@@ -1,4 +1,12 @@
 .DS_Store
 node_modules/
-__pycache__/
+dist/
+coverage/
+.turbo/
 *.log
+.env
+.env.local
+__pycache__/
+# Capacitor が生成するネイティブ側（Mac で npx cap add ios / android したもの）
+apps/web/ios/
+apps/web/android/

@@ -1,0 +1,24 @@
+import { render, screen } from "@testing-library/react";
+import { CARDS } from "@trends/cards";
+import { describe, expect, it } from "vitest";
+import { EffectText } from "./EffectText";
+import { HoloCard } from "./HoloCard";
+
+describe("EffectText", () => {
+  it("〈種族〉とキーワードを強調する", () => {
+    const { container } = render(<EffectText text="速攻。〈蒼空〉カード1枚を手札に加える。" />);
+    const kws = [...container.querySelectorAll(".kw")].map((e) => e.textContent);
+    expect(kws).toEqual(["速攻", "〈蒼空〉"]);
+  });
+});
+
+describe("HoloCard", () => {
+  it("カードデータの名前・コスト・パワーを表示する", () => {
+    const ren = CARDS.find((c) => c.id === "c2");
+    if (!ren) throw new Error("c2 not found");
+    render(<HoloCard card={ren} idle={false} />);
+    expect(screen.getByRole("img", { name: /紅蓮の簒奪者 レン/ })).toBeInTheDocument();
+    expect(screen.getByText("7200")).toBeInTheDocument();
+    expect(screen.getByText("No. 007 / 100")).toBeInTheDocument();
+  });
+});

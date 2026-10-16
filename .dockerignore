@@ -1,0 +1,8 @@
+**/node_modules
+**/dist
+**/.turbo
+.git
+assets/original
+legacy
+apps/web/public
+**/.env
