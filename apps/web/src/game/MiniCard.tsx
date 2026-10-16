@@ -6,6 +6,10 @@ interface Props {
   cost?: number;
   /** 場のアイコンが受けているダメージ */
   damage?: number;
+  /** 場のアイコンの番号（演出で要素を探すため） */
+  uid?: number;
+  /** 手札のカードなら true（演出で要素を探すため） */
+  inHand?: boolean;
   className?: string;
   disabled?: boolean;
   label?: string;
@@ -19,6 +23,8 @@ export function MiniCard({
   card,
   cost,
   damage = 0,
+  uid,
+  inHand,
   className = "",
   disabled,
   label,
@@ -33,6 +39,8 @@ export function MiniCard({
       type="button"
       className={`mini theme-${card.theme} ${card.art ? "has-art" : ""} ${className}`}
       style={art}
+      data-uid={uid}
+      data-hand-card={inHand ? "" : undefined}
       disabled={disabled}
       aria-label={label ?? `${card.name}（コスト${card.cost}・攻撃${card.attack}・体力${hp}）`}
       onClick={onClick}

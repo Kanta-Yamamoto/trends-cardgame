@@ -58,11 +58,13 @@ button { font: inherit; color: inherit; }
   .side .peek { display: none; }
 }
 .board { display: grid; gap: 12px; }
-.row { display: grid; grid-template-columns: repeat(3, minmax(0, 118px)); justify-content: center; gap: 12px; }
+.row { display: grid; grid-template-columns: repeat(3, minmax(0, 118px)) 64px; justify-content: center; gap: 12px; }
+@media (max-width: 520px) { .row { gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)) 52px; } }
 .slot { aspect-ratio: 63 / 88; border-radius: 10px; border: 1.5px dashed #9fb6d640; background: #ffffff06; }
 .slot:disabled { cursor: default; }
 .slot.droppable { cursor: pointer; border-color: var(--accent); box-shadow: 0 0 18px #8fd8ff55; animation: breathe 1.4s ease-in-out infinite; }
 @keyframes breathe { 50% { box-shadow: 0 0 6px #8fd8ff33; } }
+.midline { display: grid; justify-items: center; gap: 6px; }
 .hint { margin: 0; text-align: center; font-size: 12.5px; color: var(--muted); min-height: 1.6em; }
 .error { margin: 0; color: var(--foe); font-weight: 700; font-size: 13px; text-align: center; }
 
@@ -162,3 +164,85 @@ button.pb-main:disabled { cursor: default; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 .holo-btn { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 4.4% / 3.2%; }
 .holo-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+/* ターン：どちらの番かを色で示す（自分＝青、相手＝赤） */
+:root { --me: #5cc8ff; --foe-c: #ff4d5e; }
+.turn-pill { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 99px; color: var(--night); }
+.turn-pill.mine { background: linear-gradient(90deg, #a8e6ff, var(--me)); box-shadow: 0 0 18px #5cc8ff88; }
+.turn-pill.foe { background: linear-gradient(90deg, #ffa0a8, var(--foe-c)); box-shadow: 0 0 18px #ff4d5e88; }
+.board { position: relative; border-radius: 18px; padding: 10px; transition: box-shadow 0.4s, background 0.4s; }
+.board.turn-me { background: linear-gradient(180deg, transparent 45%, #5cc8ff10); box-shadow: inset 0 -2px 0 #5cc8ff55; }
+.board.turn-foe { background: linear-gradient(0deg, transparent 45%, #ff4d5e12); box-shadow: inset 0 2px 0 #ff4d5e66; }
+.pb-main { transition: opacity 0.3s, box-shadow 0.3s; }
+.pb-main:not(.active) { opacity: 0.72; }
+.pbar.me .pb-main.active { box-shadow: 0 0 0 1.5px var(--me), 0 0 22px #5cc8ff44; opacity: 1; }
+.pbar.foe .pb-main.active { box-shadow: 0 0 0 1.5px var(--foe-c), 0 0 22px #ff4d5e44; opacity: 1; }
+.pb-main.targetable { opacity: 1; }
+.end-turn.now { animation: nudge 1.8s ease-in-out infinite; }
+@keyframes nudge { 0%, 70%, 100% { box-shadow: 0 0 0 0 #f2cf7a00; } 80% { box-shadow: 0 0 0 6px #f2cf7a55; } }
+
+/* ターン開始のバナー */
+.turn-banner { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; pointer-events: none; animation: tb-life 1.25s linear forwards; }
+@keyframes tb-life { to { visibility: hidden; } }
+.tb-band {
+  width: 100%; padding: 18px 0; display: grid; justify-items: center; gap: 2px; transform-origin: left center;
+  animation: tb-band 1.25s cubic-bezier(.2, .9, .2, 1) forwards;
+}
+.turn-banner.mine .tb-band { background: linear-gradient(90deg, transparent, #0b4f80e6 18%, #1a8ad0f0 50%, #0b4f80e6 82%, transparent); }
+.turn-banner.foe .tb-band { background: linear-gradient(90deg, transparent, #6e0f1ae6 18%, #c9283af0 50%, #6e0f1ae6 82%, transparent); }
+.tb-band small { font: 800 12px/1 var(--f-mark); letter-spacing: 0.5em; color: #ffffffb0; }
+.tb-band strong { font: 900 clamp(28px, 7vw, 54px)/1.1 var(--f-ui); letter-spacing: 0.08em; color: #fff; text-shadow: 0 0 24px #ffffffaa; animation: tb-text 1.25s cubic-bezier(.2, .9, .2, 1) forwards; }
+@keyframes tb-band {
+  0% { transform: scaleY(0.05) scaleX(0.2); opacity: 0; }
+  14% { transform: scaleY(1) scaleX(1); opacity: 1; }
+  80% { transform: none; opacity: 1; }
+  100% { transform: scaleY(0.05); opacity: 0; }
+}
+@keyframes tb-text {
+  0% { transform: translateX(-40vw) skewX(-20deg); opacity: 0; }
+  18% { transform: translateX(6px) skewX(-6deg); opacity: 1; }
+  26% { transform: none; }
+  78% { transform: translateX(10px); opacity: 1; }
+  100% { transform: translateX(40vw) skewX(20deg); opacity: 0; }
+}
+
+/* 山札とトラッシュ */
+.piles { display: grid; grid-template-rows: 1fr 1fr; gap: 8px; align-self: stretch; }
+.pile { position: relative; padding: 0; border: 0; background: none; display: grid; justify-items: center; align-content: center; gap: 2px; font-size: 10px; color: var(--muted); }
+.pile small { font-size: 10px; }
+button.pile { cursor: pointer; }
+button.pile:disabled { cursor: default; }
+.pile-count { position: absolute; top: -6px; right: 0; min-width: 22px; height: 20px; padding: 0 5px; border-radius: 99px; display: grid; place-items: center; font: 800 12px/1 var(--f-mark); color: var(--night); background: var(--text); box-shadow: 0 2px 6px #000a; z-index: 1; font-variant-numeric: tabular-nums; }
+.cardback, .fx-cardback {
+  border-radius: 6px; border: 1.5px solid #e6c97a;
+  background:
+    radial-gradient(circle at 50% 50%, #f2cf7a 0 9%, transparent 10%),
+    radial-gradient(circle at 50% 50%, transparent 0 22%, #f2cf7a55 23% 25%, transparent 26%),
+    repeating-linear-gradient(45deg, #1b2a48 0 6px, #16223b 6px 12px);
+}
+.cardback { width: 44px; aspect-ratio: 63 / 88; display: block; }
+.cardback.depth-1 { box-shadow: 2px 2px 0 #0d1526, 2px 2px 0 1px #e6c97a55; }
+.cardback.depth-2 { box-shadow: 2px 2px 0 #0d1526, 2px 2px 0 1px #e6c97a55, 4px 4px 0 #0d1526, 4px 4px 0 1px #e6c97a44; }
+.cardback.depth-3 { box-shadow: 2px 2px 0 #0d1526, 2px 2px 0 1px #e6c97a55, 4px 4px 0 #0d1526, 4px 4px 0 1px #e6c97a44, 6px 6px 0 #0d1526, 6px 6px 0 1px #e6c97a33; }
+.cardback.empty { opacity: 0.2; }
+.trash-top, .trash-empty { width: 44px; aspect-ratio: 63 / 88; border-radius: 6px; display: block; background-size: cover; background-position: center 30%; filter: grayscale(0.6) brightness(0.7); border: 1px solid #ffffff40; overflow: hidden; }
+.trash-top.theme-light { background-color: #8a7a52; }
+.trash-top.theme-water { background-color: #1d5a86; }
+.trash-top.theme-crimson { background-color: #6a1520; }
+.trash-top i { display: block; font-style: normal; font-size: 8px; font-weight: 800; color: #fff; padding: 3px; text-shadow: 0 1px 2px #000; line-height: 1.2; }
+.trash-empty { border-style: dashed; filter: none; background: #ffffff06; }
+button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(1); }
+@media (max-width: 520px) { .cardback, .trash-top, .trash-empty { width: 38px; } }
+
+.trash-list { width: min(100%, 560px); }
+.trash-list h2 { margin: 0; font-size: 16px; }
+.trash-grid { width: 100%; max-height: 60dvh; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; }
+.sheet .trash-list { align-self: center; background: var(--night-2); border-radius: 16px; border: 1px solid var(--line); }
+
+/* 演出のレイヤー（攻撃・ドロー・ダメージの数字） */
+#fx-layer { position: fixed; inset: 0; z-index: 35; pointer-events: none; }
+.fx-num { position: fixed; font: 900 34px/1 var(--f-mark); color: #fff; -webkit-text-stroke: 1.5px #7a0a14; text-shadow: 0 0 14px #ff3b4c, 0 3px 0 #7a0a14; }
+.fx-num.heal { -webkit-text-stroke-color: #0b5a2e; text-shadow: 0 0 14px #3dff8b, 0 3px 0 #0b5a2e; }
+.fx-burst { position: fixed; width: 90px; height: 90px; border-radius: 50%; border: 6px solid var(--c); box-shadow: 0 0 30px var(--c), inset 0 0 20px var(--c); }
+.fx-ghost { position: fixed; margin: 0; pointer-events: none; }
+.fx-cardback { position: fixed; box-shadow: 0 10px 24px #000a; }

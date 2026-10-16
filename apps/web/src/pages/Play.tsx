@@ -1,9 +1,17 @@
 import type { DeckId } from "@trends/cards";
-import { type AttackTarget, effectiveCost, type GameEvent, isGuarded, legalTargets } from "@trends/game-core";
-import { useEffect, useState } from "react";
+import {
+  type AttackTarget,
+  effectiveCost,
+  type GameEvent,
+  isGuarded,
+  legalTargets,
+  type PlayerId,
+} from "@trends/game-core";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { HoloCard } from "../cards/HoloCard";
+import { animateAttack, animateDraw, popMaster } from "../game/fx";
 import { MiniCard } from "../game/MiniCard";
-import { CATALOG, CPU, DECK_INFO, ME, useGame } from "../game/store";
+import { CATALOG, CPU, DECK_INFO, ME, setPresenter, useGame } from "../game/store";
 
 const SLOT_KEYS = ["left", "center", "right"] as const;
 const nameOf = (id: string) => CATALOG[id]?.name ?? id;
@@ -96,15 +104,67 @@ function DeckSelect() {
 type Peek = { id: string; damage?: number; where: "hand" | "mine" | "foe"; index: number };
 
 function Board() {
-  const { game, deck, log, error, selection, cpuBusy, select, play, attack, endTurn, start, quit } =
-    useGame();
+  const {
+    game,
+    deck,
+    log,
+    error,
+    selection,
+    cpuBusy,
+    animating,
+    select,
+    play,
+    attack,
+    endTurn,
+    start,
+    quit,
+  } = useGame();
   const [peek, setPeek] = useState<Peek | null>(null);
   const [sheet, setSheet] = useState(false);
+  const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
+  const [trashView, setTrashView] = useState<PlayerId | null>(null);
+  const seen = useRef(0);
   const narrow = useNarrow();
+
+  // 攻撃の演出を store に登録する（演出が終わってから state を進める）
+  useEffect(() => {
+    setPresenter({
+      beforeAttack: (g, a) => animateAttack(g, a.player, a.from, a.target, CATALOG),
+      turnIntro: 1100,
+    });
+    return () => setPresenter(null);
+  }, []);
+
+  // 新しい出来事に合わせて演出を出す（ターン開始のバナー・ドロー・炎上や祝福の数字）
+  useLayoutEffect(() => {
+    const last = log.at(-1)?.id ?? 0;
+    if (last < seen.current) seen.current = 0; // 新しい対戦
+    const fresh = log.filter((l) => l.id > seen.current);
+    if (fresh.length === 0) return;
+    seen.current = last;
+    const fromPlay = fresh.some((l) => l.e.type === "played");
+    let t = 0;
+    for (const { id, e } of fresh) {
+      if (e.type === "turnStarted") {
+        setBanner({ id, mine: e.player === ME, turn: e.turn });
+        t += 950;
+      } else if (e.type === "drew") {
+        void animateDraw(e.player, t);
+        t += 180;
+      } else if (e.type === "leaderHealed" && e.amount > 0) {
+        const { player, amount } = e;
+        setTimeout(() => popMaster(player, `+${amount}`, "heal"), t);
+      } else if (e.type === "leaderDamaged" && fromPlay) {
+        const { player, amount } = e;
+        setTimeout(() => popMaster(player, `-${amount}`, "dmg"), t);
+      }
+    }
+  }, [log]);
+
   if (!game || !deck) return null;
   const me = game.players[ME];
   const foe = game.players[CPU];
-  const myTurn = game.active === ME && !game.winner && !cpuBusy;
+  const myTurn = game.active === ME && !game.winner && !cpuBusy && !animating;
   const attacking = selection?.kind === "attacker";
   const targets = attacking ? legalTargets(game, ME, CATALOG) : [];
   const canHit = (t: AttackTarget) =>
@@ -119,15 +179,17 @@ function Board() {
 
   const hint = game.winner
     ? ""
-    : !myTurn
-      ? "CPU のターンです…"
-      : selection?.kind === "hand"
-        ? "出す枠を選んでください（もう一度カードを押すと空いている枠に出します）"
-        : attacking
-          ? foeGuarded
-            ? "攻撃先を選んでください（ガードがいるのでマスターは攻撃できません）"
-            : "攻撃先を選んでください（光っているところ）"
-          : "手札を選んで場に出す／攻撃できるアイコンを選んで攻撃";
+    : game.active === CPU
+      ? "CPU が考えています…"
+      : !myTurn
+        ? ""
+        : selection?.kind === "hand"
+          ? "出す枠を選んでください（もう一度カードを押すと空いている枠に出します）"
+          : attacking
+            ? foeGuarded
+              ? "攻撃先を選んでください（ガードがいるのでマスターは攻撃できません）"
+              : "攻撃先を選んでください（光っているところ）"
+            : "手札を選んで場に出す／攻撃できるアイコンを選んで攻撃";
 
   // シートの中の操作（狭い画面用）
   const sheetAction = (() => {
@@ -156,7 +218,7 @@ function Board() {
 
   return (
     <div className="arena">
-      <div className="board">
+      <div className={`board turn-${game.active === ME ? "me" : "foe"}`}>
         <PlayerBar
           side="foe"
           name="CPU"
@@ -179,6 +241,7 @@ function Board() {
             return (
               <MiniCard
                 key={u.uid}
+                uid={u.uid}
                 card={card}
                 damage={u.damage}
                 className={`unit foe-unit enter ${hit ? "targetable" : ""}`}
@@ -191,10 +254,18 @@ function Board() {
               />
             );
           })}
+          <Piles owner={CPU} deck={foe.deck.length} trash={foe.trash} onTrash={() => setTrashView(CPU)} />
         </div>
-        <p className="hint" aria-live="polite">
-          {hint}
-        </p>
+        <div className="midline">
+          {!game.winner && (
+            <span className={`turn-pill ${game.active === ME ? "mine" : "foe"}`}>
+              {game.active === ME ? "あなたのターン" : "相手のターン"}
+            </span>
+          )}
+          <p className="hint" aria-live="polite">
+            {hint}
+          </p>
+        </div>
         <div className="row">
           {SLOT_KEYS.map((key, slot) => {
             const u = me.field[slot];
@@ -218,6 +289,7 @@ function Board() {
             return (
               <MiniCard
                 key={u.uid}
+                uid={u.uid}
                 card={card}
                 damage={u.damage}
                 className={`unit enter ${ready ? "ready" : "tired"} ${selected ? "selected" : ""}`}
@@ -235,6 +307,7 @@ function Board() {
               </MiniCard>
             );
           })}
+          <Piles owner={ME} deck={me.deck.length} trash={me.trash} onTrash={() => setTrashView(ME)} />
         </div>
         <PlayerBar
           side="me"
@@ -246,7 +319,12 @@ function Board() {
           deck={me.deck.length}
           active={game.active === ME}
         >
-          <button type="button" className="btn" onClick={endTurn} disabled={!myTurn}>
+          <button
+            type="button"
+            className={`btn end-turn ${myTurn ? "now" : ""}`}
+            onClick={endTurn}
+            disabled={!myTurn}
+          >
             ターン終了
           </button>
         </PlayerBar>
@@ -255,7 +333,7 @@ function Board() {
             {error}
           </p>
         )}
-        <div className="hand">
+        <div className="hand" data-hand={ME}>
           {me.hand.map((id, i) => {
             const card = CATALOG[id];
             if (!card) return null;
@@ -267,6 +345,7 @@ function Board() {
               <MiniCard
                 // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが手札に複数あり得るので位置で区別する
                 key={`${id}-${i}`}
+                inHand
                 card={card}
                 cost={cost}
                 className={`in-hand ${playable ? "playable" : "short"} ${selected ? "selected" : ""}`}
@@ -348,6 +427,48 @@ function Board() {
         </div>
       )}
 
+      {banner && (
+        <div
+          key={banner.id}
+          className={`turn-banner ${banner.mine ? "mine" : "foe"}`}
+          aria-hidden="true"
+          onAnimationEnd={(e) => e.target === e.currentTarget && setBanner(null)}
+        >
+          <div className="tb-band">
+            <small>TURN {banner.turn}</small>
+            <strong>{banner.mine ? "あなたのターン" : "相手のターン"}</strong>
+          </div>
+        </div>
+      )}
+
+      {trashView && (
+        <div className="sheet" role="dialog" aria-modal="true" aria-label="トラッシュ">
+          <button type="button" className="sheet-bg" aria-label="閉じる" onClick={() => setTrashView(null)} />
+          <div className="sheet-body trash-list">
+            <h2>
+              {trashView === ME ? "あなた" : "CPU"}のトラッシュ（{game.players[trashView].trash.length}枚）
+            </h2>
+            <div className="trash-grid">
+              {game.players[trashView].trash.map((id, i) => {
+                const c = CATALOG[id];
+                if (!c) return null;
+                return (
+                  <MiniCard
+                    // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが複数あり得るので位置で区別する
+                    key={`${id}-${i}`}
+                    card={c}
+                    className="in-trash"
+                  />
+                );
+              })}
+            </div>
+            <button type="button" className="btn ghost" onClick={() => setTrashView(null)}>
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
       {game.winner && (
         <div className="result" role="dialog" aria-modal="true" aria-label="対戦結果">
           <div className={`result-card ${game.winner === ME ? "win" : "lose"}`}>
@@ -364,6 +485,52 @@ function Board() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** 山札（裏向きの束）とトラッシュ（いちばん上のカード）。トラッシュを押すと一覧を出す */
+function Piles({
+  owner,
+  deck,
+  trash,
+  onTrash,
+}: {
+  owner: PlayerId;
+  deck: number;
+  trash: string[];
+  onTrash: () => void;
+}) {
+  const top = trash.at(-1);
+  const topCard = top ? CATALOG[top] : null;
+  return (
+    <div className="piles">
+      <div className="pile" data-pile={`deck-${owner}`} title={`山札 ${deck}枚`}>
+        <span className={`cardback depth-${Math.min(3, Math.ceil(deck / 5))} ${deck === 0 ? "empty" : ""}`} />
+        <b className="pile-count">{deck}</b>
+        <small>山札</small>
+      </div>
+      <button
+        type="button"
+        className="pile"
+        data-pile={`trash-${owner}`}
+        onClick={onTrash}
+        disabled={trash.length === 0}
+        aria-label={`トラッシュ ${trash.length}枚を見る`}
+      >
+        {topCard ? (
+          <span
+            className={`trash-top theme-${topCard.theme}`}
+            style={topCard.art ? { backgroundImage: `url(${topCard.art})` } : undefined}
+          >
+            <i>{topCard.name}</i>
+          </span>
+        ) : (
+          <span className="trash-empty" />
+        )}
+        <b className="pile-count">{trash.length}</b>
+        <small>トラッシュ</small>
+      </button>
     </div>
   );
 }
@@ -426,7 +593,7 @@ function PlayerBar({
         </b>
       </span>
       <span className="pb-count">
-        手札 {hand}・山札 {deck}
+        <span data-hand={side === "me" ? undefined : CPU}>手札 {hand}</span>・山札 {deck}
       </span>
     </>
   );
@@ -435,7 +602,8 @@ function PlayerBar({
       {onClick ? (
         <button
           type="button"
-          className={`pb-main ${targetable ? "targetable" : ""}`}
+          data-master={side === "me" ? ME : CPU}
+          className={`pb-main ${active ? "active" : ""} ${targetable ? "targetable" : ""}`}
           disabled={!targetable}
           onClick={onClick}
           aria-label={`${name}のマスターを攻撃`}
@@ -443,7 +611,9 @@ function PlayerBar({
           {body}
         </button>
       ) : (
-        <div className="pb-main">{body}</div>
+        <div className={`pb-main ${active ? "active" : ""}`} data-master={side === "me" ? ME : CPU}>
+          {body}
+        </div>
       )}
       {children}
     </div>

@@ -40,6 +40,8 @@ interface GameStore {
   cpuBusy: boolean;
   /** CPU の1手ごとの間隔（ms）。0 なら一気に進める（テスト用） */
   cpuDelay: number;
+  /** 自分の攻撃の演出中は true（操作を受け付けない） */
+  animating: boolean;
   start: (deck: DeckId, opts?: { seed?: number; first?: PlayerId }) => void;
   quit: () => void;
   select: (s: Selection) => void;
@@ -50,6 +52,20 @@ interface GameStore {
 
 /** start / quit のたびに増やし、古い CPU の処理を止める */
 let runId = 0;
+
+/**
+ * 画面側の演出。攻撃の前に呼ばれ、演出が終わってから state を更新する。
+ * テストや演出なしの環境では登録しない（そのまま即時に進む）。
+ */
+export interface Presenter {
+  beforeAttack: (game: GameState, action: Extract<Action, { type: "attack" }>) => Promise<void>;
+  /** CPU のターンが始まってから最初の操作までの待ち（ターン開始の演出のため） */
+  turnIntro: number;
+}
+let presenter: Presenter | null = null;
+export const setPresenter = (p: Presenter | null) => {
+  presenter = p;
+};
 
 export const useGame = create<GameStore>((set, get) => {
   const dispatch = (a: Action): boolean => {
@@ -88,14 +104,17 @@ export const useGame = create<GameStore>((set, get) => {
       return;
     }
     let i = 0;
-    const next = () => {
+    const next = async () => {
       if (my !== runId) return;
       const a = actions[i++];
-      if (!a || get().game?.winner) return finish();
+      const g = get().game;
+      if (!a || !g || g.winner) return finish();
+      if (a.type === "attack" && presenter) await presenter.beforeAttack(g, a);
+      if (my !== runId) return;
       if (!dispatch(a)) return finish();
       setTimeout(next, a.type === "endTurn" ? 0 : delay);
     };
-    setTimeout(next, delay);
+    setTimeout(next, delay + (presenter?.turnIntro ?? 0));
   };
 
   return {
@@ -106,6 +125,7 @@ export const useGame = create<GameStore>((set, get) => {
     selection: null,
     cpuBusy: false,
     cpuDelay: 700,
+    animating: false,
     start: (deck, opts = {}) => {
       runId++;
       const seed = opts.seed ?? Math.floor(Math.random() * 1e9);
@@ -119,27 +139,48 @@ export const useGame = create<GameStore>((set, get) => {
         error: null,
         selection: null,
         cpuBusy: false,
+        animating: false,
       });
       runCpu();
     },
     quit: () => {
       runId++;
-      set({ deck: null, game: null, log: [], error: null, selection: null, cpuBusy: false });
+      set({
+        deck: null,
+        game: null,
+        log: [],
+        error: null,
+        selection: null,
+        cpuBusy: false,
+        animating: false,
+      });
     },
     select: (selection) => set({ selection, error: null }),
     play: (slot) => {
       const sel = get().selection;
-      if (sel?.kind !== "hand" || get().cpuBusy) return;
+      if (sel?.kind !== "hand" || get().cpuBusy || get().animating) return;
       if (dispatch({ type: "play", player: ME, handIndex: sel.index, slot })) set({ selection: null });
     },
     attack: (target) => {
       const sel = get().selection;
-      if (sel?.kind !== "attacker" || get().cpuBusy) return;
-      dispatch({ type: "attack", player: ME, from: sel.slot, target });
-      set({ selection: null });
+      const game = get().game;
+      if (sel?.kind !== "attacker" || get().cpuBusy || get().animating || !game) return;
+      const a: Action = { type: "attack", player: ME, from: sel.slot, target };
+      if (!presenter) {
+        dispatch(a);
+        set({ selection: null });
+        return;
+      }
+      const my = runId;
+      set({ animating: true, selection: null });
+      presenter.beforeAttack(game, a).then(() => {
+        if (my !== runId) return;
+        dispatch(a);
+        set({ animating: false });
+      });
     },
     endTurn: () => {
-      if (get().cpuBusy || !dispatch({ type: "endTurn", player: ME })) return;
+      if (get().cpuBusy || get().animating || !dispatch({ type: "endTurn", player: ME })) return;
       set({ selection: null });
       runCpu();
     },
