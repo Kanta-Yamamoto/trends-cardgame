@@ -2,6 +2,7 @@ import { abilitiesOf, damageLeader, draw, hasKeyword, opponent } from "./abiliti
 import { nextRandom } from "./rng";
 import {
   type Action,
+  type AttackTarget,
   type Config,
   DEFAULT_CONFIG,
   type GameEvent,
@@ -11,6 +12,7 @@ import {
   type RuleCard,
   RuleError,
   SLOTS,
+  type Unit,
 } from "./types";
 
 export interface NewGameInput {
@@ -74,17 +76,26 @@ export function effectiveCost(
   return Math.max(0, card.cost + mod);
 }
 
-/** 今そのカードが攻撃できる相手（ガードがあればガードだけ） */
+/** アイコンの残り体力 */
+export function hpLeft(unit: Unit, catalog: Record<string, RuleCard>): number {
+  return must(catalog, unit.cardId).hp - unit.damage;
+}
+
+/** 相手の場にガードがいるか（いる間はマスターを攻撃できない） */
+export function isGuarded(state: GameState, player: PlayerId, catalog: Record<string, RuleCard>): boolean {
+  return state.players[player].field.some((u) => u && hasKeyword(catalog[u.cardId], "ガード"));
+}
+
+/** 今攻撃できる相手。相手のアイコンはいつでも攻撃でき、マスターはガードがいない間だけ攻撃できる */
 export function legalTargets(
   state: GameState,
   player: PlayerId,
   catalog: Record<string, RuleCard>,
-): ({ kind: "leader" } | { kind: "unit"; slot: number })[] {
-  const foe = state.players[opponent(player)];
-  const units = foe.field.map((u, slot) => ({ u, slot })).filter((x) => x.u);
-  const guards = units.filter((x) => hasKeyword(catalog[x.u?.cardId ?? ""], "ガード"));
-  if (guards.length > 0) return guards.map((x) => ({ kind: "unit" as const, slot: x.slot }));
-  return [{ kind: "leader" as const }, ...units.map((x) => ({ kind: "unit" as const, slot: x.slot }))];
+): AttackTarget[] {
+  const foeId = opponent(player);
+  const units = state.players[foeId].field.flatMap((u, slot) => (u ? [{ kind: "unit" as const, slot }] : []));
+  if (isGuarded(state, foeId, catalog)) return units;
+  return [{ kind: "leader" as const }, ...units];
 }
 
 /**
@@ -120,7 +131,12 @@ export function applyAction(
       const card = must(catalog, cardId);
       me.mana -= cost;
       me.hand.splice(action.handIndex, 1);
-      me.field[action.slot] = { uid: state.nextUid++, cardId, canAttack: hasKeyword(card, "速攻") };
+      me.field[action.slot] = {
+        uid: state.nextUid++,
+        cardId,
+        canAttack: hasKeyword(card, "速攻"),
+        damage: 0,
+      };
       emit({ type: "played", player: action.player, cardId, slot: action.slot, cost });
       for (const a of abilitiesOf(card)) a.onPlay?.(ctx);
       break;
@@ -138,31 +154,41 @@ export function applyAction(
       if (!ok) {
         throw new RuleError(
           "guarded",
-          action.target.kind === "unit" && !foe.field[action.target.slot]
-            ? "攻撃先のカードがありません"
-            : "ガードのカードを先に攻撃しないといけません",
+          action.target.kind === "unit"
+            ? "攻撃先のアイコンがありません"
+            : "相手の場にガードがいる間は、マスターを攻撃できません",
         );
       }
       atk.canAttack = false;
       const atkCard = must(catalog, atk.cardId);
       if (action.target.kind === "leader") {
-        damageLeader(state, foeId, atkCard.power, emit);
+        damageLeader(state, foeId, atkCard.attack, emit);
       } else {
+        // お互いの攻撃力の分だけ、相手の体力を削る（ダメージは残る）
         const slot = action.target.slot;
-        const def = foe.field[slot] as NonNullable<(typeof foe.field)[number]>;
+        const def = foe.field[slot] as Unit;
         const defCard = must(catalog, def.cardId);
+        def.damage += atkCard.attack;
+        atk.damage += defCard.attack;
         const destroyed: string[] = [];
-        if (atkCard.power >= defCard.power) {
+        if (def.damage >= defCard.hp) {
           foe.field[slot] = null;
           foe.trash.push(def.cardId);
           destroyed.push(def.cardId);
         }
-        if (defCard.power >= atkCard.power) {
+        if (atk.damage >= atkCard.hp) {
           me.field[action.from] = null;
           me.trash.push(atk.cardId);
           destroyed.push(atk.cardId);
         }
-        emit({ type: "battle", attacker: atk.cardId, defender: def.cardId, destroyed });
+        emit({
+          type: "battle",
+          attacker: atk.cardId,
+          defender: def.cardId,
+          toDefender: atkCard.attack,
+          toAttacker: defCard.attack,
+          destroyed,
+        });
       }
       for (const a of abilitiesOf(atkCard)) a.onAttack?.(ctx);
       break;
@@ -183,7 +209,7 @@ export function applyAction(
       break;
     }
   }
-  // 炎上などで自分のフォロワーが0になることもあるので、毎回両者を確認する
+  // 炎上などで自分のライフが0になることもあるので、毎回両者を確認する
   if (!state.winner) {
     if (foe.lp <= 0) state.winner = action.player;
     else if (me.lp <= 0) state.winner = foeId;

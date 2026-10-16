@@ -48,7 +48,5 @@
   .kg-effect i { opacity: 0.5; }
   .kg-effect .kw { color: var(--c1); font-weight: 800; }
   .kg-flavor { margin: 0; font-size: 0.8em; opacity: 0.6; }
-  .kg-power { justify-self: end; display: flex; align-items: baseline; gap: 0.4em; }
-  .kg-power small { font: 700 0.7em/1 var(--f-num); opacity: 0.7; }
-  .kg-power b { font: 800 1.8em/1 var(--f-num); }
+  .kg-power { justify-self: end; display: flex; }
 }

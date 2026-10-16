@@ -30,6 +30,7 @@ pnpm build
 ## ルール
 
 - ゲームのルールは必ず `packages/game-core` に書き、テストを付ける。画面側にルールを書かない
+- 画面・効果文の用語は `docs/rules.md` の「用語」にそろえる（マスター・ライフ・アイコン・攻撃力・体力・話題力）。攻撃力は赤、体力は青で表示する
 - `applyAction` は元の state を変更しない。反則は `RuleError`（日本語のメッセージ）を投げる
 - 新しいカード：`packages/cards/src/cards.json` に追加 → 効果があれば `packages/game-core/src/abilities.ts` にカード ID で登録 → 表示は `apps/web/src/cards/faces/` にデザインを追加して `HoloCard.tsx` の `FACES` に登録
 - DB スキーマを変えたら `pnpm db:generate` でマイグレーションを作り、`apps/api/drizzle/` ごとコミットする

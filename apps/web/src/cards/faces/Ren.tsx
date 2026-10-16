@@ -1,5 +1,6 @@
 import type { CardDef } from "@trends/cards";
 import { EffectText } from "../EffectText";
+import { Stats } from "../Stats";
 
 /** プロトタイプ（legacy/prototype-src）のカードデザインを React に移したもの */
 export function RenFace({ card }: { card: CardDef }) {
@@ -40,10 +41,7 @@ export function RenFace({ card }: { card: CardDef }) {
             <span className="serial">
               SERIAL<b>{card.serial}</b>
             </span>
-            <span className="power">
-              <small>POWER</small>
-              <b className="foil">{card.power}</b>
-            </span>
+            <Stats card={card} />
           </div>
         </div>
       </div>

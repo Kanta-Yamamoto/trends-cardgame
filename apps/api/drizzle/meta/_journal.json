@@ -15,6 +15,20 @@
       "when": 1792160426747,
       "tag": "0001_black_lionheart",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792165370092,
+      "tag": "0002_broad_black_bolt",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792165371511,
+      "tag": "0003_ambiguous_master_mold",
+      "breakpoints": true
     }
   ]
 }

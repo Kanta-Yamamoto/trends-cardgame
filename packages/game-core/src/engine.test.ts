@@ -4,18 +4,18 @@ import { applyAction, createGame, effectiveCost, legalTargets } from "./engine";
 import { type Action, type GameState, type RuleCard, RuleError } from "./types";
 
 const catalog: Record<string, RuleCard> = {
-  c1: { id: "c1", cost: 8, power: 8000, tribe: "光輪" },
-  c2: { id: "c2", cost: 6, power: 7200, tribe: "紅蓮", keywords: ["速攻"] },
-  c3: { id: "c3", cost: 5, power: 6500, tribe: "蒼空" },
-  halo: { id: "halo", cost: 2, power: 2000, tribe: "光輪" },
-  sky: { id: "sky", cost: 1, power: 1000, tribe: "蒼空" },
-  guard: { id: "guard", cost: 3, power: 3000, tribe: "光輪", keywords: ["ガード"] },
-  spread: { id: "spread", cost: 2, power: 1500, tribe: "蒼空", keywords: ["拡散"] },
-  flame: { id: "flame", cost: 4, power: 5000, tribe: "紅蓮", keywords: ["炎上"] },
-  bless: { id: "bless", cost: 2, power: 2000, tribe: "光輪", keywords: ["祝福"] },
-  haste: { id: "haste", cost: 1, power: 1500, tribe: "紅蓮", keywords: ["速攻"] },
-  big: { id: "big", cost: 4, power: 9000, tribe: "炎上" },
-  f: { id: "f", cost: 1, power: 100, tribe: "なし" },
+  c1: { id: "c1", cost: 8, attack: 6, hp: 8, tribe: "光輪", keywords: ["ガード"] },
+  c2: { id: "c2", cost: 6, attack: 5, hp: 4, tribe: "紅蓮", keywords: ["速攻"] },
+  c3: { id: "c3", cost: 5, attack: 4, hp: 5, tribe: "蒼空" },
+  halo: { id: "halo", cost: 2, attack: 2, hp: 2, tribe: "光輪" },
+  sky: { id: "sky", cost: 1, attack: 1, hp: 1, tribe: "蒼空" },
+  guard: { id: "guard", cost: 3, attack: 1, hp: 5, tribe: "光輪", keywords: ["ガード"] },
+  spread: { id: "spread", cost: 2, attack: 1, hp: 2, tribe: "蒼空", keywords: ["拡散"] },
+  flame: { id: "flame", cost: 4, attack: 4, hp: 3, tribe: "紅蓮", keywords: ["炎上"] },
+  bless: { id: "bless", cost: 2, attack: 2, hp: 2, tribe: "光輪", keywords: ["祝福"] },
+  haste: { id: "haste", cost: 1, attack: 1, hp: 1, tribe: "紅蓮", keywords: ["速攻"] },
+  big: { id: "big", cost: 4, attack: 9, hp: 9, tribe: "炎上" },
+  f: { id: "f", cost: 1, attack: 1, hp: 1, tribe: "なし" },
 };
 const F = (n: number) => Array.from({ length: n }, () => "f");
 
@@ -120,7 +120,7 @@ describe("キーワード", () => {
       /攻撃できません/,
     );
   });
-  it("ガード：相手にガードがいると、本体やほかのカードは攻撃できない", () => {
+  it("ガード：相手にガードがいる間はマスターを攻撃できないが、アイコンはどれでも攻撃できる", () => {
     let s = game(["haste", "f", "f", "f", ...F(5)], ["guard", "halo", ...F(10)]);
     s = end(s);
     s.players.p2.mana = 10;
@@ -128,31 +128,33 @@ describe("キーワード", () => {
     s = play(s, 0, 1, "p2");
     s = end(s, "p2");
     s = play(s, 0, 0);
-    expect(legalTargets(s, "p1", catalog)).toEqual([{ kind: "unit", slot: 0 }]);
+    expect(legalTargets(s, "p1", catalog)).toEqual([
+      { kind: "unit", slot: 0 },
+      { kind: "unit", slot: 1 },
+    ]);
     expect(() => run(s, { type: "attack", player: "p1", from: 0, target: { kind: "leader" } })).toThrow(
       /ガード/,
     );
-    expect(() =>
-      run(s, { type: "attack", player: "p1", from: 0, target: { kind: "unit", slot: 1 } }),
-    ).toThrow(/ガード/);
+    const r = run(s, { type: "attack", player: "p1", from: 0, target: { kind: "unit", slot: 1 } });
+    expect(r.state.players.p2.field[1]?.damage).toBe(1);
   });
   it("拡散：出したときに1枚引く", () => {
     const s = play(game(["spread", "f", "f", "f", "c1"]), 0, 0);
     expect(s.players.p1.hand).toEqual(["f", "f", "f", "c1"]);
   });
-  it("炎上：お互いのフォロワーが2000減る", () => {
+  it("炎上：お互いのマスターに2ダメージ", () => {
     const s = play(game(["flame", "f", "f", "f"]), 0, 0);
-    expect(s.players.p1.lp).toBe(18000);
-    expect(s.players.p2.lp).toBe(18000);
+    expect(s.players.p1.lp).toBe(18);
+    expect(s.players.p2.lp).toBe(18);
   });
-  it("祝福：自分のフォロワーが2000増える（最大20000）", () => {
+  it("祝福：自分のライフを3回復する（最大20）", () => {
     let s = game(["bless", "bless", "f", "f"]);
-    s.players.p1.lp = 15000;
+    s.players.p1.lp = 15;
     s = play(s, 0, 0);
-    expect(s.players.p1.lp).toBe(17000);
-    s.players.p1.lp = 19500;
+    expect(s.players.p1.lp).toBe(18);
+    s.players.p1.lp = 19;
     s = play(s, 0, 1);
-    expect(s.players.p1.lp).toBe(20000);
+    expect(s.players.p1.lp).toBe(20);
   });
 });
 
@@ -168,7 +170,7 @@ describe("カード固有の効果", () => {
     const before = s.players.p2.hand.length;
     const r = run(s, { type: "attack", player: "p1", from: 0, target: { kind: "leader" } });
     expect(r.state.players.p2.hand).toHaveLength(before - 1);
-    expect(r.state.players.p2.lp).toBe(20000 - 7200);
+    expect(r.state.players.p2.lp).toBe(20 - 5);
     expect(r.events.map((e) => e.type)).toEqual(["leaderDamaged", "discarded"]);
   });
   it("ミナモ：上3枚に〈蒼空〉があれば手札に加え、残りは山札の下へ", () => {
@@ -181,6 +183,7 @@ describe("カード固有の効果", () => {
 });
 
 describe("バトルと勝敗", () => {
+  /** p1 の場に c2（攻5/体4・速攻）、p2 の場の slot1 に foeCard を置いた状態 */
   function vsUnit(foeCard: string) {
     let s = game(["c2", "c3", "c1", "f", ...F(5)], [foeCard, ...F(10)]);
     s = end(s);
@@ -190,30 +193,33 @@ describe("バトルと勝敗", () => {
     s.players.p1.mana = 10;
     return play(s, 0, 0);
   }
-  it("パワーが高いほうが勝ち、負けたカードはトラッシュへ", () => {
-    const s = run(vsUnit("flame"), {
-      type: "attack",
-      player: "p1",
-      from: 0,
-      target: { kind: "unit", slot: 1 },
-    }).state;
+  const hit = (s: GameState, from = 0, slot = 1) =>
+    run(s, { type: "attack", player: "p1", from, target: { kind: "unit", slot } });
+
+  it("お互いの攻撃力の分だけ体力が減り、0以下になったアイコンはトラッシュへ", () => {
+    const { state, events } = hit(vsUnit("flame")); // 攻5 → 体3、反撃 攻4 → 体4
+    expect(state.players.p2.field[1]).toBeNull();
+    expect(state.players.p2.trash).toContain("flame");
+    expect(state.players.p1.field[0]).toBeNull();
+    expect(events[0]).toMatchObject({ type: "battle", toDefender: 5, toAttacker: 4 });
+  });
+  it("倒しきれなかったダメージは次のターンにも残る", () => {
+    let s = hit(vsUnit("guard")).state; // 攻5 → 体5 の guard は倒れる
     expect(s.players.p2.field[1]).toBeNull();
-    expect(s.players.p2.trash).toContain("flame");
-    expect(s.players.p1.field[0]?.cardId).toBe("c2");
-  });
-  it("パワーが低い攻撃側は返り討ち", () => {
-    const s = run(vsUnit("big"), {
-      type: "attack",
-      player: "p1",
-      from: 0,
-      target: { kind: "unit", slot: 1 },
-    }).state;
+    s = hit(vsUnit("big")).state; // 攻5 → 体9：残り4、反撃 9 で c2 は倒れる
+    expect(s.players.p2.field[1]?.damage).toBe(5);
     expect(s.players.p1.field[0]).toBeNull();
-    expect(s.players.p2.field[1]?.cardId).toBe("big");
+    s = end(end(s), "p2");
+    expect(s.players.p2.field[1]?.damage).toBe(5);
   });
-  it("フォロワーが0になったら勝ち、以降は操作できない", () => {
+  it("攻撃力はダメージを受けても減らない", () => {
+    const s = hit(vsUnit("big")).state;
+    expect(s.players.p2.field[1]?.cardId).toBe("big");
+    expect(catalog.big?.attack).toBe(9);
+  });
+  it("ライフが0になったら勝ち、以降は操作できない", () => {
     let s = game(["c2", "f", "f", "f"]);
-    s.players.p2.lp = 7000;
+    s.players.p2.lp = 5;
     s = run(s, { type: "play", player: "p1", handIndex: 0, slot: 0 }).state;
     s = run(s, { type: "attack", player: "p1", from: 0, target: { kind: "leader" } }).state;
     expect(s.winner).toBe("p1");
@@ -221,7 +227,7 @@ describe("バトルと勝敗", () => {
   });
   it("炎上で自分が先に0になったら負け", () => {
     let s = game(["flame", "f", "f", "f"]);
-    s.players.p1.lp = 1500;
+    s.players.p1.lp = 2;
     s = play(s, 0, 0);
     expect(s.winner).toBe("p2");
   });
@@ -239,7 +245,11 @@ describe("CPU", () => {
     let cur = s;
     for (const a of plan) cur = applyAction(cur, a, catalog).state;
     expect(plan.at(-1)).toEqual({ type: "endTurn", player: "p1" });
-    expect(cur.players.p2.field[0]).toBeNull(); // ガードを倒している
+    // 先にガードを倒し、空いたマスターへ攻撃している
+    const attacks = plan.filter((a) => a.type === "attack");
+    expect(attacks[0]).toMatchObject({ target: { kind: "unit", slot: 0 } });
+    expect(cur.players.p2.field[0]).toBeNull();
+    expect(cur.players.p2.lp).toBeLessThan(20);
   });
   it("CPU同士で最後まで対戦でき、必ず決着がつく", () => {
     const deck = ["c1", "c2", "c3", "halo", "sky", "guard", "spread", "flame", "bless", "haste"];

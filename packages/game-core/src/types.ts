@@ -2,7 +2,8 @@
 export interface RuleCard {
   id: string;
   cost: number;
-  power: number;
+  attack: number;
+  hp: number;
   tribe: string;
   keywords?: readonly string[];
 }
@@ -10,14 +11,19 @@ export interface RuleCard {
 export type PlayerId = "p1" | "p2";
 export const SLOTS = 3;
 
+/** 場に出ているアイコン */
 export interface Unit {
   /** 場に出るたびに振られる一意な番号 */
   uid: number;
   cardId: string;
   canAttack: boolean;
+  /** 受けたダメージ（ターンをまたいで残る） */
+  damage: number;
 }
 
+/** マスター（操作するプレイヤー）の状態 */
 export interface PlayerState {
+  /** ライフ。0 になったら負け */
   lp: number;
   /** 今使える話題力 */
   mana: number;
@@ -50,7 +56,16 @@ export type Action =
 export type GameEvent =
   | { type: "played"; player: PlayerId; cardId: string; slot: number; cost: number }
   | { type: "searched"; player: PlayerId; looked: string[]; added: string | null }
-  | { type: "battle"; attacker: string; defender: string; destroyed: string[] }
+  | {
+      type: "battle";
+      attacker: string;
+      defender: string;
+      /** 守る側が受けたダメージ */
+      toDefender: number;
+      /** 攻撃側が受けた反撃のダメージ */
+      toAttacker: number;
+      destroyed: string[];
+    }
   | { type: "leaderDamaged"; player: PlayerId; amount: number; lp: number }
   | { type: "leaderHealed"; player: PlayerId; amount: number; lp: number }
   | { type: "discarded"; player: PlayerId; cardId: string }
@@ -70,7 +85,7 @@ export interface Config {
 }
 export const DEFAULT_CONFIG: Config = {
   maxMana: 10,
-  startLp: 20000,
+  startLp: 20,
   startHand: 4,
   secondExtra: 1,
   secondBonusMana: 1,

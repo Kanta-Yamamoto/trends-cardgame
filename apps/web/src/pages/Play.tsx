@@ -1,6 +1,6 @@
 import type { DeckId } from "@trends/cards";
-import { type AttackTarget, effectiveCost, type GameEvent, legalTargets } from "@trends/game-core";
-import { useState } from "react";
+import { type AttackTarget, effectiveCost, type GameEvent, isGuarded, legalTargets } from "@trends/game-core";
+import { useEffect, useState } from "react";
 import { HoloCard } from "../cards/HoloCard";
 import { MiniCard } from "../game/MiniCard";
 import { CATALOG, CPU, DECK_INFO, ME, useGame } from "../game/store";
@@ -15,12 +15,14 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}：${nameOf(e.cardId)} を出した（話題力 ${e.cost}）`;
     case "searched":
       return e.added ? `山札から ${nameOf(e.added)} を手札に加えた` : "山札の上3枚に〈蒼空〉はなかった";
-    case "battle":
-      return `${nameOf(e.attacker)} → ${nameOf(e.defender)}（トラッシュ：${e.destroyed.map(nameOf).join("・") || "なし"}）`;
+    case "battle": {
+      const lost = e.destroyed.map(nameOf).join("・");
+      return `${nameOf(e.attacker)} → ${nameOf(e.defender)}：${e.toDefender} ダメージ、反撃 ${e.toAttacker}${lost ? `（トラッシュ：${lost}）` : ""}`;
+    }
     case "leaderDamaged":
-      return `${who(e.player)}のフォロワー -${e.amount}（残り ${e.lp}）`;
+      return `${who(e.player)}のマスターに ${e.amount} ダメージ（ライフ ${e.lp}）`;
     case "leaderHealed":
-      return `${who(e.player)}のフォロワー +${e.amount}（残り ${e.lp}）`;
+      return `${who(e.player)}のライフが ${e.amount} 回復（ライフ ${e.lp}）`;
     case "discarded":
       return `${who(e.player)}の手札の ${nameOf(e.cardId)} がトラッシュへ`;
     case "drew":
@@ -32,6 +34,19 @@ function describe(e: GameEvent): string {
     case "won":
       return `${who(e.player)}の勝ち`;
   }
+}
+
+/** 狭い画面ではカードを押したときに大きく表示するシートを出す */
+function useNarrow() {
+  const q = "(max-width: 999px)";
+  const [narrow, setNarrow] = useState(() => typeof window !== "undefined" && window.matchMedia(q).matches);
+  useEffect(() => {
+    const m = window.matchMedia(q);
+    const on = () => setNarrow(m.matches);
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, []);
+  return narrow;
 }
 
 export function Play() {
@@ -60,26 +75,32 @@ function DeckSelect() {
       <details className="rules">
         <summary>ルール（かんたん版）</summary>
         <ul>
-          <li>相手のフォロワー（20000）を 0 にすれば勝ち。山札が引けなくなっても負け</li>
+          <li>相手のマスターのライフ（20）を 0 にすれば勝ち。山札が引けなくなっても負け</li>
           <li>
             話題力は毎ターン 1 ずつ増え（最大 10）、ターンの始めに全回復。後攻は手札 +1
             枚、最初のターンだけ話題力 +1
           </li>
-          <li>場は 3 枠。出したターンは攻撃できない（速攻を除く）</li>
+          <li>アイコンは場に 3 体まで。出したターンは攻撃できない（速攻を除く）</li>
           <li>
-            カード同士はパワーの高い方が残る。同じなら両方トラッシュ。本体を攻撃するとパワー分フォロワーが減る
+            アイコン同士で戦うと、お互いの<b className="t-atk">攻撃力</b>の分だけ相手の
+            <b className="t-hp">体力</b>が減る。体力が 0 になったアイコンはトラッシュへ。受けたダメージは残る
           </li>
-          <li>ガードがいる間は、ガードしか攻撃できない</li>
+          <li>マスターを攻撃すると、攻撃力の分だけライフが減る</li>
+          <li>相手の場にガードがいる間は、マスターを攻撃できない（アイコンはどれでも攻撃できる）</li>
         </ul>
       </details>
     </>
   );
 }
 
+type Peek = { id: string; damage?: number; where: "hand" | "mine" | "foe"; index: number };
+
 function Board() {
   const { game, deck, log, error, selection, cpuBusy, select, play, attack, endTurn, start, quit } =
     useGame();
-  const [peek, setPeek] = useState<string | null>(null);
+  const [peek, setPeek] = useState<Peek | null>(null);
+  const [sheet, setSheet] = useState(false);
+  const narrow = useNarrow();
   if (!game || !deck) return null;
   const me = game.players[ME];
   const foe = game.players[CPU];
@@ -89,7 +110,12 @@ function Board() {
   const canHit = (t: AttackTarget) =>
     targets.some((x) => (x.kind === "leader" ? t.kind === "leader" : t.kind === "unit" && t.slot === x.slot));
   const freeSlot = me.field.findIndex((u) => !u);
-  const peekCard = peek ? CATALOG[peek] : null;
+  const foeGuarded = isGuarded(game, CPU, CATALOG);
+  const peekCard = peek ? CATALOG[peek.id] : null;
+  const show = (p: Peek, openSheet: boolean) => {
+    setPeek(p);
+    if (openSheet && narrow) setSheet(true);
+  };
 
   const hint = game.winner
     ? ""
@@ -98,8 +124,35 @@ function Board() {
       : selection?.kind === "hand"
         ? "出す枠を選んでください（もう一度カードを押すと空いている枠に出します）"
         : attacking
-          ? "攻撃先を選んでください（光っているところ）"
-          : "手札を選んで場に出す／攻撃できるカードを選んで攻撃";
+          ? foeGuarded
+            ? "攻撃先を選んでください（ガードがいるのでマスターは攻撃できません）"
+            : "攻撃先を選んでください（光っているところ）"
+          : "手札を選んで場に出す／攻撃できるアイコンを選んで攻撃";
+
+  // シートの中の操作（狭い画面用）
+  const sheetAction = (() => {
+    if (!peek || !myTurn) return null;
+    if (peek.where === "hand") {
+      const cost = effectiveCost(game, ME, peek.id, CATALOG);
+      const ok = cost <= me.mana && freeSlot >= 0;
+      return {
+        label: ok ? "場に出す" : freeSlot < 0 ? "場がいっぱいです" : `話題力が足りません（必要 ${cost}）`,
+        disabled: !ok,
+        run: () => {
+          select({ kind: "hand", index: peek.index });
+          useGame.getState().play(freeSlot);
+        },
+      };
+    }
+    if (peek.where === "mine" && me.field[peek.index]?.canAttack) {
+      return {
+        label: "攻撃先を選ぶ",
+        disabled: false,
+        run: () => select({ kind: "attacker", slot: peek.index }),
+      };
+    }
+    return null;
+  })();
 
   return (
     <div className="arena">
@@ -113,6 +166,7 @@ function Board() {
           hand={foe.hand.length}
           deck={foe.deck.length}
           active={game.active === CPU}
+          guarded={foeGuarded}
           targetable={attacking && canHit({ kind: "leader" })}
           onClick={() => attack({ kind: "leader" })}
         />
@@ -126,10 +180,14 @@ function Board() {
               <MiniCard
                 key={u.uid}
                 card={card}
+                damage={u.damage}
                 className={`unit foe-unit enter ${hit ? "targetable" : ""}`}
-                disabled={!hit}
-                onClick={() => attack({ kind: "unit", slot })}
-                onPeek={() => setPeek(card.id)}
+                onClick={() =>
+                  hit
+                    ? attack({ kind: "unit", slot })
+                    : show({ id: card.id, damage: u.damage, where: "foe", index: slot }, true)
+                }
+                onPeek={() => setPeek({ id: card.id, damage: u.damage, where: "foe", index: slot })}
               />
             );
           })}
@@ -155,16 +213,25 @@ function Board() {
               );
             }
             const selected = attacking && selection.slot === slot;
+            const ready = u.canAttack && myTurn;
+            const p: Peek = { id: card.id, damage: u.damage, where: "mine", index: slot };
             return (
               <MiniCard
                 key={u.uid}
                 card={card}
-                className={`unit enter ${u.canAttack && myTurn ? "ready" : "tired"} ${selected ? "selected" : ""}`}
-                disabled={!myTurn || !u.canAttack}
-                onClick={() => select(selected ? null : { kind: "attacker", slot })}
-                onPeek={() => setPeek(card.id)}
+                damage={u.damage}
+                className={`unit enter ${ready ? "ready" : "tired"} ${selected ? "selected" : ""}`}
+                onClick={() => {
+                  if (selected) return select(null);
+                  if (ready && !narrow) {
+                    setPeek(p);
+                    return select({ kind: "attacker", slot });
+                  }
+                  show(p, true);
+                }}
+                onPeek={() => setPeek(p)}
               >
-                {u.canAttack && myTurn && <em className="mini-ready">攻撃できる</em>}
+                {ready && <em className="mini-ready">攻撃できる</em>}
               </MiniCard>
             );
           })}
@@ -195,6 +262,7 @@ function Board() {
             const cost = effectiveCost(game, ME, id, CATALOG);
             const playable = myTurn && cost <= me.mana && freeSlot >= 0;
             const selected = selection?.kind === "hand" && selection.index === i;
+            const p: Peek = { id, where: "hand", index: i };
             return (
               <MiniCard
                 // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが手札に複数あり得るので位置で区別する
@@ -202,13 +270,14 @@ function Board() {
                 card={card}
                 cost={cost}
                 className={`in-hand ${playable ? "playable" : "short"} ${selected ? "selected" : ""}`}
-                disabled={!myTurn}
                 onClick={() => {
-                  setPeek(id);
+                  if (narrow) return show(p, true);
+                  setPeek(p);
+                  if (!myTurn) return;
                   if (selected && freeSlot >= 0) play(freeSlot);
                   else select({ kind: "hand", index: i });
                 }}
-                onPeek={() => setPeek(id)}
+                onPeek={() => setPeek(p)}
               />
             );
           })}
@@ -218,9 +287,16 @@ function Board() {
       <aside className="side">
         <div className="peek">
           {peekCard ? (
-            <HoloCard key={peekCard.id} card={peekCard} idle={false} />
+            <>
+              <HoloCard key={peekCard.id} card={peekCard} idle={false} />
+              {peek?.damage ? (
+                <p className="peek-note">
+                  ダメージ {peek.damage}／残りの体力 <b>{peekCard.hp - peek.damage}</b>
+                </p>
+              ) : null}
+            </>
           ) : (
-            <p className="muted">カードに触れると詳細を表示します</p>
+            <p className="muted">カードに触れると、ここに大きく表示します</p>
           )}
         </div>
         <ol className="log" aria-label="対戦の記録">
@@ -237,6 +313,40 @@ function Board() {
           デッキ選択に戻る
         </button>
       </aside>
+
+      {sheet && narrow && peekCard && (
+        <div className="sheet" role="dialog" aria-modal="true" aria-label={peekCard.name}>
+          <button type="button" className="sheet-bg" aria-label="閉じる" onClick={() => setSheet(false)} />
+          <div className="sheet-body">
+            <div className="sheet-card">
+              <HoloCard key={peekCard.id} card={peekCard} />
+            </div>
+            {peek?.damage ? (
+              <p className="peek-note">
+                ダメージ {peek.damage}／残りの体力 <b>{peekCard.hp - peek.damage}</b>
+              </p>
+            ) : null}
+            <div className="sheet-actions">
+              {sheetAction && (
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={sheetAction.disabled}
+                  onClick={() => {
+                    sheetAction.run();
+                    setSheet(false);
+                  }}
+                >
+                  {sheetAction.label}
+                </button>
+              )}
+              <button type="button" className="btn ghost" onClick={() => setSheet(false)}>
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {game.winner && (
         <div className="result" role="dialog" aria-modal="true" aria-label="対戦結果">
@@ -267,6 +377,8 @@ interface BarProps {
   hand: number;
   deck: number;
   active: boolean;
+  /** 場にガードがいてマスターを攻撃できない */
+  guarded?: boolean;
   targetable?: boolean;
   onClick?: () => void;
   children?: React.ReactNode;
@@ -281,20 +393,22 @@ function PlayerBar({
   hand,
   deck,
   active,
+  guarded,
   targetable,
   onClick,
   children,
 }: BarProps) {
-  const pct = Math.max(0, Math.min(100, (lp / 20000) * 100));
+  const pct = Math.max(0, Math.min(100, (lp / 20) * 100));
   const pips = Array.from({ length: Math.max(maxMana, mana) }, (_, i) => i < mana);
   const body = (
     <>
       <span className="pb-name">
-        {name}
+        {name}のマスター
         {active && <i className="turn-dot" title="この人のターン" />}
+        {guarded && <span className="pb-guard">ガードで守られている</span>}
       </span>
       <span className="pb-lp">
-        フォロワー <b key={lp}>{lp.toLocaleString()}</b>
+        ライフ <b key={lp}>{lp}</b>
         <span className="lp-bar">
           <span style={{ width: `${pct}%` }} />
         </span>
@@ -324,7 +438,7 @@ function PlayerBar({
           className={`pb-main ${targetable ? "targetable" : ""}`}
           disabled={!targetable}
           onClick={onClick}
-          aria-label={`${name}本体を攻撃`}
+          aria-label={`${name}のマスターを攻撃`}
         >
           {body}
         </button>

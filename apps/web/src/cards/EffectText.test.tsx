@@ -13,12 +13,13 @@ describe("EffectText", () => {
 });
 
 describe("HoloCard", () => {
-  it("カードデータの名前・コスト・パワーを表示する", () => {
+  it("カードデータの名前・攻撃力・体力を表示する", () => {
     const ren = CARDS.find((c) => c.id === "c2");
     if (!ren) throw new Error("c2 not found");
-    render(<HoloCard card={ren} idle={false} />);
+    const { container } = render(<HoloCard card={ren} idle={false} />);
     expect(screen.getByRole("img", { name: /紅蓮の簒奪者 レン/ })).toBeInTheDocument();
-    expect(screen.getByText("7200")).toBeInTheDocument();
+    expect(container.querySelector(".stat-atk")).toHaveTextContent("5");
+    expect(container.querySelector(".stat-hp")).toHaveTextContent("4");
     expect(screen.getByText("No. 007 / 100")).toBeInTheDocument();
   });
 });
@@ -30,7 +31,8 @@ describe("イラストのないカード", () => {
     const { container } = render(<HoloCard card={guard} idle={false} />);
     expect(container.querySelector(".kg")).not.toBeNull();
     expect(screen.getByText("ガーディア")).toBeInTheDocument();
-    expect(screen.getByText("3500")).toBeInTheDocument();
+    expect(container.querySelector(".stat-atk")).toHaveTextContent("2");
+    expect(container.querySelector(".stat-hp")).toHaveTextContent("5");
   });
 
   it("効果文が先頭のキーワードで始まっても重複キーにならない", () => {

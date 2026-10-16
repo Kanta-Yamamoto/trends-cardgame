@@ -46,7 +46,7 @@ export function damageLeader(
   emit({ type: "leaderDamaged", player, amount, lp: p.lp });
 }
 
-/** キーワード能力。カード定義の keywords から自動で付く */
+/** キーワード能力。カード定義の keywords から自動で付く（ガード・速攻はエンジン側で処理） */
 export const KEYWORD_ABILITIES: Record<string, Ability> = {
   拡散: {
     onPlay: ({ state, player, emit }) => {
@@ -55,15 +55,15 @@ export const KEYWORD_ABILITIES: Record<string, Ability> = {
   },
   炎上: {
     onPlay: ({ state, player, emit }) => {
-      damageLeader(state, opponent(player), 2000, emit);
-      damageLeader(state, player, 2000, emit);
+      damageLeader(state, opponent(player), 2, emit);
+      damageLeader(state, player, 2, emit);
     },
   },
   祝福: {
     onPlay: ({ state, player, config, emit }) => {
       const p = state.players[player];
       const before = p.lp;
-      p.lp = Math.min(config.startLp ?? DEFAULT_CONFIG.startLp, p.lp + 2000);
+      p.lp = Math.min(config.startLp ?? DEFAULT_CONFIG.startLp, p.lp + 3);
       emit({ type: "leaderHealed", player, amount: p.lp - before, lp: p.lp });
     },
   },
@@ -71,7 +71,7 @@ export const KEYWORD_ABILITIES: Record<string, Ability> = {
 
 /** カードIDごとの固有効果。新しいカードの効果はここに足す */
 export const ABILITIES: Record<string, Ability> = {
-  // シロガネ：場にある他の〈光輪〉1枚につきコスト-1
+  // シロガネ：場にある他の〈光輪〉アイコン1体につきコスト-1（ガードは keywords で付く）
   c1: {
     costModifier: ({ state, player, catalog }) =>
       -state.players[player].field.filter((u) => u && catalog[u.cardId]?.tribe === "光輪").length,

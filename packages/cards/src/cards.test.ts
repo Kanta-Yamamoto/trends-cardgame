@@ -7,10 +7,12 @@ describe("cards.json", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("コストとパワーが正の数", () => {
+  it("コスト・攻撃力・体力が正の整数", () => {
     for (const c of CARDS) {
-      expect(c.cost).toBeGreaterThan(0);
-      expect(c.power).toBeGreaterThan(0);
+      for (const v of [c.cost, c.attack, c.hp]) {
+        expect(Number.isInteger(v)).toBe(true);
+        expect(v).toBeGreaterThan(0);
+      }
     }
   });
 

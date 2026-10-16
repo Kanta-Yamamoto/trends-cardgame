@@ -2,14 +2,17 @@ export type Rarity = "UR" | "SEC" | "SP" | "SR" | "R" | "C";
 export type Theme = "light" | "crimson" | "water";
 export type Keyword = "速攻" | "ガード" | "拡散" | "炎上" | "祝福";
 
-/** カード1枚の定義。ゲームのルールと表示の両方がここを参照する */
+/** カード1枚（アイコン）の定義。ゲームのルールと表示の両方がここを参照する */
 export interface CardDef {
   id: string;
   name: string;
   epithet: string;
   rarity: Rarity;
   cost: number;
-  power: number;
+  /** 攻撃力：攻撃したとき・されたときに相手へ与えるダメージ */
+  attack: number;
+  /** 体力：受けたダメージがこの値に達すると破壊される */
+  hp: number;
   tribe: string;
   keywords: Keyword[];
   effect: string;

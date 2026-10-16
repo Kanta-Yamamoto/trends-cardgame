@@ -1,5 +1,6 @@
 import type { CardDef } from "@trends/cards";
 import { cardNo, EffectText } from "../EffectText";
+import { Stats } from "../Stats";
 
 /** プロトタイプ（legacy/prototype-src）のカードデザインを React に移したもの */
 export function ShiroganeFace({ card }: { card: CardDef }) {
@@ -31,10 +32,7 @@ export function ShiroganeFace({ card }: { card: CardDef }) {
           <p className="flavor">{card.flavor}</p>
           <div className="foot">
             <span className="no">{cardNo(card)}</span>
-            <span className="power">
-              <small>POWER</small>
-              <b>{card.power}</b>
-            </span>
+            <Stats card={card} />
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import type { CardDef } from "@trends/cards";
 import { EffectText } from "../EffectText";
+import { Stats } from "../Stats";
 
 /** イラストがまだないカード用の共通デザイン（テーマ色だけで描く） */
 export function GenericFace({ card }: { card: CardDef }) {
@@ -21,8 +22,7 @@ export function GenericFace({ card }: { card: CardDef }) {
         <p className="kg-effect">{card.effect ? <EffectText text={card.effect} /> : <i>効果なし</i>}</p>
         <p className="kg-flavor">{card.flavor}</p>
         <span className="kg-power">
-          <small>POWER</small>
-          <b>{card.power}</b>
+          <Stats card={card} />
         </span>
       </div>
     </div>
