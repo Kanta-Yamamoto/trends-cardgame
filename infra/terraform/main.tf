@@ -8,17 +8,22 @@ terraform {
       version = "~> 6.0"
     }
   }
-  # state は GCS に置く（バケットは最初に手で作る）
-  # backend "gcs" {
-  #   bucket = "YOUR_PROJECT-tfstate"
-  #   prefix = "trends"
-  # }
+  # state は GCS に置く。バケット名は init 時に渡す:
+  #   terraform init -backend-config="bucket=<PROJECT_ID>-tfstate"
+  backend "gcs" {
+    prefix = "trends"
+  }
 }
 
 provider "google" {
   project = var.project_id
   region  = var.region
+  # 予算 API などをユーザーの認証で呼ぶときに、このプロジェクトの割り当てを使う
+  user_project_override = true
+  billing_project       = var.project_id
 }
+
+data "google_project" "this" {}
 
 locals {
   services = [
@@ -27,6 +32,7 @@ locals {
     "secretmanager.googleapis.com",
     "iamcredentials.googleapis.com",
     "sts.googleapis.com",
+    "billingbudgets.googleapis.com",
   ]
 }
 
@@ -74,8 +80,9 @@ resource "google_cloud_run_v2_service" "api" {
   template {
     service_account = google_service_account.api.email
     scaling {
+      # 費用の上限を作るため最大1台（アクセスが増えたら上げる）
       min_instance_count = 0
-      max_instance_count = 2
+      max_instance_count = 1
     }
     containers {
       image = var.api_image
@@ -165,7 +172,16 @@ resource "google_billing_budget" "monthly" {
       units         = tostring(var.monthly_budget_jpy)
     }
   }
-  threshold_rules { threshold_percent = 0.5 }
-  threshold_rules { threshold_percent = 0.9 }
-  threshold_rules { threshold_percent = 1.0 }
+  budget_filter {
+    projects = ["projects/${data.google_project.this.number}"]
+  }
+  threshold_rules {
+    threshold_percent = 0.5
+  }
+  threshold_rules {
+    threshold_percent = 0.9
+  }
+  threshold_rules {
+    threshold_percent = 1.0
+  }
 }

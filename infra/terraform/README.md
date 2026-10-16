@@ -16,7 +16,8 @@ DB はここでは作りません。最初は Neon や Supabase の無料枠の 
 
 ```sh
 cd infra/terraform
-terraform init
+gsutil mb -l asia-northeast1 gs://YOUR_PROJECT_ID-tfstate   # 初回だけ
+terraform init -backend-config="bucket=YOUR_PROJECT_ID-tfstate"
 terraform apply -var project_id=YOUR_PROJECT_ID -var billing_account=XXXXXX-XXXXXX-XXXXXX
 # DB の接続文字列を登録
 echo -n "postgresql://..." | gcloud secrets versions add database-url --data-file=-
