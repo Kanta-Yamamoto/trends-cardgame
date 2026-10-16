@@ -1,0 +1,70 @@
+:root {
+  color-scheme: dark;
+  --night: #0b1018;
+  --night-2: #162133;
+  --line: #ffffff1f;
+  --text: #e8ecf4;
+  --muted: #8e9bb1;
+  --gold: #f2cf7a;
+  --accent: #8fd8ff;
+  --foe: #ff5a6a;
+  --f-ui: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --f-mark: "Cinzel", "Times New Roman", serif;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(110% 70% at 50% 0%, var(--night-2), var(--night) 70%) fixed;
+  color: var(--text);
+  font-family: var(--f-ui);
+}
+button { font: inherit; color: inherit; }
+.shell { max-width: 1100px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right)) 40px max(16px, env(safe-area-inset-left)); }
+.nav { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.nav a { color: var(--muted); text-decoration: none; font-weight: 700; font-size: 14px; }
+.nav a.active { color: var(--text); }
+.nav .brand { font: 800 14px/1 var(--f-mark); letter-spacing: 0.4em; }
+.nav .proto { font-size: 12px; }
+.spacer { flex: 1; }
+.page { padding-top: 24px; }
+.page-head h1 { margin: 0 0 6px; font-size: 22px; }
+.muted { color: var(--muted); margin: 0; font-size: 13px; line-height: 1.7; }
+.notice { margin: 10px 0 0; font-size: 12.5px; color: var(--gold); }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 32px; margin-top: 28px; }
+.holo .card { cursor: grab; }
+.zoom { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: #05080de0; backdrop-filter: blur(4px); }
+.zoom-card { width: min(78vw, 380px, calc((100vh - 120px) * 0.716)); }
+.zoom .close { position: absolute; top: 16px; right: 16px; }
+.btn { border: 0; border-radius: 99px; padding: 10px 16px; font-weight: 800; font-size: 13px; cursor: pointer; color: var(--night); background: linear-gradient(100deg, #f7e3a6, var(--gold) 50%, #e2b75a); }
+.btn.ghost { color: var(--text); background: #ffffff10; border: 1px solid #ffffff30; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn:focus-visible, .slot:focus-visible, .leader:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ルール確認用の対戦 */
+.board { display: grid; gap: 14px; margin-top: 20px; }
+.row { display: grid; grid-template-columns: repeat(3, minmax(0, 120px)); justify-content: center; gap: 12px; }
+.slot { aspect-ratio: 63 / 88; border-radius: 10px; border: 1.5px dashed #9fb6d640; background: #ffffff06; display: grid; place-content: center; gap: 4px; text-align: center; font-size: 12px; cursor: pointer; }
+.slot:disabled { cursor: default; }
+.slot.filled { border-style: solid; border-color: #8fd8ff80; background: #8fd8ff12; }
+.slot.foe-unit { border-color: #ff5a6a90; background: #ff5a6a14; }
+.slot span { font: 800 16px/1 var(--f-mark); }
+.slot em { font-style: normal; font-size: 10px; color: var(--foe); font-weight: 800; }
+.slot.droppable { border-color: var(--accent); box-shadow: 0 0 18px #8fd8ff55; }
+.slot.selected, .hand-card.selected .card { box-shadow: 0 0 0 2px var(--gold), 0 0 24px #f2cf7a88; }
+.targetable { box-shadow: 0 0 0 2px var(--foe), 0 0 22px #ff5a6a88; }
+.leader { justify-self: center; border: 1px solid var(--line); background: #ffffff0a; border-radius: 99px; padding: 8px 16px; font-size: 13px; }
+.leader b { font: 800 16px/1 var(--f-mark); }
+.me-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 13px; }
+.me-bar b { font: 800 16px/1 var(--f-mark); color: var(--accent); }
+.error { margin: 0; color: var(--foe); font-weight: 700; font-size: 13px; }
+.win { margin: 0; font: 800 22px/1.2 var(--f-mark); color: var(--gold); text-align: center; }
+.hand { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 16px; }
+.hand-card { display: grid; gap: 6px; justify-items: center; }
+.hand-card .holo { width: 100%; }
+.cost-tag { font-size: 12px; color: var(--muted); }
+.cost-tag.short { color: var(--foe); }
+.log { margin: 24px 0 0; padding: 12px 16px 12px 32px; border-radius: 12px; background: #ffffff08; font-size: 12.5px; line-height: 1.8; color: var(--muted); max-height: 220px; overflow: auto; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.holo-btn { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 4.4% / 3.2%; }
+.holo-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }

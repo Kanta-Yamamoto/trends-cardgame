@@ -1,37 +1,46 @@
-# TRENDS カードゲーム（試作）
+# TRENDS カードゲーム（開発中）
 
-AIで描いたイラストを、立体感のあるキラカードにして遊ぶオリジナルカードゲームの試作。
+AIで描いたイラストを、立体感のあるキラカードにして遊ぶオリジナルカードゲーム。
+
+## 必要なもの
+
+- Node.js 22 以上、pnpm（`corepack enable` で入る）
+- Docker（PostgreSQL をローカルで動かす）
+
+## はじめかた
+
+```sh
+pnpm install
+cp .env.example apps/api/.env
+pnpm db:up          # PostgreSQL を起動
+pnpm db:migrate     # テーブル作成
+pnpm db:seed        # カードデータを投入
+pnpm dev            # Web: http://localhost:5173 / API: http://localhost:3001
+```
 
 ## 中身
 
 | 場所 | 内容 |
 |---|---|
-| `pages/cards/` | カード単体ページ（シロガネ・レン・ミナモ）。傾けるとホロが動く |
-| `pages/gacha/` | 3枚を排出するガチャ演出のデモ（光・紅蓮・水の演出） |
-| `pages/field/` | 3枚が手札にある状態の対戦フィールドのデモ |
-| `data/cards.json` | カードデータ（名前・コスト・パワー・効果など） |
-| `assets/cards/` | 表示用の背景イラスト（`*-art.jpg`）と人物の切り抜き（`*-subject.webp`） |
-| `assets/original/` | 生成した元イラスト（1024×1536） |
-| `src/` | ページを組み立てる元のファイル（カードのCSS、ガチャ演出エンジン、対戦ロジック） |
-| `tools/cutout.py` | 元イラストから人物を切り抜くスクリプト |
+| `apps/web` | React のアプリ。カード一覧（`/`）、ルール確認用の対戦（`/play`）、試作ページ（`/prototypes/...`） |
+| `apps/api` | NestJS の API。カードを PostgreSQL から返す |
+| `packages/cards` | カードデータと型 |
+| `packages/game-core` | ゲームのルールとテスト |
+| `infra/terraform` | GCP の構成（雛形） |
+| `assets/original` | 元イラスト（印刷用） |
+| `tools/cutout.py` | 人物の切り抜きスクリプト |
 
-## 見かた
-
-ページは画像を相対パスで読むので、リポジトリの直下でローカルサーバーを立てて開く。
+## スマホアプリ（Mac で）
 
 ```sh
-npx serve .
-# http://localhost:3000/pages/gacha/ などを開く
+cd apps/web
+npx cap add ios        # 初回だけ。Android は npx cap add android
+pnpm cap:sync          # Web をビルドしてネイティブ側に反映
+npx cap open ios       # Xcode で開いて実機・シミュレーターで確認
 ```
 
 ## カードの作り方
 
-1. ChatGPTでイラストを生成（縦長2:3、魚眼・前に突き出す手など奥行きのある構図、下35%は文字を載せるため情報量を減らす）
-2. `tools/cutout.py` で人物を切り抜く
-3. 背景（`art.jpg`）と切り抜き（`subject.webp`）を重ね、切り抜きだけを枠の上に出して立体感を出す
-4. ホロ・ラメ・反射は、ポインタの位置に合わせて CSS 変数（`--mx` `--my` `--nx` `--ny`）で動かす
-
-## メモ
-
-- ゲームのルール（話題力12、フォロワー20000など）はデモ用の仮の値
-- 印刷用データ（63×88mm・塗り足し付き）は未作成
+1. ChatGPT でイラストを生成（縦長2:3、魚眼や前に突き出す手など奥行きのある構図、下35%は文字を載せるため情報量を減らす）
+2. `python tools/cutout.py <元画像> apps/web/public/assets/cards/cN-subject.webp` で人物を切り抜く
+3. `packages/cards/src/cards.json` にデータを追加し、`apps/web/src/cards/faces/` にデザインを追加
