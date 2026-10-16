@@ -1,0 +1,442 @@
+<title>TRENDS ガチャ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Dela+Gothic+One&family=Fredoka:wght@600;700&family=M+PLUS+Rounded+1c:wght@800&family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@500;700&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* Layout: one-screen pull stage. Mode chips on top, card slot in the middle, pull button below; a full-screen canvas and overlay panes carry the per-character transitions. */
+:root{
+  color-scheme: dark;
+  --night:#0a0d14; --night-2:#18202e;
+  --line:#ffffff1f; --text:#e8ecf4; --muted:#93a0b5;
+  --gold:#f2cf7a; --accent:#8fd8ff;
+  --f-ui:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-mark:"Cinzel","Times New Roman",serif;
+}
+html,body{height:100%}
+body{
+  background:radial-gradient(100% 70% at 50% 42%, var(--night-2), var(--night) 72%);
+  color:var(--text); font-family:var(--f-ui);
+  overflow:hidden; touch-action:none; user-select:none; -webkit-user-select:none;
+}
+.app{
+  height:100%; display:grid; grid-template-rows:auto 1fr auto; justify-items:center; gap:10px;
+  padding-block:14px 18px;
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+  position:relative; z-index:2;
+}
+.top{display:flex; flex-direction:column; align-items:center; gap:10px}
+.brand{margin:0; font:800 13px/1 var(--f-mark); letter-spacing:.42em; color:var(--muted)}
+.chips{display:flex; gap:6px; flex-wrap:wrap; justify-content:center}
+.chips button{
+  font:700 12px/1 var(--f-ui); letter-spacing:.06em; color:var(--muted);
+  background:transparent; border:1px solid var(--line); border-radius:99px; padding:8px 12px; cursor:pointer;
+}
+.chips button[aria-pressed="true"]{color:var(--night); background:var(--text); border-color:var(--text)}
+.chips button:focus-visible, .pull:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+
+.slot{
+  align-self:center; position:relative; perspective:1100px;
+  width:min(76vw, 340px, calc((100vh - 230px) * 0.716)); max-width:100%;
+}
+.flip{position:relative; width:100%; aspect-ratio:63/88; transform-style:preserve-3d}
+.face{position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden}
+.front{transform:rotateY(180deg)}
+.front > div{position:absolute; inset:0}
+
+/* card back */
+.back{
+  border-radius:4.4%/3.2%; overflow:hidden;
+  background:
+    repeating-linear-gradient(60deg, #ffffff10 0 1px, transparent 1px 14px),
+    repeating-linear-gradient(-60deg, #ffffff10 0 1px, transparent 1px 14px),
+    radial-gradient(80% 60% at 50% 50%, #26324a, #0e1320);
+  box-shadow:0 26px 50px -18px #000, inset 0 0 0 6px #0e1320, inset 0 0 0 7.5px #c9d3e6, inset 0 0 0 11px #0e1320, inset 0 0 0 12px #c9d3e680;
+  display:grid; place-items:center;
+}
+.back::after{
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(115deg, transparent 35%, #ffffff30 48%, #ffffff60 50%, #ffffff30 52%, transparent 65%) 0 0/250% 250%;
+  animation:sheen 3.6s ease-in-out infinite;
+}
+@keyframes sheen{0%{background-position:100% 100%}60%,100%{background-position:0 0}}
+.emblem{
+  width:42%; aspect-ratio:1; border-radius:50%; display:grid; place-items:center;
+  border:1.5px solid #c9d3e6; box-shadow:0 0 0 6px #0e1320, 0 0 0 7px #c9d3e660, 0 0 30px #8fd8ff30;
+  font:800 clamp(28px, 9vw, 46px)/1 var(--f-mark); color:#dfe6f3; letter-spacing:.04em;
+}
+.emblem small{display:block; font:600 9px/1 var(--f-mark); letter-spacing:.4em; color:var(--muted); margin-top:6px; text-align:center}
+
+.pillar{
+  position:absolute; left:50%; top:-40%; width:60%; height:180%; translate:-50% 0; z-index:-1;
+  background:radial-gradient(50% 50% at 50% 50%, var(--pc, #ffffff) 0%, transparent 70%);
+  filter:blur(18px); opacity:0; pointer-events:none;
+}
+.pillar.rainbow{background:linear-gradient(90deg,#ff8fbf,#ffe08a,#9ff2c9,#8fd8ff,#c4a8ff); -webkit-mask:radial-gradient(50% 50% at 50% 50%, #000, transparent 70%); mask:radial-gradient(50% 50% at 50% 50%, #000, transparent 70%)}
+
+.bottom{display:flex; flex-direction:column; align-items:center; gap:8px; min-height:74px}
+.pull{
+  font:800 16px/1 var(--f-ui); letter-spacing:.2em; color:var(--night);
+  background:linear-gradient(100deg,#f7e3a6,var(--gold) 45%,#fff3cf 55%,#e2b75a);
+  border:0; border-radius:99px; padding:16px 40px; cursor:pointer;
+  box-shadow:0 10px 30px -10px #f2cf7a99, inset 0 -2px 0 #0002;
+}
+.pull:disabled{opacity:.35; cursor:default}
+.note{margin:0; font-size:11.5px; letter-spacing:.06em; color:var(--muted); text-align:center}
+
+/* fx panes */
+#fx{position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:3}
+.pane{position:fixed; inset:0; pointer-events:none; opacity:0}
+.wash{z-index:1; background:radial-gradient(90% 70% at 50% 60%, #7fd6ff, #2a8cc4 60%, #0b3a5c)}
+.dark{z-index:1; background:#050304}
+.flash{z-index:4; background:#fff}
+.rays{
+  z-index:1; background:repeating-conic-gradient(from 0deg at 50% 45%, #ffffff00 0deg 7deg, #fff8e2 9deg, #ffffff00 11deg 18deg);
+  -webkit-mask:radial-gradient(70% 70% at 50% 45%, #000 0%, transparent 75%); mask:radial-gradient(70% 70% at 50% 45%, #000 0%, transparent 75%);
+}
+.halfA,.halfB{z-index:4; background:linear-gradient(180deg,#140507,#050304)}
+.halfA{clip-path:polygon(0 0,100% 0,100% 38%,0 62%)}
+.halfB{clip-path:polygon(0 62%,100% 38%,100% 100%,0 100%)}
+.slash{
+  z-index:5; top:50%; bottom:auto; height:4px; left:-10%; right:-10%; inset-inline:-10%;
+  background:linear-gradient(90deg,transparent,#ff3b4f 20%,#fff 50%,#ff3b4f 80%,transparent);
+  box-shadow:0 0 24px 6px #ff3b4f; transform:rotate(-13.5deg) scaleX(0);
+}
+.banner{
+  position:fixed; left:0; right:0; top:58%; z-index:6; pointer-events:none; opacity:0;
+  display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center;
+  padding:14px 16px; background:linear-gradient(90deg,transparent,#000a 20%,#000a 80%,transparent);
+}
+.banner .rar{font:800 13px/1 var(--f-mark); letter-spacing:.4em; color:var(--gold)}
+.banner .nm{font:800 clamp(26px, 8vw, 40px)/1.1 "Shippori Mincho B1","Hiragino Mincho ProN",serif; letter-spacing:.08em; color:#fff; text-shadow:0 0 18px var(--bc, #8fd8ff)}
+.banner .ep{font:700 12px/1 var(--f-ui); letter-spacing:.2em; color:#dfe6f3}
+svg.defs{position:absolute; width:0; height:0}
+
+%%CSS%%
+</style>
+
+<svg class="defs" aria-hidden="true">
+  <filter id="wave" x="-20%" y="-20%" width="140%" height="140%">
+    <feTurbulence id="turb" type="fractalNoise" baseFrequency="0.012 0.05" numOctaves="2" seed="4"/>
+    <feDisplacementMap id="disp" in="SourceGraphic" scale="0" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<div class="pane wash" id="wash"></div>
+<div class="pane dark" id="dark"></div>
+<div class="pane rays" id="rays"></div>
+
+<div class="app">
+  <div class="top">
+    <p class="brand">TRENDS</p>
+    <div class="chips" role="group" aria-label="排出するキャラ">
+      <button type="button" id="m-rand" data-m="rand" aria-pressed="true">ランダム</button>
+      <button type="button" id="m-c1" data-m="c1" aria-pressed="false">シロガネ</button>
+      <button type="button" id="m-c2" data-m="c2" aria-pressed="false">レン</button>
+      <button type="button" id="m-c3" data-m="c3" aria-pressed="false">ミナモ</button>
+    </div>
+  </div>
+
+  <div class="slot" id="slot">
+    <div class="pillar" id="pillar"></div>
+    <div class="flip" id="flip">
+      <div class="face back"><div class="emblem"><div>T<small>TRENDS</small></div></div></div>
+      <div class="face front">
+        <div id="c1" hidden><div class="card">%%C1%%</div></div>
+        <div id="c2" hidden><div class="card">%%C2%%</div></div>
+        <div id="c3" hidden><div class="card">%%C3%%</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <button type="button" class="pull" id="pull">1回引く</button>
+    <p class="note" id="note">引いたカードはカーソルやドラッグで傾けられます</p>
+  </div>
+</div>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="pane flash" id="flash"></div>
+<div class="pane halfA" id="halfA"></div>
+<div class="pane halfB" id="halfB"></div>
+<div class="pane slash" id="slash"></div>
+<div class="banner" id="banner" aria-live="polite"><span class="rar" id="b-rar"></span><span class="ep" id="b-ep"></span><span class="nm" id="b-nm"></span></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wait = ms => new Promise(r => setTimeout(r, reduce ? Math.min(ms, 120) : ms));
+  const anim = (el, kf, opt) => el.animate(kf, Object.assign({fill:'forwards', easing:'ease-out'}, opt, reduce ? {duration:Math.min(opt.duration, 150)} : {})).finished.catch(()=>{});
+
+  const CHARS = {
+    c1:{rar:'UR', ep:'光輪の招き手', nm:'シロガネ', glow:'#cfe3ff', fx:lightFx},
+    c2:{rar:'SEC', ep:'紅蓮の簒奪者', nm:'レン', glow:'#ff3b4f', fx:crimsonFx},
+    c3:{rar:'SP', ep:'天空の歌姫', nm:'ミナモ', glow:'#5cc8f0', fx:waterFx},
+  };
+
+  /* ---------- card sizing + tilt ---------- */
+  const inners = document.querySelectorAll('.card-inner');
+  const ro = new ResizeObserver(es => es.forEach(e => e.target.style.setProperty('--w', e.contentRect.width + 'px')));
+  inners.forEach(n => ro.observe(n));
+
+  let activeCard = null, lastMove = 0, revealed = false;
+  function tilt(nx, ny, g){
+    if (!activeCard) return;
+    nx = Math.max(-1, Math.min(1, nx)); ny = Math.max(-1, Math.min(1, ny));
+    const s = activeCard.style;
+    s.setProperty('--nx', nx.toFixed(3)); s.setProperty('--ny', ny.toFixed(3));
+    s.setProperty('--ry', (nx * 16).toFixed(2) + 'deg'); s.setProperty('--rx', (-ny * 13).toFixed(2) + 'deg');
+    s.setProperty('--mx', (50 + nx * 50).toFixed(1) + '%'); s.setProperty('--my', (50 + ny * 50).toFixed(1) + '%');
+    s.setProperty('--g', g.toFixed(2));
+  }
+  document.addEventListener('pointermove', e => {
+    if (!revealed || !activeCard) return;
+    const r = activeCard.getBoundingClientRect();
+    const nx = ((e.clientX - r.left) / r.width) * 2 - 1, ny = ((e.clientY - r.top) / r.height) * 2 - 1;
+    lastMove = performance.now(); tilt(nx, ny, Math.min(1, Math.hypot(nx, ny)));
+  });
+  function idle(t){
+    if (revealed && activeCard && t - lastMove > 2200 && !reduce){
+      const s = t / 1000;
+      tilt(Math.sin(s * .8) * .5, Math.sin(s * 1.1 + 1) * .35, .45 + Math.sin(s) * .25);
+    }
+    requestAnimationFrame(idle);
+  }
+  requestAnimationFrame(idle);
+
+  /* ---------- particle canvas ---------- */
+  const cv = $('fx'), ctx = cv.getContext('2d');
+  let W = 0, H = 0, dpr = 1, parts = [], running = false;
+  function size(){ dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+  size(); addEventListener('resize', size);
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const lowEnd = (navigator.hardwareConcurrency || 4) <= 4;
+  const N = n => reduce ? 0 : Math.round(n * (lowEnd ? .55 : 1));
+  function add(p){ parts.push(Object.assign({x:0,y:0,vx:0,vy:0,ax:0,ay:0,drag:1,life:0,max:60,size:4,rot:0,vr:0,alpha:1}, p)); if (!running){ running = true; requestAnimationFrame(step); } }
+  function center(){ const r = $('slot').getBoundingClientRect(); return {x:r.left + r.width/2, y:r.top + r.height/2, w:r.width, h:r.height}; }
+
+  function draw(p, k){
+    const a = p.alpha * (p.fade === 'in-out' ? Math.sin(Math.PI * k) : 1 - k);
+    ctx.globalAlpha = Math.max(0, a);
+    switch (p.type){
+      case 'bubble': {
+        const r = p.size;
+        const g = ctx.createRadialGradient(p.x - r*.35, p.y - r*.35, r*.05, p.x, p.y, r);
+        g.addColorStop(0, '#ffffffcc'); g.addColorStop(.12, '#ffffff22'); g.addColorStop(.7, '#bdf0ff18'); g.addColorStop(.86, '#8fe3ff88'); g.addColorStop(.93, '#ffb3d199'); g.addColorStop(1, '#ffffff00');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.fill(); break;
+      }
+      case 'drop': {
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.atan2(p.vy, p.vx));
+        ctx.fillStyle = '#e8fbff'; ctx.beginPath(); ctx.ellipse(0, 0, p.size * 2.2, p.size * .8, 0, 0, Math.PI*2); ctx.fill(); ctx.restore(); break;
+      }
+      case 'ring': {
+        ctx.strokeStyle = p.color; ctx.lineWidth = p.lw * (1 - k) + .5;
+        ctx.beginPath(); ctx.ellipse(p.x, p.y, p.size, p.size * (p.squash || 1), 0, 0, Math.PI*2); ctx.stroke(); break;
+      }
+      case 'ember': {
+        ctx.fillStyle = p.color; ctx.shadowColor = '#ff3b4f'; ctx.shadowBlur = 10;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (1 - k*.6), 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; break;
+      }
+      case 'streak': {
+        const len = p.len * (1 - k * .3);
+        const ux = Math.cos(p.ang), uy = Math.sin(p.ang);
+        ctx.strokeStyle = p.color; ctx.lineWidth = p.size; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - ux * len, p.y - uy * len); ctx.stroke(); break;
+      }
+      case 'feather': {
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        ctx.fillStyle = p.color; ctx.beginPath();
+        ctx.moveTo(0, -p.size); ctx.quadraticCurveTo(p.size*.55, -p.size*.2, 0, p.size); ctx.quadraticCurveTo(-p.size*.55, -p.size*.2, 0, -p.size); ctx.fill();
+        ctx.strokeStyle = p.vein; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, -p.size); ctx.lineTo(0, p.size * 1.25); ctx.stroke();
+        ctx.restore(); break;
+      }
+      case 'spark': {
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.color;
+        const s = p.size; ctx.beginPath();
+        for (let i = 0; i < 8; i++){ const r = i % 2 ? s * .22 : s; const a = i * Math.PI / 4; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+        ctx.closePath(); ctx.fill(); ctx.restore(); break;
+      }
+    }
+  }
+  function step(){
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+    parts = parts.filter(p => p.life < p.max);
+    for (const p of parts){
+      if (p.delay > 0){ p.delay--; continue; }
+      p.vx = (p.vx + p.ax) * p.drag; p.vy = (p.vy + p.ay) * p.drag;
+      if (p.sway) p.x += Math.sin((p.life + p.ph) * p.sway) * p.swayAmp;
+      if (p.grow) p.size += p.grow;
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life++;
+      ctx.globalCompositeOperation = p.blend || 'source-over';
+      draw(p, p.life / p.max);
+    }
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    if (parts.length) requestAnimationFrame(step); else { running = false; ctx.clearRect(0, 0, W, H); }
+  }
+
+  /* ---------- shared phases ---------- */
+  async function charge(){
+    const flip = $('flip'), pillar = $('pillar'), c = center();
+    pillar.className = 'pillar'; pillar.style.setProperty('--pc', '#ffffff');
+    for (let i = 0; i < N(70); i++){
+      const a = rnd(0, Math.PI * 2), d = rnd(Math.max(W, H) * .45, Math.max(W, H) * .7);
+      const x = c.x + Math.cos(a) * d, y = c.y + Math.sin(a) * d, t = rnd(28, 44);
+      add({type:'spark', x, y, vx:(c.x - x) / t, vy:(c.y - y) / t, max:t, size:rnd(2, 5), color:'#fff', vr:.2, delay:Math.floor(rnd(0, 26)), fade:'in-out', blend:'lighter'});
+    }
+    anim(pillar, [{opacity:0}, {opacity:.75}], {duration:700});
+    await anim(flip, [
+      {transform:'translate(0,0) rotate(0)'}, {transform:'translate(-3px,1px) rotate(-1.5deg)'}, {transform:'translate(3px,-1px) rotate(1.5deg)'},
+      {transform:'translate(-4px,0) rotate(-2deg)'}, {transform:'translate(4px,1px) rotate(2deg)'}, {transform:'translate(-5px,-1px) rotate(-2.5deg)'},
+      {transform:'translate(5px,0) rotate(2.5deg)'}, {transform:'translate(0,0) rotate(0) scale(1.04)'}
+    ], {duration:1100, easing:'linear'});
+    // omen upgrade: white pillar turns rainbow
+    pillar.classList.add('rainbow');
+    flashOnce(.55, 260);
+    await wait(380);
+  }
+  function flashOnce(peak, dur){ return anim($('flash'), [{opacity:peak}, {opacity:0}], {duration:dur}); }
+  async function flipToFront(extra){
+    await anim($('flip'), [{transform:'rotateY(0) scale(1.04)'}, {transform:`rotateY(${extra || 180}deg) scale(1)`}], {duration:720, easing:'cubic-bezier(.2,.8,.2,1)'});
+  }
+  async function showBanner(ch){
+    const b = $('banner');
+    $('b-rar').textContent = ch.rar; $('b-ep').textContent = ch.ep; $('b-nm').textContent = ch.nm;
+    b.style.setProperty('--bc', ch.glow);
+    await anim(b, [{opacity:0, transform:'translateX(-30px)'}, {opacity:1, transform:'none'}], {duration:420});
+    await wait(1300);
+    anim(b, [{opacity:1}, {opacity:0}], {duration:500});
+  }
+
+  /* ---------- water: bubbles flood the screen, the surface ripples the card into view ---------- */
+  async function waterFx(){
+    const c = center();
+    anim($('wash'), [{opacity:0}, {opacity:.9}], {duration:500});
+    for (let i = 0; i < N(150); i++){
+      const s = rnd(5, 46);
+      add({type:'bubble', x:rnd(-20, W + 20), y:H + rnd(20, 260), vy:-rnd(5, 11) * (1.3 - s / 80), ay:-.06, size:s, max:rnd(70, 120),
+        sway:rnd(.05, .12), swayAmp:rnd(.4, 1.4), ph:rnd(0, 50), delay:Math.floor(rnd(0, 30)), fade:'in-out'});
+    }
+    await wait(650);
+    // ripple distortion on the card while it flips
+    const slot = $('slot'), disp = $('disp'), turb = $('turb');
+    if (!reduce) slot.style.filter = 'url(#wave)';
+    for (let i = 0; i < 4; i++) add({type:'ring', x:c.x, y:c.y + c.h * .1, size:20, grow:rnd(9, 12), squash:.42, lw:4, color:'#e8fbff', max:70, delay:i * 9});
+    let t0 = performance.now();
+    const flipDone = flipToFront();
+    await new Promise(res => {
+      (function tick(now){
+        const k = Math.min(1, (now - t0) / 1300);
+        disp.setAttribute('scale', (90 * (1 - k) * (1 - k)).toFixed(1));
+        turb.setAttribute('baseFrequency', `${(0.012 + .01 * k).toFixed(4)} ${(0.05 - .02 * k).toFixed(4)}`);
+        if (k < 1 && !reduce) requestAnimationFrame(tick); else res();
+      })(t0);
+    });
+    await flipDone;
+    slot.style.filter = '';
+    for (let i = 0; i < N(70); i++){
+      const a = rnd(-Math.PI, 0), v = rnd(5, 14);
+      add({type:'drop', x:c.x, y:c.y + c.h * .1, vx:Math.cos(a) * v, vy:Math.sin(a) * v, ay:.38, size:rnd(1.5, 3.6), max:rnd(40, 70)});
+    }
+    anim($('wash'), [{opacity:.9}, {opacity:0}], {duration:900});
+  }
+
+  /* ---------- crimson: speed lines rush in, a slash splits the dark, the card cuts through ---------- */
+  async function crimsonFx(){
+    const c = center();
+    anim($('dark'), [{opacity:0}, {opacity:1}], {duration:280});
+    $('halfA').style.opacity = 1; $('halfB').style.opacity = 1;
+    $('halfA').style.transform = $('halfB').style.transform = 'none';
+    for (let i = 0; i < N(220); i++){
+      const ang = rnd(0, Math.PI * 2), d = Math.max(W, H) * rnd(.6, .9), sp = rnd(26, 44);
+      add({type:'streak', x:c.x + Math.cos(ang) * d, y:c.y + Math.sin(ang) * d, vx:-Math.cos(ang) * sp, vy:-Math.sin(ang) * sp,
+        ang:ang + Math.PI, len:rnd(60, 180), size:rnd(1, 2.6), color:Math.random() < .25 ? '#fff' : '#ff3b4f', max:Math.floor(d / sp * .8), delay:Math.floor(rnd(0, 34)), blend:'lighter'});
+    }
+    await wait(800);
+    const slash = $('slash');
+    slash.style.opacity = 1;
+    await anim(slash, [{transform:'rotate(-13.5deg) scaleX(0)'}, {transform:'rotate(-13.5deg) scaleX(1)'}], {duration:180, easing:'cubic-bezier(.7,0,.3,1)'});
+    flashOnce(.6, 220);
+    // halves part along the slash
+    anim($('halfA'), [{transform:'none'}, {transform:'translate(-6%,-70%)'}], {duration:620, easing:'cubic-bezier(.6,0,.2,1)'});
+    anim($('halfB'), [{transform:'none'}, {transform:'translate(6%,70%)'}], {duration:620, easing:'cubic-bezier(.6,0,.2,1)'});
+    anim(slash, [{opacity:1}, {opacity:0}], {duration:300});
+    $('dark').style.opacity = 0;
+    for (let i = 0; i < N(70); i++){
+      const a = rnd(0, Math.PI * 2), v = rnd(4, 13);
+      add({type:'ember', x:c.x, y:c.y, vx:Math.cos(a) * v, vy:Math.sin(a) * v - 2, ay:.05, drag:.975, size:rnd(1.5, 3.4), color:Math.random() < .3 ? '#ffd0c4' : '#ff3b4f', max:rnd(50, 90), blend:'lighter'});
+    }
+    for (let i = 0; i < N(26); i++){
+      const a = rnd(0, Math.PI * 2), v = rnd(5, 11);
+      add({type:'feather', x:c.x, y:c.y, vx:Math.cos(a) * v, vy:Math.sin(a) * v, ay:.12, drag:.96, size:rnd(9, 18), rot:rnd(0, 6), vr:rnd(-.2, .2), color:'#0d0a0e', vein:'#3a2a30', max:rnd(70, 100)});
+    }
+    await anim($('flip'), [
+      {transform:'rotateY(0) scale(2.4)', filter:'blur(10px)'},
+      {transform:'rotateY(540deg) scale(1)', filter:'blur(0)'}
+    ], {duration:640, easing:'cubic-bezier(.15,.85,.25,1)'});
+    $('halfA').style.opacity = 0; $('halfB').style.opacity = 0;
+  }
+
+  /* ---------- light: white-out, a halo opens, the card descends through falling feathers ---------- */
+  async function lightFx(){
+    const c = center();
+    await flashOnce(.9, 520);
+    anim($('rays'), [{opacity:0, transform:'rotate(0)'}, {opacity:.55, transform:'rotate(25deg)'}], {duration:1500, easing:'linear'});
+    for (let i = 0; i < 5; i++) add({type:'ring', x:c.x, y:c.y, size:10, grow:rnd(7, 10), lw:3, color:i % 2 ? '#f2cf7a' : '#ffffff', max:80, delay:i * 8, blend:'lighter'});
+    for (let i = 0; i < N(40); i++){
+      add({type:'feather', x:rnd(0, W), y:rnd(-200, -20), vy:rnd(1.6, 3.2), size:rnd(8, 16), rot:rnd(-.6, .6), vr:rnd(-.02, .02), sway:rnd(.04, .08), swayAmp:rnd(.8, 1.8), ph:rnd(0, 60),
+        color:'#ffffff', vein:'#c9d3e6', max:rnd(150, 220), delay:Math.floor(rnd(0, 40)), fade:'in-out'});
+    }
+    for (let i = 0; i < N(50); i++){
+      add({type:'spark', x:c.x + rnd(-c.w, c.w), y:c.y + rnd(-c.h * .7, c.h * .7), size:rnd(2, 6), rot:rnd(0, 1), vr:.03, color:Math.random() < .5 ? '#fff' : '#f2cf7a', max:rnd(40, 80), delay:Math.floor(rnd(0, 50)), fade:'in-out', blend:'lighter'});
+    }
+    const flip = $('flip');
+    await anim(flip, [{transform:'translateY(-34vh) rotateY(0) scale(.8)', opacity:0}, {transform:'translateY(0) rotateY(0) scale(1.04)', opacity:1}], {duration:820, easing:'cubic-bezier(.2,.8,.2,1)'});
+    await flipToFront();
+    anim($('rays'), [{opacity:.55}, {opacity:0}], {duration:1200});
+  }
+
+  /* ---------- flow ---------- */
+  let mode = 'rand', bag = [];
+  document.querySelectorAll('.chips button').forEach(b => b.addEventListener('click', () => {
+    mode = b.dataset.m;
+    document.querySelectorAll('.chips button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+  function pick(){
+    if (mode !== 'rand') return mode;
+    if (!bag.length) bag = ['c1','c2','c3'].sort(() => Math.random() - .5);
+    return bag.pop();
+  }
+
+  async function reset(){
+    revealed = false;
+    const flip = $('flip');
+    flip.getAnimations().forEach(a => a.cancel());
+    flip.style.transform = ''; flip.style.filter = '';
+    $('pillar').getAnimations().forEach(a => a.cancel());
+    $('pillar').style.opacity = 0;
+    ['c1','c2','c3'].forEach(id => $(id).hidden = true);
+  }
+
+  const pullBtn = $('pull');
+  pullBtn.addEventListener('click', async () => {
+    pullBtn.disabled = true;
+    document.querySelectorAll('.chips button').forEach(b => b.disabled = true);
+    await reset();
+    const id = pick(), ch = CHARS[id];
+    $(id).hidden = false;
+    activeCard = $(id).querySelector('.card');
+    tilt(0, 0, .3);
+    await charge();
+    await ch.fx();
+    anim($('pillar'), [{opacity:.75}, {opacity:0}], {duration:600});
+    revealed = true; lastMove = 0;
+    showBanner(ch);
+    pullBtn.textContent = 'もう一度引く';
+    pullBtn.disabled = false;
+    document.querySelectorAll('.chips button').forEach(b => b.disabled = false);
+  });
+})();
+</script>

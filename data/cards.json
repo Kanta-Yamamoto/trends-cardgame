@@ -1,0 +1,51 @@
+[
+  {
+    "id": "c1",
+    "name": "シロガネ",
+    "epithet": "光輪の招き手",
+    "rarity": "UR",
+    "cost": 8,
+    "power": 8000,
+    "tribe": "光輪",
+    "effect": "このキャラクターは、場にある他の〈光輪〉カード1枚につき、コストが1下がる。",
+    "flavor": "「さあ、こちら側へ。光はもう、君を選んでいる」",
+    "number": "001/040",
+    "art": "assets/cards/c1-art.jpg",
+    "subject": "assets/cards/c1-subject.webp",
+    "original": "assets/original/c1-shirogane.png",
+    "theme": "light"
+  },
+  {
+    "id": "c2",
+    "name": "レン",
+    "epithet": "紅蓮の簒奪者",
+    "rarity": "SEC",
+    "cost": 6,
+    "power": 7200,
+    "tribe": "紅蓮",
+    "keywords": ["速攻"],
+    "effect": "速攻（場に出たターンに攻撃できる）。このキャラクターが攻撃したとき、相手の手札を1枚選んで捨てさせる。",
+    "flavor": "「遅えよ。全部、俺がもらってく」",
+    "serial": "No. 007 / 100",
+    "art": "assets/cards/c2-art.jpg",
+    "subject": "assets/cards/c2-subject.webp",
+    "original": "assets/original/c2-ren.png",
+    "theme": "crimson"
+  },
+  {
+    "id": "c3",
+    "name": "ミナモ",
+    "epithet": "天空の歌姫",
+    "rarity": "SP",
+    "cost": 5,
+    "power": 6500,
+    "tribe": "蒼空",
+    "effect": "このキャラクターが場に出たとき、自分の山札の上から3枚を見て、〈蒼空〉カード1枚を手札に加える。",
+    "flavor": "「みんなー！ 今日も空から、こんにちはっ！」",
+    "number": "023/040",
+    "art": "assets/cards/c3-art.jpg",
+    "subject": "assets/cards/c3-subject.webp",
+    "original": "assets/original/c3-minamo.png",
+    "theme": "water"
+  }
+]
