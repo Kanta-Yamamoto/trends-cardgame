@@ -1,6 +1,6 @@
 export type Rarity = "UR" | "SEC" | "SP" | "SR" | "R" | "C";
 export type Theme = "light" | "crimson" | "water";
-export type Keyword = "速攻";
+export type Keyword = "速攻" | "ガード" | "拡散" | "炎上" | "祝福";
 
 /** カード1枚の定義。ゲームのルールと表示の両方がここを参照する */
 export interface CardDef {
@@ -11,15 +11,15 @@ export interface CardDef {
   cost: number;
   power: number;
   tribe: string;
-  keywords?: Keyword[];
+  keywords: Keyword[];
   effect: string;
   flavor: string;
-  number?: string;
+  number?: string | null;
   serial?: string;
-  /** web の public からのパス */
-  art: string;
-  subject: string;
+  /** web の public からのパス。イラストがまだないカードは持たない */
+  art?: string;
+  subject?: string;
   /** 印刷用の元画像（リポジトリ直下からのパス） */
-  original: string;
+  original?: string;
   theme: Theme;
 }

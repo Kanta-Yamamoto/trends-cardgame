@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { CARDS } from "@trends/cards";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { EffectText } from "./EffectText";
 import { HoloCard } from "./HoloCard";
 
@@ -20,5 +20,23 @@ describe("HoloCard", () => {
     expect(screen.getByRole("img", { name: /紅蓮の簒奪者 レン/ })).toBeInTheDocument();
     expect(screen.getByText("7200")).toBeInTheDocument();
     expect(screen.getByText("No. 007 / 100")).toBeInTheDocument();
+  });
+});
+
+describe("イラストのないカード", () => {
+  it("専用デザインがなければ共通デザインで表示する", () => {
+    const guard = CARDS.find((c) => c.id === "l2");
+    if (!guard) throw new Error("l2 not found");
+    const { container } = render(<HoloCard card={guard} idle={false} />);
+    expect(container.querySelector(".kg")).not.toBeNull();
+    expect(screen.getByText("ガーディア")).toBeInTheDocument();
+    expect(screen.getByText("3500")).toBeInTheDocument();
+  });
+
+  it("効果文が先頭のキーワードで始まっても重複キーにならない", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<EffectText text="ガード（相手はこのカードから攻撃しないといけない）" />);
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 });

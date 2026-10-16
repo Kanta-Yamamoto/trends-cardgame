@@ -1,5 +1,6 @@
 import type { CardDef } from "@trends/cards";
 import { type ComponentType, useEffect, useRef } from "react";
+import { GenericFace } from "./faces/Generic";
 import { MinamoFace } from "./faces/Minamo";
 import { RenFace } from "./faces/Ren";
 import { ShiroganeFace } from "./faces/Shirogane";
@@ -9,6 +10,9 @@ const FACES: Record<string, { cls: string; Face: ComponentType<{ card: CardDef }
   c2: { cls: "k2", Face: RenFace },
   c3: { cls: "k3", Face: MinamoFace },
 };
+
+/** 専用デザインがないカードはテーマ色の共通デザインで描く */
+const GENERIC = { cls: "kg", Face: GenericFace };
 
 const clamp = (v: number) => Math.max(-1, Math.min(1, v));
 
@@ -35,7 +39,7 @@ interface Props {
 export function HoloCard({ card, idle = true, onClick }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
   const lastMove = useRef(0);
-  const face = FACES[card.id];
+  const face = FACES[card.id] ?? GENERIC;
 
   useEffect(() => {
     const el = cardRef.current;
@@ -64,7 +68,6 @@ export function HoloCard({ card, idle = true, onClick }: Props) {
     };
   }, [idle]);
 
-  if (!face) return null;
   const { cls, Face } = face;
 
   const onPointerMove = (e: React.PointerEvent) => {

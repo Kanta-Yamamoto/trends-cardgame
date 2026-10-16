@@ -19,7 +19,10 @@ export interface Unit {
 
 export interface PlayerState {
   lp: number;
+  /** 今使える話題力 */
   mana: number;
+  /** 話題力の上限（ターンごとに1増える） */
+  maxMana: number;
   deck: string[];
   hand: string[];
   field: (Unit | null)[];
@@ -27,6 +30,7 @@ export interface PlayerState {
 }
 
 export interface GameState {
+  /** 通算ターン数（両者合計、1から） */
   turn: number;
   active: PlayerId;
   players: Record<PlayerId, PlayerState>;
@@ -48,17 +52,29 @@ export type GameEvent =
   | { type: "searched"; player: PlayerId; looked: string[]; added: string | null }
   | { type: "battle"; attacker: string; defender: string; destroyed: string[] }
   | { type: "leaderDamaged"; player: PlayerId; amount: number; lp: number }
+  | { type: "leaderHealed"; player: PlayerId; amount: number; lp: number }
   | { type: "discarded"; player: PlayerId; cardId: string }
   | { type: "drew"; player: PlayerId; cardId: string }
-  | { type: "turnStarted"; player: PlayerId; turn: number }
+  | { type: "deckOut"; player: PlayerId }
+  | { type: "turnStarted"; player: PlayerId; turn: number; mana: number }
   | { type: "won"; player: PlayerId };
 
 export interface Config {
   maxMana: number;
   startLp: number;
   startHand: number;
+  /** 後攻が追加で持つ枚数 */
+  secondExtra: number;
+  /** 後攻の最初のターンだけ追加される話題力 */
+  secondBonusMana: number;
 }
-export const DEFAULT_CONFIG: Config = { maxMana: 12, startLp: 20000, startHand: 3 };
+export const DEFAULT_CONFIG: Config = {
+  maxMana: 10,
+  startLp: 20000,
+  startHand: 4,
+  secondExtra: 1,
+  secondBonusMana: 1,
+};
 
 export class RuleError extends Error {
   constructor(

@@ -1,11 +1,11 @@
 import type { CardDef } from "@trends/cards";
 import { Fragment } from "react";
 
-const KEYWORDS = ["速攻"];
+const KEYWORDS = ["速攻", "ガード", "拡散", "炎上", "祝福"];
 
 /** 効果文の〈種族〉とキーワードを強調する */
 export function EffectText({ text }: { text: string }) {
-  const parts = text.split(new RegExp(`(〈[^〉]+〉|${KEYWORDS.join("|")})`));
+  const parts = text.split(new RegExp(`(〈[^〉]+〉|${KEYWORDS.join("|")})`)).filter((p) => p !== "");
   // 文字位置をキーにする（同じ文が並んでも重ならない）
   let offset = 0;
   const pieces = parts.map((p) => {

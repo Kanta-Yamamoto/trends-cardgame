@@ -1,4 +1,5 @@
-import { ABILITIES, opponent } from "./abilities";
+import { abilitiesOf, damageLeader, draw, hasKeyword, opponent } from "./abilities";
+import { nextRandom } from "./rng";
 import {
   type Action,
   type Config,
@@ -13,34 +14,49 @@ import {
 } from "./types";
 
 export interface NewGameInput {
-  decks: Record<PlayerId, string[]>;
+  decks: Record<PlayerId, readonly string[]>;
   seed?: number;
   first?: PlayerId;
   config?: Partial<Config>;
+  /** false にすると山札を並び替えない（テスト用） */
+  shuffle?: boolean;
 }
 
-/** 新しい対戦を作る。山札の上（配列の先頭）から startHand 枚を引いて始める */
+function shuffled(deck: readonly string[], seed: number): [string[], number] {
+  const d = [...deck];
+  let s = seed;
+  for (let i = d.length - 1; i > 0; i--) {
+    const [r, next] = nextRandom(s);
+    s = next;
+    const j = Math.floor(r * (i + 1));
+    [d[i], d[j]] = [d[j] as string, d[i] as string];
+  }
+  return [d, s];
+}
+
+/** 新しい対戦を作る。山札をシャッフルし、上から startHand 枚を引いて始める */
 export function createGame(input: NewGameInput): GameState {
   const config = { ...DEFAULT_CONFIG, ...input.config };
-  const mk = (deck: string[]): PlayerState => {
-    const d = [...deck];
+  let seed = input.seed ?? 1;
+  const first = input.first ?? "p1";
+  const mk = (deck: readonly string[], isFirst: boolean): PlayerState => {
+    let d = [...deck];
+    if (input.shuffle !== false) [d, seed] = shuffled(deck, seed);
+    // 後攻は1枚多く持って始める（先攻有利を和らげる）
+    const hand = config.startHand + (isFirst ? 0 : config.secondExtra);
     return {
       lp: config.startLp,
-      mana: config.maxMana,
-      deck: d.slice(config.startHand),
-      hand: d.slice(0, config.startHand),
+      mana: isFirst ? 1 : 0,
+      maxMana: isFirst ? 1 : 0,
+      deck: d.slice(hand),
+      hand: d.slice(0, hand),
       field: Array.from({ length: SLOTS }, () => null),
       trash: [],
     };
   };
-  return {
-    turn: 1,
-    active: input.first ?? "p1",
-    players: { p1: mk(input.decks.p1), p2: mk(input.decks.p2) },
-    winner: null,
-    seed: input.seed ?? 1,
-    nextUid: 1,
-  };
+  const p1 = mk(input.decks.p1, first === "p1");
+  const p2 = mk(input.decks.p2, first === "p2");
+  return { turn: 1, active: first, players: { p1, p2 }, winner: null, seed, nextUid: 1 };
 }
 
 /** 支払うコスト（効果による補正込み、最低0） */
@@ -51,8 +67,24 @@ export function effectiveCost(
   catalog: Record<string, RuleCard>,
 ): number {
   const card = must(catalog, cardId);
-  const mod = ABILITIES[cardId]?.costModifier?.({ state, player, catalog }) ?? 0;
+  const mod = abilitiesOf(card).reduce(
+    (sum, a) => sum + (a.costModifier?.({ state, player, catalog }) ?? 0),
+    0,
+  );
   return Math.max(0, card.cost + mod);
+}
+
+/** 今そのカードが攻撃できる相手（ガードがあればガードだけ） */
+export function legalTargets(
+  state: GameState,
+  player: PlayerId,
+  catalog: Record<string, RuleCard>,
+): ({ kind: "leader" } | { kind: "unit"; slot: number })[] {
+  const foe = state.players[opponent(player)];
+  const units = foe.field.map((u, slot) => ({ u, slot })).filter((x) => x.u);
+  const guards = units.filter((x) => hasKeyword(catalog[x.u?.cardId ?? ""], "ガード"));
+  if (guards.length > 0) return guards.map((x) => ({ kind: "unit" as const, slot: x.slot }));
+  return [{ kind: "leader" as const }, ...units.map((x) => ({ kind: "unit" as const, slot: x.slot }))];
 }
 
 /**
@@ -74,6 +106,7 @@ export function applyAction(
   const me = state.players[action.player];
   const foeId = opponent(action.player);
   const foe = state.players[foeId];
+  const ctx = { state, player: action.player, catalog, config, emit };
 
   switch (action.type) {
     case "play": {
@@ -84,27 +117,39 @@ export function applyAction(
       const cost = effectiveCost(state, action.player, cardId, catalog);
       if (cost > me.mana)
         throw new RuleError("no_mana", `話題力が足りません（必要 ${cost}・残り ${me.mana}）`);
+      const card = must(catalog, cardId);
       me.mana -= cost;
       me.hand.splice(action.handIndex, 1);
-      const haste = must(catalog, cardId).keywords?.includes("速攻") ?? false;
-      me.field[action.slot] = { uid: state.nextUid++, cardId, canAttack: haste };
+      me.field[action.slot] = { uid: state.nextUid++, cardId, canAttack: hasKeyword(card, "速攻") };
       emit({ type: "played", player: action.player, cardId, slot: action.slot, cost });
-      ABILITIES[cardId]?.onPlay?.({ state, player: action.player, catalog, emit });
+      for (const a of abilitiesOf(card)) a.onPlay?.(ctx);
       break;
     }
     case "attack": {
       const atk = me.field[action.from];
       if (!atk) throw new RuleError("no_unit", "攻撃するカードがありません");
       if (!atk.canAttack) throw new RuleError("cannot_attack", "このカードは今は攻撃できません");
+      const legal = legalTargets(state, action.player, catalog);
+      const ok = legal.some((t) =>
+        t.kind === "leader"
+          ? action.target.kind === "leader"
+          : action.target.kind === "unit" && action.target.slot === t.slot,
+      );
+      if (!ok) {
+        throw new RuleError(
+          "guarded",
+          action.target.kind === "unit" && !foe.field[action.target.slot]
+            ? "攻撃先のカードがありません"
+            : "ガードのカードを先に攻撃しないといけません",
+        );
+      }
       atk.canAttack = false;
       const atkCard = must(catalog, atk.cardId);
       if (action.target.kind === "leader") {
-        foe.lp = Math.max(0, foe.lp - atkCard.power);
-        emit({ type: "leaderDamaged", player: foeId, amount: atkCard.power, lp: foe.lp });
+        damageLeader(state, foeId, atkCard.power, emit);
       } else {
         const slot = action.target.slot;
-        const def = foe.field[slot];
-        if (!def) throw new RuleError("no_target", "攻撃先のカードがありません");
+        const def = foe.field[slot] as NonNullable<(typeof foe.field)[number]>;
         const defCard = must(catalog, def.cardId);
         const destroyed: string[] = [];
         if (atkCard.power >= defCard.power) {
@@ -119,26 +164,30 @@ export function applyAction(
         }
         emit({ type: "battle", attacker: atk.cardId, defender: def.cardId, destroyed });
       }
-      ABILITIES[atk.cardId]?.onAttack?.({ state, player: action.player, catalog, emit });
-      if (foe.lp <= 0) {
-        state.winner = action.player;
-        emit({ type: "won", player: action.player });
-      }
+      for (const a of abilitiesOf(atkCard)) a.onAttack?.(ctx);
       break;
     }
     case "endTurn": {
       state.active = foeId;
       state.turn += 1;
-      foe.mana = config.maxMana;
+      foe.maxMana = Math.min(config.maxMana, foe.maxMana + 1);
+      // 後攻の最初のターンだけ話題力 +1（先攻有利を和らげる）
+      foe.mana = foe.maxMana + (state.turn === 2 ? config.secondBonusMana : 0);
       for (const u of foe.field) if (u) u.canAttack = true;
-      const drawn = foe.deck.shift();
-      if (drawn) {
-        foe.hand.push(drawn);
-        emit({ type: "drew", player: foeId, cardId: drawn });
+      emit({ type: "turnStarted", player: foeId, turn: state.turn, mana: foe.mana });
+      if (!draw(state, foeId, emit)) {
+        emit({ type: "deckOut", player: foeId });
+        state.winner = action.player;
+        emit({ type: "won", player: action.player });
       }
-      emit({ type: "turnStarted", player: foeId, turn: state.turn });
       break;
     }
+  }
+  // 炎上などで自分のフォロワーが0になることもあるので、毎回両者を確認する
+  if (!state.winner) {
+    if (foe.lp <= 0) state.winner = action.player;
+    else if (me.lp <= 0) state.winner = foeId;
+    if (state.winner) emit({ type: "won", player: state.winner });
   }
   return { state, events };
 }

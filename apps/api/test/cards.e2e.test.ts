@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { CARDS } from "@trends/cards";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AppModule } from "../src/app.module";
@@ -32,8 +33,11 @@ describe("cards API", () => {
 
   it("GET /cards は全カードを ID 順で返す", async () => {
     const res = await request(app.getHttpServer()).get("/cards").expect(200);
-    expect(res.body.map((c: { id: string }) => c.id)).toEqual(["c1", "c2", "c3"]);
+    const ids = CARDS.map((c) => c.id).sort();
+    expect(res.body.map((c: { id: string }) => c.id)).toEqual(ids);
     expect(res.body[1]).toMatchObject({ name: "レン", cost: 6, power: 7200, keywords: ["速攻"] });
+    // イラストがまだないカードは art が null
+    expect(res.body.find((c: { id: string }) => c.id === "l1")).toMatchObject({ art: null, theme: "light" });
   });
 
   it("GET /cards/:id", async () => {

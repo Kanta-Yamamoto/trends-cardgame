@@ -14,8 +14,9 @@ export const cards = pgTable("cards", {
   flavor: text("flavor").notNull(),
   number: text("number"),
   serial: text("serial"),
-  art: text("art").notNull(),
-  subject: text("subject").notNull(),
+  // イラストがまだないカードは null
+  art: text("art"),
+  subject: text("subject"),
   theme: text("theme").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })

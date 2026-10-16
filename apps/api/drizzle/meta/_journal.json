@@ -8,6 +8,13 @@
       "when": 1792147053310,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792160426747,
+      "tag": "0001_black_lionheart",
+      "breakpoints": true
     }
   ]
 }

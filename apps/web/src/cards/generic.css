@@ -1,0 +1,54 @@
+/* イラストのないカードの共通デザイン（.kg）。色はテーマごと */
+.kg {
+  --f-name: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --f-num: "Cinzel", "Times New Roman", serif;
+  .card {
+    --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; --nx: 0; --ny: 0; --g: 0;
+    position: relative; width: 100%; aspect-ratio: 63 / 88; border-radius: 4.2% / 3%;
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transition: transform 0.12s ease-out;
+    box-shadow: 0 30px 60px -20px #000a, 0 0 0 1px #ffffff30;
+    overflow: hidden; isolation: isolate; color: #fff;
+  }
+  .card-inner { position: absolute; inset: 0; font-size: calc(var(--w, 360px) / 24); }
+  .layer { position: absolute; inset: 0; }
+  .kg-light { --c1: #f6f1e2; --c2: #c9b98a; --c3: #8a7a52; --ink: #2b2414; }
+  .kg-water { --c1: #d9f3ff; --c2: #5cb8e6; --c3: #1d5a86; --ink: #0c2638; }
+  .kg-crimson { --c1: #ffb3a8; --c2: #d8303f; --c3: #3a0b12; --ink: #1d0509; }
+  .kg-bg {
+    background:
+      radial-gradient(120% 70% at 50% 18%, var(--c1) 0%, var(--c2) 45%, var(--c3) 100%);
+  }
+  .kg-sheen {
+    background: radial-gradient(40% 30% at var(--mx) var(--my), #ffffff70, transparent 70%),
+      linear-gradient(115deg, transparent 30%, #ffffff22 45%, transparent 60%);
+    mix-blend-mode: overlay; opacity: calc(0.4 + var(--g) * 0.6);
+  }
+  .kg-cost {
+    position: absolute; left: 5%; top: 3.5%; width: 3.2em; height: 3.2em; border-radius: 50%;
+    display: grid; place-items: center; background: var(--ink); box-shadow: 0 0 0 0.18em var(--c1);
+    font: 800 1.5em/1 var(--f-num);
+  }
+  .kg-cost b { font-size: 1.4em; }
+  .kg-rarity { position: absolute; right: 6%; top: 5%; font: 800 1.2em/1 var(--f-num); letter-spacing: 0.1em; color: var(--ink); }
+  .kg-mark {
+    position: absolute; inset: 14% 0 auto; text-align: center; font: 900 9em/1 var(--f-name);
+    color: #ffffff; opacity: 0.35; text-shadow: 0 0.05em 0.2em #0006;
+    transform: translate(calc(var(--nx) * -6px), calc(var(--ny) * -6px));
+  }
+  .kg-plate {
+    position: absolute; left: 5%; right: 5%; bottom: 4%; padding: 0.9em 1em 0.8em; border-radius: 0.7em;
+    background: color-mix(in srgb, var(--ink) 82%, transparent); backdrop-filter: blur(3px);
+    display: grid; gap: 0.35em; box-shadow: inset 0 0 0 1px #ffffff30;
+  }
+  .kg-epi { font-size: 0.85em; opacity: 0.75; }
+  .kg-name { margin: 0; font: 800 1.9em/1.1 var(--f-name); }
+  .kg-tribe { justify-self: start; font-size: 0.8em; padding: 0.15em 0.6em; border-radius: 99px; background: #ffffff22; }
+  .kg-effect { margin: 0; font-size: 0.95em; line-height: 1.5; min-height: 3em; }
+  .kg-effect i { opacity: 0.5; }
+  .kg-effect .kw { color: var(--c1); font-weight: 800; }
+  .kg-flavor { margin: 0; font-size: 0.8em; opacity: 0.6; }
+  .kg-power { justify-self: end; display: flex; align-items: baseline; gap: 0.4em; }
+  .kg-power small { font: 700 0.7em/1 var(--f-num); opacity: 0.7; }
+  .kg-power b { font: 800 1.8em/1 var(--f-num); }
+}

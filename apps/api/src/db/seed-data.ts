@@ -16,8 +16,8 @@ export function cardRows(): (typeof cards.$inferInsert)[] {
     flavor: c.flavor,
     number: c.number ?? null,
     serial: c.serial ?? null,
-    art: c.art,
-    subject: c.subject,
+    art: c.art ?? null,
+    subject: c.subject ?? null,
     theme: c.theme,
   }));
 }

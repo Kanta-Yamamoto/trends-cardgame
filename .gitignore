@@ -10,3 +10,4 @@ __pycache__/
 # Capacitor が生成するネイティブ側（Mac で npx cap add ios / android したもの）
 apps/web/ios/
 apps/web/android/
+*.tsbuildinfo

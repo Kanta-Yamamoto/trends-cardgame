@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CARDS, getCard } from "./index";
+import { CARDS, DECKS, getCard } from "./index";
 
 describe("cards.json", () => {
   it("ID が重複していない", () => {
@@ -14,10 +14,17 @@ describe("cards.json", () => {
     }
   });
 
-  it("画像パスが assets/cards を指している", () => {
-    for (const c of CARDS) {
+  it("イラストがあるカードの画像パスは assets/cards を指している", () => {
+    for (const c of CARDS.filter((x) => x.art)) {
       expect(c.art).toMatch(/^\/assets\/cards\/.+\.jpg$/);
       expect(c.subject).toMatch(/^\/assets\/cards\/.+\.webp$/);
+    }
+  });
+
+  it("デッキは20枚で、すべて登録済みのカード", () => {
+    for (const deck of Object.values(DECKS)) {
+      expect(deck).toHaveLength(20);
+      for (const id of deck) expect(() => getCard(id)).not.toThrow();
     }
   });
 
