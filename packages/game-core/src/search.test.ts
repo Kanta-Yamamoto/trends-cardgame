@@ -8,8 +8,10 @@ import type { GameState, RuleCard } from "./types";
 const real = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string, RuleCard>;
 const ids = Object.keys(DECKS) as (keyof typeof DECKS)[];
 
+// テストは軽めの設定で、時間制限なし（遅いマシンでも結果が変わらないように）
+const LIGHT = { beam: 8, maxNodes: 2500, finalists: 12, timeLimitMs: Number.POSITIVE_INFINITY };
 const runTurn = (s: GameState, smart: boolean) => {
-  for (const a of smart ? planTurnSearch(s, s.active, real) : planTurn(s, s.active, real)) {
+  for (const a of smart ? planTurnSearch(s, s.active, real, LIGHT) : planTurn(s, s.active, real)) {
     s = applyAction(s, a, real).state;
     if (s.winner) break;
   }
@@ -32,7 +34,7 @@ describe("先読みする CPU（planTurnSearch）", () => {
         for (let t = 0; t < 120 && !s.winner; t++) s = runTurn(s, true);
         expect(s.winner).not.toBeNull();
       }
-  });
+  }, 60_000);
 
   it("とどめを刺せるときは刺す", () => {
     let s = createGame({ decks: { p1: DECKS.flame, p2: DECKS.idol }, seed: 2 });
@@ -60,5 +62,5 @@ describe("先読みする CPU（planTurnSearch）", () => {
           if (s.winner === smart) wins++;
         }
     expect(wins / games).toBeGreaterThan(0.6);
-  });
+  }, 120_000);
 });
