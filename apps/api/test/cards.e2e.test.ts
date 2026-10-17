@@ -48,12 +48,13 @@ describe("cards API", () => {
       keywords: ["連撃"],
     });
     expect(ren.dark).toMatchObject({ name: "闇堕ちレン", attack: 7, hp: 3 });
-    // 投稿は攻撃力・体力を持たず、イラストがまだないカードは art が null
+    // 投稿は攻撃力・体力を持たない
     expect(res.body.find((c: { id: string }) => c.id === "f5")).toMatchObject({
       type: "post",
       attack: null,
       hp: null,
-      art: null,
+      art: "/assets/cards/f5-art.jpg",
+      dark: null,
       target: "enemyIcon",
     });
   });

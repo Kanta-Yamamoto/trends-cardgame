@@ -47,6 +47,14 @@
   .kg-flavor { margin: 0; font-size: 0.8em; opacity: 0.6; }
   .kg-power { justify-self: end; display: flex; }
   .kg-post .kg-mark { font-size: 7em; }
+  /* イラスト：上寄せで全面に敷き、下の文字の板が読めるように暗くする */
+  .kg-art {
+    background-size: cover; background-position: center 18%;
+    transform: scale(1.06) translate(calc(var(--nx) * -5px), calc(var(--ny) * -5px));
+  }
+  .has-art .kg-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, #000a 85%); }
+  /* 属性の色の枠 */
+  .kg-frame { border: 0.45em solid; border-image-slice: 1; border-radius: inherit; pointer-events: none; }
 }
 
 /* 属性と界隈のラベル（カードの中・外どちらでも使う） */

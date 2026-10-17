@@ -34,6 +34,6 @@ pnpm build
 - `applyAction` は元の state を変更しない。反則は `RuleError`（日本語のメッセージ）を投げる
 - 新しいカード：`packages/cards/src/cards.json` に追加 → 効果があれば `packages/game-core/src/abilities.ts` にカード ID で登録 → 表示は `apps/web/src/cards/faces/` にデザインを追加して `HoloCard.tsx` の `FACES` に登録
 - DB スキーマを変えたら `pnpm db:generate` でマイグレーションを作り、`apps/api/drizzle/` ごとコミットする
-- 画像は `apps/web/public/assets/cards/` に `cN-art.jpg`（背景）と `cN-subject.webp`（切り抜き）を置く。イラストの依頼は `docs/card-art-prompt.md` のフォーマットを使う
+- 画像は `apps/web/public/assets/cards/` に `cN-art.jpg`（背景）と `cN-subject.webp`（切り抜き）を置く。イラストの依頼は `docs/card-art-prompt.md`（★が低いほどシンプルに）のフォーマットを使い、カードごとの注文は `docs/card-art-orders.md` に残す
 - リント・整形は Biome。コミット前に `pnpm lint` を通す
 - CI（`.github/workflows/ci.yml`）はリント・型・テスト（実 PostgreSQL）・ビルド・API の Docker ビルド・Terraform の検証を行う

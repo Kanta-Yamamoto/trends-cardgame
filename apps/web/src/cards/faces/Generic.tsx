@@ -4,21 +4,25 @@ import { EffectText } from "../EffectText";
 import { attrBackground, stars, typeLabel } from "../meta";
 import { Stats } from "../Stats";
 
-/** イラストがまだないカード用の共通デザイン（属性の色で描く） */
+/** メイン以外のカードの共通デザイン。イラストがあれば全面に敷き、無ければ属性の色で描く */
 export function GenericFace({ card }: { card: CardDef }) {
   return (
-    <div className={`card-inner kg-${card.type}`}>
+    <div className={`card-inner kg-${card.type} ${card.art ? "has-art" : ""}`}>
       <div className="layer kg-bg" style={{ background: attrBackground(card) }} />
+      {card.art && <div className="layer kg-art" style={{ backgroundImage: `url(${card.art})` }} />}
       <div className="layer kg-sheen" />
+      <div className="layer kg-frame" style={{ borderImageSource: attrBackground(card) }} />
       <div className="kg-cost">
         <b>{card.cost}</b>
       </div>
       <div className="kg-rarity" title={`★${card.rarity}`}>
         {stars(card.rarity)}
       </div>
-      <div className="kg-mark" aria-hidden="true">
-        {card.name.slice(0, 1)}
-      </div>
+      {!card.art && (
+        <div className="kg-mark" aria-hidden="true">
+          {card.name.slice(0, 1)}
+        </div>
+      )}
       {card.dark && <div className="kg-dark">闇堕ち</div>}
       <div className="kg-plate">
         <span className="kg-type">{typeLabel(card)}</span>

@@ -39,7 +39,8 @@ describe("cards.json", () => {
   it("イラストがあるカードの画像パスは assets/cards を指している", () => {
     for (const c of CARDS.filter((x) => x.art)) {
       expect(c.art).toMatch(/^\/assets\/cards\/.+\.jpg$/);
-      expect(c.subject).toMatch(/^\/assets\/cards\/.+\.webp$/);
+      // 切り抜き（subject）は専用デザインのカードだけが持つ
+      if (c.subject) expect(c.subject).toMatch(/^\/assets\/cards\/.+\.webp$/);
     }
   });
 

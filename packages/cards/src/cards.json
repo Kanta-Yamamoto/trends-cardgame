@@ -40,7 +40,9 @@
     "keywords": ["速攻"],
     "effects": [],
     "effect": "速攻（場に出たターンに攻撃できる）",
-    "flavor": "15秒あれば十分だ。"
+    "flavor": "15秒あれば十分だ。",
+    "art": "/assets/cards/f1-art.jpg",
+    "original": "assets/original/f1.webp"
   },
   {
     "id": "f2",
@@ -56,7 +58,9 @@
     "keywords": ["叩き"],
     "effects": [],
     "effect": "叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）",
-    "flavor": "アポなし、許可なし、反省なし。"
+    "flavor": "アポなし、許可なし、反省なし。",
+    "art": "/assets/cards/f2-art.jpg",
+    "original": "assets/original/f2.webp"
   },
   {
     "id": "f3",
@@ -72,7 +76,9 @@
     "keywords": ["連撃"],
     "effects": [],
     "effect": "連撃（1ターンに2回攻撃できる）",
-    "flavor": "見てないって言いながら、全部見てる。"
+    "flavor": "見てないって言いながら、全部見てる。",
+    "art": "/assets/cards/f3-art.jpg",
+    "original": "assets/original/f3.webp"
   },
   {
     "id": "f4",
@@ -95,7 +101,9 @@
     ],
     "effect": "相手のアイコン1体を晒し者にする（次の自分のターンが終わるまで、ガードを無視して攻撃できる）。カードを1枚引く。",
     "flavor": "魚拓は取った。",
-    "target": "enemyIcon"
+    "target": "enemyIcon",
+    "art": "/assets/cards/f4-art.jpg",
+    "original": "assets/original/f4.webp"
   },
   {
     "id": "f5",
@@ -118,7 +126,9 @@
     ],
     "effect": "相手のアイコン1体に3ダメージ。そのアイコンを晒し者にする。",
     "flavor": "トレンド1位、おめでとう。",
-    "target": "enemyIcon"
+    "target": "enemyIcon",
+    "art": "/assets/cards/f5-art.jpg",
+    "original": "assets/original/f5.webp"
   },
   {
     "id": "k1",
@@ -141,7 +151,9 @@
       }
     ],
     "effect": "場に出たとき、草を2体生やす。",
-    "flavor": "チピチピチャパチャパ。"
+    "flavor": "なぜか、頭から離れない。",
+    "art": "/assets/cards/k1-art.jpg",
+    "original": "assets/original/k1.webp"
   },
   {
     "id": "k2",
@@ -162,7 +174,9 @@
       }
     ],
     "effect": "場に出たとき、空いている枠にこのアイコンのコピーを1体出す（コピーはオワコンに行くと消える）。",
-    "flavor": "↑これ考えたやつ天才"
+    "flavor": "↑これ考えたやつ天才",
+    "art": "/assets/cards/k2-art.jpg",
+    "original": "assets/original/k2.webp"
   },
   {
     "id": "k3",
@@ -184,7 +198,9 @@
       }
     ],
     "effect": "ノリ：場に出たとき、このターンに出したほかのカード1枚につき攻撃力+1。",
-    "flavor": "お題：こんなカードゲームは嫌だ。"
+    "flavor": "お題：こんなカードゲームは嫌だ。",
+    "art": "/assets/cards/k3-art.jpg",
+    "original": "assets/original/k3.webp"
   },
   {
     "id": "k4",
@@ -203,7 +219,9 @@
       }
     ],
     "effect": "自分の空いている枠すべてに草を生やす。",
-    "flavor": "wwwwwwwwwwwwwww"
+    "flavor": "wwwwwwwwwwwwwww",
+    "art": "/assets/cards/k4-art.jpg",
+    "original": "assets/original/k4.webp"
   },
   {
     "id": "k5",
@@ -224,7 +242,9 @@
       }
     ],
     "effect": "自分の場のほかのアイコン1体につき、攻撃力+1。",
-    "flavor": "作者不明。保存数は10万。"
+    "flavor": "作者不明。保存数は10万。",
+    "art": "/assets/cards/k5-art.jpg",
+    "original": "assets/original/k5.webp"
   },
   {
     "id": "t-kusa",
@@ -241,7 +261,9 @@
     "effects": [],
     "effect": "",
     "flavor": "w",
-    "token": true
+    "token": true,
+    "art": "/assets/cards/t-kusa-art.jpg",
+    "original": "assets/original/t-kusa.webp"
   },
   {
     "id": "m1",
@@ -264,7 +286,9 @@
       "hp": 3,
       "keywords": ["連撃"],
       "effect": "連撃。笑顔の裏側は、誰も知らない。"
-    }
+    },
+    "art": "/assets/cards/m1-art.jpg",
+    "original": "assets/original/m1.webp"
   },
   {
     "id": "m2",
@@ -280,7 +304,9 @@
     "keywords": ["注目"],
     "effects": [],
     "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）",
-    "flavor": "いつか、あのステージへ。"
+    "flavor": "いつか、あのステージへ。",
+    "art": "/assets/cards/m2-art.jpg",
+    "original": "assets/original/m2.webp"
   },
   {
     "id": "m3",
@@ -303,7 +329,9 @@
       }
     ],
     "effect": "場に出たとき、自分のほかのアイコン1体（ランダム）に攻撃力+1・体力+1。",
-    "flavor": "推しは推せるときに推せ。"
+    "flavor": "推しは推せるときに推せ。",
+    "art": "/assets/cards/m3-art.jpg",
+    "original": "assets/original/m3.webp"
   },
   {
     "id": "m4",
@@ -319,7 +347,9 @@
     "keywords": ["ガード"],
     "effects": [],
     "effect": "ガード（相手はこのアイコンしか攻撃できない）",
-    "flavor": "推しには指一本触れさせない。"
+    "flavor": "推しには指一本触れさせない。",
+    "art": "/assets/cards/m4-art.jpg",
+    "original": "assets/original/m4.webp"
   },
   {
     "id": "m5",
@@ -340,7 +370,9 @@
     ],
     "effect": "自分のアイコン1体に攻撃力+2・体力+2。",
     "flavor": "今、目が合った。",
-    "target": "allyIcon"
+    "target": "allyIcon",
+    "art": "/assets/cards/m5-art.jpg",
+    "original": "assets/original/m5.webp"
   },
   {
     "id": "c3",
@@ -383,7 +415,9 @@
     "keywords": ["ガード"],
     "effects": [],
     "effect": "ガード（相手はこのアイコンしか攻撃できない）",
-    "flavor": "動じない。"
+    "flavor": "動じない。",
+    "art": "/assets/cards/i1-art.jpg",
+    "original": "assets/original/i1.webp"
   },
   {
     "id": "i2",
@@ -406,7 +440,9 @@
       }
     ],
     "effect": "場に出たとき、自分のライフを3回復する。",
-    "flavor": "すぴー。"
+    "flavor": "すぴー。",
+    "art": "/assets/cards/i2-art.jpg",
+    "original": "assets/original/i2.webp"
   },
   {
     "id": "i3",
@@ -422,7 +458,9 @@
     "keywords": ["ガード"],
     "effects": [],
     "effect": "ガード（相手はこのアイコンしか攻撃できない）",
-    "flavor": "おすわり、まて、ガード。"
+    "flavor": "おすわり、まて、ガード。",
+    "art": "/assets/cards/i3-art.jpg",
+    "original": "assets/original/i3.webp"
   },
   {
     "id": "i4",
@@ -441,7 +479,9 @@
     ],
     "effect": "相手のアイコン1体を眠らせる（次の相手のターン、攻撃できない）。",
     "flavor": "おやすみ、また明日。",
-    "target": "enemyIcon"
+    "target": "enemyIcon",
+    "art": "/assets/cards/i4-art.jpg",
+    "original": "assets/original/i4.webp"
   },
   {
     "id": "i5",
@@ -465,7 +505,9 @@
       }
     ],
     "effect": "自分のアイコンすべての体力を全回復し、自分のライフを3回復する。",
-    "flavor": "リプ欄が、あたたかい。"
+    "flavor": "リプ欄が、あたたかい。",
+    "art": "/assets/cards/i5-art.jpg",
+    "original": "assets/original/i5.webp"
   },
   {
     "id": "i6",
@@ -483,7 +525,9 @@
       }
     ],
     "effect": "場のすべてのアイコンの強化と状態を消し、闇堕ちしたアイコンを表に戻す。",
-    "flavor": "殺伐としたTLに、一筋の光。"
+    "flavor": "殺伐としたTLに、一筋の光。",
+    "art": "/assets/cards/i6-art.jpg",
+    "original": "assets/original/i6.webp"
   },
   {
     "id": "c1",
@@ -531,7 +575,9 @@
       }
     ],
     "effect": "場に出たとき、手札が3枚以下ならカードを1枚引く。",
-    "flavor": "ちなみに、カピバラはネズミの仲間。"
+    "flavor": "ちなみに、カピバラはネズミの仲間。",
+    "art": "/assets/cards/g1-art.jpg",
+    "original": "assets/original/g1.webp"
   },
   {
     "id": "g2",
@@ -553,7 +599,9 @@
       }
     ],
     "effect": "場に出たとき、カードを1枚引く。",
-    "flavor": "有識者ニキ、解説頼む。"
+    "flavor": "有識者ニキ、解説頼む。",
+    "art": "/assets/cards/g2-art.jpg",
+    "original": "assets/original/g2.webp"
   },
   {
     "id": "g3",
@@ -576,7 +624,9 @@
     ],
     "effect": "相手のアイコン1体のキーワードと効果を消し、攻撃力-2。",
     "flavor": "読者が背景情報を追加しました。",
-    "target": "enemyIcon"
+    "target": "enemyIcon",
+    "art": "/assets/cards/g3-art.jpg",
+    "original": "assets/original/g3.webp"
   },
   {
     "id": "g4",
@@ -599,6 +649,8 @@
       }
     ],
     "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコン1体に3ダメージ。",
-    "flavor": "それ、論文ありますか？"
+    "flavor": "それ、論文ありますか？",
+    "art": "/assets/cards/g4-art.jpg",
+    "original": "assets/original/g4.webp"
   }
 ]
