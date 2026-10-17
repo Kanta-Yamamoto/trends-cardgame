@@ -4,10 +4,10 @@ AIで描いたイラストを立体感のあるキラカードにして遊ぶ、
 
 ## 構成（pnpm workspaces + Turborepo）
 
-- `apps/web` — React 19 + Vite + TypeScript。カード表示（`src/cards`）、CPU 対戦（`src/pages/Play.tsx`、CPU は `planTurn`）、オンライン対戦（`src/pages/Online.tsx`）。`public/prototypes` に HTML だけで作った試作（ガチャ演出・対戦フィールド）を同梱。PWA（`public/manifest.webmanifest`・`public/sw.js`・`src/pwa.ts`。サービスワーカーの中身を変えたら `sw.js` の `VERSION` を上げる）
+- `apps/web` — React 19 + Vite + TypeScript。カード表示（`src/cards`）、CPU 対戦（`src/pages/Play.tsx`、CPU は `planTurnSearch`）、オンライン対戦（`src/pages/Online.tsx`）。`public/prototypes` に HTML だけで作った試作（ガチャ演出・対戦フィールド）を同梱。PWA（`public/manifest.webmanifest`・`public/sw.js`・`src/pwa.ts`。サービスワーカーの中身を変えたら `sw.js` の `VERSION` を上げる）
 - `apps/api` — NestJS 11 + Drizzle ORM + PostgreSQL。`GET /cards`、`GET /health`、Google ログイン（`/auth/*`）、オンライン対戦（`POST /matches` と Socket.IO。仕組みは `docs/online.md`）
 - `packages/cards` — カードデータ（`src/cards.json`）と型。web・api・game-core の共通の元データ
-- `packages/game-core` — ゲームのルール。画面に依存しない純粋な関数（`applyAction(state, action, catalog)`）と CPU の思考（`planTurn`）。ルールの説明は `docs/rules.md`
+- `packages/game-core` — ゲームのルール。画面に依存しない純粋な関数（`applyAction(state, action, catalog)`）と CPU の思考（`planTurnSearch`：1ターン分をビームサーチで先読みし、相手の殴り返しまで試して盤面の点数で選ぶ。`planTurn` は採点ルールだけの貪欲法で、探索の候補と相手の読みに使う）。ルールの説明は `docs/rules.md`
 - `infra/terraform` — GCP（Cloud Run・Artifact Registry・Secret Manager・Workload Identity）。API が Web も配る1つの Cloud Run 構成。公開の手順は `docs/deploy.md`
 - `legacy/prototype-src` — 試作の元ソース（参照用、ビルド対象外）
 - `assets/original` — 生成した元イラスト（印刷用）

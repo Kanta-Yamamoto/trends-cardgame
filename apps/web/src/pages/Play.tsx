@@ -19,10 +19,19 @@ import { AttrChips } from "../cards/AttrChips";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { CardZoom } from "../game/CardZoom";
-import { animateAttack, animateDraw, flipCard, popDamage, popMaster } from "../game/fx";
+import {
+  animateAttack,
+  animateDraw,
+  animateEffects,
+  flipCard,
+  hasVisibleEffects,
+  popDamage,
+  popMaster,
+} from "../game/fx";
 import { MiniCard } from "../game/MiniCard";
 import { CATALOG, CPU, DECK_INFO, ME, setPresenter, useGame } from "../game/store";
 
+const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const SLOT_KEYS = Array.from({ length: SLOTS }, (_, i) => `slot-${i}`);
 const nameOf = (id: string) => CATALOG[id]?.name ?? id;
 const who = (p: string) => (p === ME ? "あなた" : useGame.getState().foeName);
@@ -372,7 +381,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   };
   const [resignAsk, setResignAsk] = useState(false);
   /** 相手が出した・使ったカードを大きく見せる */
-  const [reveal, setReveal] = useState<{ id: number; cardId: string; kind: "play" | "cast" } | null>(null);
+  const [reveal, setReveal] = useState<{
+    id: number;
+    cardId: string;
+    kind: "play" | "cast";
+    mine?: boolean;
+  } | null>(null);
   /** 手札が多いときに、全部を大きく並べて見る */
   const [handOpen, setHandOpen] = useState(false);
   const [peek, setPeek] = useState<Peek | null>(null);
@@ -390,6 +404,34 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     setPresenter({
       beforeAttack: (g, a) => animateAttack(g, a.player, a.from, a.target, CATALOG),
       turnIntro: 1100,
+      resolveEffects: async (shown, a, events, next) => {
+        const visible = hasVisibleEffects(events);
+        const cardId = events.find((e) => e.type === "played" || e.type === "cast");
+        const card = cardId && "cardId" in cardId ? CATALOG[cardId.cardId] : undefined;
+        const attr = card?.attributes[0];
+        const tint = attr ? ATTR_META[attr].color : undefined;
+        if (a.type === "cast") {
+          // 自分の投稿も、使ったカードを真ん中に見せてから効果を飛ばす（相手の投稿は revealFoe で見せ済み）
+          if (a.player === ME && card) {
+            const id = Date.now();
+            setReveal({ id, cardId: card.id, kind: "cast", mine: true });
+            setTimeout(() => setReveal((r) => (r?.id === id ? null : r)), 1000);
+            await wait(visible ? 620 : 900);
+          }
+          if (visible) {
+            const from = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+            await animateEffects(shown, events, next, { from, tint });
+          }
+        } else if (a.type === "play") {
+          if (!visible) return;
+          await wait(420); // 出たアイコンが場に着くのを待つ
+          const uid = next.players[a.player].field[a.slot]?.uid;
+          const from = uid ? document.querySelector<HTMLElement>(`[data-uid="${uid}"]`) : null;
+          await animateEffects(shown, events, next, { from, tint });
+        } else if (visible) {
+          await animateEffects(shown, events, next, { from: null });
+        }
+      },
       revealFoe: (g, cardId, a) =>
         new Promise<void>((resolve) => {
           setReveal({ id: Date.now(), cardId, kind: a.type });
@@ -418,7 +460,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     const g = useGame.getState().game;
     const uidAt = (p: PlayerId, slot: number) => g?.players[p].field[slot]?.uid;
     let t = 0;
-    for (const { id, e } of fresh) {
+    for (const { id, e, fx } of fresh) {
+      // 効果の演出で見せ終わった数字は出さない
+      if (fx && (e.type === "damaged" || e.type === "leaderDamaged" || e.type === "leaderHealed")) continue;
       if (e.type === "turnStarted") {
         setBanner({ id, mine: e.player === ME, turn: e.turn });
         t += 950;
@@ -722,9 +766,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       )}
 
       {reveal && CATALOG[reveal.cardId] && (
-        <div key={reveal.id} className="foe-reveal" aria-live="polite">
+        <div key={reveal.id} className={`foe-reveal ${reveal.mine ? "mine" : ""}`} aria-live="polite">
           <span className="fr-label">
-            {foeName}が{reveal.kind === "play" ? "出した" : "投稿した"}
+            {reveal.mine ? "あなたの投稿" : `${foeName}が${reveal.kind === "play" ? "出した" : "投稿した"}`}
           </span>
           <div className="fr-card">
             <HoloCard card={CATALOG[reveal.cardId] as CardDef} idle={false} />

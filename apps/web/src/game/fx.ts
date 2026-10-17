@@ -1,4 +1,4 @@
-import type { AttackTarget, GameState, PlayerId, RuleCard, Unit } from "@trends/game-core";
+import type { AttackTarget, GameEvent, GameState, PlayerId, RuleCard, Unit } from "@trends/game-core";
 import { viewUnit } from "@trends/game-core";
 
 /**
@@ -301,4 +301,226 @@ export function popDamage(uid: number, amount: number) {
   const el = q(`[data-uid="${uid}"]`);
   popNumber(el, `-${amount}`);
   shake(el, 0.7);
+}
+
+/* ---------- 投稿・登場時の効果の演出 ---------- */
+
+type Point = { x: number; y: number };
+
+/** 光の玉が source から target へ飛ぶ（少し弧を描く） */
+async function fly(from: Point, to: Point, color: string, size = 20): Promise<void> {
+  const orb = document.createElement("div");
+  orb.className = "fx-orb";
+  orb.style.setProperty("--c", color);
+  Object.assign(orb.style, {
+    left: `${from.x}px`,
+    top: `${from.y}px`,
+    width: `${size}px`,
+    height: `${size}px`,
+  });
+  layer().appendChild(orb);
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const lift = -Math.min(90, Math.hypot(dx, dy) * 0.25);
+  await orb
+    .animate(
+      [
+        { transform: "translate(-50%,-50%) scale(0.3)", opacity: 0 },
+        { transform: "translate(-50%,-50%) scale(1.2)", opacity: 1, offset: 0.12 },
+        {
+          transform: `translate(calc(-50% + ${dx * 0.5}px), calc(-50% + ${dy * 0.5 + lift}px)) scale(1)`,
+          offset: 0.55,
+        },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.8)`, opacity: 1 },
+      ],
+      { duration: 420, easing: "cubic-bezier(.4,0,.6,1)" },
+    )
+    .finished.catch(() => {});
+  orb.remove();
+}
+
+/** 文字の札（晒し・眠り・+1/+1 など）がポンと出て消える */
+function popLabel(target: HTMLElement | null, text: string, color: string) {
+  if (!target) return;
+  const c = center(target.getBoundingClientRect());
+  const n = document.createElement("div");
+  n.className = "fx-label";
+  n.textContent = text;
+  n.style.setProperty("--c", color);
+  n.style.left = `${c.x}px`;
+  n.style.top = `${c.y}px`;
+  layer().appendChild(n);
+  n.animate(
+    [
+      { transform: "translate(-50%, -20%) scale(0.5)", opacity: 0 },
+      { transform: "translate(-50%, -60%) scale(1.25)", opacity: 1, offset: 0.2 },
+      { transform: "translate(-50%, -70%) scale(1)", opacity: 1, offset: 0.7 },
+      { transform: "translate(-50%, -110%) scale(0.95)", opacity: 0 },
+    ],
+    { duration: 1100, easing: "cubic-bezier(.2,.8,.3,1)" },
+  ).onfinish = () => n.remove();
+}
+
+/** 光る（回復・強化のとき、そのアイコンが内側から光る） */
+function glow(el: HTMLElement | null, color: string) {
+  if (!el) return;
+  el.animate(
+    [
+      { filter: "brightness(1)", boxShadow: `0 0 0 0 ${color}00` },
+      { filter: "brightness(1.6)", boxShadow: `0 0 26px 6px ${color}`, offset: 0.35 },
+      { filter: "brightness(1)", boxShadow: `0 0 0 0 ${color}00` },
+    ],
+    { duration: 700, easing: "ease-out" },
+  );
+}
+
+const STATUS_COLOR: Record<string, string> = {
+  晒し: "#ff4f9a",
+  眠り: "#8fb7ff",
+  訂正: "#f4f4f4",
+  ガード消滅: "#f4f4f4",
+};
+
+/** 効果の出来事を、1つずつ「飛んで・当たる」演出にする。見せる出来事が無ければ false */
+export function hasVisibleEffects(events: GameEvent[]) {
+  return events.some((e) =>
+    [
+      "damaged",
+      "leaderDamaged",
+      "healed",
+      "leaderHealed",
+      "buffed",
+      "status",
+      "stolen",
+      "destroyed",
+    ].includes(e.type),
+  );
+}
+
+/**
+ * 投稿・登場時・ターンの始めと終わりの効果を見せる。
+ * shown は今画面に出ている state（効果を受ける前の姿）。next はすべて終わったあとの state。
+ * from は効果の出どころ（投稿なら画面の真ん中、登場なら出たアイコン）。null なら飛ばさずに当たるだけ。
+ */
+export async function animateEffects(
+  shown: GameState,
+  events: GameEvent[],
+  next: GameState,
+  opts: { from: Point | HTMLElement | null; tint?: string },
+): Promise<void> {
+  if (!canAnimate() || reduced()) return;
+  const source = opts.from instanceof HTMLElement ? center(opts.from.getBoundingClientRect()) : opts.from;
+  const unitEl = (p: PlayerId, slot: number) => {
+    const u = shown.players[p].field[slot];
+    return u ? q(`[data-uid="${u.uid}"]`) : null;
+  };
+  const masterEl = (p: PlayerId) => q(`[data-master="${p}"]`);
+
+  const hits: { el: HTMLElement | null; color: string; land: (el: HTMLElement) => void }[] = [];
+  for (const e of events) {
+    switch (e.type) {
+      case "damaged":
+        hits.push({
+          el: unitEl(e.player, e.slot),
+          color: opts.tint ?? "#ff6a3d",
+          land: (el) => {
+            burst(center(el.getBoundingClientRect()), opts.tint ?? "#ff5a4a");
+            popNumber(el, `-${e.amount}`);
+            shake(el, 0.8);
+          },
+        });
+        break;
+      case "leaderDamaged":
+        hits.push({
+          el: masterEl(e.player),
+          color: opts.tint ?? "#ff6a3d",
+          land: (el) => {
+            burst(center(el.getBoundingClientRect()), "#ff5a4a");
+            popNumber(el, `-${e.amount}`);
+            shake(el, 0.6);
+            quake(Math.min(1.6, 0.4 + e.amount / 4));
+          },
+        });
+        break;
+      case "healed":
+        hits.push({
+          el: unitEl(e.player, e.slot),
+          color: "#6dffa8",
+          land: (el) => {
+            glow(el, "#6dffa8");
+            popNumber(el, `+${e.amount}`, "heal");
+          },
+        });
+        break;
+      case "leaderHealed":
+        hits.push({
+          el: masterEl(e.player),
+          color: "#6dffa8",
+          land: (el) => {
+            glow(el, "#6dffa8");
+            popNumber(el, `+${e.amount}`, "heal");
+          },
+        });
+        break;
+      case "buffed": {
+        const up = e.attack >= 0 && e.hp >= 0;
+        const text = `${e.attack >= 0 ? "+" : ""}${e.attack}/${e.hp >= 0 ? "+" : ""}${e.hp}`;
+        hits.push({
+          el: unitEl(e.player, e.slot),
+          color: up ? "#ffd76a" : "#b06bff",
+          land: (el) => {
+            glow(el, up ? "#ffd76a" : "#b06bff");
+            popLabel(el, text, up ? "#ffd76a" : "#c08bff");
+          },
+        });
+        break;
+      }
+      case "status": {
+        const color = STATUS_COLOR[e.status] ?? "#ffffff";
+        hits.push({
+          el: unitEl(e.player, e.slot),
+          color,
+          land: (el) => {
+            burst(center(el.getBoundingClientRect()), color);
+            popLabel(el, e.status, color);
+            shake(el, 0.4);
+          },
+        });
+        break;
+      }
+      case "stolen":
+        hits.push({
+          el: unitEl(e.player === "p1" ? "p2" : "p1", e.from),
+          color: "#ff7ad9",
+          land: (el) => {
+            glow(el, "#ff7ad9");
+            popLabel(el, "推し変", "#ff7ad9");
+          },
+        });
+        break;
+    }
+  }
+
+  // 1つずつ少しずらして飛ばす（全体攻撃はほぼ同時に）
+  const gap = hits.length > 3 ? 90 : 170;
+  const flights = hits.map(async (h, i) => {
+    await wait(i * gap);
+    if (!h.el) return;
+    if (source) await fly(source, center(h.el.getBoundingClientRect()), h.color);
+    h.land(h.el);
+  });
+  await Promise.all(flights);
+  // 当たったところを少し見せてから
+  if (hits.length > 0) await wait(520);
+
+  // 倒れたアイコン（次の state にいないもの）はオワコンへ
+  const alive = new Set(
+    (["p1", "p2"] as const).flatMap((p) => next.players[p].field.flatMap((u) => (u ? [u.uid] : []))),
+  );
+  for (const p of ["p1", "p2"] as const) {
+    for (const u of shown.players[p].field) {
+      if (u && !alive.has(u.uid)) toTrash(q(`[data-uid="${u.uid}"]`), p);
+    }
+  }
+  await wait(hits.length > 0 ? 460 : 0);
 }
