@@ -6,7 +6,7 @@ API と Web を1つの Cloud Run で動かします（API が Web のビルド�
 
 - Cloud Run `trends-api`（使わないときは0台。オンライン対戦の部屋をメモリで持つので最大1台、WebSocket 用にセッションアフィニティと1時間のタイムアウト）
 - Artifact Registry `trends`（Docker イメージ置き場）
-- Secret Manager `database-url`（DB の接続文字列。値は人が画面で入れる）
+- Secret Manager `database-url` の読み取り権限（シークレット自体と値は bootstrap.sh で人が入れる）
 - GitHub Actions 用の Workload Identity 連携とデプロイ用サービスアカウント（鍵ファイルなしでデプロイ）
 - 予算アラート（`billing_account` を指定したときだけ）
 
@@ -14,12 +14,11 @@ DB はここでは作りません。Neon などの無料枠の PostgreSQL を使
 
 ## 手順
 
-```sh
-cd infra/terraform
-gcloud storage buckets create gs://YOUR_PROJECT-tfstate --location=asia-northeast1
-terraform init -backend-config="bucket=YOUR_PROJECT-tfstate"
-terraform apply -var project_id=YOUR_PROJECT_ID -var billing_account=XXXXXX-XXXXXX-XXXXXX \
-  -var google_client_id=XXXX.apps.googleusercontent.com
-```
+最初の1回だけ、Cloud Shell で [../bootstrap.sh](../bootstrap.sh) を実行する（state のバケット、GitHub Actions 用の連携、DB の接続文字列）。以降は GitHub Actions（`.github/workflows/infra.yml`）が `terraform apply` する。全体の流れは [docs/deploy.md](../../docs/deploy.md)。
 
-apply 後に出る `workload_identity_provider` と `deployer_service_account` を、GitHub リポジトリの Variables に `GCP_WIF_PROVIDER` / `GCP_DEPLOYER_SA` として、プロジェクト ID を `GCP_PROJECT_ID` として登録すると、main へのマージで自動デプロイされます（`.github/workflows/deploy.yml`）。
+手元で動かすときは:
+
+```sh
+terraform init -backend-config="bucket=YOUR_PROJECT-tfstate"
+terraform apply -var project_id=YOUR_PROJECT_ID
+```
