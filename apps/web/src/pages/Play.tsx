@@ -291,7 +291,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             ? "使う相手を選んでください（光っているアイコン）"
             : "もう一度カードを押すと投稿します"
           : selection?.kind === "hand"
-            ? "出す枠を選んでください（もう一度カードを押すと空いている枠に出します）"
+            ? "出す枠を押してください（もう一度カードを押すと、選ぶのをやめます）"
             : attacking
               ? foeGuarded
                 ? "攻撃先を選んでください（ガードがいるので、ガードと晒し者しか攻撃できません）"
@@ -367,7 +367,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           if (!myTurn) return;
           if (inSheet) setHandOpen(false);
           if (selected && card.type === "post" && !card.target) return cast();
-          if (selected && card.type === "icon" && freeSlot >= 0) return play(freeSlot);
+          // アイコンは、出す枠を自分で選んだときだけ出す（もう一度押しても勝手に出さず、選ぶのをやめる）
           select(selected ? null : { kind: "hand", index: i });
         }}
         onPeek={() => setPeek(p)}
