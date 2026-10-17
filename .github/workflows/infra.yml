@@ -42,8 +42,16 @@ jobs:
           terraform_wrapper: false
       - if: steps.cfg.outputs.ok == 'true'
         run: terraform init -input=false -backend-config="bucket=${GCP_PROJECT_ID}-tfstate"
-      - if: steps.cfg.outputs.ok == 'true'
-        run: terraform apply -auto-approve -input=false -var "project_id=${GCP_PROJECT_ID}" -var "region=${GCP_REGION}" -var "google_client_id=${GOOGLE_CLIENT_ID}"
+      - name: terraform apply
+        if: steps.cfg.outputs.ok == 'true'
+        run: |
+          set -o pipefail
+          if ! terraform apply -auto-approve -input=false -no-color \
+            -var "project_id=${GCP_PROJECT_ID}" -var "region=${GCP_REGION}" -var "google_client_id=${GOOGLE_CLIENT_ID}" 2>&1 | tee apply.log; then
+            # エラー文を注釈に出す（ログを開かなくても、失敗の理由が分かるように）
+            grep -A6 '^Error' apply.log | head -60 | while IFS= read -r line; do echo "::error::${line}"; done
+            exit 1
+          fi
       - name: Summary
         if: steps.cfg.outputs.ok == 'true'
         run: echo "### Cloud Run の URL：$(terraform output -raw api_url)" >> "$GITHUB_STEP_SUMMARY"
