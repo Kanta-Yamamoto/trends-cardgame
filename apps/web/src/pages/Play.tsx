@@ -410,7 +410,7 @@ function Board() {
           <div className="col-right">
             <div className="peek">
               {peekCard ? (
-                <PeekCard card={peekCard} view={peek?.view} />
+                <PeekCard key={peekCard.id} card={peekCard} view={peek?.view} />
               ) : (
                 <p className="muted">カードを押すと、ここに大きく表示します</p>
               )}
@@ -494,10 +494,12 @@ function Board() {
 /** 大きく表示するカード。場のアイコンなら今の状態（闇堕ち・ダメージ・強化）も添える */
 function PeekCard({ card, view }: { card: CardDef; view?: UnitView }) {
   const dark = view?.unit.dark && card.dark;
+  // カードを押すと文字の板を隠して絵だけを見せる（スマホでも使えるようにホバーではなくタップ）
+  const [textHidden, setTextHidden] = useState(false);
   return (
     <>
       <div className={dark ? "peek-dark" : undefined}>
-        <HoloCard key={card.id} card={card} idle={false} />
+        <HoloCard card={card} idle={false} textHidden={textHidden} onClick={() => setTextHidden((v) => !v)} />
       </div>
       {view && (
         <div className="peek-note">

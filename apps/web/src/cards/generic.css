@@ -44,7 +44,6 @@
   .kg-effect { margin: 0; font-size: 0.95em; line-height: 1.5; min-height: 3em; }
   .kg-effect i { opacity: 0.5; }
   .kg-effect .kw { color: #ffe27a; font-weight: 800; }
-  .kg-flavor { margin: 0; font-size: 0.8em; opacity: 0.6; }
   .kg-power { justify-self: end; display: flex; }
   .kg-post .kg-mark { font-size: 7em; }
   /* イラスト：上寄せで全面に敷き、下の文字の板が読めるように暗くする */
@@ -52,7 +51,23 @@
     background-size: cover; background-position: center 18%;
     transform: scale(1.06) translate(calc(var(--nx) * -5px), calc(var(--ny) * -5px));
   }
-  .has-art .kg-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, #000a 85%); }
+  .has-art .kg-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 58%, #0007 100%); }
+  /* 絵があるカードは文字の板を箱にせず、下からのグラデーションと文字の影で読ませて絵を広く見せる */
+  .has-art .kg-plate {
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ink) 58%, transparent) 2.2em);
+    backdrop-filter: none; box-shadow: none; padding-top: 1.6em;
+    text-shadow: 0 0.05em 0.15em #000, 0 0 0.5em #000c;
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  .has-art .kg-effect { min-height: 0; }
+  /* 一覧用：名前と数値だけ */
+  .card.is-compact .kg-type,
+  .card.is-compact .kg-epi,
+  .card.is-compact .kg-effect,
+  .card.is-compact .kg-darktext { display: none; }
+  .card.is-compact .kg-plate { gap: 0.25em; }
+  /* 押して文字を隠す */
+  .card.text-hidden .kg-plate { opacity: 0; transform: translateY(15%); pointer-events: none; }
   /* 属性の色の枠 */
   .kg-frame { border: 0.45em solid; border-image-slice: 1; border-radius: inherit; pointer-events: none; }
 }

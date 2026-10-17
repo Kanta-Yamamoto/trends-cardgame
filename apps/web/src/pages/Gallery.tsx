@@ -8,13 +8,18 @@ export function Gallery() {
   const { data, isLoading } = useQuery({ queryKey: ["cards"], queryFn: fetchCards });
   const cards = data?.cards.filter((c) => !c.token) ?? [];
   const [zoom, setZoom] = useState<CardDef | null>(null);
+  const [textHidden, setTextHidden] = useState(false);
+  const open = (c: CardDef) => {
+    setTextHidden(false);
+    setZoom(c);
+  };
 
   return (
     <section className="page">
       <header className="page-head">
         <h1>カード一覧</h1>
         <p className="muted">
-          カードにカーソルを乗せるかドラッグすると、面が傾いてホロが動きます。タップで拡大。
+          カードを押すと拡大して、効果を読めます。拡大したカードをもう一度押すと、文字を隠して絵だけを見られます。
         </p>
         {data?.fallback && (
           <p className="notice">API に接続できないため、アプリに同梱したカードデータを表示しています。</p>
@@ -25,7 +30,7 @@ export function Gallery() {
       ) : (
         <div className="gallery">
           {cards.map((c) => (
-            <HoloCard key={c.id} card={c} onClick={() => setZoom(c)} />
+            <HoloCard key={c.id} card={c} compact onClick={() => open(c)} />
           ))}
         </div>
       )}
@@ -35,8 +40,11 @@ export function Gallery() {
             閉じる
           </button>
           <div className="zoom-card">
-            <HoloCard card={zoom} />
+            <HoloCard card={zoom} textHidden={textHidden} onClick={() => setTextHidden((v) => !v)} />
           </div>
+          <p className="zoom-hint">
+            {textHidden ? "カードを押すと文字を戻します" : "カードを押すと文字を隠して絵だけを見られます"}
+          </p>
         </div>
       )}
     </section>

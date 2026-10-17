@@ -39,7 +39,6 @@ export function RenFace({ card }: { card: CardDef }) {
           <p className="effect">
             <EffectText text={card.effect} />
           </p>
-          <p className="flavor">{card.flavor}</p>
           <div className="foot">
             <span className="serial">
               SERIAL<b>{card.serial}</b>

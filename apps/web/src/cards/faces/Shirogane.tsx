@@ -32,7 +32,6 @@ export function ShiroganeFace({ card }: { card: CardDef }) {
           <p className="effect">
             <EffectText text={card.effect} />
           </p>
-          <p className="flavor">{card.flavor}</p>
           <div className="foot">
             <span className="no">{cardNo(card)}</span>
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />

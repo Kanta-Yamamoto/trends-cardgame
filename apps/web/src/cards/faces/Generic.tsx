@@ -35,7 +35,6 @@ export function GenericFace({ card }: { card: CardDef }) {
             闇堕ち：一度倒されたとき、裏返って「{card.dark.name}」になる（姿は裏返るまで秘密）
           </p>
         )}
-        <p className="kg-flavor">{card.flavor}</p>
         {card.type === "icon" && (
           <span className="kg-power">
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />

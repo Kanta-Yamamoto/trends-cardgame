@@ -34,9 +34,13 @@ interface Props {
   /** 触っていないときにゆっくり揺らす */
   idle?: boolean;
   onClick?: () => void;
+  /** 一覧用：名前と数値だけにして、絵を広く見せる */
+  compact?: boolean;
+  /** 文字の板を隠して絵だけを見せる */
+  textHidden?: boolean;
 }
 
-export function HoloCard({ card, idle = true, onClick }: Props) {
+export function HoloCard({ card, idle = true, onClick, compact = false, textHidden = false }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
   const lastMove = useRef(0);
   const face = FACES[card.id] ?? GENERIC;
@@ -83,7 +87,7 @@ export function HoloCard({ card, idle = true, onClick }: Props) {
   const body = (
     <div
       ref={cardRef}
-      className="card"
+      className={`card ${compact ? "is-compact" : ""} ${textHidden ? "text-hidden" : ""}`}
       role="img"
       aria-label={
         card.type === "post"
