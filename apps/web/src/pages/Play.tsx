@@ -293,6 +293,55 @@ function DeckConfirm({
   );
 }
 
+/** ターン終了の確認。まだ攻撃できるアイコンや、残っている話題力があれば添える */
+function EndTurnConfirm({
+  attackers,
+  mana,
+  onYes,
+  onNo,
+}: {
+  attackers: number;
+  mana: number;
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onNo();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onNo]);
+  const notes = [
+    attackers > 0 && `まだ攻撃できるアイコンが ${attackers} 体います`,
+    mana > 0 && `話題力が ${mana} 残っています`,
+  ].filter((x): x is string => !!x);
+  return (
+    <div
+      className="zoom-sheet end-confirm"
+      role="alertdialog"
+      aria-modal="true"
+      aria-label="ターン終了の確認"
+    >
+      <button type="button" className="zoom-sheet-bg" aria-label="やめる" onClick={onNo} />
+      <div className="end-confirm-body">
+        <p className="end-confirm-q">ターンを終了しますか？</p>
+        {notes.map((n) => (
+          <p key={n} className="end-confirm-note">
+            {n}
+          </p>
+        ))}
+        <div className="end-confirm-actions">
+          <button type="button" className="btn ghost" onClick={onNo}>
+            いいえ
+          </button>
+          <button type="button" className="btn" onClick={onYes}>
+            はい、終了する
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type Peek = { id: string; view?: UnitView; where: "hand" | "mine" | "foe" | "trash"; index: number };
 
 /** 対戦の画面。CPU 戦とオンライン対戦で共通（onQuit を渡すと「戻る」でそれを呼ぶ） */
@@ -333,6 +382,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
   const seen = useRef(0);
   const { stage, probe } = useStage();
+  /** ターン終了の確認を出しているか（押し間違いで終わらないように） */
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
   // 攻撃の演出を store に登録する（演出が終わってから state を進める）
   useEffect(() => {
@@ -620,7 +671,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             <button
               type="button"
               className={`btn end-turn ${myTurn ? "now" : ""}`}
-              onClick={endTurn}
+              onClick={() => setConfirmEnd(true)}
               disabled={!myTurn}
             >
               ターン終了
@@ -694,6 +745,17 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         </div>
       )}
 
+      {confirmEnd && myTurn && (
+        <EndTurnConfirm
+          attackers={me.field.filter((u) => u && canUnitAttack(game, u)).length}
+          mana={me.mana}
+          onYes={() => {
+            setConfirmEnd(false);
+            endTurn();
+          }}
+          onNo={() => setConfirmEnd(false)}
+        />
+      )}
       {zoom && CATALOG[zoom.id] && (
         <CardZoom card={CATALOG[zoom.id] as CardDef} view={zoom.view} onClose={() => setZoom(null)} />
       )}
