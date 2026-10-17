@@ -120,7 +120,7 @@ button { font: inherit; color: inherit; }
 .mini.targetable.enter, .mini.ready.enter { animation-fill-mode: none; }
 
 .hand { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 10px; padding-top: 6px; }
-.mini.in-hand:hover:not(:disabled) { transform: translateY(-6px); }
+@media (hover: hover) { .mini.in-hand:hover:not(:disabled) { transform: translateY(-6px); } }
 .mini.in-hand.short { filter: grayscale(0.7) brightness(0.65); }
 .mini.in-hand.playable { box-shadow: 0 0 0 1.5px #7dffb0aa, 0 10px 22px -12px #000; }
 .mini.in-hand.selected { transform: translateY(-12px) scale(1.05); box-shadow: 0 0 0 2px var(--gold), 0 0 26px #f2cf7a99; }
@@ -287,10 +287,19 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .stage .mini-name { font-size: 10.5px; }
 .stage .mini-name small { font-size: 8px; }
 .stage .mini-kw { font-size: 8.5px; padding: 1px 4px; }
-.stage .hand { display: flex; justify-content: center; align-items: end; padding: 10px 14px 0; }
-.stage .hand .mini { flex: none; width: calc(var(--slot, 100px) * 0.92); }
-.stage .hand .mini + .mini { margin-left: min(6px, calc((100% - var(--slot, 100px) * 0.92 * var(--n)) / (var(--n) - 1))); }
-.stage .hand .mini:hover, .stage .hand .mini.selected { z-index: 2; }
+/* 手札は扇のように持つ。--f は真ん中からのずれ（左がマイナス）。端ほど傾いて少し下がる */
+.stage .hand { --step: min(4.5deg, calc(24deg / var(--n))); display: flex; justify-content: center; align-items: end; padding: 14px 14px 0; }
+.stage .hand .mini {
+  flex: none; width: calc(var(--slot, 100px) * 0.92); transform-origin: 50% 120%;
+  transform: rotate(calc(var(--f, 0) * var(--step))) translateY(calc(var(--f, 0) * var(--f, 0) * 1.6px));
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+.stage .hand .mini + .mini { margin-left: min(-10px, calc((100% - var(--slot, 100px) * (0.92 * var(--n) + 0.7)) / (var(--n) - 1))); }
+/* PC はホバー、スマホは押して選んだときに、真っすぐ持ち上げて大きく見せる */
+@media (hover: hover) {
+  .stage .hand .mini.in-hand:hover:not(:disabled) { z-index: 3; transform: translateY(-22px) scale(1.12); }
+}
+.stage .hand .mini.in-hand.selected { z-index: 4; transform: translateY(-26px) scale(1.14); }
 
 .col-right { display: grid; grid-template-rows: minmax(0, 1fr) auto auto auto; gap: 8px; min-height: 0; }
 .col-right .peek { align-content: start; overflow: auto; min-height: 0; scrollbar-width: thin; }

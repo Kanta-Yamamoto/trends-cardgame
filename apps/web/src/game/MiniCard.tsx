@@ -1,6 +1,6 @@
 import type { CardDef } from "@trends/cards";
 import type { UnitView } from "@trends/game-core";
-import { useRef } from "react";
+import { type CSSProperties, useRef } from "react";
 import { ATTR_META, attrBackground, stars } from "../cards/meta";
 
 interface Props {
@@ -13,6 +13,8 @@ interface Props {
   uid?: number;
   inHand?: boolean;
   className?: string;
+  /** 追加のスタイル（手札の扇の並びなど） */
+  style?: CSSProperties;
   disabled?: boolean;
   label?: string;
   onClick?: () => void;
@@ -32,6 +34,7 @@ export function MiniCard({
   uid,
   inHand,
   className = "",
+  style,
   disabled,
   label,
   onClick,
@@ -55,7 +58,7 @@ export function MiniCard({
     <button
       type="button"
       className={`mini ${card.art && !dark ? "has-art" : ""} ${dark ? "is-dark" : ""} ${isPost ? "is-post" : ""} ${className}`}
-      style={bg}
+      style={{ ...bg, ...style }}
       data-uid={uid}
       data-hand-card={inHand ? "" : undefined}
       disabled={disabled}

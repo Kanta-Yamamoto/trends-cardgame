@@ -588,6 +588,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         card={card}
         cost={cost}
         className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""}`}
+        // 手元で扇のように持つ（真ん中からのずれ。広げた一覧では使わない）
+        style={inSheet ? undefined : ({ "--f": i - (me.hand.length - 1) / 2 } as CSSProperties)}
         onClick={() => {
           setPeek(p);
           if (!myTurn) return;
