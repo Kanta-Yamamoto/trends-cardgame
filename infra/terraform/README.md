@@ -4,9 +4,9 @@
 
 ## 作るもの
 
-- Cloud Run（API、使わないときは0台）
+- Cloud Run（API、使わないときは0台。オンライン対戦の部屋をメモリで持つので最大1台、WebSocket 用にセッションアフィニティと1時間のタイムアウト）
 - Artifact Registry（Docker イメージ置き場）
-- Secret Manager（`database-url`）
+- Secret Manager（`database-url`、`session-secret`）
 - GitHub Actions 用の Workload Identity 連携とデプロイ用サービスアカウント
 - 予算アラート（`billing_account` を指定したときだけ）
 
@@ -17,9 +17,11 @@ DB はここでは作りません。最初は Neon や Supabase の無料枠の 
 ```sh
 cd infra/terraform
 terraform init
-terraform apply -var project_id=YOUR_PROJECT_ID -var billing_account=XXXXXX-XXXXXX-XXXXXX
-# DB の接続文字列を登録
+terraform apply -var project_id=YOUR_PROJECT_ID -var billing_account=XXXXXX-XXXXXX-XXXXXX \
+  -var google_client_id=XXXX.apps.googleusercontent.com -var cors_origin=https://YOUR_WEB_ORIGIN
+# DB の接続文字列と、ログインのトークンに署名する鍵を登録
 echo -n "postgresql://..." | gcloud secrets versions add database-url --data-file=-
+openssl rand -base64 48 | tr -d '\n' | gcloud secrets versions add session-secret --data-file=-
 ```
 
 apply 後に出る `workload_identity_provider` と `deployer_service_account` を、GitHub リポジトリの Settings → Variables に `GCP_WIF_PROVIDER` / `GCP_DEPLOYER_SA` として登録すると、デプロイ用のワークフローを追加できます。

@@ -1,5 +1,6 @@
 import type { CardEffect, DarkSide } from "@trends/cards";
-import { boolean, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import type { GameState } from "@trends/game-core";
+import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 /** カードの定義。元データは packages/cards/src/cards.json で、seed で取り込む */
 export const cards = pgTable("cards", {
@@ -40,3 +41,37 @@ export const cards = pgTable("cards", {
 });
 
 export type CardRow = typeof cards.$inferSelect;
+
+/** ログインしたユーザー（Google のアカウント。開発用ログインは sub が dev: で始まる） */
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Google の sub（アカウントごとに変わらない ID） */
+  sub: text("sub").notNull().unique(),
+  name: text("name").notNull(),
+  picture: text("picture"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+export type UserRow = typeof users.$inferSelect;
+
+/** 対戦の部屋。合言葉（code）で相手が入り、2人そろったら state に対戦の状態を持つ */
+export const matches = pgTable("matches", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  code: text("code").notNull().unique(),
+  /** waiting（相手待ち）/ playing / finished */
+  status: text("status").notNull().default("waiting"),
+  p1Id: uuid("p1_id")
+    .notNull()
+    .references(() => users.id),
+  p1Deck: text("p1_deck").notNull(),
+  p2Id: uuid("p2_id").references(() => users.id),
+  p2Deck: text("p2_deck"),
+  /** game-core の GameState（隠す情報も含む本当の状態。クライアントには stateFor で変えて渡す） */
+  state: jsonb("state").$type<GameState>(),
+  winnerId: uuid("winner_id").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+export type MatchRow = typeof matches.$inferSelect;

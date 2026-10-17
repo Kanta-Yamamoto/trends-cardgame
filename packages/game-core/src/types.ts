@@ -92,7 +92,9 @@ export type Action =
   | { type: "play"; player: PlayerId; handIndex: number; slot: number }
   | { type: "cast"; player: PlayerId; handIndex: number; target?: CastTarget }
   | { type: "attack"; player: PlayerId; from: number; target: AttackTarget }
-  | { type: "endTurn"; player: PlayerId };
+  | { type: "endTurn"; player: PlayerId }
+  /** 降参（相手の勝ちになる。自分のターンでなくてもできる） */
+  | { type: "resign"; player: PlayerId };
 
 /** 画面側が演出を付けるための出来事の記録 */
 export type GameEvent =
@@ -128,6 +130,7 @@ export type GameEvent =
   | { type: "leaderHealed"; player: PlayerId; amount: number; lp: number }
   | { type: "drew"; player: PlayerId; cardId: string }
   | { type: "deckOut"; player: PlayerId }
+  | { type: "resigned"; player: PlayerId }
   | { type: "turnStarted"; player: PlayerId; turn: number; mana: number }
   | { type: "won"; player: PlayerId };
 

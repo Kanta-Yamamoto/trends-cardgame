@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes } from "react-router";
 import { Gallery } from "./pages/Gallery";
+import { OnlineLobby, OnlineRoom } from "./pages/Online";
 import { Play } from "./pages/Play";
 
 const PROTOTYPES = [
@@ -16,6 +17,7 @@ export function App() {
           カード
         </NavLink>
         <NavLink to="/play">CPU と対戦</NavLink>
+        <NavLink to="/online">オンライン対戦</NavLink>
         <span className="spacer" />
         {PROTOTYPES.map((p) => (
           <a key={p.href} href={p.href} className="proto">
@@ -27,6 +29,8 @@ export function App() {
         <Routes>
           <Route path="/" element={<Gallery />} />
           <Route path="/play" element={<Play />} />
+          <Route path="/online" element={<OnlineLobby />} />
+          <Route path="/online/:code" element={<OnlineRoom />} />
         </Routes>
       </main>
     </div>

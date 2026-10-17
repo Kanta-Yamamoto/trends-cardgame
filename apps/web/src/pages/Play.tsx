@@ -24,7 +24,7 @@ import { CATALOG, CPU, DECK_INFO, ME, setPresenter, useGame } from "../game/stor
 
 const SLOT_KEYS = Array.from({ length: SLOTS }, (_, i) => `slot-${i}`);
 const nameOf = (id: string) => CATALOG[id]?.name ?? id;
-const who = (p: string) => (p === ME ? "あなた" : "CPU");
+const who = (p: string) => (p === ME ? "あなた" : useGame.getState().foeName);
 
 function describe(e: GameEvent): string {
   switch (e.type) {
@@ -66,6 +66,8 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}が ${nameOf(e.cardId)} を奪った（推し変）`;
     case "extraTurn":
       return `${who(e.player)}は、このあともう一度ターンを行う`;
+    case "resigned":
+      return `${who(e.player)}が降参した`;
     case "won":
       return `${who(e.player)}の勝ち`;
   }
@@ -108,26 +110,7 @@ function DeckSelect() {
           デッキを選んでください。CPU はほかのデッキから1つを使います。先攻・後攻はランダムです。
         </p>
       </header>
-      <div className="decks">
-        {(Object.keys(DECK_INFO) as DeckId[]).map((id) => {
-          const [a, b] = DECK_ATTRS[id].map((x) => ATTR_META[x]);
-          return (
-            <button
-              key={id}
-              type="button"
-              className="deck-pick"
-              style={{
-                background: `linear-gradient(125deg, ${a?.color}, ${a?.deep} 50%, ${b?.deep} 50%, ${b?.color})`,
-              }}
-              onClick={() => start(id)}
-            >
-              <span className="deck-attrs">{DECK_ATTRS[id].join(" × ")}</span>
-              <strong>{DECK_INFO[id].name}</strong>
-              <span>{DECK_INFO[id].text}</span>
-            </button>
-          );
-        })}
-      </div>
+      <DeckGrid onPick={start} />
       <details className="rules">
         <summary>ルール（かんたん版）</summary>
         <ul>
@@ -152,9 +135,36 @@ function DeckSelect() {
   );
 }
 
+/** デッキを選ぶボタンの並び（CPU 戦とオンライン対戦で共通） */
+export function DeckGrid({ onPick }: { onPick: (deck: DeckId) => void }) {
+  return (
+    <div className="decks">
+      {(Object.keys(DECK_INFO) as DeckId[]).map((id) => {
+        const [a, b] = DECK_ATTRS[id].map((x) => ATTR_META[x]);
+        return (
+          <button
+            key={id}
+            type="button"
+            className="deck-pick"
+            style={{
+              background: `linear-gradient(125deg, ${a?.color}, ${a?.deep} 50%, ${b?.deep} 50%, ${b?.color})`,
+            }}
+            onClick={() => onPick(id)}
+          >
+            <span className="deck-attrs">{DECK_ATTRS[id].join(" × ")}</span>
+            <strong>{DECK_INFO[id].name}</strong>
+            <span>{DECK_INFO[id].text}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 type Peek = { id: string; view?: UnitView; where: "hand" | "mine" | "foe" | "trash"; index: number };
 
-function Board() {
+/** 対戦の画面。CPU 戦とオンライン対戦で共通（onQuit を渡すと「戻る」でそれを呼ぶ） */
+export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const {
     game,
     deck,
@@ -169,8 +179,21 @@ function Board() {
     attack,
     endTurn,
     start,
-    quit,
+    quit: quitGame,
+    mode,
+    foeName,
+    resign,
   } = useGame();
+  const online = mode === "online";
+  const quit = () => {
+    quitGame();
+    onQuit?.();
+  };
+  const [resignAsk, setResignAsk] = useState(false);
+  /** 相手が出した・使ったカードを大きく見せる */
+  const [reveal, setReveal] = useState<{ id: number; cardId: string; kind: "play" | "cast" } | null>(null);
+  /** 手札が多いときに、全部を大きく並べて見る */
+  const [handOpen, setHandOpen] = useState(false);
   const [peek, setPeek] = useState<Peek | null>(null);
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
@@ -182,6 +205,20 @@ function Board() {
     setPresenter({
       beforeAttack: (g, a) => animateAttack(g, a.player, a.from, a.target, CATALOG),
       turnIntro: 1100,
+      revealFoe: (g, cardId, a) =>
+        new Promise<void>((resolve) => {
+          setReveal({ id: Date.now(), cardId, kind: a.type });
+          // 対象がある投稿は、狙われたアイコンを光らせる（相手から見た enemy＝こちらのアイコン）
+          const t = a.type === "cast" ? a.target : undefined;
+          const uid = t ? g.players[t.side === "enemy" ? ME : CPU].field[t.slot]?.uid : undefined;
+          const el = uid ? document.querySelector(`[data-uid="${uid}"]`) : null;
+          el?.classList.add("fx-targeted");
+          setTimeout(() => {
+            setReveal(null);
+            el?.classList.remove("fx-targeted");
+            resolve();
+          }, 1300);
+        }),
     });
     return () => setPresenter(null);
   }, []);
@@ -241,7 +278,9 @@ function Board() {
   const hint = game.winner
     ? ""
     : game.active === CPU
-      ? "CPU が考えています…"
+      ? online
+        ? `${foeName}のターンです`
+        : "CPU が考えています…"
       : !myTurn
         ? ""
         : postSelected
@@ -301,6 +340,36 @@ function Board() {
     );
   };
 
+  const handCard = (id: string, i: number, inSheet = false) => {
+    const card = CATALOG[id];
+    if (!card) return null;
+    const cost = effectiveCost(game, ME, id, CATALOG);
+    const usable =
+      myTurn &&
+      cost <= me.mana &&
+      (card.type === "icon" ? freeSlot >= 0 : !card.target || castTargets(game, ME, id, CATALOG).length > 0);
+    const selected = selection?.kind === "hand" && selection.index === i;
+    const p: Peek = { id, where: "hand", index: i };
+    return (
+      <MiniCard
+        key={`${id}-${i}`}
+        inHand
+        card={card}
+        cost={cost}
+        className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""}`}
+        onClick={() => {
+          setPeek(p);
+          if (!myTurn) return;
+          if (inSheet) setHandOpen(false);
+          if (selected && card.type === "post" && !card.target) return cast();
+          if (selected && card.type === "icon" && freeSlot >= 0) return play(freeSlot);
+          select(selected ? null : { kind: "hand", index: i });
+        }}
+        onPeek={() => setPeek(p)}
+      />
+    );
+  };
+
   return (
     <div className="play-full">
       <div className="stage" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
@@ -308,7 +377,7 @@ function Board() {
           <div className="col-left">
             <PlayerBar
               side="foe"
-              name="CPU"
+              name={foeName}
               lp={foe.lp}
               mana={foe.mana}
               maxMana={foe.maxMana}
@@ -381,38 +450,13 @@ function Board() {
               })}
             </div>
             <div className="hand" data-hand={ME} style={{ "--n": me.hand.length } as CSSProperties}>
-              {me.hand.map((id, i) => {
-                const card = CATALOG[id];
-                if (!card) return null;
-                const cost = effectiveCost(game, ME, id, CATALOG);
-                const usable =
-                  myTurn &&
-                  cost <= me.mana &&
-                  (card.type === "icon"
-                    ? freeSlot >= 0
-                    : !card.target || castTargets(game, ME, id, CATALOG).length > 0);
-                const selected = selection?.kind === "hand" && selection.index === i;
-                const p: Peek = { id, where: "hand", index: i };
-                return (
-                  <MiniCard
-                    // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが手札に複数あり得るので位置で区別する
-                    key={`${id}-${i}`}
-                    inHand
-                    card={card}
-                    cost={cost}
-                    className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""}`}
-                    onClick={() => {
-                      setPeek(p);
-                      if (!myTurn) return;
-                      if (selected && card.type === "post" && !card.target) return cast();
-                      if (selected && card.type === "icon" && freeSlot >= 0) return play(freeSlot);
-                      select(selected ? null : { kind: "hand", index: i });
-                    }}
-                    onPeek={() => setPeek(p)}
-                  />
-                );
-              })}
+              {me.hand.map((id, i) => handCard(id, i))}
             </div>
+            {me.hand.length >= 7 && (
+              <button type="button" className="hand-more" onClick={() => setHandOpen(true)}>
+                手札 {me.hand.length}枚を広げる
+              </button>
+            )}
           </div>
 
           <div className="col-right">
@@ -444,8 +488,18 @@ function Board() {
                   ))}
               </ol>
             </details>
+            {online && !game.winner && (
+              <button
+                type="button"
+                className={`btn ghost resign ${resignAsk ? "ask" : ""}`}
+                onClick={() => (resignAsk ? resign() : setResignAsk(true))}
+                onBlur={() => setResignAsk(false)}
+              >
+                {resignAsk ? "本当に降参する" : "降参"}
+              </button>
+            )}
             <button type="button" className="btn ghost quit" onClick={quit}>
-              デッキ選択に戻る
+              {online ? "ロビーに戻る" : "デッキ選択に戻る"}
             </button>
           </div>
         </div>
@@ -466,12 +520,36 @@ function Board() {
         </div>
       )}
 
+      {reveal && CATALOG[reveal.cardId] && (
+        <div key={reveal.id} className="foe-reveal" aria-live="polite">
+          <span className="fr-label">
+            {foeName}が{reveal.kind === "play" ? "出した" : "投稿した"}
+          </span>
+          <div className="fr-card">
+            <HoloCard card={CATALOG[reveal.cardId] as CardDef} idle={false} />
+          </div>
+        </div>
+      )}
+
+      {handOpen && (
+        <div className="sheet" role="dialog" aria-modal="true" aria-label="手札">
+          <button type="button" className="sheet-bg" aria-label="閉じる" onClick={() => setHandOpen(false)} />
+          <div className="sheet-body hand-sheet">
+            <h2>手札（{me.hand.length}枚）</h2>
+            <div className="hand-grid">{me.hand.map((id, i) => handCard(id, i, true))}</div>
+            <button type="button" className="btn ghost" onClick={() => setHandOpen(false)}>
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
       {trashView && (
         <div className="sheet" role="dialog" aria-modal="true" aria-label="オワコン">
           <button type="button" className="sheet-bg" aria-label="閉じる" onClick={() => setTrashView(null)} />
           <div className="sheet-body trash-list">
             <h2>
-              {trashView === ME ? "あなた" : "CPU"}のオワコン（{game.players[trashView].trash.length}枚）
+              {trashView === ME ? "あなた" : foeName}のオワコン（{game.players[trashView].trash.length}枚）
             </h2>
             <div className="trash-grid">
               {game.players[trashView].trash.map((id, i) => {
@@ -494,7 +572,9 @@ function Board() {
         </div>
       )}
 
-      {game.winner && <Result game={game} onAgain={() => start(deck)} onQuit={quit} />}
+      {game.winner && (
+        <Result game={game} onAgain={online ? undefined : () => start(deck)} onQuit={quit} online={online} />
+      )}
     </div>
   );
 }
@@ -537,18 +617,30 @@ function PeekCard({ card, view }: { card: CardDef; view?: UnitView }) {
   );
 }
 
-function Result({ game, onAgain, onQuit }: { game: GameState; onAgain: () => void; onQuit: () => void }) {
+function Result({
+  game,
+  onAgain,
+  onQuit,
+  online,
+}: {
+  game: GameState;
+  onAgain?: () => void;
+  onQuit: () => void;
+  online: boolean;
+}) {
   return (
     <div className="result" role="dialog" aria-modal="true" aria-label="対戦結果">
       <div className={`result-card ${game.winner === ME ? "win" : "lose"}`}>
         <strong>{game.winner === ME ? "勝利！" : "敗北…"}</strong>
         <span>{game.turn} ターン目で決着</span>
         <div className="result-actions">
-          <button type="button" className="btn" onClick={onAgain}>
-            もう一度
-          </button>
-          <button type="button" className="btn ghost" onClick={onQuit}>
-            デッキを選び直す
+          {onAgain && (
+            <button type="button" className="btn" onClick={onAgain}>
+              もう一度
+            </button>
+          )}
+          <button type="button" className={onAgain ? "btn ghost" : "btn"} onClick={onQuit}>
+            {online ? "ロビーに戻る" : "デッキを選び直す"}
           </button>
         </div>
       </div>

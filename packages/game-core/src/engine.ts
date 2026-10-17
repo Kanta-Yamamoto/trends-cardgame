@@ -625,6 +625,12 @@ export function applyAction(
   const emit: Emit = (e) => events.push(e);
 
   if (state.winner) throw new RuleError("game_over", "対戦は終了しています");
+  if (action.type === "resign") {
+    state.winner = opponent(action.player);
+    emit({ type: "resigned", player: action.player });
+    emit({ type: "won", player: state.winner });
+    return { state, events };
+  }
   if (action.player !== state.active) throw new RuleError("not_your_turn", "相手のターンです");
   const player = action.player;
   const me = state.players[player];
