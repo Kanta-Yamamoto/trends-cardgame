@@ -23,8 +23,8 @@
 | 3 | 人 | GCP の画面右上の Cloud Shell で `infra/bootstrap.sh` の中身を貼って実行する。途中で 2 の接続文字列を聞かれるので貼る（画面には出ない）。最後に出る `PROJECT_NUMBER=…` を Claude に伝える |
 | 4 | 人 | 「お支払い」→「予算とアラート」で、月の予算（例：3,000円）とメールの通知を作る |
 | 5 | Claude | `infra/gcp.env` にプロジェクト番号を書いて main にマージ。Infra（Terraform）→ Deploy が自動で流れる |
-| 6 | 人 | Google ログインの OAuth クライアント ID を作る（[online.md](online.md)「Google ログインの準備」。生成元は Cloud Run の URL） |
-| 7 | Claude | `infra/gcp.env` にクライアント ID を書いて main にマージ（Infra が流れ直す） |
+| 6 | 人 | ✅ Google ログインの OAuth クライアント ID を作る（[online.md](online.md)「Google ログインの準備」。生成元は Cloud Run の URL） |
+| 7 | Claude | ✅ `infra/gcp.env` にクライアント ID を書いて main にマージ（Infra が流れ直す） |
 
 これで、Cloud Run の URL を友だちに送れば遊べる。
 

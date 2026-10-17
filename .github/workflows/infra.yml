@@ -55,3 +55,14 @@ jobs:
       - name: Summary
         if: steps.cfg.outputs.ok == 'true'
         run: echo "### Cloud Run の URL：$(terraform output -raw api_url)" >> "$GITHUB_STEP_SUMMARY"
+      - name: ログインの設定が届いたか確かめる
+        if: steps.cfg.outputs.ok == 'true' && env.GOOGLE_CLIENT_ID != ''
+        run: |
+          URL=$(terraform output -raw api_url)
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS "$URL/auth/config" | tee config.json | grep -q "$GOOGLE_CLIENT_ID"; then break; fi
+            sleep 10
+          done
+          grep -q "$GOOGLE_CLIENT_ID" config.json || { echo "::error::/auth/config にクライアント ID が出ていません"; exit 1; }
+          grep -q '"devLogin":false' config.json || { echo "::error::本番で開発用ログインが有効になっています"; exit 1; }
+          echo "Google ログインを有効にしました" >> "$GITHUB_STEP_SUMMARY"
