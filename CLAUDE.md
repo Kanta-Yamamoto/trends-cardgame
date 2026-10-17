@@ -2,6 +2,8 @@
 
 AIで描いたイラストを立体感のあるキラカードにして遊ぶ、オリジナルカードゲーム。Web とスマホアプリ（Capacitor）で出す予定。
 
+作業の前に [`docs/working-agreement.md`](docs/working-agreement.md)（オーナーからの指示・進め方）と [`docs/history.md`](docs/history.md)（経緯）を読む。マージはオーナーの一言で行い、オーナーが対戦中は本番に出さない。
+
 ## 構成（pnpm workspaces + Turborepo）
 
 - `apps/web` — React 19 + Vite + TypeScript。カード表示（`src/cards`）、CPU 対戦（`src/pages/Play.tsx`、CPU は `planTurnSearch`）、オンライン対戦（`src/pages/Online.tsx`）。`public/prototypes` に HTML だけで作った試作（ガチャ演出・対戦フィールド）を同梱。PWA（`public/manifest.webmanifest`・`public/sw.js`・`src/pwa.ts`。サービスワーカーの中身を変えたら `sw.js` の `VERSION` を上げる）
