@@ -17,7 +17,10 @@ export async function fetchCards(): Promise<CardsResult> {
   try {
     const res = await fetch(`${API_URL}/cards`, { signal: AbortSignal.timeout(4000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return { cards: (await res.json()) as CardDef[], fallback: false };
+    const cards = (await res.json()) as CardDef[];
+    // DB にまだカードが入っていないときも、同梱データで表示を続ける
+    if (cards.length === 0) return { cards: [...CARDS], fallback: true };
+    return { cards, fallback: false };
   } catch {
     return { cards: [...CARDS], fallback: true };
   }
