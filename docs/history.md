@@ -4,7 +4,7 @@
 
 ## 10月16日：試作からモノレポへ
 
-- キラカード3枚・ガチャ演出・対戦フィールドの HTML 試作を作る（`apps/web/public/prototypes`）
+- キラカード3枚・ガチャ演出・対戦フィールドの HTML 試作を作る（`apps/web/public/prototypes`。ガチャ演出と対戦フィールドは 10月18日に削除）
 - モノレポ（React・NestJS・PostgreSQL・ルールエンジン・CI）に移行（#1）
 - ルール v1 と CPU 対戦。ステータスを攻撃力・体力の2つに。対戦の演出（ターン表示・攻撃・ドロー）
 - イラストは ChatGPT の画像生成で作り、依頼の型を `docs/card-art-prompt.md` に

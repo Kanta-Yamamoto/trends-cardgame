@@ -25,7 +25,6 @@ button { font: inherit; color: inherit; }
 .nav a { color: var(--muted); text-decoration: none; font-weight: 700; font-size: 14px; }
 .nav a.active { color: var(--text); }
 .nav .brand { font: 800 14px/1 var(--f-mark); letter-spacing: 0.4em; }
-.nav .proto { font-size: 12px; }
 .nav { padding-top: max(14px, env(safe-area-inset-top, 0px)); position: relative; }
 .install-btn { padding: 6px 12px; font-size: 12px; }
 .spacer { flex: 1; }
