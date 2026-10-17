@@ -1,4 +1,4 @@
-import type { CardDef, DeckId } from "@trends/cards";
+import { type CardDef, DECKS, type DeckId } from "@trends/cards";
 import {
   type AttackTarget,
   type CastTarget,
@@ -74,18 +74,66 @@ function describe(e: GameEvent): string {
   }
 }
 
-/** 画面は 960×540（スマホの横画面と同じ 16:9）で作り、ウィンドウに合わせて拡大・縮小する */
+/**
+ * 対戦画面は「舞台」を作って、画面に合わせて拡大・縮小する。
+ * - 切り欠き・ホームバー（セーフエリア）を除いた範囲に収める（iPhone の横画面で左右が欠けて重なるのを防ぐ）
+ * - 横長の画面ほど舞台を低くして、カードを大きく・横いっぱいに使う（16:9 で 960×540、20:9 で 960×432 まで）
+ * - 舞台の高さに合わせて、場の枠の大きさ（--slot）を決める
+ */
 const STAGE_W = 960;
 const STAGE_H = 540;
-function useStageScale() {
-  const [scale, setScale] = useState(1);
-  useEffect(() => {
-    const on = () => setScale(Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H));
+const STAGE_H_MIN = 432;
+/** 場の枠の幅から決まる、舞台の縦の長さ（余白＋案内＋場2段＋手札）。stage の CSS と合わせる */
+const fitSlot = (height: number) => Math.min(100, Math.floor((height - 84) / 4.08));
+
+interface Stage {
+  width: number;
+  height: number;
+  scale: number;
+  slot: number;
+  cx: number;
+  cy: number;
+}
+
+function safeArea(probe: HTMLElement | null) {
+  if (!probe) return { t: 0, r: 0, b: 0, l: 0 };
+  const cs = getComputedStyle(probe);
+  const px = (v: string) => Number.parseFloat(v) || 0;
+  return { t: px(cs.paddingTop), r: px(cs.paddingRight), b: px(cs.paddingBottom), l: px(cs.paddingLeft) };
+}
+
+export function measureStage(vw: number, vh: number, safe = { t: 0, r: 0, b: 0, l: 0 }): Stage {
+  const w = Math.max(1, vw - safe.l - safe.r);
+  const h = Math.max(1, vh - safe.t - safe.b);
+  const aspect = w / h;
+  const height = Math.min(STAGE_H, Math.max(STAGE_H_MIN, STAGE_W / aspect));
+  const width = Math.max(STAGE_W, height * aspect);
+  return {
+    width,
+    height,
+    scale: Math.min(w / width, h / height),
+    slot: fitSlot(height),
+    cx: safe.l + w / 2,
+    cy: safe.t + h / 2,
+  };
+}
+
+function useStage() {
+  const probe = useRef<HTMLDivElement>(null);
+  const [stage, setStage] = useState<Stage>(() => measureStage(STAGE_W, STAGE_H));
+  useLayoutEffect(() => {
+    const on = () => setStage(measureStage(window.innerWidth, window.innerHeight, safeArea(probe.current)));
     on();
+    // iPhone は向きを変えた直後のサイズが古いことがあるので、少し後にも測り直す
+    const later = () => setTimeout(on, 300);
     window.addEventListener("resize", on);
-    return () => window.removeEventListener("resize", on);
+    window.addEventListener("orientationchange", later);
+    return () => {
+      window.removeEventListener("resize", on);
+      window.removeEventListener("orientationchange", later);
+    };
   }, []);
-  return scale;
+  return { stage, probe };
 }
 
 export function Play() {
@@ -137,7 +185,18 @@ function DeckSelect() {
 }
 
 /** デッキを選ぶボタンの並び（CPU 戦とオンライン対戦で共通） */
-export function DeckGrid({ onPick }: { onPick: (deck: DeckId) => void }) {
+/**
+ * デッキを選ぶ。confirmLabel を渡すと、押してすぐには決めず、中身を見せて確かめてから onPick する
+ * （オンライン対戦は選んだらすぐ部屋ができるので、押し間違いを防ぐ）
+ */
+export function DeckGrid({
+  onPick,
+  confirmLabel,
+}: {
+  onPick: (deck: DeckId) => void;
+  confirmLabel?: string;
+}) {
+  const [pending, setPending] = useState<DeckId | null>(null);
   return (
     <div className="decks">
       {(Object.keys(DECK_INFO) as DeckId[]).map((id) => {
@@ -150,7 +209,7 @@ export function DeckGrid({ onPick }: { onPick: (deck: DeckId) => void }) {
             style={{
               background: `linear-gradient(125deg, ${a?.color}, ${a?.deep} 50%, ${b?.deep} 50%, ${b?.color})`,
             }}
-            onClick={() => onPick(id)}
+            onClick={() => (confirmLabel ? setPending(id) : onPick(id))}
           >
             <span className="deck-attrs">{DECK_ATTRS[id].join(" × ")}</span>
             <strong>{DECK_INFO[id].name}</strong>
@@ -158,6 +217,127 @@ export function DeckGrid({ onPick }: { onPick: (deck: DeckId) => void }) {
           </button>
         );
       })}
+      {pending && confirmLabel && (
+        <DeckConfirm
+          deck={pending}
+          label={confirmLabel}
+          onConfirm={() => {
+            setPending(null);
+            onPick(pending);
+          }}
+          onCancel={() => setPending(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/** デッキの確認（名前・属性・説明と、入っているカード） */
+function DeckConfirm({
+  deck,
+  label,
+  onConfirm,
+  onCancel,
+}: {
+  deck: DeckId;
+  label: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCancel();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+  const counts = new Map<string, number>();
+  for (const id of DECKS[deck]) counts.set(id, (counts.get(id) ?? 0) + 1);
+  const list = [...counts]
+    .map(([id, n]) => ({ card: CATALOG[id], n }))
+    .filter((x): x is { card: CardDef; n: number } => !!x.card)
+    .sort((x, y) => y.card.rarity - x.card.rarity || x.card.cost - y.card.cost);
+  const [a, b] = DECK_ATTRS[deck].map((x) => ATTR_META[x]);
+  return (
+    <div className="zoom-sheet deck-confirm" role="dialog" aria-modal="true" aria-label="デッキの確認">
+      <button type="button" className="zoom-sheet-bg" aria-label="選び直す" onClick={onCancel} />
+      <div className="deck-confirm-body">
+        <div
+          className="deck-confirm-head"
+          style={{
+            background: `linear-gradient(125deg, ${a?.color}, ${a?.deep} 50%, ${b?.deep} 50%, ${b?.color})`,
+          }}
+        >
+          <span className="deck-attrs">{DECK_ATTRS[deck].join(" × ")}</span>
+          <strong>{DECK_INFO[deck].name}</strong>
+          <span>{DECK_INFO[deck].text}</span>
+        </div>
+        <ul className="deck-confirm-list">
+          {list.map(({ card, n }) => (
+            <li key={card.id}>
+              <span className="dc-cost">{card.cost}</span>
+              <span className="dc-name">{card.name}</span>
+              <span className="dc-stars">{"★".repeat(card.rarity)}</span>
+              <span className="dc-n">×{n}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="deck-confirm-actions">
+          <button type="button" className="btn ghost" onClick={onCancel}>
+            選び直す
+          </button>
+          <button type="button" className="btn" onClick={onConfirm}>
+            {label}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** ターン終了の確認。まだ攻撃できるアイコンや、残っている話題力があれば添える */
+function EndTurnConfirm({
+  attackers,
+  mana,
+  onYes,
+  onNo,
+}: {
+  attackers: number;
+  mana: number;
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onNo();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onNo]);
+  const notes = [
+    attackers > 0 && `まだ攻撃できるアイコンが ${attackers} 体います`,
+    mana > 0 && `話題力が ${mana} 残っています`,
+  ].filter((x): x is string => !!x);
+  return (
+    <div
+      className="zoom-sheet end-confirm"
+      role="alertdialog"
+      aria-modal="true"
+      aria-label="ターン終了の確認"
+    >
+      <button type="button" className="zoom-sheet-bg" aria-label="やめる" onClick={onNo} />
+      <div className="end-confirm-body">
+        <p className="end-confirm-q">ターンを終了しますか？</p>
+        {notes.map((n) => (
+          <p key={n} className="end-confirm-note">
+            {n}
+          </p>
+        ))}
+        <div className="end-confirm-actions">
+          <button type="button" className="btn ghost" onClick={onNo}>
+            いいえ
+          </button>
+          <button type="button" className="btn" onClick={onYes}>
+            はい、終了する
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -201,7 +381,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
   const seen = useRef(0);
-  const scale = useStageScale();
+  const { stage, probe } = useStage();
+  /** ターン終了の確認を出しているか（押し間違いで終わらないように） */
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
   // 攻撃の演出を store に登録する（演出が終わってから state を進める）
   useEffect(() => {
@@ -291,7 +473,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             ? "使う相手を選んでください（光っているアイコン）"
             : "もう一度カードを押すと投稿します"
           : selection?.kind === "hand"
-            ? "出す枠を選んでください（もう一度カードを押すと空いている枠に出します）"
+            ? "出す枠を押してください（もう一度カードを押すと、選ぶのをやめます）"
             : attacking
               ? foeGuarded
                 ? "攻撃先を選んでください（ガードがいるので、ガードと晒し者しか攻撃できません）"
@@ -367,7 +549,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           if (!myTurn) return;
           if (inSheet) setHandOpen(false);
           if (selected && card.type === "post" && !card.target) return cast();
-          if (selected && card.type === "icon" && freeSlot >= 0) return play(freeSlot);
+          // アイコンは、出す枠を自分で選んだときだけ出す（もう一度押しても勝手に出さず、選ぶのをやめる）
           select(selected ? null : { kind: "hand", index: i });
         }}
         onPeek={() => setPeek(p)}
@@ -378,7 +560,20 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
 
   return (
     <div className="play-full">
-      <div className="stage" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
+      <div className="safe-probe" ref={probe} aria-hidden="true" />
+      <div
+        className="stage"
+        style={
+          {
+            left: stage.cx,
+            top: stage.cy,
+            width: stage.width,
+            height: stage.height,
+            transform: `translate(-50%, -50%) scale(${stage.scale})`,
+            "--slot": `${stage.slot}px`,
+          } as CSSProperties
+        }
+      >
         <div className="stage-grid">
           <div className="col-left">
             <PlayerBar
@@ -476,7 +671,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             <button
               type="button"
               className={`btn end-turn ${myTurn ? "now" : ""}`}
-              onClick={endTurn}
+              onClick={() => setConfirmEnd(true)}
               disabled={!myTurn}
             >
               ターン終了
@@ -550,6 +745,17 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         </div>
       )}
 
+      {confirmEnd && myTurn && (
+        <EndTurnConfirm
+          attackers={me.field.filter((u) => u && canUnitAttack(game, u)).length}
+          mana={me.mana}
+          onYes={() => {
+            setConfirmEnd(false);
+            endTurn();
+          }}
+          onNo={() => setConfirmEnd(false)}
+        />
+      )}
       {zoom && CATALOG[zoom.id] && (
         <CardZoom card={CATALOG[zoom.id] as CardDef} view={zoom.view} onClose={() => setZoom(null)} />
       )}
