@@ -45,13 +45,9 @@ resource "google_artifact_registry_repository" "images" {
   depends_on    = [google_project_service.apis]
 }
 
-# DB 接続文字列（値は Secret Manager の画面か gcloud で入れる）
-resource "google_secret_manager_secret" "database_url" {
+# DB 接続文字列。秘密の値なので Terraform では作らず、最初の準備（infra/bootstrap.sh）で人が入れる
+data "google_secret_manager_secret" "database_url" {
   secret_id = "database-url"
-  replication {
-    auto {}
-  }
-  depends_on = [google_project_service.apis]
 }
 
 # API が動くときのサービスアカウント
@@ -61,7 +57,7 @@ resource "google_service_account" "api" {
 }
 
 resource "google_secret_manager_secret_iam_member" "api_reads_db_url" {
-  secret_id = google_secret_manager_secret.database_url.id
+  secret_id = data.google_secret_manager_secret.database_url.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.api.email}"
 }
@@ -100,7 +96,7 @@ resource "google_cloud_run_v2_service" "api" {
         name = "DATABASE_URL"
         value_source {
           secret_key_ref {
-            secret  = google_secret_manager_secret.database_url.secret_id
+            secret  = data.google_secret_manager_secret.database_url.secret_id
             version = "latest"
           }
         }
