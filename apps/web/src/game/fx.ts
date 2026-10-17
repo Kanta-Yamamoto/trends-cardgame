@@ -165,8 +165,10 @@ export async function animateAttack(
 
   const a = atkEl.getBoundingClientRect();
   const d = defEl.getBoundingClientRect();
-  const dx = (center(d).x - center(a).x) * 0.78;
-  const dy = (center(d).y - center(a).y) * 0.78;
+  // 対戦画面は拡大・縮小しているので、画面上の距離を舞台の中の距離に直す
+  const scale = atkEl.offsetWidth > 0 ? a.width / atkEl.offsetWidth : 1;
+  const dx = ((center(d).x - center(a).x) * 0.78) / scale;
+  const dy = ((center(d).y - center(a).y) * 0.78) / scale;
   const back = { x: -dx * 0.08, y: -dy * 0.08 };
 
   atkEl.style.zIndex = "6";

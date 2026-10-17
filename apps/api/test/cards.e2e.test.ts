@@ -35,9 +35,27 @@ describe("cards API", () => {
     const res = await request(app.getHttpServer()).get("/cards").expect(200);
     const ids = CARDS.map((c) => c.id).sort();
     expect(res.body.map((c: { id: string }) => c.id)).toEqual(ids);
-    expect(res.body[1]).toMatchObject({ name: "レン", cost: 6, attack: 5, hp: 4, keywords: ["速攻"] });
-    // イラストがまだないカードは art が null
-    expect(res.body.find((c: { id: string }) => c.id === "l1")).toMatchObject({ art: null, theme: "light" });
+    const ren = res.body.find((c: { id: string }) => c.id === "c2");
+    expect(ren).toMatchObject({
+      name: "レン",
+      epithet: "炎上系配信者",
+      type: "icon",
+      rarity: 5,
+      cost: 6,
+      attack: 5,
+      hp: 4,
+      attributes: ["炎上"],
+      keywords: ["連撃"],
+    });
+    expect(ren.dark).toMatchObject({ name: "闇堕ちレン", attack: 7, hp: 3 });
+    // 投稿は攻撃力・体力を持たず、イラストがまだないカードは art が null
+    expect(res.body.find((c: { id: string }) => c.id === "f5")).toMatchObject({
+      type: "post",
+      attack: null,
+      hp: null,
+      art: null,
+      target: "enemyIcon",
+    });
   });
 
   it("GET /cards/:id", async () => {

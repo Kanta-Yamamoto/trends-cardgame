@@ -13,7 +13,7 @@ import {
   type UnitView,
   viewUnit,
 } from "@trends/game-core";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AttrChips } from "../cards/AttrChips";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
@@ -66,17 +66,18 @@ function describe(e: GameEvent): string {
   }
 }
 
-/** 狭い画面ではカードを押したときに大きく表示するシートを出す */
-function useNarrow() {
-  const q = "(max-width: 999px)";
-  const [narrow, setNarrow] = useState(() => typeof window !== "undefined" && window.matchMedia(q).matches);
+/** 画面は 960×540（スマホの横画面と同じ 16:9）で作り、ウィンドウに合わせて拡大・縮小する */
+const STAGE_W = 960;
+const STAGE_H = 540;
+function useStageScale() {
+  const [scale, setScale] = useState(1);
   useEffect(() => {
-    const m = window.matchMedia(q);
-    const on = () => setNarrow(m.matches);
-    m.addEventListener("change", on);
-    return () => m.removeEventListener("change", on);
+    const on = () => setScale(Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H));
+    on();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
   }, []);
-  return narrow;
+  return scale;
 }
 
 export function Play() {
@@ -164,11 +165,10 @@ function Board() {
     quit,
   } = useGame();
   const [peek, setPeek] = useState<Peek | null>(null);
-  const [sheet, setSheet] = useState(false);
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
   const seen = useRef(0);
-  const narrow = useNarrow();
+  const scale = useStageScale();
 
   // 攻撃の演出を store に登録する（演出が終わってから state を進める）
   useEffect(() => {
@@ -231,11 +231,6 @@ function Board() {
   const freeSlot = me.field.findIndex((u) => !u);
   const foeGuarded = foe.field.some((u) => u && viewUnit(game, CPU, u, CATALOG).guard);
   const peekCard = peek ? CATALOG[peek.id] : null;
-  const show = (p: Peek, openSheet: boolean) => {
-    setPeek(p);
-    if (openSheet && narrow) setSheet(true);
-  };
-
   const hint = game.winner
     ? ""
     : game.active === CPU
@@ -254,51 +249,6 @@ function Board() {
                 : "攻撃先を選んでください（光っているところ）"
               : "手札を選んで場に出す・投稿する／攻撃できるアイコンを選んで攻撃";
 
-  // シートの中の操作（狭い画面用）
-  const sheetAction = (() => {
-    if (!peek || !myTurn || !peekCard) return null;
-    if (peek.where === "hand") {
-      const cost = peekCard.cost;
-      if (peekCard.type === "post") {
-        const needTarget = !!peekCard.target;
-        const hasTarget = castTargets(game, ME, peek.id, CATALOG).length > 0;
-        const ok = cost <= me.mana && (!needTarget || hasTarget);
-        return {
-          label: !ok
-            ? cost > me.mana
-              ? `話題力が足りません（必要 ${cost}）`
-              : "使える相手がいません"
-            : needTarget
-              ? "使う相手を選ぶ"
-              : "投稿する",
-          disabled: !ok,
-          run: () => {
-            select({ kind: "hand", index: peek.index });
-            if (!needTarget) useGame.getState().cast();
-          },
-        };
-      }
-      const ok = cost <= me.mana && freeSlot >= 0;
-      return {
-        label: ok ? "場に出す" : freeSlot < 0 ? "場がいっぱいです" : `話題力が足りません（必要 ${cost}）`,
-        disabled: !ok,
-        run: () => {
-          select({ kind: "hand", index: peek.index });
-          useGame.getState().play(freeSlot);
-        },
-      };
-    }
-    const u = peek.where === "mine" ? me.field[peek.index] : null;
-    if (u && canUnitAttack(game, u)) {
-      return {
-        label: "攻撃先を選ぶ",
-        disabled: false,
-        run: () => select({ kind: "attacker", slot: peek.index }),
-      };
-    }
-    return null;
-  })();
-
   const unitCard = (owner: PlayerId, slot: number, u: Unit) => {
     const card = CATALOG[u.cardId] as CardDef;
     const view = viewUnit(game, owner, u, CATALOG);
@@ -315,7 +265,7 @@ function Board() {
           view={view}
           className={`unit foe-unit enter ${hit || castable ? "targetable" : ""}`}
           onClick={() =>
-            castable ? cast({ side: "enemy", slot }) : hit ? attack({ kind: "unit", slot }) : show(p, true)
+            castable ? cast({ side: "enemy", slot }) : hit ? attack({ kind: "unit", slot }) : setPeek(p)
           }
           onPeek={() => setPeek(p)}
         />
@@ -334,11 +284,8 @@ function Board() {
         onClick={() => {
           if (castable) return cast({ side: "ally", slot });
           if (selected) return select(null);
-          if (ready && !narrow) {
-            setPeek(p);
-            return select({ kind: "attacker", slot });
-          }
-          show(p, true);
+          setPeek(p);
+          if (ready) select({ kind: "attacker", slot });
         }}
         onPeek={() => setPeek(p)}
       >
@@ -348,170 +295,154 @@ function Board() {
   };
 
   return (
-    <div className="arena">
-      <div className={`board turn-${game.active === ME ? "me" : "foe"}`}>
-        <PlayerBar
-          side="foe"
-          name="CPU"
-          lp={foe.lp}
-          mana={foe.mana}
-          maxMana={foe.maxMana}
-          hand={foe.hand.length}
-          active={game.active === CPU}
-          guarded={foeGuarded}
-          targetable={attacking && canHit({ kind: "leader" })}
-          onClick={() => attack({ kind: "leader" })}
-          piles={
-            <Piles owner={CPU} deck={foe.deck.length} trash={foe.trash} onTrash={() => setTrashView(CPU)} />
-          }
-        />
-        <div className="row">
-          {SLOT_KEYS.map((key, slot) => {
-            const u = foe.field[slot];
-            return u ? (
-              unitCard(CPU, slot, u)
-            ) : (
-              <div key={key} className={`slot ${slot === 2 ? "center" : ""}`} />
-            );
-          })}
-        </div>
-        <div className="midline">
-          {!game.winner && (
-            <span className={`turn-pill ${game.active === ME ? "mine" : "foe"}`}>
-              {game.active === ME ? "あなたのターン" : "相手のターン"}
-            </span>
-          )}
-          <p className="hint" aria-live="polite">
-            {hint}
-          </p>
-        </div>
-        <div className="row">
-          {SLOT_KEYS.map((key, slot) => {
-            const u = me.field[slot];
-            if (u) return unitCard(ME, slot, u);
-            const drop = myTurn && selection?.kind === "hand" && !postSelected;
-            return (
-              <button
-                key={key}
-                type="button"
-                className={`slot ${slot === 2 ? "center" : ""} ${drop ? "droppable" : ""}`}
-                disabled={!drop}
-                aria-label={`空き枠 ${slot + 1}${slot === 2 ? "（センター）" : ""}`}
-                onClick={() => play(slot)}
-              />
-            );
-          })}
-        </div>
-        <PlayerBar
-          side="me"
-          name="あなた"
-          lp={me.lp}
-          mana={me.mana}
-          maxMana={me.maxMana}
-          hand={me.hand.length}
-          active={game.active === ME}
-          piles={<Piles owner={ME} deck={me.deck.length} trash={me.trash} onTrash={() => setTrashView(ME)} />}
-        >
-          <button
-            type="button"
-            className={`btn end-turn ${myTurn ? "now" : ""}`}
-            onClick={endTurn}
-            disabled={!myTurn}
-          >
-            ターン終了
-          </button>
-        </PlayerBar>
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
-        )}
-        <div className="hand" data-hand={ME}>
-          {me.hand.map((id, i) => {
-            const card = CATALOG[id];
-            if (!card) return null;
-            const usable =
-              myTurn &&
-              card.cost <= me.mana &&
-              (card.type === "icon"
-                ? freeSlot >= 0
-                : !card.target || castTargets(game, ME, id, CATALOG).length > 0);
-            const selected = selection?.kind === "hand" && selection.index === i;
-            const p: Peek = { id, where: "hand", index: i };
-            return (
-              <MiniCard
-                // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが手札に複数あり得るので位置で区別する
-                key={`${id}-${i}`}
-                inHand
-                card={card}
-                cost={card.cost}
-                className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""}`}
-                onClick={() => {
-                  if (narrow) return show(p, true);
-                  setPeek(p);
-                  if (!myTurn) return;
-                  if (selected && card.type === "post" && !card.target) return cast();
-                  if (selected && card.type === "icon" && freeSlot >= 0) return play(freeSlot);
-                  select(selected ? null : { kind: "hand", index: i });
-                }}
-                onPeek={() => setPeek(p)}
-              />
-            );
-          })}
-        </div>
-      </div>
+    <div className="play-full">
+      <div className="stage" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
+        <div className="stage-grid">
+          <div className="col-left">
+            <PlayerBar
+              side="foe"
+              name="CPU"
+              lp={foe.lp}
+              mana={foe.mana}
+              maxMana={foe.maxMana}
+              hand={foe.hand.length}
+              active={game.active === CPU}
+              guarded={foeGuarded}
+              targetable={attacking && canHit({ kind: "leader" })}
+              onClick={() => attack({ kind: "leader" })}
+              piles={
+                <Piles
+                  owner={CPU}
+                  deck={foe.deck.length}
+                  trash={foe.trash}
+                  onTrash={() => setTrashView(CPU)}
+                />
+              }
+            />
+            {!game.winner && (
+              <span className={`turn-pill ${game.active === ME ? "mine" : "foe"}`}>
+                {game.active === ME ? "あなたのターン" : "相手のターン"}
+              </span>
+            )}
+            <PlayerBar
+              side="me"
+              name="あなた"
+              lp={me.lp}
+              mana={me.mana}
+              maxMana={me.maxMana}
+              hand={me.hand.length}
+              active={game.active === ME}
+              piles={
+                <Piles owner={ME} deck={me.deck.length} trash={me.trash} onTrash={() => setTrashView(ME)} />
+              }
+            />
+          </div>
 
-      <aside className="side">
-        <div className="peek">
-          {peekCard ? (
-            <PeekCard card={peekCard} view={peek?.view} />
-          ) : (
-            <p className="muted">カードに触れると、ここに大きく表示します</p>
-          )}
-        </div>
-        <ol className="log" aria-label="対戦の記録">
-          {log
-            .slice()
-            .reverse()
-            .map(({ id, e }) => (
-              <li key={id} className={`ev-${e.type}`}>
-                {describe(e)}
-              </li>
-            ))}
-        </ol>
-        <button type="button" className="btn ghost" onClick={quit}>
-          デッキ選択に戻る
-        </button>
-      </aside>
-
-      {sheet && narrow && peekCard && (
-        <div className="sheet" role="dialog" aria-modal="true" aria-label={peekCard.name}>
-          <button type="button" className="sheet-bg" aria-label="閉じる" onClick={() => setSheet(false)} />
-          <div className="sheet-body">
-            <div className="sheet-card">
-              <PeekCard card={peekCard} view={peek?.view} idle />
+          <div className={`col-center board turn-${game.active === ME ? "me" : "foe"}`}>
+            <div className="row">
+              {SLOT_KEYS.map((key, slot) => {
+                const u = foe.field[slot];
+                return u ? (
+                  unitCard(CPU, slot, u)
+                ) : (
+                  <div key={key} className={`slot ${slot === 2 ? "center" : ""}`} />
+                );
+              })}
             </div>
-            <div className="sheet-actions">
-              {sheetAction && (
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={sheetAction.disabled}
-                  onClick={() => {
-                    sheetAction.run();
-                    setSheet(false);
-                  }}
-                >
-                  {sheetAction.label}
-                </button>
-              )}
-              <button type="button" className="btn ghost" onClick={() => setSheet(false)}>
-                閉じる
-              </button>
+            <p
+              className={`hint ${error ? "is-error" : ""}`}
+              aria-live="polite"
+              role={error ? "alert" : undefined}
+            >
+              {error ?? hint}
+            </p>
+            <div className="row">
+              {SLOT_KEYS.map((key, slot) => {
+                const u = me.field[slot];
+                if (u) return unitCard(ME, slot, u);
+                const drop = myTurn && selection?.kind === "hand" && !postSelected;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`slot ${slot === 2 ? "center" : ""} ${drop ? "droppable" : ""}`}
+                    disabled={!drop}
+                    aria-label={`空き枠 ${slot + 1}${slot === 2 ? "（センター）" : ""}`}
+                    onClick={() => play(slot)}
+                  />
+                );
+              })}
+            </div>
+            <div className="hand" data-hand={ME} style={{ "--n": me.hand.length } as CSSProperties}>
+              {me.hand.map((id, i) => {
+                const card = CATALOG[id];
+                if (!card) return null;
+                const usable =
+                  myTurn &&
+                  card.cost <= me.mana &&
+                  (card.type === "icon"
+                    ? freeSlot >= 0
+                    : !card.target || castTargets(game, ME, id, CATALOG).length > 0);
+                const selected = selection?.kind === "hand" && selection.index === i;
+                const p: Peek = { id, where: "hand", index: i };
+                return (
+                  <MiniCard
+                    // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが手札に複数あり得るので位置で区別する
+                    key={`${id}-${i}`}
+                    inHand
+                    card={card}
+                    cost={card.cost}
+                    className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""}`}
+                    onClick={() => {
+                      setPeek(p);
+                      if (!myTurn) return;
+                      if (selected && card.type === "post" && !card.target) return cast();
+                      if (selected && card.type === "icon" && freeSlot >= 0) return play(freeSlot);
+                      select(selected ? null : { kind: "hand", index: i });
+                    }}
+                    onPeek={() => setPeek(p)}
+                  />
+                );
+              })}
             </div>
           </div>
+
+          <div className="col-right">
+            <div className="peek">
+              {peekCard ? (
+                <PeekCard card={peekCard} view={peek?.view} />
+              ) : (
+                <p className="muted">カードを押すと、ここに大きく表示します</p>
+              )}
+            </div>
+            <button
+              type="button"
+              className={`btn end-turn ${myTurn ? "now" : ""}`}
+              onClick={endTurn}
+              disabled={!myTurn}
+            >
+              ターン終了
+            </button>
+            <details className="log-box">
+              <summary>対戦の記録</summary>
+              <ol className="log" aria-label="対戦の記録">
+                {log
+                  .slice()
+                  .reverse()
+                  .map(({ id, e }) => (
+                    <li key={id} className={`ev-${e.type}`}>
+                      {describe(e)}
+                    </li>
+                  ))}
+              </ol>
+            </details>
+            <button type="button" className="btn ghost quit" onClick={quit}>
+              デッキ選択に戻る
+            </button>
+          </div>
         </div>
-      )}
+      </div>
+      <p className="rotate-hint">スマホは横向きにすると大きく遊べます</p>
 
       {banner && (
         <div
@@ -561,12 +492,12 @@ function Board() {
 }
 
 /** 大きく表示するカード。場のアイコンなら今の状態（闇堕ち・ダメージ・強化）も添える */
-function PeekCard({ card, view, idle = false }: { card: CardDef; view?: UnitView; idle?: boolean }) {
+function PeekCard({ card, view }: { card: CardDef; view?: UnitView }) {
   const dark = view?.unit.dark && card.dark;
   return (
     <>
       <div className={dark ? "peek-dark" : undefined}>
-        <HoloCard key={card.id} card={card} idle={idle} />
+        <HoloCard key={card.id} card={card} idle={false} />
       </div>
       {view && (
         <div className="peek-note">
