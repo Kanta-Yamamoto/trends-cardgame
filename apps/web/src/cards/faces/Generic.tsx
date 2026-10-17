@@ -31,9 +31,7 @@ export function GenericFace({ card }: { card: CardDef }) {
         <AttrChips card={card} />
         <p className="kg-effect">{card.effect ? <EffectText text={card.effect} /> : <i>効果なし</i>}</p>
         {card.dark && (
-          <p className="kg-darktext">
-            闇堕ち：一度倒されたとき、裏返って「{card.dark.name}」になる（姿は裏返るまで秘密）
-          </p>
+          <p className="kg-darktext">闇堕ち：一度倒されたとき、裏返って別の姿になる（姿は裏返るまで秘密）</p>
         )}
         {card.type === "icon" && (
           <span className="kg-power">

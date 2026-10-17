@@ -1,0 +1,139 @@
+/* ★4〜5 の共通キラデザイン（.kr）。色は --c（属性の色）/ --c-deep、絵は --art / --subject */
+.kr {
+  --f-name: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --f-num: "Cinzel", "Times New Roman", serif;
+  --win: inset(4.4% 5.2% 4.4% 5.2% round 2.4%);
+  --rainbow: repeating-linear-gradient(118deg, #ff7ad9 0%, #ffd36e 4%, #7dffb0 8%, #6ec9ff 12%, #b48cff 16%, #ff7ad9 20%);
+
+  .card {
+    --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; --nx: 0; --ny: 0; --g: 0;
+    position: relative; width: 100%; aspect-ratio: 63 / 88; border-radius: 4.2% / 3%;
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transition: transform 0.12s ease-out;
+    box-shadow: 0 30px 60px -20px #000a, 0 0 0 1px #ffffff40;
+    overflow: hidden; isolation: isolate; color: #fff; background: #111;
+  }
+  .card-inner { position: absolute; inset: 0; font-size: calc(var(--w, 360px) / 24); }
+  .layer { position: absolute; inset: 0; }
+
+  /* 絵の窓 */
+  .kr-base { background: radial-gradient(120% 80% at 50% 20%, var(--c), var(--c-deep)); }
+  .kr-win { clip-path: var(--win); }
+  .kr-art {
+    background: var(--art) center 22% / cover no-repeat;
+    transform: translate(calc(var(--nx) * -7px), calc(var(--ny) * -7px)) scale(1.06);
+  }
+  .kr-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, #0008 100%); }
+  /* 虹色のホロ（傾けると流れる） */
+  .kr-holo {
+    background: var(--rainbow); background-size: 260% 260%; background-position: var(--mx) var(--my);
+    mix-blend-mode: color-dodge; opacity: calc(0.08 + var(--g) * 0.18);
+  }
+  /* ラメ（★5 だけ） */
+  .kr-glitter { display: none; }
+  .kr-ssr .kr-glitter {
+    display: block;
+    background:
+      radial-gradient(circle, #fff 0 1px, transparent 1.6px) 0 0 / 23px 23px,
+      radial-gradient(circle, #fff 0 0.8px, transparent 1.4px) 11px 7px / 17px 17px,
+      radial-gradient(circle, #fff8 0 1.2px, transparent 2px) 5px 13px / 31px 31px;
+    background-position: calc(var(--nx) * 12px) calc(var(--ny) * 12px);
+    mix-blend-mode: screen; opacity: calc(0.15 + var(--g) * 0.6);
+    mask-image: radial-gradient(55% 45% at var(--mx) var(--my), #000, transparent);
+  }
+
+  /* 枠：属性の色の金属。★5 は虹色の箔がのる */
+  .kr-frame {
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--c) 35%, white), var(--c) 30%, var(--c-deep) 50%, var(--c2) 70%, color-mix(in srgb, var(--c2) 40%, white));
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 4.4%, 5.2% 4.4%, 5.2% 95.6%, 94.8% 95.6%, 94.8% 4.4%, 0 4.4%);
+  }
+  .kr-frame::before {
+    content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(62deg, #ffffff30 0 2px, transparent 2px 5px);
+  }
+  .kr-ssr .kr-frame::after {
+    content: ""; position: absolute; inset: 0;
+    background: var(--rainbow); background-size: 240% 240%; background-position: var(--mx) var(--my);
+    mix-blend-mode: overlay; opacity: calc(0.35 + var(--g) * 0.4);
+  }
+  .kr-line {
+    inset: 4.4% 5.2%; border-radius: 2.4%; pointer-events: none;
+    box-shadow: 0 0 0 1.5px #ffffffcc, 0 0 0 3px var(--c-deep), 0 0 0 4px #ffffff80;
+  }
+
+  /* 切り抜いた人物：枠の上にはみ出して立体的に見せる */
+  .kr-subject {
+    background: var(--subject) center 22% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 7px), calc(var(--ny) * 7px)) scale(1.06);
+    filter: drop-shadow(0 6px 10px #0008);
+    pointer-events: none;
+  }
+  .kr-subject-holo {
+    mask: var(--subject) center 22% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 7px), calc(var(--ny) * 7px)) scale(1.06);
+    background: var(--rainbow); background-size: 260% 260%; background-position: var(--mx) var(--my);
+    mix-blend-mode: soft-light; opacity: calc(0.1 + var(--g) * 0.3); pointer-events: none;
+  }
+  .kr-sr .kr-subject-holo { display: none; }
+
+  /* コスト・★ */
+  .kr-cost {
+    position: absolute; left: 2.6%; top: 1.8%; width: 16.5%; aspect-ratio: 1; border-radius: 50%; z-index: 3;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 35% 30%, #fff, color-mix(in srgb, var(--c) 40%, white) 45%, var(--c) 80%, var(--c-deep));
+    box-shadow: 0 0 0 0.12em #fff, 0 0 0 0.24em var(--c-deep), 0 0.4em 0.8em -0.2em #000a;
+  }
+  .kr-cost b { font: 800 2.3em/1 var(--f-num); color: var(--c-deep); text-shadow: 0 1px 0 #fff; }
+  .kr-rarity {
+    position: absolute; right: 7%; top: 6%; z-index: 3; font-size: 0.95em; letter-spacing: 0.05em;
+    padding: 0.3em 0.6em; border-radius: 2em; color: #ffe27a;
+    background: #0009; box-shadow: 0 0 0 1px #ffe27a80; text-shadow: 0 0 0.4em #ffcf4a;
+  }
+  .kr-dark {
+    position: absolute; right: 7%; top: 12.5%; z-index: 3; font-size: 0.8em; font-weight: 800;
+    padding: 0.2em 0.6em; border-radius: 99px; background: #1a0d24; color: #d9a8ff; box-shadow: 0 0 0 1px #b06bff;
+  }
+
+  /* 名前と効果：絵を隠しすぎないよう、下からのグラデーションと文字の影で読ませる */
+  .kr-plate {
+    position: absolute; left: 5.2%; right: 5.2%; bottom: 4.4%; z-index: 2;
+    padding: 2.2em 0.9em 0.7em; display: grid; gap: 0.35em;
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, color-mix(in srgb, var(--c-deep) 65%, #000) 72%, transparent) 2.4em);
+    border-radius: 0 0 0.6em 0.6em;
+    text-shadow: 0 0.05em 0.15em #000, 0 0 0.5em #000c;
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  .kr-name { display: grid; justify-items: center; gap: 0.15em; text-align: center; }
+  .kr-type { font-size: 0.66em; font-weight: 800; letter-spacing: 0.12em; opacity: 0.8; }
+  .kr-epi { font-size: 0.8em; opacity: 0.85; }
+  .kr-name h3 { margin: 0; font: 800 1.9em/1.1 var(--f-name); letter-spacing: 0.04em; }
+  /* ★5 の名前は箔押し */
+  .kr-ssr .kr-name h3 {
+    background: linear-gradient(100deg, #fff 20%, color-mix(in srgb, var(--c) 50%, white) 40%, #fff 50%, #ffe9a8 65%, #fff 80%);
+    background-size: 200% 100%; background-position: var(--mx) 0;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0.06em 0.1em #000) drop-shadow(0 0 0.4em #000a);
+    text-shadow: none;
+  }
+  .kr-box { display: grid; gap: 0.35em; justify-items: center; }
+  .kr-effect { margin: 0; font-size: 0.92em; line-height: 1.5; text-align: center; }
+  .kr-effect .kw { color: #ffe27a; font-weight: 800; }
+  .kr-darktext { margin: 0; font-size: 0.75em; line-height: 1.4; color: #d9a8ff; text-align: center; }
+  .kr-power { justify-self: end; display: flex; }
+
+  .kr-glare {
+    background: radial-gradient(45% 35% at var(--mx) var(--my), #ffffff40, transparent 70%);
+    mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.7); pointer-events: none;
+  }
+
+  /* 一覧用：名前と数値だけ */
+  .card.is-compact .kr-type,
+  .card.is-compact .kr-epi,
+  .card.is-compact .kr-effect,
+  .card.is-compact .kr-darktext { display: none; }
+  /* 押して文字を隠す */
+  .card.text-hidden .kr-plate { opacity: 0; transform: translateY(15%); pointer-events: none; }
+  /* 動かないカードはラメを控えめに固定 */
+  .card.is-still .kr-glitter { mask-image: none; opacity: 0.12; }
+}

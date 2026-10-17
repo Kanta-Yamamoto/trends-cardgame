@@ -2,6 +2,7 @@ import type { CardDef } from "@trends/cards";
 import { type ComponentType, useEffect, useRef } from "react";
 import { GenericFace } from "./faces/Generic";
 import { MinamoFace } from "./faces/Minamo";
+import { RareFace } from "./faces/Rare";
 import { RenFace } from "./faces/Ren";
 import { ShiroganeFace } from "./faces/Shirogane";
 
@@ -11,8 +12,9 @@ const FACES: Record<string, { cls: string; Face: ComponentType<{ card: CardDef }
   c3: { cls: "k3", Face: MinamoFace },
 };
 
-/** 専用デザインがないカードはテーマ色の共通デザインで描く */
+/** 専用デザインがないカードは、★4以上なら共通のキラデザイン、それ以外は共通デザインで描く */
 const GENERIC = { cls: "kg", Face: GenericFace };
+const RARE = { cls: "kr", Face: RareFace };
 
 const clamp = (v: number) => Math.max(-1, Math.min(1, v));
 
@@ -59,7 +61,7 @@ export function HoloCard({
   const live = interactive && card.rarity >= KIRA_RARITY;
   const cardRef = useRef<HTMLDivElement>(null);
   const lastMove = useRef(0);
-  const face = FACES[card.id] ?? GENERIC;
+  const face = FACES[card.id] ?? (card.rarity >= KIRA_RARITY ? RARE : GENERIC);
 
   useEffect(() => {
     const el = cardRef.current;
