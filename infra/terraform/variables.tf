@@ -35,3 +35,9 @@ variable "monthly_budget_jpy" {
   type    = number
   default = 3000
 }
+
+variable "google_client_id" {
+  type        = string
+  description = "Google ログインの OAuth クライアント ID（Google Cloud コンソールの「認証情報」で作る。公開してよい値）"
+  default     = ""
+}

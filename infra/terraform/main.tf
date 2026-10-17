@@ -53,6 +53,15 @@ resource "google_secret_manager_secret" "database_url" {
   depends_on = [google_project_service.apis]
 }
 
+# ログインのトークンに署名する鍵（値は `openssl rand -base64 48` などで作って入れる）
+resource "google_secret_manager_secret" "session_secret" {
+  secret_id = "session-secret"
+  replication {
+    auto {}
+  }
+  depends_on = [google_project_service.apis]
+}
+
 # API が動くときのサービスアカウント
 resource "google_service_account" "api" {
   account_id   = "trends-api"
@@ -65,6 +74,12 @@ resource "google_secret_manager_secret_iam_member" "api_reads_db_url" {
   member    = "serviceAccount:${google_service_account.api.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "api_reads_session_secret" {
+  secret_id = google_secret_manager_secret.session_secret.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.api.email}"
+}
+
 resource "google_cloud_run_v2_service" "api" {
   name                = "trends-api"
   location            = var.region
@@ -73,10 +88,15 @@ resource "google_cloud_run_v2_service" "api" {
 
   template {
     service_account = google_service_account.api.email
+    # オンライン対戦（WebSocket）の部屋は1台のメモリで管理しているので、台数は1に固定する。
+    # 増やすときは Socket.IO の Redis アダプターなどで台数間をつなぐ
     scaling {
       min_instance_count = 0
-      max_instance_count = 2
+      max_instance_count = 1
     }
+    # 同じ人の接続を同じ台に、WebSocket は最長1時間つなぎっぱなしにできるように
+    session_affinity = true
+    timeout          = "3600s"
     containers {
       image = var.api_image
       ports {
@@ -85,6 +105,19 @@ resource "google_cloud_run_v2_service" "api" {
       env {
         name  = "CORS_ORIGIN"
         value = var.cors_origin
+      }
+      env {
+        name  = "GOOGLE_CLIENT_ID"
+        value = var.google_client_id
+      }
+      env {
+        name = "SESSION_SECRET"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.session_secret.secret_id
+            version = "latest"
+          }
+        }
       }
       env {
         name = "DATABASE_URL"

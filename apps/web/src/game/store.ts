@@ -48,7 +48,24 @@ export interface LogEntry {
   e: GameEvent;
 }
 
+/** オンライン対戦で、サーバーから届く1手分 */
+export interface RemoteUpdate {
+  action: Action;
+  events: GameEvent[];
+  state: GameState;
+}
+
+/** オンライン対戦のつなぎ口（送った操作が反則ならエラー文を返す） */
+export interface RemoteLink {
+  send: (a: Action) => Promise<string | null>;
+  resign: () => void;
+}
+
 interface GameStore {
+  /** cpu＝CPU と対戦／online＝ほかの人と対戦（状態はサーバーから届く） */
+  mode: "cpu" | "online";
+  /** 相手の名前 */
+  foeName: string;
   /** 自分が選んだデッキ。null ならデッキ選択画面 */
   deck: DeckId | null;
   game: GameState | null;
@@ -69,6 +86,11 @@ interface GameStore {
   cast: (target?: CastTarget) => void;
   attack: (target: AttackTarget) => void;
   endTurn: () => void;
+  /** オンライン対戦を始める（再接続のときも、届いた状態で呼び直す） */
+  startOnline: (o: { deck: DeckId; foeName: string; state: GameState; link: RemoteLink }) => void;
+  /** サーバーから届いた1手を反映する（攻撃なら演出のあとで） */
+  receive: (u: RemoteUpdate) => void;
+  resign: () => void;
 }
 
 /** start / quit のたびに増やし、古い CPU の処理を止める */
@@ -88,10 +110,51 @@ export const setPresenter = (p: Presenter | null) => {
   presenter = p;
 };
 
+let link: RemoteLink | null = null;
+/** サーバーから届いた手を、順番に1つずつ反映する */
+let inbox: RemoteUpdate[] = [];
+let draining = false;
+
 export const useGame = create<GameStore>((set, get) => {
+  const appendLog = (events: GameEvent[]) => {
+    const log = get().log;
+    let id = log.at(-1)?.id ?? 0;
+    return [...log, ...events.map((e) => ({ id: ++id, e }))].slice(-60);
+  };
+
+  const drain = async () => {
+    if (draining) return;
+    draining = true;
+    const my = runId;
+    while (inbox.length > 0 && my === runId) {
+      const u = inbox.shift() as RemoteUpdate;
+      const g = get().game;
+      if (u.action.type === "attack" && presenter && g) {
+        set({ animating: true });
+        await presenter.beforeAttack(g, u.action);
+        if (my !== runId) break;
+      }
+      set({ game: u.state, log: appendLog(u.events), animating: false });
+    }
+    draining = false;
+  };
+
+  /** オンライン：操作をサーバーに送る。結果は receive で届く */
+  const sendRemote = async (a: Action) => {
+    if (!link) return false;
+    set({ cpuBusy: true, selection: null, error: null });
+    const error = await link.send(a);
+    set({ cpuBusy: false, error });
+    return !error;
+  };
+
   const dispatch = (a: Action): boolean => {
     const game = get().game;
     if (!game) return false;
+    if (get().mode === "online") {
+      void sendRemote(a);
+      return true;
+    }
     try {
       const { state, events } = applyAction(game, a, CATALOG);
       const log = get().log;
@@ -143,6 +206,8 @@ export const useGame = create<GameStore>((set, get) => {
   };
 
   return {
+    mode: "cpu",
+    foeName: "CPU",
     deck: null,
     game: null,
     log: [],
@@ -153,12 +218,16 @@ export const useGame = create<GameStore>((set, get) => {
     animating: false,
     start: (deck, opts = {}) => {
       runId++;
+      link = null;
+      inbox = [];
       const seed = opts.seed ?? Math.floor(Math.random() * 1e9);
       const first = opts.first ?? (seed % 2 === 0 ? ME : CPU);
       const others = (Object.keys(DECKS) as DeckId[]).filter((d) => d !== deck);
       const cpuDeck = others[seed % others.length] as DeckId;
       const game = createGame({ decks: { [ME]: DECKS[deck], [CPU]: DECKS[cpuDeck] } as never, seed, first });
       set({
+        mode: "cpu",
+        foeName: "CPU",
         deck,
         game,
         log: [{ id: 1, e: { type: "turnStarted", player: first, turn: 1, mana: game.players[first].mana } }],
@@ -171,7 +240,11 @@ export const useGame = create<GameStore>((set, get) => {
     },
     quit: () => {
       runId++;
+      link = null;
+      inbox = [];
       set({
+        mode: "cpu",
+        foeName: "CPU",
         deck: null,
         game: null,
         log: [],
@@ -197,7 +270,8 @@ export const useGame = create<GameStore>((set, get) => {
       const game = get().game;
       if (sel?.kind !== "attacker" || get().cpuBusy || get().animating || !game) return;
       const a: Action = { type: "attack", player: ME, from: sel.slot, target };
-      if (!presenter) {
+      // オンラインでは、演出はサーバーから結果が届いてから
+      if (!presenter || get().mode === "online") {
         dispatch(a);
         set({ selection: null });
         return;
@@ -213,7 +287,32 @@ export const useGame = create<GameStore>((set, get) => {
     endTurn: () => {
       if (get().cpuBusy || get().animating || !dispatch({ type: "endTurn", player: ME })) return;
       set({ selection: null });
-      runCpu();
+      if (get().mode === "cpu") runCpu();
     },
+    startOnline: ({ deck, foeName, state, link: l }) => {
+      const same = get().mode === "online" && get().deck === deck && link === l;
+      if (!same) runId++;
+      link = l;
+      inbox = [];
+      draining = false;
+      set({
+        mode: "online",
+        foeName,
+        deck,
+        game: state,
+        // 再接続のときは記録を残す
+        log: same ? get().log : [],
+        error: null,
+        selection: null,
+        cpuBusy: false,
+        animating: false,
+      });
+    },
+    receive: (u) => {
+      if (get().mode !== "online") return;
+      inbox.push(u);
+      void drain();
+    },
+    resign: () => link?.resign(),
   };
 });

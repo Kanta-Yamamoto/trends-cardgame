@@ -24,7 +24,7 @@ import { CATALOG, CPU, DECK_INFO, ME, setPresenter, useGame } from "../game/stor
 
 const SLOT_KEYS = Array.from({ length: SLOTS }, (_, i) => `slot-${i}`);
 const nameOf = (id: string) => CATALOG[id]?.name ?? id;
-const who = (p: string) => (p === ME ? "あなた" : "CPU");
+const who = (p: string) => (p === ME ? "あなた" : useGame.getState().foeName);
 
 function describe(e: GameEvent): string {
   switch (e.type) {
@@ -66,6 +66,8 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}が ${nameOf(e.cardId)} を奪った（推し変）`;
     case "extraTurn":
       return `${who(e.player)}は、このあともう一度ターンを行う`;
+    case "resigned":
+      return `${who(e.player)}が降参した`;
     case "won":
       return `${who(e.player)}の勝ち`;
   }
@@ -108,26 +110,7 @@ function DeckSelect() {
           デッキを選んでください。CPU はほかのデッキから1つを使います。先攻・後攻はランダムです。
         </p>
       </header>
-      <div className="decks">
-        {(Object.keys(DECK_INFO) as DeckId[]).map((id) => {
-          const [a, b] = DECK_ATTRS[id].map((x) => ATTR_META[x]);
-          return (
-            <button
-              key={id}
-              type="button"
-              className="deck-pick"
-              style={{
-                background: `linear-gradient(125deg, ${a?.color}, ${a?.deep} 50%, ${b?.deep} 50%, ${b?.color})`,
-              }}
-              onClick={() => start(id)}
-            >
-              <span className="deck-attrs">{DECK_ATTRS[id].join(" × ")}</span>
-              <strong>{DECK_INFO[id].name}</strong>
-              <span>{DECK_INFO[id].text}</span>
-            </button>
-          );
-        })}
-      </div>
+      <DeckGrid onPick={start} />
       <details className="rules">
         <summary>ルール（かんたん版）</summary>
         <ul>
@@ -152,9 +135,36 @@ function DeckSelect() {
   );
 }
 
+/** デッキを選ぶボタンの並び（CPU 戦とオンライン対戦で共通） */
+export function DeckGrid({ onPick }: { onPick: (deck: DeckId) => void }) {
+  return (
+    <div className="decks">
+      {(Object.keys(DECK_INFO) as DeckId[]).map((id) => {
+        const [a, b] = DECK_ATTRS[id].map((x) => ATTR_META[x]);
+        return (
+          <button
+            key={id}
+            type="button"
+            className="deck-pick"
+            style={{
+              background: `linear-gradient(125deg, ${a?.color}, ${a?.deep} 50%, ${b?.deep} 50%, ${b?.color})`,
+            }}
+            onClick={() => onPick(id)}
+          >
+            <span className="deck-attrs">{DECK_ATTRS[id].join(" × ")}</span>
+            <strong>{DECK_INFO[id].name}</strong>
+            <span>{DECK_INFO[id].text}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 type Peek = { id: string; view?: UnitView; where: "hand" | "mine" | "foe" | "trash"; index: number };
 
-function Board() {
+/** 対戦の画面。CPU 戦とオンライン対戦で共通（onQuit を渡すと「戻る」でそれを呼ぶ） */
+export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const {
     game,
     deck,
@@ -169,8 +179,17 @@ function Board() {
     attack,
     endTurn,
     start,
-    quit,
+    quit: quitGame,
+    mode,
+    foeName,
+    resign,
   } = useGame();
+  const online = mode === "online";
+  const quit = () => {
+    quitGame();
+    onQuit?.();
+  };
+  const [resignAsk, setResignAsk] = useState(false);
   const [peek, setPeek] = useState<Peek | null>(null);
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
@@ -241,7 +260,9 @@ function Board() {
   const hint = game.winner
     ? ""
     : game.active === CPU
-      ? "CPU が考えています…"
+      ? online
+        ? `${foeName}のターンです`
+        : "CPU が考えています…"
       : !myTurn
         ? ""
         : postSelected
@@ -308,7 +329,7 @@ function Board() {
           <div className="col-left">
             <PlayerBar
               side="foe"
-              name="CPU"
+              name={foeName}
               lp={foe.lp}
               mana={foe.mana}
               maxMana={foe.maxMana}
@@ -444,8 +465,18 @@ function Board() {
                   ))}
               </ol>
             </details>
+            {online && !game.winner && (
+              <button
+                type="button"
+                className={`btn ghost resign ${resignAsk ? "ask" : ""}`}
+                onClick={() => (resignAsk ? resign() : setResignAsk(true))}
+                onBlur={() => setResignAsk(false)}
+              >
+                {resignAsk ? "本当に降参する" : "降参"}
+              </button>
+            )}
             <button type="button" className="btn ghost quit" onClick={quit}>
-              デッキ選択に戻る
+              {online ? "ロビーに戻る" : "デッキ選択に戻る"}
             </button>
           </div>
         </div>
@@ -471,7 +502,7 @@ function Board() {
           <button type="button" className="sheet-bg" aria-label="閉じる" onClick={() => setTrashView(null)} />
           <div className="sheet-body trash-list">
             <h2>
-              {trashView === ME ? "あなた" : "CPU"}のオワコン（{game.players[trashView].trash.length}枚）
+              {trashView === ME ? "あなた" : foeName}のオワコン（{game.players[trashView].trash.length}枚）
             </h2>
             <div className="trash-grid">
               {game.players[trashView].trash.map((id, i) => {
@@ -494,7 +525,9 @@ function Board() {
         </div>
       )}
 
-      {game.winner && <Result game={game} onAgain={() => start(deck)} onQuit={quit} />}
+      {game.winner && (
+        <Result game={game} onAgain={online ? undefined : () => start(deck)} onQuit={quit} online={online} />
+      )}
     </div>
   );
 }
@@ -537,18 +570,30 @@ function PeekCard({ card, view }: { card: CardDef; view?: UnitView }) {
   );
 }
 
-function Result({ game, onAgain, onQuit }: { game: GameState; onAgain: () => void; onQuit: () => void }) {
+function Result({
+  game,
+  onAgain,
+  onQuit,
+  online,
+}: {
+  game: GameState;
+  onAgain?: () => void;
+  onQuit: () => void;
+  online: boolean;
+}) {
   return (
     <div className="result" role="dialog" aria-modal="true" aria-label="対戦結果">
       <div className={`result-card ${game.winner === ME ? "win" : "lose"}`}>
         <strong>{game.winner === ME ? "勝利！" : "敗北…"}</strong>
         <span>{game.turn} ターン目で決着</span>
         <div className="result-actions">
-          <button type="button" className="btn" onClick={onAgain}>
-            もう一度
-          </button>
-          <button type="button" className="btn ghost" onClick={onQuit}>
-            デッキを選び直す
+          {onAgain && (
+            <button type="button" className="btn" onClick={onAgain}>
+              もう一度
+            </button>
+          )}
+          <button type="button" className={onAgain ? "btn ghost" : "btn"} onClick={onQuit}>
+            {online ? "ロビーに戻る" : "デッキを選び直す"}
           </button>
         </div>
       </div>
