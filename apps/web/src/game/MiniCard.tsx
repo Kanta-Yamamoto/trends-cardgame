@@ -1,5 +1,6 @@
 import type { CardDef } from "@trends/cards";
 import type { UnitView } from "@trends/game-core";
+import { useRef } from "react";
 import { ATTR_META, attrBackground, stars } from "../cards/meta";
 
 interface Props {
@@ -16,8 +17,12 @@ interface Props {
   label?: string;
   onClick?: () => void;
   onPeek?: () => void;
+  /** 長押し（スマホ）・右クリック（PC）で呼ぶ。カードを大きく見るのに使う */
+  onLongPress?: () => void;
   children?: React.ReactNode;
 }
+
+const LONG_PRESS_MS = 450;
 
 /** 対戦画面の手札・場で使う小さいカード。イラストがあれば背景に敷き、なければ属性の色で塗る */
 export function MiniCard({
@@ -31,8 +36,12 @@ export function MiniCard({
   label,
   onClick,
   onPeek,
+  onLongPress,
   children,
 }: Props) {
+  const timer = useRef<number | undefined>(undefined);
+  const longPressed = useRef(false);
+  const cancel = () => window.clearTimeout(timer.current);
   const dark = view?.unit.dark ?? false;
   const bg =
     card.art && !dark ? { backgroundImage: `url(${card.art})` } : { background: attrBackground(card) };
@@ -56,7 +65,31 @@ export function MiniCard({
           ? `${name}（投稿・コスト${cost ?? card.cost}）`
           : `${name}（コスト${cost ?? card.cost}・攻撃${attack}・体力${hp}）`)
       }
-      onClick={onClick}
+      onClick={() => {
+        // 長押しで拡大したあとの指を離した操作は、選択として扱わない
+        if (longPressed.current) {
+          longPressed.current = false;
+          return;
+        }
+        onClick?.();
+      }}
+      onPointerDown={() => {
+        if (!onLongPress) return;
+        longPressed.current = false;
+        cancel();
+        timer.current = window.setTimeout(() => {
+          longPressed.current = true;
+          onLongPress();
+        }, LONG_PRESS_MS);
+      }}
+      onPointerUp={cancel}
+      onPointerLeave={cancel}
+      onPointerCancel={cancel}
+      onContextMenu={(e) => {
+        if (!onLongPress) return;
+        e.preventDefault();
+        if (!longPressed.current) onLongPress();
+      }}
       onPointerEnter={onPeek}
       onFocus={onPeek}
     >
