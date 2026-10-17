@@ -1,0 +1,26 @@
+{
+  "name": "TRENDS カードゲーム",
+  "short_name": "TRENDS",
+  "description": "ネットの話題をキラカードにして戦う、オリジナルカードゲーム",
+  "lang": "ja",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1018",
+  "theme_color": "#0b1018",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "CPU と対戦", "url": "/play", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    {
+      "name": "オンライン対戦",
+      "url": "/online",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

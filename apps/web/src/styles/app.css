@@ -26,6 +26,10 @@ button { font: inherit; color: inherit; }
 .nav a.active { color: var(--text); }
 .nav .brand { font: 800 14px/1 var(--f-mark); letter-spacing: 0.4em; }
 .nav .proto { font-size: 12px; }
+.nav { padding-top: max(14px, env(safe-area-inset-top, 0px)); position: relative; }
+.install-btn { padding: 6px 12px; font-size: 12px; }
+.install-tip { position: absolute; right: 0; top: 100%; z-index: 30; width: min(320px, calc(100vw - 32px)); margin-top: 6px; padding: 12px 14px; border-radius: 14px; background: #121a28f2; border: 1px solid #f2cf7a55; box-shadow: 0 12px 30px #000a; font-size: 13px; line-height: 1.7; }
+.install-tip p { margin: 0 0 8px; }
 .spacer { flex: 1; }
 .page { padding-top: 24px; }
 .page-head h1 { margin: 0 0 6px; font-size: 22px; }
