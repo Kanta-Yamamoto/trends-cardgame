@@ -170,7 +170,7 @@ export function OnlineLobby() {
             <p className="muted">使うデッキを選ぶと部屋ができます。</p>
             {error && <p className="notice">{error}</p>}
             <fieldset disabled={busy} className="plain">
-              <DeckGrid onPick={create} />
+              <DeckGrid onPick={create} confirmLabel="このデッキで部屋を作る" />
             </fieldset>
           </div>
         </>
@@ -292,7 +292,7 @@ export function OnlineRoom() {
         <div className="online-card">
           <h2>{info.players.p1?.name} さんの部屋に入る</h2>
           <p className="muted">使うデッキを選ぶと対戦が始まります。</p>
-          <DeckGrid onPick={setDeck} />
+          <DeckGrid onPick={setDeck} confirmLabel="このデッキで対戦する" />
         </div>
       ) : (
         <div className="online-card waiting">

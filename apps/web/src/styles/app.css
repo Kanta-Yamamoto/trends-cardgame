@@ -384,3 +384,18 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
   .zoom-sheet-card { width: min(78vw, 320px, calc((100dvh - 260px) * 0.716)); }
   .zoom-sheet-text { max-height: none; }
 }
+
+/* オンライン対戦のデッキの確認 */
+.deck-confirm-body { position: relative; width: min(440px, 100%); max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 12px; padding: 14px; border-radius: 18px; background: #121a28f5; border: 1px solid #ffffff26; box-shadow: 0 20px 50px #000c; }
+.deck-confirm-head { display: grid; gap: 6px; padding: 16px 18px; border-radius: 12px; }
+.deck-confirm-head strong { font-size: 22px; text-shadow: 0 2px 6px #0009; }
+.deck-confirm-head span { font-size: 13px; line-height: 1.6; color: #ffffffe6; text-shadow: 0 1px 3px #0009; }
+.deck-confirm-head .deck-attrs { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; }
+.deck-confirm-list { list-style: none; margin: 0; padding: 0 4px; overflow: auto; display: grid; gap: 4px; font-size: 14px; }
+.deck-confirm-list li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto 32px; align-items: center; gap: 8px; padding: 5px 6px; border-bottom: 1px solid #ffffff10; }
+.dc-cost { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; background: #0b1018; box-shadow: 0 0 0 1.5px var(--gold); }
+.dc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.dc-stars { color: var(--gold); font-size: 11px; letter-spacing: -0.05em; }
+.dc-n { color: var(--muted); text-align: right; font-weight: 700; }
+.deck-confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.deck-confirm-actions .btn { padding: 12px 18px; font-size: 14px; }

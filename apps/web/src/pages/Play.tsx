@@ -1,4 +1,4 @@
-import type { CardDef, DeckId } from "@trends/cards";
+import { type CardDef, DECKS, type DeckId } from "@trends/cards";
 import {
   type AttackTarget,
   type CastTarget,
@@ -137,7 +137,18 @@ function DeckSelect() {
 }
 
 /** デッキを選ぶボタンの並び（CPU 戦とオンライン対戦で共通） */
-export function DeckGrid({ onPick }: { onPick: (deck: DeckId) => void }) {
+/**
+ * デッキを選ぶ。confirmLabel を渡すと、押してすぐには決めず、中身を見せて確かめてから onPick する
+ * （オンライン対戦は選んだらすぐ部屋ができるので、押し間違いを防ぐ）
+ */
+export function DeckGrid({
+  onPick,
+  confirmLabel,
+}: {
+  onPick: (deck: DeckId) => void;
+  confirmLabel?: string;
+}) {
+  const [pending, setPending] = useState<DeckId | null>(null);
   return (
     <div className="decks">
       {(Object.keys(DECK_INFO) as DeckId[]).map((id) => {
@@ -150,7 +161,7 @@ export function DeckGrid({ onPick }: { onPick: (deck: DeckId) => void }) {
             style={{
               background: `linear-gradient(125deg, ${a?.color}, ${a?.deep} 50%, ${b?.deep} 50%, ${b?.color})`,
             }}
-            onClick={() => onPick(id)}
+            onClick={() => (confirmLabel ? setPending(id) : onPick(id))}
           >
             <span className="deck-attrs">{DECK_ATTRS[id].join(" × ")}</span>
             <strong>{DECK_INFO[id].name}</strong>
@@ -158,6 +169,78 @@ export function DeckGrid({ onPick }: { onPick: (deck: DeckId) => void }) {
           </button>
         );
       })}
+      {pending && confirmLabel && (
+        <DeckConfirm
+          deck={pending}
+          label={confirmLabel}
+          onConfirm={() => {
+            setPending(null);
+            onPick(pending);
+          }}
+          onCancel={() => setPending(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/** デッキの確認（名前・属性・説明と、入っているカード） */
+function DeckConfirm({
+  deck,
+  label,
+  onConfirm,
+  onCancel,
+}: {
+  deck: DeckId;
+  label: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCancel();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+  const counts = new Map<string, number>();
+  for (const id of DECKS[deck]) counts.set(id, (counts.get(id) ?? 0) + 1);
+  const list = [...counts]
+    .map(([id, n]) => ({ card: CATALOG[id], n }))
+    .filter((x): x is { card: CardDef; n: number } => !!x.card)
+    .sort((x, y) => y.card.rarity - x.card.rarity || x.card.cost - y.card.cost);
+  const [a, b] = DECK_ATTRS[deck].map((x) => ATTR_META[x]);
+  return (
+    <div className="zoom-sheet deck-confirm" role="dialog" aria-modal="true" aria-label="デッキの確認">
+      <button type="button" className="zoom-sheet-bg" aria-label="選び直す" onClick={onCancel} />
+      <div className="deck-confirm-body">
+        <div
+          className="deck-confirm-head"
+          style={{
+            background: `linear-gradient(125deg, ${a?.color}, ${a?.deep} 50%, ${b?.deep} 50%, ${b?.color})`,
+          }}
+        >
+          <span className="deck-attrs">{DECK_ATTRS[deck].join(" × ")}</span>
+          <strong>{DECK_INFO[deck].name}</strong>
+          <span>{DECK_INFO[deck].text}</span>
+        </div>
+        <ul className="deck-confirm-list">
+          {list.map(({ card, n }) => (
+            <li key={card.id}>
+              <span className="dc-cost">{card.cost}</span>
+              <span className="dc-name">{card.name}</span>
+              <span className="dc-stars">{"★".repeat(card.rarity)}</span>
+              <span className="dc-n">×{n}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="deck-confirm-actions">
+          <button type="button" className="btn ghost" onClick={onCancel}>
+            選び直す
+          </button>
+          <button type="button" className="btn" onClick={onConfirm}>
+            {label}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
