@@ -1,0 +1,39 @@
+name: Logs
+
+# Cloud Run（trends-api）のログのうち、エラー・再起動・遅い応答を拾って注釈に出す（手動で動かす）。
+# ログの画面を開かなくても、GitHub の画面（と API）で原因を追えるように。
+on:
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: 何時間前まで見るか
+        default: "48"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  logs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 設定を読む（infra/gcp.env）
+        run: grep -E '^[A-Z_]+=' infra/gcp.env >> "$GITHUB_ENV"
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/${{ env.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-bootstrap/providers/github
+          service_account: terraform@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: ログを読む
+        env:
+          HOURS: ${{ inputs.hours }}
+        run: |
+          SINCE=$(date -u -d "-${HOURS} hours" +%Y-%m-%dT%H:%M:%SZ)
+          BASE="resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"trends-api\" AND timestamp>=\"$SINCE\""
+          read_logs() { gcloud logging read "$BASE AND ($1)" --project "$GCP_PROJECT_ID" --limit "$2" --order desc \
+            --format 'value(timestamp,severity,httpRequest.status,httpRequest.latency,httpRequest.requestUrl,textPayload,jsonPayload.message)' | cut -c1-400; }
+          note() { body=$(cat | head -c 6000); body="${body//'%'/'%25'}"; body="${body//$'\n'/'%0A'}"; echo "::notice title=$1::${body:-（なし）}"; }
+          read_logs 'severity>=WARNING OR httpRequest.status>=500' 60 | note "エラー・警告（新しい順）"
+          read_logs 'textPayload:"migrated" OR textPayload:"seeded" OR textPayload:"Nest application successfully started" OR textPayload:"Starting new instance" OR logName:"varlog/system"' 40 | note "起動・停止（新しい順）"
+          read_logs 'httpRequest.requestUrl:"/auth/config" OR httpRequest.requestUrl:"/matches"' 60 | note "ログイン・対戦の通信（新しい順）"
