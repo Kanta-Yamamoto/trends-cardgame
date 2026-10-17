@@ -72,4 +72,6 @@ jobs:
           # 起動直後（DB の起動待ちなど）は失敗することがあるので、少し待ってやり直す
           curl -fsS --retry 6 --retry-delay 10 --retry-all-errors "$URL/health"
           curl -fsS --retry 6 --retry-delay 10 --retry-all-errors -H 'Accept: text/html' "$URL/" | grep -q '<title>TRENDS'
+          # カードのデータが DB に入っているか
+          curl -fsS --retry 3 --retry-delay 5 --retry-all-errors "$URL/cards" | grep -q '"id":"c1"'
           echo "### デプロイしました: $URL" >> "$GITHUB_STEP_SUMMARY"

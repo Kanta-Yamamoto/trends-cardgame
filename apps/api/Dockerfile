@@ -17,5 +17,5 @@ COPY --from=build /out .
 USER node
 EXPOSE 8080
 ENV PORT=8080
-# 起動前に drizzle/ のマイグレーションを当てる
-CMD ["sh", "-c", "node dist/db/migrate.js && node dist/main.js"]
+# 起動前に drizzle/ のマイグレーションを当て、カードのデータ（cards.json）を DB に入れる（何度やっても同じ結果）
+CMD ["sh", "-c", "node dist/db/migrate.js && node dist/db/seed.js && node dist/main.js"]
