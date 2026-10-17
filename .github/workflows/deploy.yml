@@ -46,10 +46,13 @@ jobs:
         id: ready
         if: steps.cfg.outputs.ok == 'true'
         run: |
-          if gcloud run services describe trends-api --region "$GCP_REGION" --project "${GCP_PROJECT_ID}" >/dev/null 2>&1; then
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          else
+          if ! CURRENT=$(gcloud run services describe trends-api --region "$GCP_REGION" --project "${GCP_PROJECT_ID}" --format 'value(spec.template.spec.containers[0].image)' 2>/dev/null); then
             echo "まだ Cloud Run がありません。Infra が終わると自動でもう一度動きます" >> "$GITHUB_STEP_SUMMARY"
+          elif [[ "$CURRENT" == *":$SHA" ]]; then
+            # CI と Infra の両方から呼ばれるので、同じ版を二重にデプロイしない
+            echo "この版（$SHA）はデプロイ済みです" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Build and push image
         if: steps.ready.outputs.ok == 'true'
@@ -66,6 +69,7 @@ jobs:
         if: steps.ready.outputs.ok == 'true'
         run: |
           URL=$(gcloud run services describe trends-api --region "$GCP_REGION" --project "${GCP_PROJECT_ID}" --format 'value(status.url)')
-          curl -fsS "$URL/health"
-          curl -fsS -H 'Accept: text/html' "$URL/" | grep -q '<title>TRENDS'
+          # 起動直後（DB の起動待ちなど）は失敗することがあるので、少し待ってやり直す
+          curl -fsS --retry 6 --retry-delay 10 --retry-all-errors "$URL/health"
+          curl -fsS --retry 6 --retry-delay 10 --retry-all-errors -H 'Accept: text/html' "$URL/" | grep -q '<title>TRENDS'
           echo "### デプロイしました: $URL" >> "$GITHUB_STEP_SUMMARY"
