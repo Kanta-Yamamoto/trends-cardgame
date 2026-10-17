@@ -1,5 +1,5 @@
 import type { CardDef } from "@trends/cards";
-import { type ComponentType, useEffect, useRef } from "react";
+import { type ComponentType, type CSSProperties, useEffect, useRef } from "react";
 import { CollageFace } from "./faces/Collage";
 import { ExpertFace } from "./faces/Expert";
 import { GenericFace } from "./faces/Generic";
@@ -58,6 +58,8 @@ interface Props {
   compact?: boolean;
   /** 文字の板を隠して絵だけを見せる */
   textHidden?: boolean;
+  /** 闇堕ちの姿で描く（名前・効果・数値・絵だけを闇堕ちのものにし、デザインはそのまま） */
+  darkForm?: boolean;
 }
 
 export function HoloCard({
@@ -67,7 +69,27 @@ export function HoloCard({
   onClick,
   compact = false,
   textHidden = false,
+  darkForm = false,
 }: Props) {
+  const dark = darkForm ? card.dark : undefined;
+  const shown: CardDef = dark
+    ? {
+        ...card,
+        name: dark.name,
+        effect: dark.effect,
+        attack: dark.attack,
+        hp: dark.hp,
+        keywords: dark.keywords,
+        art: dark.art ?? card.art,
+        subject: dark.subject ?? card.subject,
+      }
+    : card;
+  const darkVars = dark
+    ? ({
+        ...(dark.art ? { "--art": `url(${dark.art})` } : {}),
+        ...(dark.subject ? { "--subject": `url(${dark.subject})` } : {}),
+      } as CSSProperties)
+    : undefined;
   const live = interactive && card.rarity >= KIRA_RARITY;
   const cardRef = useRef<HTMLDivElement>(null);
   const lastMove = useRef(0);
@@ -120,16 +142,17 @@ export function HoloCard({
   const body = (
     <div
       ref={cardRef}
-      className={`card ${live ? "is-live" : "is-still"} ${compact ? "is-compact" : ""} ${textHidden ? "text-hidden" : ""}`}
+      className={`card ${live ? "is-live" : "is-still"} ${compact ? "is-compact" : ""} ${textHidden ? "text-hidden" : ""} ${dark ? "is-darkform" : ""}`}
+      style={darkVars}
       role="img"
       aria-label={
-        card.type === "post"
-          ? `${card.name}（投稿・コスト${card.cost}）`
-          : `${card.epithet} ${card.name}（コスト${card.cost}・攻撃${card.attack}・体力${card.hp}）`
+        shown.type === "post"
+          ? `${shown.name}（投稿・コスト${shown.cost}）`
+          : `${shown.epithet} ${shown.name}（コスト${shown.cost}・攻撃${shown.attack}・体力${shown.hp}）`
       }
       onPointerMove={onPointerMove}
     >
-      <Face card={card} />
+      <Face card={shown} />
     </div>
   );
 

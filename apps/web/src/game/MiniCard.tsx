@@ -46,8 +46,9 @@ export function MiniCard({
   const longPressed = useRef(false);
   const cancel = () => window.clearTimeout(timer.current);
   const dark = view?.unit.dark ?? false;
-  const bg =
-    card.art && !dark ? { backgroundImage: `url(${card.art})` } : { background: attrBackground(card) };
+  // 闇堕ちしたら闇堕ちの絵（無ければ元の絵に紫の影をかける）
+  const art = dark ? (card.dark?.art ?? card.art) : card.art;
+  const bg = art ? { backgroundImage: `url(${art})` } : { background: attrBackground(card) };
   const name = view?.name ?? card.name;
   const keywords = view?.keywords ?? card.keywords;
   const attack = view?.attack ?? card.attack ?? 0;
@@ -57,7 +58,7 @@ export function MiniCard({
   return (
     <button
       type="button"
-      className={`mini ${card.art && !dark ? "has-art" : ""} ${dark ? "is-dark" : ""} ${isPost ? "is-post" : ""} ${className}`}
+      className={`mini ${art ? "has-art" : ""} ${dark ? "is-dark" : ""} ${isPost ? "is-post" : ""} ${className}`}
       style={{ ...bg, ...style }}
       data-uid={uid}
       data-hand-card={inHand ? "" : undefined}

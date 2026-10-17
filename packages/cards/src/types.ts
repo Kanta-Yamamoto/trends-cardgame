@@ -78,6 +78,9 @@ export interface DarkSide {
   hp: number;
   keywords: Keyword[];
   effect: string;
+  /** 闇堕ちの姿の絵（web の public からのパス）。無ければ元の絵 */
+  art?: string;
+  subject?: string;
 }
 
 /** カード1枚の定義。ゲームのルールと表示の両方がここを参照する */

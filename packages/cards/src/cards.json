@@ -24,7 +24,9 @@
       "attack": 7,
       "hp": 3,
       "keywords": ["連撃", "叩き"],
-      "effect": "連撃。叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）"
+      "effect": "連撃。叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）",
+      "art": "/assets/cards/c2-dark-art.jpg",
+      "subject": "/assets/cards/c2-dark-subject.webp"
     },
     "serial": "No. 007 / 100",
     "art": "/assets/cards/c2-art.jpg",
@@ -269,7 +271,9 @@
       "attack": 5,
       "hp": 3,
       "keywords": ["叩き"],
-      "effect": "叩き。見た者のタイムラインに、必ず流れてくる。"
+      "effect": "叩き。見た者のタイムラインに、必ず流れてくる。",
+      "art": "/assets/cards/k5-dark-art.jpg",
+      "subject": "/assets/cards/k5-dark-subject.webp"
     }
   },
   {
@@ -316,7 +320,9 @@
       "attack": 8,
       "hp": 3,
       "keywords": ["連撃"],
-      "effect": "連撃。笑顔の裏側は、誰も知らない。"
+      "effect": "連撃。笑顔の裏側は、誰も知らない。",
+      "art": "/assets/cards/m1-dark-art.jpg",
+      "subject": "/assets/cards/m1-dark-subject.webp"
     },
     "art": "/assets/cards/m1-art.jpg",
     "subject": "/assets/cards/m1-subject.webp",
@@ -707,7 +713,9 @@
       "attack": 6,
       "hp": 3,
       "keywords": ["連撃"],
-      "effect": "連撃。真実は、いつも自分の中にある。"
+      "effect": "連撃。真実は、いつも自分の中にある。",
+      "art": "/assets/cards/g4-dark-art.jpg",
+      "subject": "/assets/cards/g4-dark-subject.webp"
     }
   },
   {
@@ -1278,7 +1286,9 @@
       "attack": 6,
       "hp": 4,
       "keywords": ["連撃"],
-      "effect": "連撃。やさしい声が、毒に変わる。"
+      "effect": "連撃。やさしい声が、毒に変わる。",
+      "art": "/assets/cards/c5-dark-art.jpg",
+      "subject": "/assets/cards/c5-dark-subject.webp"
     },
     "art": "/assets/cards/c5-art.jpg",
     "original": "assets/original/c5.webp"

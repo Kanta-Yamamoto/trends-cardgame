@@ -72,12 +72,12 @@
     border: 0.32em dotted #fff; opacity: 0.95;
   }
   .subject {
-    background: url(/assets/cards/m1-subject.webp) center 20% / cover no-repeat;
+    background: var(--subject, url(/assets/cards/m1-subject.webp)) center 20% / cover no-repeat;
     transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
     filter: drop-shadow(0 6px 10px #a3165e55); pointer-events: none;
   }
   .subject-shine {
-    mask: url(/assets/cards/m1-subject.webp) center 20% / cover no-repeat;
+    mask: var(--subject, url(/assets/cards/m1-subject.webp)) center 20% / cover no-repeat;
     transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
     background: linear-gradient(115deg, transparent 35%, #ffd1e8 46%, #fff 50%, #ffd1e8 54%, transparent 65%) var(--mx) var(--my) / 260% 260% no-repeat;
     mix-blend-mode: soft-light; opacity: calc(0.25 + var(--g) * 0.5); pointer-events: none;
@@ -172,7 +172,7 @@
   .win { inset: 4.4% 5.2%; clip-path: var(--torn); }
   .bg {
     inset: -2%;
-    background: url(/assets/cards/k5-art.jpg) center 20% / cover no-repeat;
+    background: var(--art, url(/assets/cards/k5-art.jpg)) center 20% / cover no-repeat;
     transform: translate(calc(var(--nx) * -7px), calc(var(--ny) * -7px)) scale(1.04);
   }
   /* 走査線のグリッチ（傾けるとずれる） */
@@ -191,12 +191,12 @@
     mix-blend-mode: color-dodge; opacity: calc(0.12 + var(--g) * 0.4);
   }
   .subject {
-    background: url(/assets/cards/k5-subject.webp) center 20% / cover no-repeat;
+    background: var(--subject, url(/assets/cards/k5-subject.webp)) center 20% / cover no-repeat;
     transform: translate(calc(var(--nx) * 9px), calc(var(--ny) * 9px)) scale(1.06);
     filter: drop-shadow(0.15em 0.2em 0 #fff) drop-shadow(0 0.3em 0.5em #0006); pointer-events: none;
   }
   .subject-shine {
-    mask: url(/assets/cards/k5-subject.webp) center 20% / cover no-repeat;
+    mask: var(--subject, url(/assets/cards/k5-subject.webp)) center 20% / cover no-repeat;
     transform: translate(calc(var(--nx) * 9px), calc(var(--ny) * 9px)) scale(1.06);
     background: linear-gradient(115deg, transparent 35%, #c8ff9a 47%, #fff 50%, #c8ff9a 53%, transparent 65%) var(--mx) var(--my) / 260% 260% no-repeat;
     mix-blend-mode: soft-light; opacity: calc(0.2 + var(--g) * 0.5); pointer-events: none;
@@ -295,7 +295,7 @@
   }
   .win { clip-path: var(--arch); }
   .bg {
-    background: url(/assets/cards/g4-art.jpg) center 20% / cover no-repeat;
+    background: var(--art, url(/assets/cards/g4-art.jpg)) center 20% / cover no-repeat;
     transform: translate(calc(var(--nx) * -7px), calc(var(--ny) * -7px)) scale(1.06);
   }
   /* 金の図形（同心円と放射線。傾けると中心が動く） */
@@ -321,12 +321,12 @@
     box-shadow: 0 0 0 0.12em var(--gold-2), 0 0 0 0.28em var(--gold), 0 0 0 0.36em var(--gold-deep), 0 0 1.2em 0.2em #f2c14e66;
   }
   .subject {
-    background: url(/assets/cards/g4-subject.webp) center 20% / cover no-repeat;
+    background: var(--subject, url(/assets/cards/g4-subject.webp)) center 20% / cover no-repeat;
     transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
     filter: drop-shadow(0 6px 10px #5a400a55); pointer-events: none;
   }
   .subject-shine {
-    mask: url(/assets/cards/g4-subject.webp) center 20% / cover no-repeat;
+    mask: var(--subject, url(/assets/cards/g4-subject.webp)) center 20% / cover no-repeat;
     transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
     background: linear-gradient(115deg, transparent 35%, #ffe9a8 47%, #fff 50%, #ffe9a8 53%, transparent 65%) var(--mx) var(--my) / 260% 260% no-repeat;
     mix-blend-mode: soft-light; opacity: calc(0.25 + var(--g) * 0.5); pointer-events: none;
@@ -537,7 +537,7 @@
   }
   .win { clip-path: inset(4.4% 5.2% 4.4% 5.2% round 6% 6% 3% 3%); }
   .bg {
-    background: url(/assets/cards/c5-art.jpg) center 20% / cover no-repeat;
+    background: var(--art, url(/assets/cards/c5-art.jpg)) center 20% / cover no-repeat;
     transform: translate(calc(var(--nx) * -7px), calc(var(--ny) * -7px)) scale(1.06);
   }
   /* 水面からの光の網目（コースティクス） */
@@ -560,12 +560,12 @@
     box-shadow: 0 0 0 0.15em #fff, 0 0 0 0.3em var(--aqua), 0 0 1.2em 0.2em #8fdcff77;
   }
   .subject {
-    background: url(/assets/cards/c5-subject.webp) center 20% / cover no-repeat;
+    background: var(--subject, url(/assets/cards/c5-subject.webp)) center 20% / cover no-repeat;
     transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
     filter: drop-shadow(0 6px 12px #1d4d6e55); pointer-events: none;
   }
   .subject-shine {
-    mask: url(/assets/cards/c5-subject.webp) center 20% / cover no-repeat;
+    mask: var(--subject, url(/assets/cards/c5-subject.webp)) center 20% / cover no-repeat;
     transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
     background: linear-gradient(120deg, #c9c2ff, #d8f4ff, #fff, #ffd9f0, #c9c2ff); background-size: 300% 300%; background-position: var(--mx) var(--my);
     mix-blend-mode: soft-light; opacity: calc(0.2 + var(--g) * 0.45); pointer-events: none;
