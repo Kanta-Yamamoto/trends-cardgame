@@ -46,6 +46,8 @@ type Selection = { kind: "hand"; index: number } | { kind: "attacker"; slot: num
 export interface LogEntry {
   id: number;
   e: GameEvent;
+  /** 効果の演出（resolveEffects）で見せ終わった出来事なら true（数字を二重に出さない） */
+  fx?: boolean;
 }
 
 /** オンライン対戦で、サーバーから届く1手分 */
@@ -104,6 +106,11 @@ export interface Presenter {
   beforeAttack: (game: GameState, action: Extract<Action, { type: "attack" }>) => Promise<void>;
   /** CPU のターンが始まってから最初の操作までの待ち（ターン開始の演出のため） */
   turnIntro: number;
+  /**
+   * 出す・投稿・ターン終了の効果を見せる（state を進める前）。
+   * shown は今画面に出ている state（出したアイコンは場に置いた姿）、next は効果がすべて済んだ state
+   */
+  resolveEffects?: (shown: GameState, action: Action, events: GameEvent[], next: GameState) => Promise<void>;
   /** 相手がカードを出す・投稿を使う前に、そのカードを大きく見せる */
   revealFoe?: (
     game: GameState,
@@ -121,11 +128,39 @@ let link: RemoteLink | null = null;
 let inbox: RemoteUpdate[] = [];
 let draining = false;
 
+/** 出したアイコンだけを場に置いた、効果の前の姿（演出のあいだ画面に出す） */
+function placedOnly(prev: GameState, a: Extract<Action, { type: "play" }>, next: GameState): GameState {
+  const unit = next.players[a.player].field[a.slot];
+  if (!unit) return prev;
+  const me = prev.players[a.player];
+  return {
+    ...prev,
+    players: {
+      ...prev.players,
+      [a.player]: {
+        ...me,
+        mana: next.players[a.player].mana,
+        hand: me.hand.filter((_, i) => i !== a.handIndex),
+        field: me.field.map((u, i) => (i === a.slot ? unit : u)),
+      },
+    },
+  };
+}
+
+const hasEffects = (a: Action) => a.type === "play" || a.type === "cast" || a.type === "endTurn";
+
 export const useGame = create<GameStore>((set, get) => {
-  const appendLog = (events: GameEvent[]) => {
+  const appendLog = (events: GameEvent[], fx = false) => {
     const log = get().log;
     let id = log.at(-1)?.id ?? 0;
-    return [...log, ...events.map((e) => ({ id: ++id, e }))].slice(-60);
+    return [...log, ...events.map((e) => ({ id: ++id, e, ...(fx ? { fx } : {}) }))].slice(-60);
+  };
+
+  /** 効果を見せる（出したアイコンを先に置いてから） */
+  const present = async (game: GameState, a: Action, events: GameEvent[], next: GameState) => {
+    const shown = a.type === "play" ? placedOnly(game, a, next) : game;
+    if (shown !== game) set({ game: shown });
+    await presenter?.resolveEffects?.(shown, a, events, next);
   };
 
   const drain = async () => {
@@ -149,6 +184,13 @@ export const useGame = create<GameStore>((set, get) => {
           await presenter.revealFoe(g, ev.cardId, a);
           if (my !== runId) break;
         }
+      }
+      if (hasEffects(a) && presenter?.resolveEffects && g) {
+        set({ animating: true });
+        await present(g, a, u.events, u.state);
+        if (my !== runId) break;
+        set({ game: u.state, log: appendLog(u.events, true), animating: false });
+        continue;
       }
       set({ game: u.state, log: appendLog(u.events), animating: false });
     }
@@ -187,6 +229,35 @@ export const useGame = create<GameStore>((set, get) => {
     }
   };
 
+  /**
+   * 操作を反映する。演出があれば効果を見せてから state を進める（Promise を返す）。
+   * 演出が無いとき（テストなど）は、その場で反映して true / false を返す
+   */
+  const commit = (a: Action): boolean | Promise<boolean> => {
+    const game = get().game;
+    if (!game || get().mode === "online" || !presenter?.resolveEffects || !hasEffects(a)) return dispatch(a);
+    let res: ReturnType<typeof applyAction>;
+    try {
+      res = applyAction(game, a, CATALOG);
+    } catch (e) {
+      if (e instanceof RuleError) {
+        set({ error: e.message });
+        return false;
+      }
+      throw e;
+    }
+    const { state, events } = res;
+    const my = runId;
+    set({ animating: true, selection: null, error: null });
+    return present(game, a, events, state).then(() => {
+      if (my !== runId) return false;
+      set({ game: state, log: appendLog(events, true), animating: false, error: null });
+      return true;
+    });
+  };
+  const then = (r: boolean | Promise<boolean>, fn: (ok: boolean) => void) =>
+    r instanceof Promise ? void r.then(fn) : fn(r);
+
   /** CPU のターンを planTurnSearch（先読みする CPU）の通りに1手ずつ進める */
   const runCpu = () => {
     const game = get().game;
@@ -219,7 +290,8 @@ export const useGame = create<GameStore>((set, get) => {
         if (id) await presenter.revealFoe(g, id, a);
       }
       if (my !== runId) return;
-      if (!dispatch(a)) return finish();
+      if (!(await commit(a))) return finish();
+      if (my !== runId) return;
       setTimeout(next, a.type === "endTurn" ? 0 : delay);
     };
     setTimeout(next, delay + (presenter?.turnIntro ?? 0));
@@ -278,12 +350,18 @@ export const useGame = create<GameStore>((set, get) => {
     play: (slot) => {
       const sel = get().selection;
       if (sel?.kind !== "hand" || get().cpuBusy || get().animating) return;
-      if (dispatch({ type: "play", player: ME, handIndex: sel.index, slot })) set({ selection: null });
+      then(
+        commit({ type: "play", player: ME, handIndex: sel.index, slot }),
+        (ok) => ok && set({ selection: null }),
+      );
     },
     cast: (target) => {
       const sel = get().selection;
       if (sel?.kind !== "hand" || get().cpuBusy || get().animating) return;
-      if (dispatch({ type: "cast", player: ME, handIndex: sel.index, target })) set({ selection: null });
+      then(
+        commit({ type: "cast", player: ME, handIndex: sel.index, target }),
+        (ok) => ok && set({ selection: null }),
+      );
     },
     attack: (target) => {
       const sel = get().selection;
@@ -305,9 +383,12 @@ export const useGame = create<GameStore>((set, get) => {
       });
     },
     endTurn: () => {
-      if (get().cpuBusy || get().animating || !dispatch({ type: "endTurn", player: ME })) return;
-      set({ selection: null });
-      if (get().mode === "cpu") runCpu();
+      if (get().cpuBusy || get().animating) return;
+      then(commit({ type: "endTurn", player: ME }), (ok) => {
+        if (!ok) return;
+        set({ selection: null });
+        if (get().mode === "cpu") runCpu();
+      });
     },
     startOnline: ({ deck, foeName, state, link: l }) => {
       const same = get().mode === "online" && get().deck === deck && link === l;
@@ -336,3 +417,8 @@ export const useGame = create<GameStore>((set, get) => {
     resign: () => link?.resign(),
   };
 });
+
+// 開発中だけ、ブラウザから対戦の状態を触れるようにする（演出の確認用）
+if (import.meta.env.DEV && typeof window !== "undefined") {
+  (window as unknown as { __trends?: typeof useGame }).__trends = useGame;
+}

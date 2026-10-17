@@ -408,3 +408,10 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .end-confirm-note { margin: 0; font-size: 13px; color: var(--gold); }
 .end-confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
 .end-confirm-actions .btn { padding: 13px 10px; font-size: 15px; }
+
+/* 投稿・登場時の効果：飛ぶ光と文字の札 */
+.fx-orb { position: fixed; border-radius: 50%; background: radial-gradient(circle, #fff 0 25%, var(--c) 55%, transparent 72%); box-shadow: 0 0 18px 6px var(--c); }
+.fx-label { position: fixed; padding: 3px 10px; border-radius: 99px; font: 900 15px/1.2 var(--f-ui); color: #0b1018; background: var(--c); box-shadow: 0 0 16px var(--c), 0 3px 8px #000a; white-space: nowrap; }
+.foe-reveal.mine { animation-duration: 1s; }
+.foe-reveal.mine .fr-label { background: #2f7fd8; }
+.foe-reveal.mine .fr-card { width: min(180px, 30vh); }
