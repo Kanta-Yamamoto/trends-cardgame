@@ -190,6 +190,10 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     onQuit?.();
   };
   const [resignAsk, setResignAsk] = useState(false);
+  /** 相手が出した・使ったカードを大きく見せる */
+  const [reveal, setReveal] = useState<{ id: number; cardId: string; kind: "play" | "cast" } | null>(null);
+  /** 手札が多いときに、全部を大きく並べて見る */
+  const [handOpen, setHandOpen] = useState(false);
   const [peek, setPeek] = useState<Peek | null>(null);
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
@@ -201,6 +205,20 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     setPresenter({
       beforeAttack: (g, a) => animateAttack(g, a.player, a.from, a.target, CATALOG),
       turnIntro: 1100,
+      revealFoe: (g, cardId, a) =>
+        new Promise<void>((resolve) => {
+          setReveal({ id: Date.now(), cardId, kind: a.type });
+          // 対象がある投稿は、狙われたアイコンを光らせる（相手から見た enemy＝こちらのアイコン）
+          const t = a.type === "cast" ? a.target : undefined;
+          const uid = t ? g.players[t.side === "enemy" ? ME : CPU].field[t.slot]?.uid : undefined;
+          const el = uid ? document.querySelector(`[data-uid="${uid}"]`) : null;
+          el?.classList.add("fx-targeted");
+          setTimeout(() => {
+            setReveal(null);
+            el?.classList.remove("fx-targeted");
+            resolve();
+          }, 1300);
+        }),
     });
     return () => setPresenter(null);
   }, []);
@@ -322,6 +340,37 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     );
   };
 
+  const handCard = (id: string, i: number, inSheet = false) => {
+    const card = CATALOG[id];
+    if (!card) return null;
+    const cost = effectiveCost(game, ME, id, CATALOG);
+    const usable =
+      myTurn &&
+      cost <= me.mana &&
+      (card.type === "icon" ? freeSlot >= 0 : !card.target || castTargets(game, ME, id, CATALOG).length > 0);
+    const selected = selection?.kind === "hand" && selection.index === i;
+    const p: Peek = { id, where: "hand", index: i };
+    return (
+      <MiniCard
+        // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが手札に複数あり得るので位置で区別する
+        key={`${id}-${i}`}
+        inHand
+        card={card}
+        cost={cost}
+        className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""}`}
+        onClick={() => {
+          setPeek(p);
+          if (!myTurn) return;
+          if (inSheet) setHandOpen(false);
+          if (selected && card.type === "post" && !card.target) return cast();
+          if (selected && card.type === "icon" && freeSlot >= 0) return play(freeSlot);
+          select(selected ? null : { kind: "hand", index: i });
+        }}
+        onPeek={() => setPeek(p)}
+      />
+    );
+  };
+
   return (
     <div className="play-full">
       <div className="stage" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
@@ -402,38 +451,13 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               })}
             </div>
             <div className="hand" data-hand={ME} style={{ "--n": me.hand.length } as CSSProperties}>
-              {me.hand.map((id, i) => {
-                const card = CATALOG[id];
-                if (!card) return null;
-                const cost = effectiveCost(game, ME, id, CATALOG);
-                const usable =
-                  myTurn &&
-                  cost <= me.mana &&
-                  (card.type === "icon"
-                    ? freeSlot >= 0
-                    : !card.target || castTargets(game, ME, id, CATALOG).length > 0);
-                const selected = selection?.kind === "hand" && selection.index === i;
-                const p: Peek = { id, where: "hand", index: i };
-                return (
-                  <MiniCard
-                    // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが手札に複数あり得るので位置で区別する
-                    key={`${id}-${i}`}
-                    inHand
-                    card={card}
-                    cost={cost}
-                    className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""}`}
-                    onClick={() => {
-                      setPeek(p);
-                      if (!myTurn) return;
-                      if (selected && card.type === "post" && !card.target) return cast();
-                      if (selected && card.type === "icon" && freeSlot >= 0) return play(freeSlot);
-                      select(selected ? null : { kind: "hand", index: i });
-                    }}
-                    onPeek={() => setPeek(p)}
-                  />
-                );
-              })}
+              {me.hand.map((id, i) => handCard(id, i))}
             </div>
+            {me.hand.length >= 7 && (
+              <button type="button" className="hand-more" onClick={() => setHandOpen(true)}>
+                手札 {me.hand.length}枚を広げる
+              </button>
+            )}
           </div>
 
           <div className="col-right">
@@ -493,6 +517,30 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           <div className="tb-band">
             <small>TURN {banner.turn}</small>
             <strong>{banner.mine ? "あなたのターン" : "相手のターン"}</strong>
+          </div>
+        </div>
+      )}
+
+      {reveal && CATALOG[reveal.cardId] && (
+        <div key={reveal.id} className="foe-reveal" aria-live="polite">
+          <span className="fr-label">
+            {foeName}が{reveal.kind === "play" ? "出した" : "投稿した"}
+          </span>
+          <div className="fr-card">
+            <HoloCard card={CATALOG[reveal.cardId] as CardDef} idle={false} />
+          </div>
+        </div>
+      )}
+
+      {handOpen && (
+        <div className="sheet" role="dialog" aria-modal="true" aria-label="手札">
+          <button type="button" className="sheet-bg" aria-label="閉じる" onClick={() => setHandOpen(false)} />
+          <div className="sheet-body hand-sheet">
+            <h2>手札（{me.hand.length}枚）</h2>
+            <div className="hand-grid">{me.hand.map((id, i) => handCard(id, i, true))}</div>
+            <button type="button" className="btn ghost" onClick={() => setHandOpen(false)}>
+              閉じる
+            </button>
           </div>
         </div>
       )}

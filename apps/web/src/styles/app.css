@@ -283,7 +283,7 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .stage .mini-name { font-size: 10.5px; }
 .stage .mini-name small { font-size: 8px; }
 .stage .mini-kw { font-size: 8.5px; padding: 1px 4px; }
-.stage .hand { display: flex; justify-content: center; align-items: end; padding-top: 10px; }
+.stage .hand { display: flex; justify-content: center; align-items: end; padding: 10px 14px 0; }
 .stage .hand .mini { flex: none; width: 92px; }
 .stage .hand .mini + .mini { margin-left: min(6px, calc((100% - 92px * var(--n)) / (var(--n) - 1))); }
 .stage .hand .mini:hover, .stage .hand .mini.selected { z-index: 2; }
@@ -324,3 +324,29 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .col-right .resign { padding: 6px 10px; font-size: 11px; }
 .col-right .resign.ask { color: #fff; background: #b8323a; border-color: #ff8a8a; }
 .log-box[open] ~ .resign { display: none; }
+
+/* ---------- 相手が出したカードを大きく見せる ---------- */
+.foe-reveal {
+  position: fixed; inset: 0; z-index: 40; display: grid; place-content: center; justify-items: center; gap: 10px;
+  pointer-events: none; background: radial-gradient(closest-side, #05080ecc, #05080e55 70%, transparent);
+  animation: fr-in 1.3s ease both;
+}
+.foe-reveal .fr-label { padding: 4px 14px; border-radius: 99px; background: #b8323a; color: #fff; font-weight: 800; font-size: 14px; box-shadow: 0 4px 14px #0008; }
+.foe-reveal .fr-card { width: min(220px, 34vh); }
+@keyframes fr-in {
+  0% { opacity: 0; transform: scale(0.82) translateY(-30px); }
+  18% { opacity: 1; transform: scale(1) translateY(0); }
+  80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.9) translateY(30px); }
+}
+.fx-targeted { outline: 3px solid #ff5a5f; outline-offset: 2px; border-radius: 10px; animation: fx-target 0.5s ease-in-out infinite alternate; }
+@keyframes fx-target { to { outline-color: #ffd36e; box-shadow: 0 0 18px #ff5a5f; } }
+@media (prefers-reduced-motion: reduce) { .foe-reveal, .fx-targeted { animation: none; } }
+
+/* ---------- 手札が多いとき ---------- */
+.stage .hand-more { position: absolute; right: 14px; bottom: 146px; z-index: 3; padding: 5px 10px; border-radius: 99px; border: 1px solid var(--gold); background: #0b1018e6; color: var(--gold); font-weight: 800; font-size: 11px; cursor: pointer; }
+.hand-sheet h2 { margin: 0 0 10px; font-size: 16px; }
+.hand-grid { width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; max-height: 70dvh; overflow: auto; padding: 4px; }
+.hand-grid .mini { width: 100%; }
+.sheet .hand-sheet { align-self: center; width: min(92vw, 760px); background: var(--night-2); border-radius: 16px; border: 1px solid var(--line); }
+.stage .col-center { position: relative; }

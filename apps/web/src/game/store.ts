@@ -104,6 +104,12 @@ export interface Presenter {
   beforeAttack: (game: GameState, action: Extract<Action, { type: "attack" }>) => Promise<void>;
   /** CPU のターンが始まってから最初の操作までの待ち（ターン開始の演出のため） */
   turnIntro: number;
+  /** 相手がカードを出す・投稿を使う前に、そのカードを大きく見せる */
+  revealFoe?: (
+    game: GameState,
+    cardId: string,
+    action: Extract<Action, { type: "play" | "cast" }>,
+  ) => Promise<void>;
 }
 let presenter: Presenter | null = null;
 export const setPresenter = (p: Presenter | null) => {
@@ -133,6 +139,16 @@ export const useGame = create<GameStore>((set, get) => {
         set({ animating: true });
         await presenter.beforeAttack(g, u.action);
         if (my !== runId) break;
+      }
+      // 相手が出した・使ったカードは、出来事からカードを知って大きく見せる
+      const a = u.action;
+      if ((a.type === "play" || a.type === "cast") && a.player === CPU && presenter?.revealFoe && g) {
+        const ev = u.events.find((e) => e.type === "played" || e.type === "cast");
+        if (ev && "cardId" in ev) {
+          set({ animating: true });
+          await presenter.revealFoe(g, ev.cardId, a);
+          if (my !== runId) break;
+        }
       }
       set({ game: u.state, log: appendLog(u.events), animating: false });
     }
@@ -198,6 +214,10 @@ export const useGame = create<GameStore>((set, get) => {
       const g = get().game;
       if (!a || !g || g.winner) return finish();
       if (a.type === "attack" && presenter) await presenter.beforeAttack(g, a);
+      if ((a.type === "play" || a.type === "cast") && presenter?.revealFoe) {
+        const id = g.players[CPU].hand[a.handIndex];
+        if (id) await presenter.revealFoe(g, id, a);
+      }
       if (my !== runId) return;
       if (!dispatch(a)) return finish();
       setTimeout(next, a.type === "endTurn" ? 0 : delay);
@@ -214,7 +234,7 @@ export const useGame = create<GameStore>((set, get) => {
     error: null,
     selection: null,
     cpuBusy: false,
-    cpuDelay: 700,
+    cpuDelay: 900,
     animating: false,
     start: (deck, opts = {}) => {
       runId++;
