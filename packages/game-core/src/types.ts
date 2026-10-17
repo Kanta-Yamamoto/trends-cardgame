@@ -68,6 +68,8 @@ export interface PlayerState {
   playedThisTurn: number;
   /** このゲームで使った投稿の枚数 */
   postsUsed: number;
+  /** このゲームで回復の効果を使った回数（癒しの「回復するたびに」で使う） */
+  heals: number;
   /** このターンのあとに続けて行うターンの数 */
   extraTurns: number;
   /** このターン数の間、自分のアイコンはガードを無視して攻撃できる */

@@ -22,7 +22,7 @@ pnpm dev            # Web: http://localhost:5173 / API: http://localhost:3001
 
 | 場所 | 内容 |
 |---|---|
-| `apps/web` | React のアプリ。カード一覧（`/`）、ルール確認用の対戦（`/play`）、試作ページ（`/prototypes/...`） |
+| `apps/web` | React のアプリ。カード一覧（`/`）、ルール確認用の対戦（`/play`） |
 | `apps/api` | NestJS の API。カードを PostgreSQL から返す |
 | `packages/cards` | カードデータと型 |
 | `packages/game-core` | ゲームのルールとテスト |

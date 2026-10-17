@@ -588,6 +588,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         card={card}
         cost={cost}
         className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""}`}
+        // 手元で扇のように持つ（真ん中からのずれ。広げた一覧では使わない）
+        style={inSheet ? undefined : ({ "--f": i - (me.hand.length - 1) / 2 } as CSSProperties)}
         onClick={() => {
           setPeek(p);
           if (!myTurn) return;
@@ -847,7 +849,7 @@ function PeekCard({ card, view, onOpen }: { card: CardDef; view?: UnitView; onOp
     <>
       {/* 押すと画面いっぱいに拡大して、効果を大きな文字で読める */}
       <div className={dark ? "peek-dark" : undefined}>
-        <HoloCard card={card} interactive idle={false} onClick={onOpen} />
+        <HoloCard card={card} darkForm={!!dark} interactive idle={false} onClick={onOpen} />
       </div>
       <button type="button" className="btn ghost peek-zoom" onClick={onOpen}>
         大きく見る

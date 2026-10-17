@@ -200,7 +200,7 @@
 
 
 .bg{
-  background:url(/assets/cards/c2-art.jpg) center 38%/cover no-repeat;
+  background:var(--art, url(/assets/cards/c2-art.jpg)) center 38%/cover no-repeat;
   transform:translate(calc(var(--nx) * -8px), calc(var(--ny) * -8px)) scale(1.06);
 }
 
@@ -223,13 +223,13 @@
 }
 
 .subject{
-  background:url(/assets/cards/c2-subject.webp) center 38%/cover no-repeat;
+  background:var(--subject, url(/assets/cards/c2-subject.webp)) center 38%/cover no-repeat;
   transform:translate(calc(var(--nx) * 9px), calc(var(--ny) * 9px)) scale(1.06);
   filter:drop-shadow(0 8px 12px #000c) drop-shadow(0 0 6px #e3263a55);
   pointer-events:none;
 }
 .subject-shine{
-  -webkit-mask:url(/assets/cards/c2-subject.webp) center 38%/cover no-repeat; mask:url(/assets/cards/c2-subject.webp) center 38%/cover no-repeat;
+  -webkit-mask:var(--subject, url(/assets/cards/c2-subject.webp)) center 38%/cover no-repeat; mask:var(--subject, url(/assets/cards/c2-subject.webp)) center 38%/cover no-repeat;
   transform:translate(calc(var(--nx) * 9px), calc(var(--ny) * 9px)) scale(1.06);
   background:linear-gradient(115deg, transparent 35%, #ff6a5a 47%, #fff 50%, #ff6a5a 53%, transparent 65%) var(--mx) var(--my)/260% 260% no-repeat;
   mix-blend-mode:soft-light; opacity:calc(.2 + var(--g) * .55); pointer-events:none;

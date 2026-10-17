@@ -1,6 +1,6 @@
 import type { CardDef } from "@trends/cards";
 import type { UnitView } from "@trends/game-core";
-import { useRef } from "react";
+import { type CSSProperties, useRef } from "react";
 import { ATTR_META, attrBackground, stars } from "../cards/meta";
 
 interface Props {
@@ -13,6 +13,8 @@ interface Props {
   uid?: number;
   inHand?: boolean;
   className?: string;
+  /** 追加のスタイル（手札の扇の並びなど） */
+  style?: CSSProperties;
   disabled?: boolean;
   label?: string;
   onClick?: () => void;
@@ -32,6 +34,7 @@ export function MiniCard({
   uid,
   inHand,
   className = "",
+  style,
   disabled,
   label,
   onClick,
@@ -43,8 +46,9 @@ export function MiniCard({
   const longPressed = useRef(false);
   const cancel = () => window.clearTimeout(timer.current);
   const dark = view?.unit.dark ?? false;
-  const bg =
-    card.art && !dark ? { backgroundImage: `url(${card.art})` } : { background: attrBackground(card) };
+  // 闇堕ちしたら闇堕ちの絵（無ければ元の絵に紫の影をかける）
+  const art = dark ? (card.dark?.art ?? card.art) : card.art;
+  const bg = art ? { backgroundImage: `url(${art})` } : { background: attrBackground(card) };
   const name = view?.name ?? card.name;
   const keywords = view?.keywords ?? card.keywords;
   const attack = view?.attack ?? card.attack ?? 0;
@@ -54,8 +58,8 @@ export function MiniCard({
   return (
     <button
       type="button"
-      className={`mini ${card.art && !dark ? "has-art" : ""} ${dark ? "is-dark" : ""} ${isPost ? "is-post" : ""} ${className}`}
-      style={bg}
+      className={`mini ${art ? "has-art" : ""} ${dark ? "is-dark" : ""} ${isPost ? "is-post" : ""} ${className}`}
+      style={{ ...bg, ...style }}
       data-uid={uid}
       data-hand-card={inHand ? "" : undefined}
       disabled={disabled}

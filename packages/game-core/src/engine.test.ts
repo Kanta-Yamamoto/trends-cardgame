@@ -98,6 +98,15 @@ const catalog: Record<string, RuleCard> = {
     ],
   }),
   sweeper: icon("sweeper", 3, 2, 3, { effects: [{ on: "play", do: "sweep", maxHp: 1 }] }),
+  dj: icon("dj", 3, 2, 3, { effects: [{ on: "passive", do: "healGrow", attack: 1, hp: 1 }] }),
+  sauna: icon("sauna", 6, 3, 6, {
+    effects: [
+      { on: "play", do: "heal", to: "master", amount: 3 },
+      { on: "passive", do: "healBurn", amount: 2 },
+    ],
+  }),
+  yuru: icon("yuru", 8, 5, 8, { effects: [{ on: "hand", do: "cheaperPerHeal" }] }),
+  therapy: post("therapy", 2, { effects: [{ do: "heal", to: "allAlliesAndMaster", amount: 2 }] }),
 };
 const F = (n: number) => Array.from({ length: n }, () => "f");
 
@@ -481,6 +490,23 @@ describe("切り札の効果（★4〜5）", () => {
     expect(s.active).toBe("p1");
     expect(s.turn).toBe(turn + 1);
     expect(end(s).active).toBe("p2");
+  });
+  it("回復の効果を使うたび：数を数え、healGrow は強くなり、healBurn は相手のマスターにダメージ", () => {
+    let s = play(game(["dj", "sauna", "therapy", "yuru"], F(12), 20), 0, 0);
+    // ととのい師：自分の登場の回復で、もう2ダメージ
+    s = play(s, 0, 1);
+    expect(s.players.p1.heals).toBe(1);
+    expect(s.players.p2.lp).toBe(20 - 2);
+    const dj = s.players.p1.field[0];
+    expect(dj && viewUnit(s, "p1", dj, catalog).attack).toBe(3);
+    // 満タンでも回復の効果を使えば数える
+    s = applyAction(s, { type: "cast", player: "p1", handIndex: 0 }, catalog).state;
+    expect(s.players.p1.heals).toBe(2);
+    expect(s.players.p2.lp).toBe(20 - 4);
+    const dj2 = s.players.p1.field[0];
+    expect(dj2 && viewUnit(s, "p1", dj2, catalog).attack).toBe(4);
+    // ゆるキャラは回復の回数だけ安くなる
+    expect(effectiveCost(s, "p1", "yuru", catalog)).toBe(8 - 2);
   });
   it("体力が1以下の相手のアイコンをすべて倒す", () => {
     const s = play(withFoe(["sweeper"], ["f", "wall", "f"]), 0, 0);

@@ -36,8 +36,9 @@ export function CardZoom({ card, view, onClose }: { card: CardDef; view?: UnitVi
     <div className="zoom-sheet" role="dialog" aria-modal="true" aria-label={`${name} を拡大`}>
       <button type="button" className="zoom-sheet-bg" aria-label="閉じる" onClick={onClose} />
       <div className="zoom-sheet-body">
-        <div className={`zoom-sheet-card ${dark ? "peek-dark" : ""}`}>
+        <div className="zoom-sheet-card">
           <HoloCard
+            darkForm={dark}
             card={card}
             interactive
             idle={false}
