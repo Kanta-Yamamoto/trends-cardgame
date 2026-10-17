@@ -8,7 +8,7 @@ import {
   type GameEvent,
   type GameState,
   type PlayerId,
-  planTurn,
+  planTurnSearch,
   RuleError,
 } from "@trends/game-core";
 import { create } from "zustand";
@@ -187,12 +187,12 @@ export const useGame = create<GameStore>((set, get) => {
     }
   };
 
-  /** CPU のターンを planTurn の通りに1手ずつ進める */
+  /** CPU のターンを planTurnSearch（先読みする CPU）の通りに1手ずつ進める */
   const runCpu = () => {
     const game = get().game;
     if (!game || game.winner || game.active !== CPU) return;
     const my = runId;
-    const actions = planTurn(game, CPU, CATALOG);
+    const actions = planTurnSearch(game, CPU, CATALOG);
     set({ cpuBusy: true, selection: null });
     const delay = get().cpuDelay;
     const finish = () => {
