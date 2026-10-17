@@ -18,6 +18,7 @@ import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from
 import { AttrChips } from "../cards/AttrChips";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
+import { CardZoom } from "../game/CardZoom";
 import { animateAttack, animateDraw, flipCard, popDamage, popMaster } from "../game/fx";
 import { MiniCard } from "../game/MiniCard";
 import { CATALOG, CPU, DECK_INFO, ME, setPresenter, useGame } from "../game/store";
@@ -195,6 +196,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   /** 手札が多いときに、全部を大きく並べて見る */
   const [handOpen, setHandOpen] = useState(false);
   const [peek, setPeek] = useState<Peek | null>(null);
+  /** 画面いっぱいに大きく見ているカード（スマホで効果を読むため） */
+  const [zoom, setZoom] = useState<Peek | null>(null);
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
   const seen = useRef(0);
@@ -293,7 +296,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               ? foeGuarded
                 ? "攻撃先を選んでください（ガードがいるので、ガードと晒し者しか攻撃できません）"
                 : "攻撃先を選んでください（光っているところ）"
-              : "手札を選んで場に出す・投稿する／攻撃できるアイコンを選んで攻撃";
+              : "手札を選んで場に出す・投稿する／攻撃できるアイコンを選んで攻撃（長押しでカードを拡大）";
 
   const unitCard = (owner: PlayerId, slot: number, u: Unit) => {
     const card = CATALOG[u.cardId] as CardDef;
@@ -314,6 +317,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             castable ? cast({ side: "enemy", slot }) : hit ? attack({ kind: "unit", slot }) : setPeek(p)
           }
           onPeek={() => setPeek(p)}
+          onLongPress={() => setZoom(p)}
         />
       );
     }
@@ -334,6 +338,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           if (ready) select({ kind: "attacker", slot });
         }}
         onPeek={() => setPeek(p)}
+        onLongPress={() => setZoom(p)}
       >
         {ready && <em className="mini-ready">{u.attacksLeft > 1 ? "2回攻撃" : "攻撃できる"}</em>}
       </MiniCard>
@@ -366,6 +371,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           select(selected ? null : { kind: "hand", index: i });
         }}
         onPeek={() => setPeek(p)}
+        onLongPress={() => setZoom(p)}
       />
     );
   };
@@ -462,9 +468,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           <div className="col-right">
             <div className="peek">
               {peekCard ? (
-                <PeekCard key={peekCard.id} card={peekCard} view={peek?.view} />
+                <PeekCard key={peekCard.id} card={peekCard} view={peek?.view} onOpen={() => setZoom(peek)} />
               ) : (
-                <p className="muted">カードを押すと、ここに大きく表示します</p>
+                <p className="muted">カードを押すと、ここに表示します。長押しで画面いっぱいに拡大</p>
               )}
             </div>
             <button
@@ -544,6 +550,10 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         </div>
       )}
 
+      {zoom && CATALOG[zoom.id] && (
+        <CardZoom card={CATALOG[zoom.id] as CardDef} view={zoom.view} onClose={() => setZoom(null)} />
+      )}
+
       {trashView && (
         <div className="sheet" role="dialog" aria-modal="true" aria-label="オワコン">
           <button type="button" className="sheet-bg" aria-label="閉じる" onClick={() => setTrashView(null)} />
@@ -561,6 +571,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                     key={`${id}-${i}`}
                     card={c}
                     className="in-trash"
+                    onClick={() => setZoom({ id, where: "trash", index: i })}
                   />
                 );
               })}
@@ -580,21 +591,17 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
 }
 
 /** 大きく表示するカード。場のアイコンなら今の状態（闇堕ち・ダメージ・強化）も添える */
-function PeekCard({ card, view }: { card: CardDef; view?: UnitView }) {
+function PeekCard({ card, view, onOpen }: { card: CardDef; view?: UnitView; onOpen: () => void }) {
   const dark = view?.unit.dark && card.dark;
-  // カードを押すと文字の板を隠して絵だけを見せる（スマホでも使えるようにホバーではなくタップ）
-  const [textHidden, setTextHidden] = useState(false);
   return (
     <>
+      {/* 押すと画面いっぱいに拡大して、効果を大きな文字で読める */}
       <div className={dark ? "peek-dark" : undefined}>
-        <HoloCard
-          card={card}
-          interactive
-          idle={false}
-          textHidden={textHidden}
-          onClick={() => setTextHidden((v) => !v)}
-        />
+        <HoloCard card={card} interactive idle={false} onClick={onOpen} />
       </div>
+      <button type="button" className="btn ghost peek-zoom" onClick={onOpen}>
+        大きく見る
+      </button>
       {view && (
         <div className="peek-note">
           {dark && <b className="peek-darkname">闇堕ち：{card.dark?.name}</b>}
