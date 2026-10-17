@@ -19,7 +19,7 @@ export function Gallery() {
       <header className="page-head">
         <h1>カード一覧</h1>
         <p className="muted">
-          カードを押すと拡大して、効果を読めます。拡大したカードをもう一度押すと、文字を隠して絵だけを見られます。
+          カードを押すと拡大して、効果を読めます。拡大したカードをもう一度押すと、文字を隠して絵だけを見られます。★4以上のキラカードは、拡大中に触ると傾いてホロが動きます。
         </p>
         {data?.fallback && (
           <p className="notice">API に接続できないため、アプリに同梱したカードデータを表示しています。</p>
@@ -40,7 +40,12 @@ export function Gallery() {
             閉じる
           </button>
           <div className="zoom-card">
-            <HoloCard card={zoom} textHidden={textHidden} onClick={() => setTextHidden((v) => !v)} />
+            <HoloCard
+              card={zoom}
+              interactive
+              textHidden={textHidden}
+              onClick={() => setTextHidden((v) => !v)}
+            />
           </div>
           <p className="zoom-hint">
             {textHidden ? "カードを押すと文字を戻します" : "カードを押すと文字を隠して絵だけを見られます"}

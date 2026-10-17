@@ -461,3 +461,5 @@
   50%{transform:translate(calc(var(--sw) * 1px),-60vh) scale(1)}
   100%{transform:translate(0,-125vh) scale(1.05)}
 }
+/* 動かないカード（一覧など）は泡のアニメーションも止める */
+.card.is-still .bubbles i{animation-play-state:paused}

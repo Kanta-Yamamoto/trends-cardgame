@@ -29,8 +29,16 @@ export function setTilt(el: HTMLElement, nx: number, ny: number, glow: number) {
   el.style.setProperty("--g", glow.toFixed(2));
 }
 
+/** 傾きとホロが動く「キラカード」になる★の下限 */
+export const KIRA_RARITY = 4;
+
 interface Props {
   card: CardDef;
+  /**
+   * 触ると傾いてホロが動く。★4以上のカードだけに効く。
+   * 一覧のように何枚も並ぶ場所では付けない（毎フレームの更新が重いため）
+   */
+  interactive?: boolean;
   /** 触っていないときにゆっくり揺らす */
   idle?: boolean;
   onClick?: () => void;
@@ -40,7 +48,15 @@ interface Props {
   textHidden?: boolean;
 }
 
-export function HoloCard({ card, idle = true, onClick, compact = false, textHidden = false }: Props) {
+export function HoloCard({
+  card,
+  interactive = false,
+  idle = true,
+  onClick,
+  compact = false,
+  textHidden = false,
+}: Props) {
+  const live = interactive && card.rarity >= KIRA_RARITY;
   const cardRef = useRef<HTMLDivElement>(null);
   const lastMove = useRef(0);
   const face = FACES[card.id] ?? GENERIC;
@@ -53,6 +69,11 @@ export function HoloCard({ card, idle = true, onClick, compact = false, textHidd
       if (e && inner) inner.style.setProperty("--w", `${e.contentRect.width}px`);
     });
     ro.observe(el);
+    // 動かないカードは正面を向けたまま。毎フレームの更新もしない
+    if (!live) {
+      setTilt(el, 0, 0, 0);
+      return () => ro.disconnect();
+    }
     setTilt(el, -0.3, -0.3, 0.4);
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -70,13 +91,13 @@ export function HoloCard({ card, idle = true, onClick, compact = false, textHidd
       ro.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, [idle]);
+  }, [idle, live]);
 
   const { cls, Face } = face;
 
   const onPointerMove = (e: React.PointerEvent) => {
     const el = cardRef.current;
-    if (!el) return;
+    if (!el || !live) return;
     const r = el.getBoundingClientRect();
     const nx = ((e.clientX - r.left) / r.width) * 2 - 1;
     const ny = ((e.clientY - r.top) / r.height) * 2 - 1;
@@ -87,7 +108,7 @@ export function HoloCard({ card, idle = true, onClick, compact = false, textHidd
   const body = (
     <div
       ref={cardRef}
-      className={`card ${compact ? "is-compact" : ""} ${textHidden ? "text-hidden" : ""}`}
+      className={`card ${live ? "is-live" : "is-still"} ${compact ? "is-compact" : ""} ${textHidden ? "text-hidden" : ""}`}
       role="img"
       aria-label={
         card.type === "post"

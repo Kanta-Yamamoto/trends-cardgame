@@ -32,7 +32,7 @@ button { font: inherit; color: inherit; }
 .muted { color: var(--muted); margin: 0; font-size: 13px; line-height: 1.7; }
 .notice { margin: 10px 0 0; font-size: 12.5px; color: var(--gold); }
 .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 32px; margin-top: 28px; }
-.holo .card { cursor: grab; }
+.holo .card.is-live { cursor: grab; }
 .zoom { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: #05080de0; backdrop-filter: blur(4px); }
 .zoom-card { width: min(78vw, 380px, calc((100vh - 150px) * 0.716)); }
 .zoom { align-content: center; gap: 12px; }

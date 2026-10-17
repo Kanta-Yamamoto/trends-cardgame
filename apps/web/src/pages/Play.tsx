@@ -499,7 +499,13 @@ function PeekCard({ card, view }: { card: CardDef; view?: UnitView }) {
   return (
     <>
       <div className={dark ? "peek-dark" : undefined}>
-        <HoloCard card={card} idle={false} textHidden={textHidden} onClick={() => setTextHidden((v) => !v)} />
+        <HoloCard
+          card={card}
+          interactive
+          idle={false}
+          textHidden={textHidden}
+          onClick={() => setTextHidden((v) => !v)}
+        />
       </div>
       {view && (
         <div className="peek-note">
