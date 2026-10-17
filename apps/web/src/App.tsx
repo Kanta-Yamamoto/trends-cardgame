@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from "react-router";
+import { InstallButton } from "./InstallButton";
 import { Gallery } from "./pages/Gallery";
 import { OnlineLobby, OnlineRoom } from "./pages/Online";
 import { Play } from "./pages/Play";
@@ -19,6 +20,7 @@ export function App() {
         <NavLink to="/play">CPU と対戦</NavLink>
         <NavLink to="/online">オンライン対戦</NavLink>
         <span className="spacer" />
+        <InstallButton />
         {PROTOTYPES.map((p) => (
           <a key={p.href} href={p.href} className="proto">
             試作：{p.label}

@@ -9,6 +9,9 @@ import "./cards/rare.css";
 import "./cards/rare5.css";
 import "./cards/stats.css";
 import "./styles/app.css";
+import { registerPwa } from "./pwa";
+
+registerPwa();
 
 const root = document.getElementById("root");
 if (!root) throw new Error("#root がありません");

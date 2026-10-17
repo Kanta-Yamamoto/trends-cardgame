@@ -4,7 +4,7 @@ AIで描いたイラストを立体感のあるキラカードにして遊ぶ、
 
 ## 構成（pnpm workspaces + Turborepo）
 
-- `apps/web` — React 19 + Vite + TypeScript。カード表示（`src/cards`）、CPU 対戦（`src/pages/Play.tsx`、CPU は `planTurn`）、オンライン対戦（`src/pages/Online.tsx`）。`public/prototypes` に HTML だけで作った試作（ガチャ演出・対戦フィールド）を同梱
+- `apps/web` — React 19 + Vite + TypeScript。カード表示（`src/cards`）、CPU 対戦（`src/pages/Play.tsx`、CPU は `planTurn`）、オンライン対戦（`src/pages/Online.tsx`）。`public/prototypes` に HTML だけで作った試作（ガチャ演出・対戦フィールド）を同梱。PWA（`public/manifest.webmanifest`・`public/sw.js`・`src/pwa.ts`。サービスワーカーの中身を変えたら `sw.js` の `VERSION` を上げる）
 - `apps/api` — NestJS 11 + Drizzle ORM + PostgreSQL。`GET /cards`、`GET /health`、Google ログイン（`/auth/*`）、オンライン対戦（`POST /matches` と Socket.IO。仕組みは `docs/online.md`）
 - `packages/cards` — カードデータ（`src/cards.json`）と型。web・api・game-core の共通の元データ
 - `packages/game-core` — ゲームのルール。画面に依存しない純粋な関数（`applyAction(state, action, catalog)`）と CPU の思考（`planTurn`）。ルールの説明は `docs/rules.md`
