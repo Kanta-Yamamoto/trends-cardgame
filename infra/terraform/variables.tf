@@ -21,8 +21,8 @@ variable "api_image" {
 
 variable "cors_origin" {
   type        = string
-  description = "API を呼べる Web のオリジン（カンマ区切り）"
-  default     = "http://localhost:5173"
+  description = "API を呼べる別の Web のオリジン（カンマ区切り）。画面は同じサーバーで配るので、普段は空でよい"
+  default     = ""
 }
 
 variable "billing_account" {

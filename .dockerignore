@@ -4,5 +4,4 @@
 .git
 assets/original
 legacy
-apps/web/public
 **/.env

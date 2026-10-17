@@ -208,7 +208,9 @@ export function OnlineRoom() {
   // 接続して部屋に入る。切れても自動でつなぎ直し、入り直す
   useEffect(() => {
     if (!ready || !token) return;
-    const socket: Socket = io(API_URL, { auth: { token }, transports: ["websocket", "polling"] });
+    const opts = { auth: { token }, transports: ["websocket", "polling"] };
+    // API_URL が空なら、画面と同じサーバーにつなぐ
+    const socket: Socket = API_URL ? io(API_URL, opts) : io(opts);
     const link: RemoteLink = {
       send: (action: Action) =>
         new Promise((resolve) => {

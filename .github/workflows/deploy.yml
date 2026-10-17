@@ -1,0 +1,52 @@
+name: Deploy
+
+# main の CI が通ったら、Cloud Run に自動でデプロイする。
+# GitHub の Variables（GCP_PROJECT_ID / GCP_WIF_PROVIDER / GCP_DEPLOYER_SA）が無ければ何もしない。
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      vars.GCP_WIF_PROVIDER != '' &&
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    env:
+      REGION: ${{ vars.GCP_REGION || 'asia-northeast1' }}
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Build and push image
+        run: |
+          IMAGE="$REGION-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/trends/api:$SHA"
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          docker build -f apps/api/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+      - name: Deploy to Cloud Run
+        run: gcloud run deploy trends-api --image "$IMAGE" --region "$REGION" --project "${{ vars.GCP_PROJECT_ID }}" --quiet
+      - name: Smoke test
+        run: |
+          URL=$(gcloud run services describe trends-api --region "$REGION" --project "${{ vars.GCP_PROJECT_ID }}" --format 'value(status.url)')
+          curl -fsS "$URL/health"
+          curl -fsS -H 'Accept: text/html' "$URL/" | grep -q '<title>TRENDS'
+          echo "### デプロイしました: $URL" >> "$GITHUB_STEP_SUMMARY"
