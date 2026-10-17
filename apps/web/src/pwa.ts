@@ -24,7 +24,16 @@ export function isStandalone() {
   );
 }
 
-function isIos() {
+export function isAndroid() {
+  return /Android/.test(navigator.userAgent);
+}
+
+/** スマホ・タブレット（指で触る端末） */
+export function isTouchDevice() {
+  return window.matchMedia?.("(pointer: coarse)").matches || navigator.maxTouchPoints > 1;
+}
+
+export function isIos() {
   const ua = navigator.userAgent;
   return /iPhone|iPad|iPod/.test(ua) || (ua.includes("Macintosh") && navigator.maxTouchPoints > 1);
 }
@@ -48,6 +57,28 @@ export function registerPwa() {
       // 登録できなくても、普通の Web として遊べる
     });
   });
+}
+
+/** 初めての人に案内を自動で出すか（閉じてから7日は出さない・「もう表示しない」なら出さない） */
+const GUIDE_KEY = "trends.installGuide";
+export function shouldAutoGuide() {
+  if (isStandalone() || !isTouchDevice() || import.meta.env.BASE_URL !== "/" || "Capacitor" in window)
+    return false;
+  try {
+    const v = localStorage.getItem(GUIDE_KEY);
+    if (v === "never") return false;
+    if (v && Date.now() - Number(v) < 7 * 24 * 3600 * 1000) return false;
+  } catch {
+    // 保存できない環境では毎回出す
+  }
+  return true;
+}
+export function dismissGuide(forever: boolean) {
+  try {
+    localStorage.setItem(GUIDE_KEY, forever ? "never" : String(Date.now()));
+  } catch {
+    // 保存できなくてもよい
+  }
 }
 
 /** インストールの案内の状態 */

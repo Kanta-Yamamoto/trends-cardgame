@@ -28,8 +28,6 @@ button { font: inherit; color: inherit; }
 .nav .proto { font-size: 12px; }
 .nav { padding-top: max(14px, env(safe-area-inset-top, 0px)); position: relative; }
 .install-btn { padding: 6px 12px; font-size: 12px; }
-.install-tip { position: absolute; right: 0; top: 100%; z-index: 30; width: min(320px, calc(100vw - 32px)); margin-top: 6px; padding: 12px 14px; border-radius: 14px; background: #121a28f2; border: 1px solid #f2cf7a55; box-shadow: 0 12px 30px #000a; font-size: 13px; line-height: 1.7; }
-.install-tip p { margin: 0 0 8px; }
 .spacer { flex: 1; }
 .page { padding-top: 24px; }
 .page-head h1 { margin: 0 0 6px; font-size: 22px; }
@@ -415,3 +413,40 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .foe-reveal.mine { animation-duration: 1s; }
 .foe-reveal.mine .fr-label { background: #2f7fd8; }
 .foe-reveal.mine .fr-card { width: min(180px, 30vh); }
+
+/* ホーム画面に追加する案内 */
+.install-guide { z-index: 70; }
+.ig-body { position: relative; width: min(420px, 100%); max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); overflow: auto; display: grid; gap: 12px; justify-items: center; text-align: center; padding: 22px 18px 18px; border-radius: 20px; background: #121a28f7; border: 1px solid #f2cf7a55; box-shadow: 0 20px 50px #000c; }
+.ig-icon { border-radius: 14px; box-shadow: 0 6px 18px #000a; }
+.ig-body h2 { margin: 0; font-size: 19px; }
+.ig-now { width: 100%; padding: 13px; font-size: 15px; }
+.ig-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; padding: 4px; border-radius: 12px; background: #ffffff0d; }
+.ig-tabs button { border: 0; border-radius: 9px; padding: 8px 6px; background: transparent; color: var(--muted); font-weight: 800; font-size: 12.5px; cursor: pointer; }
+.ig-tabs button.on { background: #ffffff1f; color: var(--text); }
+.ig-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; width: 100%; text-align: left; }
+.ig-steps p { margin: 0 0 6px; display: flex; gap: 10px; align-items: baseline; font-size: 14.5px; line-height: 1.6; font-weight: 700; }
+.ig-steps b { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--gold); color: var(--night); font-size: 13px; }
+.ig-steps img { display: block; width: 100%; border-radius: 12px; border: 1px solid #ffffff1f; }
+.ig-actions { display: flex; gap: 10px; justify-content: space-between; align-items: center; width: 100%; margin-top: 4px; }
+.ig-actions .btn:not(.small) { padding: 11px 26px; }
+
+/* カード一覧：★ごとの段と、属性の絞り込み */
+.g-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.g-chip { border: 1.5px solid #ffffff40; border-radius: 99px; padding: 6px 13px; background: transparent; color: var(--text); font-weight: 800; font-size: 12.5px; cursor: pointer; }
+.g-chip.on { background: #ffffff26; border-color: #fff; }
+.g-row { margin-top: 26px; }
+.g-row-head { display: flex; align-items: baseline; gap: 10px; margin: 0; font-size: 16px; }
+.g-row-head small { color: var(--muted); font-size: 12px; font-weight: 700; }
+.g-stars { color: var(--gold); letter-spacing: -0.05em; }
+.g-swipe { display: none; margin-left: auto; color: var(--muted); font-size: 11.5px; font-weight: 700; }
+.g-row .gallery { margin-top: 12px; }
+@media (max-width: 700px) and (orientation: portrait) {
+  /* 縦持ち：段ごとに横へスワイプ。1枚は画面の6割ほど、次のカードが少し見える */
+  .g-swipe { display: inline; }
+  .g-row .gallery {
+    display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+    margin: 12px -16px 0; padding: 4px 16px 14px; scroll-padding: 0 16px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .g-row .gallery::-webkit-scrollbar { display: none; }
+  .g-item { flex: none; width: min(62vw, 260px); scroll-snap-align: start; }
+}
