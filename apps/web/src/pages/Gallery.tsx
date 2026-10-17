@@ -1,19 +1,29 @@
 import { useQuery } from "@tanstack/react-query";
-import type { CardDef } from "@trends/cards";
+import { ATTRIBUTES, type CardDef } from "@trends/cards";
 import { useState } from "react";
 import { fetchCards } from "../api/client";
 import { HoloCard } from "../cards/HoloCard";
 
 export function Gallery() {
   const { data, isLoading } = useQuery({ queryKey: ["cards"], queryFn: fetchCards });
+  // 属性ごと（共通は最後）に、コストの低い順で並べる
+  const group = (c: CardDef) => (c.attributes[0] ? ATTRIBUTES.indexOf(c.attributes[0]) : ATTRIBUTES.length);
+  const cards = (data?.cards.filter((c) => !c.token) ?? [])
+    .slice()
+    .sort((a, b) => group(a) - group(b) || a.cost - b.cost || a.id.localeCompare(b.id));
   const [zoom, setZoom] = useState<CardDef | null>(null);
+  const [textHidden, setTextHidden] = useState(false);
+  const open = (c: CardDef) => {
+    setTextHidden(false);
+    setZoom(c);
+  };
 
   return (
     <section className="page">
       <header className="page-head">
         <h1>カード一覧</h1>
         <p className="muted">
-          カードにカーソルを乗せるかドラッグすると、面が傾いてホロが動きます。タップで拡大。
+          カードを押すと拡大して、効果を読めます。拡大したカードをもう一度押すと、文字を隠して絵だけを見られます。★4以上のキラカードは、拡大中に触ると傾いてホロが動きます。
         </p>
         {data?.fallback && (
           <p className="notice">API に接続できないため、アプリに同梱したカードデータを表示しています。</p>
@@ -23,8 +33,8 @@ export function Gallery() {
         <p className="muted">読み込み中…</p>
       ) : (
         <div className="gallery">
-          {data?.cards.map((c) => (
-            <HoloCard key={c.id} card={c} onClick={() => setZoom(c)} />
+          {cards.map((c) => (
+            <HoloCard key={c.id} card={c} compact onClick={() => open(c)} />
           ))}
         </div>
       )}
@@ -34,8 +44,16 @@ export function Gallery() {
             閉じる
           </button>
           <div className="zoom-card">
-            <HoloCard card={zoom} />
+            <HoloCard
+              card={zoom}
+              interactive
+              textHidden={textHidden}
+              onClick={() => setTextHidden((v) => !v)}
+            />
           </div>
+          <p className="zoom-hint">
+            {textHidden ? "カードを押すと文字を戻します" : "カードを押すと文字を隠して絵だけを見られます"}
+          </p>
         </div>
       )}
     </section>

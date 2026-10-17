@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { CARDS } from "@trends/cards";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AppModule } from "../src/app.module";
@@ -32,8 +33,30 @@ describe("cards API", () => {
 
   it("GET /cards は全カードを ID 順で返す", async () => {
     const res = await request(app.getHttpServer()).get("/cards").expect(200);
-    expect(res.body.map((c: { id: string }) => c.id)).toEqual(["c1", "c2", "c3"]);
-    expect(res.body[1]).toMatchObject({ name: "レン", cost: 6, power: 7200, keywords: ["速攻"] });
+    const ids = CARDS.map((c) => c.id).sort();
+    expect(res.body.map((c: { id: string }) => c.id)).toEqual(ids);
+    const ren = res.body.find((c: { id: string }) => c.id === "c2");
+    expect(ren).toMatchObject({
+      name: "レン",
+      epithet: "炎上系配信者",
+      type: "icon",
+      rarity: 5,
+      cost: 6,
+      attack: 4,
+      hp: 4,
+      attributes: ["炎上"],
+      keywords: ["連撃"],
+    });
+    expect(ren.dark).toMatchObject({ name: "闇堕ちレン", attack: 7, hp: 3 });
+    // 投稿は攻撃力・体力を持たない
+    expect(res.body.find((c: { id: string }) => c.id === "f5")).toMatchObject({
+      type: "post",
+      attack: null,
+      hp: null,
+      art: "/assets/cards/f5-art.jpg",
+      dark: null,
+      target: "enemyIcon",
+    });
   });
 
   it("GET /cards/:id", async () => {

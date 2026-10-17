@@ -1,0 +1,624 @@
+/* ★5 の専用デザイン：トップアイドル（.s-idol）・伝説のコラ画像（.s-collage）・専門家（.s-expert） */
+
+/* ---------- 共通の土台 ---------- */
+.s-idol, .s-collage, .s-expert, .s-hibana, .s-nagi {
+  --rainbow: repeating-linear-gradient(118deg, #ff7ad9 0%, #ffd36e 4%, #7dffb0 8%, #6ec9ff 12%, #b48cff 16%, #ff7ad9 20%);
+  .card {
+    --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; --nx: 0; --ny: 0; --g: 0;
+    position: relative; width: 100%; aspect-ratio: 63 / 88; border-radius: 4.2% / 3%;
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transition: transform 0.12s ease-out;
+    overflow: hidden; isolation: isolate;
+  }
+  .card-inner { position: absolute; inset: 0; font-size: calc(var(--w, 360px) / 24); }
+  .layer { position: absolute; inset: 0; }
+  .stats { font-size: 0.95em; }
+}
+
+/* =========================================================
+   トップアイドル：ピンクと白、ギンガム、ハート、リボン、ファンレター
+   ========================================================= */
+.s-idol {
+  --pink: #ff4fa3; --pink-2: #ff8ec4; --pink-3: #ffd1e8; --berry: #a3165e; --ink: #6a2347;
+  --heart: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 30'%3E%3Cpath d='M16 29C7 22 1 17 1 9.5 1 4.8 4.8 1 9.3 1c2.8 0 5.2 1.4 6.7 3.6C17.5 2.4 19.9 1 22.7 1 27.2 1 31 4.8 31 9.5 31 17 25 22 16 29z'/%3E%3C/svg%3E");
+  --hearts: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath transform='translate(6 8) scale(.38)' d='M16 29C7 22 1 17 1 9.5 1 4.8 4.8 1 9.3 1c2.8 0 5.2 1.4 6.7 3.6C17.5 2.4 19.9 1 22.7 1 27.2 1 31 4.8 31 9.5 31 17 25 22 16 29z'/%3E%3Cpath transform='translate(36 30) scale(.26)' d='M16 29C7 22 1 17 1 9.5 1 4.8 4.8 1 9.3 1c2.8 0 5.2 1.4 6.7 3.6C17.5 2.4 19.9 1 22.7 1 27.2 1 31 4.8 31 9.5 31 17 25 22 16 29z'/%3E%3Cpath transform='translate(18 44) scale(.18)' d='M16 29C7 22 1 17 1 9.5 1 4.8 4.8 1 9.3 1c2.8 0 5.2 1.4 6.7 3.6C17.5 2.4 19.9 1 22.7 1 27.2 1 31 4.8 31 9.5 31 17 25 22 16 29z'/%3E%3Ccircle cx='48' cy='10' r='1.6'/%3E%3Ccircle cx='28' cy='22' r='1.1'/%3E%3C/svg%3E");
+  --f-name: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif;
+  --f-body: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", sans-serif;
+  --f-num: "Fredoka", "Arial Rounded MT Bold", sans-serif;
+
+  .card {
+    color: var(--ink); background: #fff7fb;
+    box-shadow: 0 30px 60px -20px #000b, 0 0 60px -12px #ff4fa388, 0 0 0 1px #ffffff60;
+  }
+  /* 枠：ピンクのギンガムチェック＋パステルの虹 */
+  .frame {
+    background:
+      repeating-linear-gradient(0deg, #ffffff66 0 0.6em, transparent 0.6em 1.2em),
+      repeating-linear-gradient(90deg, #ffffff66 0 0.6em, transparent 0.6em 1.2em),
+      linear-gradient(160deg, var(--pink-3), var(--pink-2) 45%, #ffc1df 70%, var(--pink-3));
+  }
+  .frame-iri {
+    background: linear-gradient(120deg, #ffb3d1, #ffe9a8, #a8f0d8, #8fd8ff, #c9b3ff, #ffb3d1);
+    background-size: 300% 300%; background-position: var(--mx) var(--my);
+    mix-blend-mode: soft-light; opacity: calc(0.4 + var(--g) * 0.4);
+  }
+  .frame-hearts {
+    background: #fff; mask: var(--hearts) repeat 0 0 / 3.4em;
+    opacity: calc(0.45 + var(--g) * 0.55);
+  }
+  .win { clip-path: inset(4.4% 5.2% 4.4% 5.2% round 5%); }
+  .bg {
+    background: var(--art, url(/assets/cards/m1-art.jpg)) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * -7px), calc(var(--ny) * -7px)) scale(1.06);
+  }
+  /* ステージの光（傾けると回る） */
+  .lights {
+    background: repeating-conic-gradient(from calc(var(--nx) * 30deg) at 50% -10%,
+      transparent 0deg, transparent 4deg, #ffd1e8 5deg, #fff 5.6deg, #ffd1e8 6.2deg, transparent 7deg, transparent 12deg);
+    mix-blend-mode: soft-light; opacity: calc(0.25 + var(--g) * 0.45);
+  }
+  .hearts {
+    background: radial-gradient(60% 50% at var(--mx) var(--my), #fff, #ffb3d6 45%, transparent 80%);
+    mask: var(--hearts) repeat calc(var(--nx) * 14px) calc(var(--ny) * 14px) / 3em;
+    mix-blend-mode: screen; opacity: calc(0.25 + var(--g) * 0.7);
+  }
+  /* 窓のふち：白いレース */
+  .lace {
+    inset: 4.4% 5.2%; border-radius: 5%; pointer-events: none;
+    box-shadow: 0 0 0 0.18em #fff, 0 0 0 0.36em var(--pink-2), 0 0 1em 0.2em #ff4fa355;
+  }
+  .lace::before {
+    content: ""; position: absolute; inset: -0.55em; border-radius: 6%;
+    border: 0.32em dotted #fff; opacity: 0.95;
+  }
+  .subject {
+    background: url(/assets/cards/m1-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
+    filter: drop-shadow(0 6px 10px #a3165e55); pointer-events: none;
+  }
+  .subject-shine {
+    mask: url(/assets/cards/m1-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
+    background: linear-gradient(115deg, transparent 35%, #ffd1e8 46%, #fff 50%, #ffd1e8 54%, transparent 65%) var(--mx) var(--my) / 260% 260% no-repeat;
+    mix-blend-mode: soft-light; opacity: calc(0.25 + var(--g) * 0.5); pointer-events: none;
+  }
+  /* コスト：ハート */
+  .cost {
+    position: absolute; left: 2%; top: 1.4%; width: 18%; aspect-ratio: 32 / 30; z-index: 3;
+    display: grid; place-items: center; padding-bottom: 0.3em;
+    background: linear-gradient(160deg, #ffa3cf, var(--pink) 55%, var(--berry));
+    mask: var(--heart) center / contain no-repeat;
+    filter: drop-shadow(0 0 0.1em #fff);
+  }
+  .cost b { font: 700 2.2em/1 var(--f-num); color: #fff; text-shadow: 0 0.06em 0 var(--berry), 0 0 0.3em #fff8; }
+  .rarity {
+    position: absolute; right: 7%; top: 6%; z-index: 3; font-size: 0.85em; letter-spacing: 0.08em;
+    color: #fff; padding: 0.35em 1.1em; background: var(--pink);
+    clip-path: polygon(0 0, 100% 0, 92% 50%, 100% 100%, 0 100%, 8% 50%);
+    text-shadow: 0 0 0.3em #fff;
+  }
+  .dark-tag {
+    position: absolute; right: 7%; top: 12%; z-index: 3; font-size: 0.75em; font-weight: 800;
+    padding: 0.2em 0.6em; border-radius: 99px; background: #2a0d24; color: #ffb3e0; box-shadow: 0 0 0 1px #ff8ec4;
+  }
+  /* 名前：リボン */
+  .plate {
+    position: absolute; left: 7%; right: 7%; bottom: 5.5%; z-index: 2;
+    display: grid; justify-items: center; gap: 0;
+  }
+  .ribbon {
+    position: relative; z-index: 1; margin-bottom: -0.55em; padding: 0.35em 2.2em 0.45em;
+    background: linear-gradient(180deg, #ff7ab9, var(--pink) 55%, #e0338a);
+    clip-path: polygon(0 0, 100% 0, 94% 50%, 100% 100%, 0 100%, 6% 50%);
+    filter: drop-shadow(0 0.15em 0.2em #a3165e66);
+  }
+  .ribbon h3 {
+    margin: 0; font: 800 1.45em/1.15 var(--f-name); letter-spacing: 0.06em; color: #fff;
+    text-shadow: 0 0.06em 0 var(--berry), 0 0 0.4em #ffffffaa;
+  }
+  /* 効果：ファンレター（上がスカラップ、ピンクの点線） */
+  .letter {
+    width: 100%; display: grid; gap: 0.4em; justify-items: center; text-align: center;
+    padding: 1em 0.9em 0.6em; border-radius: 0.8em;
+    background: #ffffffeb;
+    outline: 0.12em dashed var(--pink-2); outline-offset: -0.4em;
+    box-shadow: 0 0.3em 1em -0.3em #a3165e66;
+    mask: radial-gradient(circle at 50% 0, transparent 0.42em, #000 0.45em) 0 0 / 1.2em 100% repeat-x;
+  }
+  .chip { font-size: 0.72em; }
+  .chip.kaiwai { background: var(--pink-3); color: var(--berry); box-shadow: none; }
+  .effect { margin: 0; font: 700 0.86em/1.55 var(--f-body); color: var(--ink); text-wrap: pretty; }
+  .effect .kw { color: var(--pink); background: linear-gradient(transparent 60%, #ffd1e8 60%); }
+  .dark-note { margin: 0; font: 700 0.68em/1.4 var(--f-body); color: #8a3c9e; }
+  .foot { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .stamp {
+    font: 700 0.7em/1 var(--f-num); letter-spacing: 0.12em; color: var(--pink);
+    padding: 0.3em 0.6em; border: 0.12em solid var(--pink); border-radius: 0.4em; transform: rotate(-8deg);
+  }
+  .glare {
+    z-index: 4; pointer-events: none;
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffffffcc 0%, #ffd1e830 25%, transparent 55%);
+    mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);
+  }
+}
+
+/* =========================================================
+   伝説のコラ画像：新聞紙・網点・破れた窓・マスキングテープ・脅迫状文字
+   ========================================================= */
+.s-collage {
+  --lime: #8cff3f; --leaf: #6bcb3b; --moss: #25520c; --news: #e9e4d6; --ink: #161616;
+  --torn: polygon(0% 3%, 6% 0%, 13% 2.5%, 21% 0.5%, 29% 3%, 37% 0%, 46% 2%, 55% 0.5%, 63% 3%, 72% 0%, 80% 2.5%, 88% 0.5%, 95% 2.5%, 100% 0.5%,
+    99% 10%, 100% 22%, 98.5% 35%, 100% 48%, 98.5% 60%, 100% 72%, 98.5% 85%, 100% 98%,
+    93% 100%, 85% 98%, 76% 100%, 67% 98.5%, 58% 100%, 49% 98%, 40% 100%, 31% 98.5%, 22% 100%, 13% 98%, 5% 100%, 0% 98%,
+    1.5% 86%, 0% 74%, 1.5% 62%, 0% 50%, 1.5% 38%, 0% 26%, 1.5% 14%);
+  --f-ui: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+
+  .card { color: var(--ink); background: var(--news); box-shadow: 0 30px 60px -20px #000b, 0 0 50px -14px #8cff3f88, 0 0 0 1px #0003; }
+  /* 新聞紙：網点と段組みの線 */
+  .paper {
+    background:
+      radial-gradient(#0000002a 0.09em, transparent 0.12em) 0 0 / 0.42em 0.42em,
+      linear-gradient(160deg, #f1ecdf, #ddd6c4);
+  }
+  .columns {
+    background: repeating-linear-gradient(180deg, transparent 0 0.55em, #00000018 0.55em 0.62em);
+    mask: linear-gradient(90deg, #000 0 30%, transparent 30% 34%, #000 34% 66%, transparent 66% 70%, #000 70%);
+    opacity: 0.8;
+  }
+  .neon {
+    inset: 3.8% 4.4%; clip-path: var(--torn);
+    background: var(--lime); filter: blur(0.35em); opacity: calc(0.45 + var(--g) * 0.5);
+  }
+  .win { inset: 4.4% 5.2%; clip-path: var(--torn); }
+  .bg {
+    inset: -2%;
+    background: url(/assets/cards/k5-art.jpg) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * -7px), calc(var(--ny) * -7px)) scale(1.04);
+  }
+  /* 走査線のグリッチ（傾けるとずれる） */
+  .glitch {
+    background: repeating-linear-gradient(180deg, transparent 0 0.9em, #8cff3f 0.9em 1em, transparent 1em 1.4em, #ff3fd0 1.4em 1.45em, transparent 1.45em 3.1em);
+    background-position: calc(var(--nx) * 12px) calc(var(--ny) * 30px);
+    mix-blend-mode: color-dodge; opacity: calc(0.05 + var(--g) * 0.3);
+  }
+  /* 虹色の切り抜き片 */
+  .shards {
+    background: var(--rainbow); background-size: 260% 260%; background-position: var(--mx) var(--my);
+    mask:
+      conic-gradient(from 20deg at 30% 40%, #000 0 12%, transparent 12% 30%, #000 30% 38%, transparent 38% 61%, #000 61% 70%, transparent 70%) 0 0 / 4.5em 4.5em,
+      radial-gradient(55% 45% at var(--mx) var(--my), #000, transparent);
+    mask-composite: intersect;
+    mix-blend-mode: color-dodge; opacity: calc(0.12 + var(--g) * 0.4);
+  }
+  .subject {
+    background: url(/assets/cards/k5-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 9px), calc(var(--ny) * 9px)) scale(1.06);
+    filter: drop-shadow(0.15em 0.2em 0 #fff) drop-shadow(0 0.3em 0.5em #0006); pointer-events: none;
+  }
+  .subject-shine {
+    mask: url(/assets/cards/k5-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 9px), calc(var(--ny) * 9px)) scale(1.06);
+    background: linear-gradient(115deg, transparent 35%, #c8ff9a 47%, #fff 50%, #c8ff9a 53%, transparent 65%) var(--mx) var(--my) / 260% 260% no-repeat;
+    mix-blend-mode: soft-light; opacity: calc(0.2 + var(--g) * 0.5); pointer-events: none;
+  }
+  /* マスキングテープ */
+  .tape {
+    position: absolute; z-index: 3; width: 22%; height: 4.2%;
+    background: repeating-linear-gradient(90deg, #f6ffd8cc 0 0.5em, #e9f7c4cc 0.5em 1em);
+    clip-path: polygon(3% 0, 97% 4%, 100% 30%, 96% 55%, 100% 80%, 97% 100%, 2% 96%, 0 70%, 4% 45%, 0 20%);
+    box-shadow: 0 0.1em 0.2em #0002;
+  }
+  .tape-a { left: 1%; top: 6%; transform: rotate(-32deg); }
+  .tape-b { right: 0%; top: 7%; transform: rotate(28deg); width: 18%; }
+  .tape-c { left: -4%; top: -0.6em; width: 30%; height: 1.4em; transform: rotate(-12deg); }
+  /* コスト：テープで貼ったシール */
+  .cost {
+    position: absolute; left: 3%; top: 2.4%; width: 16%; aspect-ratio: 1; z-index: 4;
+    display: grid; place-items: center; border-radius: 50%; transform: rotate(-8deg);
+    background: var(--lime); box-shadow: 0 0 0 0.25em #fff, 0 0.25em 0.5em #0006;
+  }
+  .cost b { font: 400 2.1em/1 "Dela Gothic One", sans-serif; color: var(--ink); }
+  /* ★：ラベルライターのテープ */
+  .rarity {
+    position: absolute; right: 6%; top: 6%; z-index: 4; transform: rotate(3deg);
+    font: 700 0.8em/1 var(--f-ui); letter-spacing: 0.2em; color: #fff;
+    padding: 0.45em 0.8em; background: #111; box-shadow: inset 0 0.1em 0 #fff3, 0 0.15em 0.3em #0006;
+    text-shadow: 0 -0.05em 0 #000, 0 0.05em 0 #fff6;
+  }
+  /* 名前：脅迫状のように1文字ずつ切り抜き */
+  .plate { position: absolute; left: 6%; right: 6%; bottom: 5%; z-index: 2; display: grid; justify-items: center; gap: 0.6em; }
+  .ransom { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.12em; line-height: 1; }
+  .ransom span {
+    display: inline-block; padding: 0.12em 0.16em; font-size: 1.5em; box-shadow: 0.06em 0.1em 0.15em #0006;
+    background: #fff; color: #111; font-family: "Dela Gothic One", sans-serif;
+  }
+  .ransom span:nth-child(5n + 1) { background: #111; color: #fff; transform: rotate(-5deg); font-family: "Shippori Mincho B1", serif; font-weight: 800; }
+  .ransom span:nth-child(5n + 2) { background: var(--lime); transform: rotate(4deg) translateY(0.1em); }
+  .ransom span:nth-child(5n + 3) { background: #fff4a8; transform: rotate(-2deg); font-family: "M PLUS Rounded 1c", sans-serif; font-weight: 800; }
+  .ransom span:nth-child(5n + 4) { background: #f1ecdf; transform: rotate(6deg) translateY(-0.08em); font-family: "Shippori Mincho B1", serif; font-weight: 800; }
+  .ransom span:nth-child(5n) { background: #ff3fd0; color: #fff; transform: rotate(-3deg); }
+  /* 効果：破った紙の切れ端 */
+  .scrap {
+    position: relative; width: 100%; display: grid; gap: 0.4em; padding: 0.9em 0.9em 0.6em;
+    background: #fbf8ef; transform: rotate(-1.2deg);
+    clip-path: polygon(0 4%, 8% 0, 17% 3%, 26% 0.5%, 37% 3.5%, 48% 0, 60% 3%, 71% 0.5%, 82% 3.5%, 92% 0, 100% 3%, 100% 100%, 0 100%);
+    filter: drop-shadow(0 0.2em 0.3em #0005);
+  }
+  .chip { font-size: 0.72em; }
+  .chip.kaiwai { background: #111; color: #fff; box-shadow: none; }
+  .effect { margin: 0; font: 700 0.86em/1.55 var(--f-ui); color: var(--ink); }
+  .effect .kw { background: linear-gradient(transparent 55%, var(--lime) 55%); }
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5em; }
+  .src { font: 500 0.6em/1.2 "Courier New", monospace; color: #555; letter-spacing: 0.04em; }
+  .glare {
+    z-index: 5; pointer-events: none;
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #f8ffe6aa 0%, #8cff3f1c 25%, transparent 55%);
+    mix-blend-mode: overlay; opacity: calc(0.25 + var(--g) * 0.6);
+  }
+}
+
+/* =========================================================
+   専門家：象牙と金、アーチの窓、設計図のような金の図形、論文の「所見」
+   ========================================================= */
+.s-expert {
+  --gold: #e8bd4f; --gold-2: #fff1c2; --gold-deep: #7a5a0e; --ivory: #fbf6e8; --navy: #1d2742; --ink: #2a2418;
+  --f-name: "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
+  --f-num: "Cinzel", "Times New Roman", serif;
+  --arch: inset(4.4% 6% 4.4% 6% round 38% 38% 2.5% 2.5% / 18% 18% 2% 2%);
+
+  .card { color: var(--ink); background: var(--ivory); box-shadow: 0 30px 60px -20px #000b, 0 0 60px -14px #f2c14e99, 0 0 0 1px #fff8; }
+  .ivory {
+    background:
+      radial-gradient(120% 60% at 20% 10%, #fffdf6, transparent 60%),
+      radial-gradient(90% 60% at 90% 90%, #efe3c4, transparent 60%),
+      linear-gradient(160deg, #fbf6e8, #f1e7cc);
+  }
+  /* 枠の彫り込み：細い方眼と、四隅の金の星 */
+  .engrave {
+    background:
+      radial-gradient(circle at 5.5% 4%, var(--gold) 0 0.35em, transparent 0.4em),
+      radial-gradient(circle at 94.5% 4%, var(--gold) 0 0.35em, transparent 0.4em),
+      radial-gradient(circle at 5.5% 96%, var(--gold) 0 0.35em, transparent 0.4em),
+      radial-gradient(circle at 94.5% 96%, var(--gold) 0 0.35em, transparent 0.4em),
+      repeating-linear-gradient(0deg, #b8923022 0 1px, transparent 1px 0.7em),
+      repeating-linear-gradient(90deg, #b8923022 0 1px, transparent 1px 0.7em);
+  }
+  .gold-frame {
+    inset: 2.2% 3%; border-radius: 3%; pointer-events: none;
+    box-shadow: inset 0 0 0 0.12em var(--gold), inset 0 0 0 0.3em var(--ivory), inset 0 0 0 0.38em var(--gold-deep);
+  }
+  .gold-frame::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit;
+    background: linear-gradient(115deg, transparent 30%, #fff8 47%, #fff 50%, #fff8 53%, transparent 70%) var(--mx) var(--my) / 260% 260% no-repeat;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    padding: 0.4em; opacity: calc(0.3 + var(--g) * 0.6);
+  }
+  .win { clip-path: var(--arch); }
+  .bg {
+    background: url(/assets/cards/g4-art.jpg) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * -7px), calc(var(--ny) * -7px)) scale(1.06);
+  }
+  /* 金の図形（同心円と放射線。傾けると中心が動く） */
+  .diagram {
+    background:
+      repeating-radial-gradient(circle at var(--mx) var(--my), transparent 0 1.6em, #ffe9a8 1.65em 1.72em, transparent 1.75em 3.3em),
+      repeating-conic-gradient(from 0deg at var(--mx) var(--my), transparent 0 7deg, #ffe9a855 7deg 7.4deg);
+    mix-blend-mode: color-dodge; opacity: calc(0.12 + var(--g) * 0.35);
+    mask: radial-gradient(60% 45% at var(--mx) var(--my), #000, transparent);
+  }
+  .dust {
+    background:
+      radial-gradient(circle, #fff6d0 0 1px, transparent 1.6px) 0 0 / 19px 19px,
+      radial-gradient(circle, #ffd86a 0 0.8px, transparent 1.4px) 7px 11px / 13px 13px;
+    background-position: calc(var(--nx) * 10px) calc(var(--ny) * 10px);
+    mix-blend-mode: screen; opacity: calc(0.2 + var(--g) * 0.6);
+    mask: radial-gradient(55% 45% at var(--mx) var(--my), #000, transparent);
+  }
+  /* アーチの金の縁 */
+  .arch {
+    inset: 4.4% 6%; pointer-events: none;
+    border-radius: 38% 38% 2.5% 2.5% / 18% 18% 2% 2%;
+    box-shadow: 0 0 0 0.12em var(--gold-2), 0 0 0 0.28em var(--gold), 0 0 0 0.36em var(--gold-deep), 0 0 1.2em 0.2em #f2c14e66;
+  }
+  .subject {
+    background: url(/assets/cards/g4-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
+    filter: drop-shadow(0 6px 10px #5a400a55); pointer-events: none;
+  }
+  .subject-shine {
+    mask: url(/assets/cards/g4-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
+    background: linear-gradient(115deg, transparent 35%, #ffe9a8 47%, #fff 50%, #ffe9a8 53%, transparent 65%) var(--mx) var(--my) / 260% 260% no-repeat;
+    mix-blend-mode: soft-light; opacity: calc(0.25 + var(--g) * 0.5); pointer-events: none;
+  }
+  /* コスト：月桂樹の金メダル */
+  .cost {
+    position: absolute; left: 2.4%; top: 1.6%; width: 17%; aspect-ratio: 1; z-index: 3; border-radius: 50%;
+    display: grid; place-items: center;
+    background:
+      radial-gradient(circle, transparent 58%, var(--gold-deep) 59% 61%, transparent 62%),
+      repeating-conic-gradient(var(--gold) 0 6deg, #fff1c2 6deg 9deg, var(--gold) 9deg 15deg),
+      var(--gold);
+    box-shadow: 0 0 0 0.12em var(--gold-deep), 0 0.3em 0.7em -0.2em #000a;
+  }
+  .cost::before {
+    content: ""; position: absolute; inset: 18%; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fffbe9, var(--gold-2) 40%, var(--gold) 90%);
+    box-shadow: inset 0 0 0 0.08em var(--gold-deep);
+  }
+  .cost b { position: relative; font: 800 2.1em/1 var(--f-num); color: var(--gold-deep); text-shadow: 0 1px 0 #fff; }
+  .rarity {
+    position: absolute; right: 8%; top: 6.5%; z-index: 3; font-size: 0.78em; letter-spacing: 0.12em;
+    color: var(--gold-2); padding: 0.35em 0.7em; background: var(--navy); border-radius: 0.2em;
+    box-shadow: 0 0 0 0.1em var(--gold), 0 0 0 0.2em var(--navy);
+  }
+  /* 名前：金の箔押しと飾り罫 */
+  .plate { position: absolute; left: 7%; right: 7%; bottom: 5%; z-index: 2; display: grid; gap: 0.3em; }
+  .title { display: grid; justify-items: center; }
+  .title h3 {
+    margin: 0; font: 800 2em/1.1 var(--f-name); letter-spacing: 0.2em; padding-left: 0.2em;
+    background: linear-gradient(100deg, #8a6512 0%, #e8bd4f 30%, #fff6d6 48%, #e8bd4f 60%, #8a6512 100%);
+    background-size: 220% 100%; background-position: var(--mx) 0;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 0.04em #2a1d02) drop-shadow(0 0 0.04em #2a1d02) drop-shadow(0 0.1em 0.25em #000c);
+  }
+  .rule {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0.4em; width: 70%;
+    font-size: 0.7em; color: var(--gold-deep);
+  }
+  .rule::before, .rule::after { content: ""; height: 0.12em; background: linear-gradient(90deg, transparent, var(--gold)); }
+  .rule::after { background: linear-gradient(90deg, var(--gold), transparent); }
+  /* 効果：論文の「所見」 */
+  .paper {
+    display: grid; gap: 0.35em; padding: 0.6em 0.9em 0.55em;
+    background: linear-gradient(180deg, #fffdf6f2, #f8f0dcf2);
+    border-top: 0.14em double var(--gold-deep); border-bottom: 0.14em double var(--gold-deep);
+    box-shadow: 0 0.3em 0.8em -0.3em #5a400a55;
+  }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 0.4em; }
+  .head > span:first-child {
+    font: 800 0.72em/1 var(--f-name); letter-spacing: 0.4em; color: var(--navy);
+    padding-bottom: 0.2em; border-bottom: 0.08em solid var(--navy);
+  }
+  .chip { font-size: 0.68em; }
+  .chip.kaiwai { background: var(--navy); color: var(--gold-2); box-shadow: none; }
+  .effect { margin: 0; font: 700 0.86em/1.6 var(--f-name); color: var(--ink); text-wrap: pretty; }
+  .effect .kw { color: var(--navy); text-decoration: underline 0.08em var(--gold); text-underline-offset: 0.2em; }
+  .foot { display: flex; align-items: center; gap: 0.5em; }
+  .seal {
+    width: 2em; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
+    font-size: 0.8em; color: #fff6d6; background: radial-gradient(circle at 35% 30%, #f5d27a, var(--gold) 55%, var(--gold-deep));
+    box-shadow: 0 0 0 0.12em #fff, 0 0 0 0.2em var(--gold-deep);
+  }
+  .cite { flex: 1; font: 700 0.6em/1 var(--f-name); color: var(--gold-deep); letter-spacing: 0.1em; }
+  .glare {
+    z-index: 4; pointer-events: none;
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #fffbe8cc 0%, #f2c14e22 25%, transparent 55%);
+    mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);
+  }
+}
+
+/* =========================================================
+   ヒバナ：黒い漆と燃えるステージ、ニュースの「速報」テロップ
+   ========================================================= */
+.s-hibana {
+  --ember: #ff5a1f; --blaze: #ffb02e; --blood: #c8102e; --coal: #0d0708;
+  --f-name: "Dela Gothic One", "Hiragino Sans", sans-serif;
+  --f-ui: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+  --f-num: "Cinzel", "Times New Roman", serif;
+
+  .card { color: #fff; background: var(--coal); box-shadow: 0 30px 70px -18px #000, 0 0 60px -10px #ff5a1f88, 0 0 0 1px #ffffff1a; }
+  .lacquer {
+    background:
+      linear-gradient(115deg, transparent 30%, #ffffff22 46%, #ffffff44 50%, #ffffff22 54%, transparent 70%) var(--mx) var(--my) / 260% 260% no-repeat,
+      linear-gradient(160deg, #221012, #070304 45%, #1d0c0e 70%, #050203);
+  }
+  .embers {
+    background: radial-gradient(60% 50% at var(--mx) var(--my), #ffd2a0, var(--ember) 45%, transparent 80%);
+    mask:
+      radial-gradient(circle, #000 0 1px, transparent 1.6px) 0 0 / 17px 17px,
+      radial-gradient(circle, #000 0 0.8px, transparent 1.4px) 6px 9px / 11px 11px;
+    opacity: calc(0.35 + var(--g) * 0.65);
+  }
+  .win { clip-path: inset(4.4% 5.2% 4.4% 5.2% round 1.6%); }
+  .bg {
+    background: url(/assets/cards/c4-art.jpg) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * -8px), calc(var(--ny) * -8px)) scale(1.06);
+  }
+  /* 陽炎（傾けると揺らぐ熱） */
+  .heat {
+    background: repeating-linear-gradient(180deg, transparent 0 0.5em, #ff7a3a18 0.5em 0.6em);
+    background-position: 0 calc(var(--ny) * 20px);
+    mix-blend-mode: screen; opacity: calc(0.2 + var(--g) * 0.4);
+  }
+  .sparks {
+    background: radial-gradient(60% 50% at var(--mx) var(--my), #fff0d0, var(--blaze) 40%, transparent 80%);
+    mask:
+      radial-gradient(circle, #000 0 1.2px, transparent 2px) 0 0 / 23px 29px,
+      radial-gradient(circle, #000 0 0.8px, transparent 1.5px) 9px 13px / 15px 19px;
+    mask-position: calc(var(--nx) * 16px) calc(var(--ny) * 16px);
+    mix-blend-mode: screen; opacity: calc(0.25 + var(--g) * 0.7);
+  }
+  /* 枠の下からせり上がる熱 */
+  .flames {
+    top: auto; height: 30%;
+    background:
+      radial-gradient(40% 60% at 20% 100%, #ffb02e99, transparent 70%),
+      radial-gradient(40% 70% at 60% 100%, #ff5a1faa, transparent 70%),
+      radial-gradient(35% 55% at 90% 100%, #ffb02e88, transparent 70%);
+    background-position: calc(var(--nx) * 8px) 0;
+    mix-blend-mode: screen; opacity: calc(0.5 + var(--g) * 0.4);
+  }
+  .edge {
+    inset: 4.4% 5.2%; border-radius: 1.6%; pointer-events: none;
+    box-shadow: 0 0 0 1.5px #000, 0 0 0 2.5px var(--ember), 0 0 1em 0.2em #ff5a1f88;
+  }
+  .subject {
+    background: url(/assets/cards/c4-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 9px), calc(var(--ny) * 9px)) scale(1.06);
+    filter: drop-shadow(0 8px 12px #000c) drop-shadow(0 0 6px #ff5a1f66); pointer-events: none;
+  }
+  .subject-shine {
+    mask: url(/assets/cards/c4-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 9px), calc(var(--ny) * 9px)) scale(1.06);
+    background: linear-gradient(115deg, transparent 35%, #ffb02e 47%, #fff 50%, #ffb02e 53%, transparent 65%) var(--mx) var(--my) / 260% 260% no-repeat;
+    mix-blend-mode: soft-light; opacity: calc(0.2 + var(--g) * 0.55); pointer-events: none;
+  }
+  /* コスト：燃える王冠のメダル */
+  .cost {
+    position: absolute; left: 2.2%; top: 1.6%; width: 16.5%; aspect-ratio: 1; z-index: 3; border-radius: 50%;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 35% 28%, #4a1a12, #170708 55%, #050203);
+    box-shadow: 0 0 0 0.12em #000, 0 0 0 0.24em var(--ember), 0 0 1.2em -0.1em #ff5a1fcc;
+  }
+  .cost b {
+    font: 800 2.3em/1 var(--f-num);
+    background: linear-gradient(180deg, #fff3c4, var(--blaze) 40%, var(--ember) 70%, var(--blood));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .rarity {
+    position: absolute; right: 7%; top: 6%; z-index: 3; font-size: 0.8em; letter-spacing: 0.15em;
+    padding: 0.4em 0.7em; color: #fff3c4; transform: skewX(-12deg);
+    background: linear-gradient(110deg, var(--blood), #6d0a15); box-shadow: 0 0 0 1px #000, 0 0 0.8em #ff5a1f88;
+  }
+  .plate { position: absolute; left: 5.2%; right: 5.2%; bottom: 5%; z-index: 2; display: grid; gap: 0.3em; }
+  .name { display: flex; align-items: baseline; gap: 0.5em; padding-left: 0.4em; }
+  .name .epi {
+    font: 800 0.7em/1 var(--f-ui); letter-spacing: 0.2em; color: #000; padding: 0.3em 0.5em;
+    background: var(--blaze); transform: skewX(-12deg);
+  }
+  .name h3 {
+    margin: 0; font: 400 2.1em/1 var(--f-name); letter-spacing: 0.08em;
+    background: linear-gradient(180deg, #fff 20%, #fff1c8 50%, var(--blaze) 80%, var(--ember));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 0.04em #000) drop-shadow(0 0 0.04em #000) drop-shadow(0 0.06em 0 #000) drop-shadow(0 0 0.35em #ff5a1fcc);
+  }
+  /* 効果：ニュース速報のテロップ */
+  .ticker { display: grid; gap: 0.35em; background: #0b0606e8; box-shadow: inset 0 0.18em 0 var(--blood), 0 0.3em 1em -0.3em #000; padding: 0 0.8em 0.55em; }
+  .ticker-head { display: flex; align-items: center; justify-content: space-between; margin: 0 -0.8em; }
+  .flash {
+    font: 800 0.85em/1 var(--f-ui); letter-spacing: 0.2em; color: #fff; padding: 0.4em 0.9em 0.4em 0.8em;
+    background: linear-gradient(90deg, var(--blood), #ff2a3c); clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
+  }
+  .ticker-head .chips { padding-right: 0.8em; }
+  .chip { font-size: 0.68em; }
+  .chip.kaiwai { background: #ffffff1c; color: #fff; }
+  .effect { margin: 0; font: 700 0.86em/1.55 var(--f-ui); color: #fff; }
+  .effect .kw { color: var(--blaze); }
+  .foot { display: flex; align-items: center; justify-content: space-between; }
+  .live { font: 800 0.7em/1 var(--f-ui); letter-spacing: 0.12em; color: #ff3b4f; text-shadow: 0 0 0.5em #ff3b4f; }
+  .glare {
+    z-index: 4; pointer-events: none;
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffd6b066 0%, #ff5a1f1c 25%, transparent 55%);
+    mix-blend-mode: screen; opacity: calc(0.25 + var(--g) * 0.6);
+  }
+}
+
+/* =========================================================
+   ナギ：水色のガラス、波形の模様、水の中の光。効果は音声プレイヤー
+   ========================================================= */
+.s-nagi {
+  --aqua: #8fdcff; --aqua-2: #d8f4ff; --deep: #1d4d6e; --lilac: #c9c2ff; --ink: #163a52;
+  --f-name: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif;
+  --f-body: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", sans-serif;
+  --f-num: "Fredoka", "Arial Rounded MT Bold", sans-serif;
+
+  .card { color: var(--ink); background: #eef9ff; box-shadow: 0 30px 60px -20px #000b, 0 0 60px -12px #8fdcff99, 0 0 0 1px #ffffff60; }
+  /* 枠：すりガラス */
+  .glass {
+    background:
+      linear-gradient(120deg, transparent 30%, #ffffffd0 47%, #fff 50%, #ffffffd0 53%, transparent 70%) var(--mx) var(--my) / 250% 250% no-repeat,
+      linear-gradient(160deg, #f2fbff, #c6ebfb 35%, #f6fbff 55%, #b9def5 80%, #e9f6ff);
+  }
+  /* 枠に刻んだ音の波 */
+  .wave-lines {
+    background: repeating-radial-gradient(ellipse 140% 60% at 50% 120%, transparent 0 0.6em, #ffffff90 0.65em 0.72em, transparent 0.77em 1.3em);
+    opacity: calc(0.5 + var(--g) * 0.4);
+  }
+  .win { clip-path: inset(4.4% 5.2% 4.4% 5.2% round 6% 6% 3% 3%); }
+  .bg {
+    background: url(/assets/cards/c5-art.jpg) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * -7px), calc(var(--ny) * -7px)) scale(1.06);
+  }
+  /* 水面からの光の網目（コースティクス） */
+  .caustics {
+    background:
+      repeating-radial-gradient(circle at calc(var(--mx) - 10%) calc(var(--my) - 20%), transparent 0 1.1em, #ffffff55 1.25em 1.35em, transparent 1.5em 2.4em),
+      repeating-radial-gradient(circle at calc(var(--mx) + 15%) calc(var(--my) + 10%), transparent 0 1.6em, #d8f4ff44 1.75em 1.85em, transparent 2em 3.1em);
+    mix-blend-mode: soft-light; opacity: calc(0.25 + var(--g) * 0.5);
+  }
+  .bubbles-soft {
+    background:
+      radial-gradient(circle at 30% 30%, #fff 0 8%, transparent 14%) 0 0 / 3.2em 3.2em,
+      radial-gradient(circle at 60% 60%, #ffffffaa 0 5%, transparent 10%) 1.1em 1.6em / 2.3em 2.3em;
+    background-position: calc(var(--nx) * 10px) calc(var(--ny) * -14px);
+    mask: radial-gradient(55% 45% at var(--mx) var(--my), #000, transparent);
+    mix-blend-mode: screen; opacity: calc(0.15 + var(--g) * 0.5);
+  }
+  .rim {
+    inset: 4.4% 5.2%; border-radius: 6% 6% 3% 3%; pointer-events: none;
+    box-shadow: 0 0 0 0.15em #fff, 0 0 0 0.3em var(--aqua), 0 0 1.2em 0.2em #8fdcff77;
+  }
+  .subject {
+    background: url(/assets/cards/c5-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
+    filter: drop-shadow(0 6px 12px #1d4d6e55); pointer-events: none;
+  }
+  .subject-shine {
+    mask: url(/assets/cards/c5-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
+    background: linear-gradient(120deg, #c9c2ff, #d8f4ff, #fff, #ffd9f0, #c9c2ff); background-size: 300% 300%; background-position: var(--mx) var(--my);
+    mix-blend-mode: soft-light; opacity: calc(0.2 + var(--g) * 0.45); pointer-events: none;
+  }
+  /* コスト：泡 */
+  .cost {
+    position: absolute; left: 2.4%; top: 1.6%; width: 16.5%; aspect-ratio: 1; z-index: 3; border-radius: 50%;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 32% 28%, #fff 0 12%, #e6f8ff 22%, #a9e3fb 60%, #5cb8e6);
+    box-shadow: inset -0.2em -0.3em 0.5em #ffffff80, 0 0 0 0.12em #fff, 0 0.3em 0.8em -0.2em #1d4d6e88;
+  }
+  .cost b { font: 700 2.2em/1 var(--f-num); color: var(--deep); text-shadow: 0 1px 0 #fff; }
+  .rarity {
+    position: absolute; right: 7%; top: 6%; z-index: 3; font-size: 0.8em; letter-spacing: 0.12em; color: var(--deep);
+    padding: 0.35em 0.75em; border-radius: 2em; background: #ffffffd0; box-shadow: 0 0 0 1px var(--aqua);
+  }
+  .dark-tag {
+    position: absolute; right: 7%; top: 12%; z-index: 3; font-size: 0.75em; font-weight: 800;
+    padding: 0.2em 0.6em; border-radius: 99px; background: #1a0d24; color: #c9c2ff; box-shadow: 0 0 0 1px #8f7bff;
+  }
+  .plate { position: absolute; left: 6%; right: 6%; bottom: 5%; z-index: 2; display: grid; gap: 0.3em; }
+  .name { display: grid; justify-items: center; }
+  .name .epi { font: 700 0.72em/1.2 var(--f-body); letter-spacing: 0.3em; color: #fff; text-shadow: 0 0 0.4em #1d4d6e; }
+  .name h3 {
+    margin: 0; font: 800 2.1em/1.05 var(--f-name); letter-spacing: 0.3em; padding-left: 0.3em; color: #fff;
+    text-shadow: 0 0 0.3em #8fdcff, 0 0 0.8em #5cb8e6, 0 0.06em 0.1em #1d4d6e;
+  }
+  /* 効果：音声プレイヤー */
+  .player {
+    display: grid; gap: 0.35em; justify-items: center; text-align: center; padding: 0.6em 0.9em 0.55em; border-radius: 1em;
+    background: #ffffffd8; box-shadow: 0 0 0 0.1em #ffffff, 0 0 0 0.22em #8fdcff80, 0 0.3em 1em -0.3em #1d4d6e66;
+  }
+  .wave { display: flex; align-items: center; gap: 0.12em; width: 100%; height: 1.4em; }
+  .wave i {
+    flex: 1; border-radius: 1em; background: linear-gradient(180deg, var(--lilac), var(--aqua));
+    transform: scaleY(calc(0.7 + var(--g) * 0.3)); transform-origin: center;
+  }
+  .chip { font-size: 0.68em; }
+  .chip.kaiwai { background: var(--aqua-2); color: var(--deep); box-shadow: none; }
+  .effect { margin: 0; font: 700 0.86em/1.55 var(--f-body); color: var(--ink); }
+  .effect .kw { color: #2b8fd0; }
+  .dark-note { margin: 0; font: 700 0.66em/1.4 var(--f-body); color: #6a55c9; }
+  .foot { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 0.6em; }
+  .seek { flex: 1; display: grid; gap: 0.2em; justify-items: start; }
+  .seek .bar {
+    width: 100%; height: 0.25em; border-radius: 1em;
+    background: linear-gradient(90deg, var(--aqua) 0 38%, #d6e4ee 38%);
+    box-shadow: inset 0 0 0 1px #ffffff80;
+  }
+  .seek .time { font: 600 0.6em/1 var(--f-num); color: var(--deep); letter-spacing: 0.06em; }
+  .glare {
+    z-index: 4; pointer-events: none;
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffffffcc 0%, #d8f4ff30 25%, transparent 55%);
+    mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);
+  }
+}

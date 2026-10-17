@@ -15,7 +15,7 @@ export function App() {
         <NavLink to="/" end>
           カード
         </NavLink>
-        <NavLink to="/play">対戦（ルール確認）</NavLink>
+        <NavLink to="/play">CPU と対戦</NavLink>
         <span className="spacer" />
         {PROTOTYPES.map((p) => (
           <a key={p.href} href={p.href} className="proto">

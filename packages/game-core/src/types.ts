@@ -1,32 +1,81 @@
-/** ルールが必要とするカード情報だけ（表示用の情報は持たない） */
-export interface RuleCard {
-  id: string;
-  cost: number;
-  power: number;
-  tribe: string;
-  keywords?: readonly string[];
-}
+import type { CardDef, Keyword } from "@trends/cards";
+
+/** ルールが必要とするカード情報（表示用の情報は使わない） */
+export type RuleCard = Pick<
+  CardDef,
+  | "id"
+  | "type"
+  | "cost"
+  | "attack"
+  | "hp"
+  | "keywords"
+  | "effects"
+  | "target"
+  | "dark"
+  | "token"
+  | "kaiwai"
+  | "attributes"
+>;
 
 export type PlayerId = "p1" | "p2";
-export const SLOTS = 3;
+export const SLOTS = 5;
+/** 真ん中の枠（注目が多くたまる） */
+export const CENTER_SLOT = 2;
 
+/** 場に出ているアイコン */
 export interface Unit {
   /** 場に出るたびに振られる一意な番号 */
   uid: number;
   cardId: string;
+  /** 受けたダメージ（ターンをまたいで残る） */
+  damage: number;
+  /** このターンに攻撃できる状態か（出したターンは false。速攻なら true） */
   canAttack: boolean;
+  /** このターンに残っている攻撃回数（連撃は2） */
+  attacksLeft: number;
+  /** 効果で増減した攻撃力・体力 */
+  atkBuff: number;
+  hpBuff: number;
+  /** 闇堕ちの姿になっているか／一度闇堕ちしたか */
+  dark: boolean;
+  darkUsed: boolean;
+  /** このターン数までは晒し者（ガードを無視して攻撃される） */
+  exposedUntil: number;
+  /** このターン数までは眠っていて攻撃できない */
+  boundUntil: number;
+  /** キーワードと効果が消されている（コミュニティノート） */
+  silenced: boolean;
+  /** ガードだけ消されている */
+  noGuard: boolean;
+  /** トークン（オワコンに行くと消える） */
+  token: boolean;
 }
 
+/** マスター（操作するプレイヤー）の状態 */
 export interface PlayerState {
+  /** ライフ。0 になったら負け */
   lp: number;
+  /** 今使える話題力 */
   mana: number;
+  /** 話題力の上限（ターンごとに1増える） */
+  maxMana: number;
   deck: string[];
   hand: string[];
   field: (Unit | null)[];
+  /** オワコン（倒されたアイコンや使った投稿が行く場所） */
   trash: string[];
+  /** このターンに出した・使ったカードの枚数 */
+  playedThisTurn: number;
+  /** このゲームで使った投稿の枚数 */
+  postsUsed: number;
+  /** このターンのあとに続けて行うターンの数 */
+  extraTurns: number;
+  /** このターン数の間、自分のアイコンはガードを無視して攻撃できる */
+  breakthroughTurn: number;
 }
 
 export interface GameState {
+  /** 通算ターン数（両者合計、1から） */
   turn: number;
   active: PlayerId;
   players: Record<PlayerId, PlayerState>;
@@ -36,29 +85,81 @@ export interface GameState {
 }
 
 export type AttackTarget = { kind: "leader" } | { kind: "unit"; slot: number };
+/** 投稿の対象（相手のアイコンか、自分のアイコン） */
+export type CastTarget = { side: "enemy" | "ally"; slot: number };
 
 export type Action =
   | { type: "play"; player: PlayerId; handIndex: number; slot: number }
+  | { type: "cast"; player: PlayerId; handIndex: number; target?: CastTarget }
   | { type: "attack"; player: PlayerId; from: number; target: AttackTarget }
   | { type: "endTurn"; player: PlayerId };
 
 /** 画面側が演出を付けるための出来事の記録 */
 export type GameEvent =
   | { type: "played"; player: PlayerId; cardId: string; slot: number; cost: number }
-  | { type: "searched"; player: PlayerId; looked: string[]; added: string | null }
-  | { type: "battle"; attacker: string; defender: string; destroyed: string[] }
+  | { type: "cast"; player: PlayerId; cardId: string; cost: number; target?: CastTarget }
+  | { type: "summoned"; player: PlayerId; cardId: string; slot: number }
+  | {
+      type: "battle";
+      attacker: string;
+      defender: string;
+      /** 守る側が受けたダメージ */
+      toDefender: number;
+      /** 攻撃側が受けた反撃のダメージ */
+      toAttacker: number;
+      destroyed: string[];
+    }
+  | { type: "damaged"; player: PlayerId; slot: number; cardId: string; amount: number }
+  | { type: "destroyed"; player: PlayerId; cardId: string }
+  | { type: "darkFall"; player: PlayerId; slot: number; cardId: string }
+  | { type: "restored"; player: PlayerId; slot: number; cardId: string }
+  | {
+      type: "status";
+      player: PlayerId;
+      slot: number;
+      cardId: string;
+      status: "晒し" | "眠り" | "訂正" | "ガード消滅";
+    }
+  | { type: "stolen"; player: PlayerId; from: number; slot: number; cardId: string }
+  | { type: "extraTurn"; player: PlayerId }
+  | { type: "buffed"; player: PlayerId; slot: number; cardId: string; attack: number; hp: number }
+  | { type: "healed"; player: PlayerId; slot: number; cardId: string; amount: number }
   | { type: "leaderDamaged"; player: PlayerId; amount: number; lp: number }
-  | { type: "discarded"; player: PlayerId; cardId: string }
+  | { type: "leaderHealed"; player: PlayerId; amount: number; lp: number }
   | { type: "drew"; player: PlayerId; cardId: string }
-  | { type: "turnStarted"; player: PlayerId; turn: number }
+  | { type: "deckOut"; player: PlayerId }
+  | { type: "turnStarted"; player: PlayerId; turn: number; mana: number }
   | { type: "won"; player: PlayerId };
 
 export interface Config {
   maxMana: number;
   startLp: number;
   startHand: number;
+  /** 後攻が追加で持つ枚数 */
+  secondExtra: number;
+  /** 後攻の最初のターンだけ追加される話題力 */
+  secondBonusMana: number;
 }
-export const DEFAULT_CONFIG: Config = { maxMana: 12, startLp: 20000, startHand: 3 };
+export const DEFAULT_CONFIG: Config = {
+  maxMana: 10,
+  startLp: 20,
+  startHand: 4,
+  secondExtra: 1,
+  secondBonusMana: 1,
+};
+
+/** 画面や CPU が使う、アイコンの今の姿 */
+export interface UnitView {
+  unit: Unit;
+  name?: string;
+  attack: number;
+  hp: number;
+  maxHp: number;
+  keywords: Keyword[];
+  guard: boolean;
+  exposed: boolean;
+  asleep: boolean;
+}
 
 export class RuleError extends Error {
   constructor(

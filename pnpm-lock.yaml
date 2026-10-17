@@ -150,6 +150,10 @@ importers:
         version: 5.0.5(@types/node@26.6.5)(jsdom@30.1.3(@noble/hashes@1.8.0))(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15))
 
   packages/game-core:
+    dependencies:
+      '@trends/cards':
+        specifier: workspace:*
+        version: link:../cards
     devDependencies:
       tsup:
         specifier: ^9.0.0

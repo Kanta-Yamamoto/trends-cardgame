@@ -127,7 +127,6 @@
 }
 .effect{margin:0; font:500 .8em/1.65 var(--f-body); color:var(--ink); text-wrap:pretty}
 .effect .kw{font-weight:700; letter-spacing:.02em}
-.flavor{margin:0; font:700 .7em/1.5 var(--f-name); color:var(--ink-soft); font-style:normal}
 .foot{
   margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between; gap:.6em;
 }
@@ -283,7 +282,6 @@
 }
 .effect{margin:0; font:500 .72em/1.6 var(--f-body); color:var(--bone); text-wrap:pretty}
 .effect .kw{font-weight:700; color:var(--ember)}
-.flavor{margin:0; font:700 .64em/1.5 var(--f-body); color:var(--ash)}
 .foot{margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between; gap:.5em}
 .serial{
   font:600 .52em/1.2 var(--f-num); letter-spacing:.12em; color:var(--cap); font-variant-numeric:tabular-nums;
@@ -441,7 +439,6 @@
 }
 .effect{margin:0; font:500 .72em/1.62 var(--f-body); color:var(--ink); text-wrap:pretty}
 .effect .kw{font-weight:700; color:var(--aqua-deep)}
-.flavor{margin:0; font:700 .64em/1.5 var(--f-body); color:var(--ink-soft)}
 .foot{margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between; gap:.5em}
 .no{font:600 .54em/1 var(--f-num); letter-spacing:.12em; color:var(--ink-soft); font-variant-numeric:tabular-nums}
 .power{display:flex; align-items:baseline; gap:.3em}
@@ -464,3 +461,5 @@
   50%{transform:translate(calc(var(--sw) * 1px),-60vh) scale(1)}
   100%{transform:translate(0,-125vh) scale(1.05)}
 }
+/* 動かないカード（一覧など）は泡のアニメーションも止める */
+.card.is-still .bubbles i{animation-play-state:paused}
