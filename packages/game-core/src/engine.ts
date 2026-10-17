@@ -75,6 +75,9 @@ export function createGame(input: NewGameInput): GameState {
       field: Array.from({ length: SLOTS }, () => null),
       trash: [],
       playedThisTurn: 0,
+      postsUsed: 0,
+      extraTurns: 0,
+      breakthroughTurn: 0,
     };
   };
   const p1 = mk(input.decks.p1, first === "p1");
@@ -96,6 +99,13 @@ function effectsOf(u: Unit, catalog: Catalog): CardEffect[] {
   return must(catalog, u.cardId).effects;
 }
 
+const triggerOf = (e: CardEffect) => e.on ?? "play";
+
+/** 場にいる間ずっと効く効果を持っているか */
+function hasPassive(u: Unit, kind: CardEffect["do"], catalog: Catalog): boolean {
+  return effectsOf(u, catalog).some((e) => triggerOf(e) === "passive" && e.do === kind);
+}
+
 export function hasKeyword(u: Unit, k: Keyword, catalog: Catalog): boolean {
   return keywordsOf(u, catalog).includes(k);
 }
@@ -106,7 +116,7 @@ export function viewUnit(state: GameState, owner: PlayerId, unit: Unit, catalog:
   const base = unit.dark && card.dark ? card.dark : { attack: card.attack ?? 0, hp: card.hp ?? 1 };
   let attack = base.attack + unit.atkBuff;
   for (const e of effectsOf(unit, catalog)) {
-    if (e.do === "attackPerAlly") {
+    if (triggerOf(e) === "passive" && e.do === "attackPerAlly") {
       attack += state.players[owner].field.filter((x) => x && x.uid !== unit.uid).length;
     }
   }
@@ -125,14 +135,17 @@ export function viewUnit(state: GameState, owner: PlayerId, unit: Unit, catalog:
   };
 }
 
-/** 支払うコスト（今は補正なし） */
-export function effectiveCost(
-  _state: GameState,
-  _player: PlayerId,
-  cardId: string,
-  catalog: Catalog,
-): number {
-  return must(catalog, cardId).cost;
+/** 支払うコスト。手札にある間の補正（場のアイコンの数・使った投稿の数で安くなる）を反映する */
+export function effectiveCost(state: GameState, player: PlayerId, cardId: string, catalog: Catalog): number {
+  const card = must(catalog, cardId);
+  const me = state.players[player];
+  let cost = card.cost;
+  for (const e of card.effects) {
+    if (triggerOf(e) !== "hand") continue;
+    if (e.do === "cheaperPerAlly") cost -= me.field.filter((u) => u).length;
+    if (e.do === "cheaperPerPost") cost -= me.postsUsed ?? 0;
+  }
+  return Math.max(0, cost);
 }
 
 /**
@@ -144,7 +157,8 @@ export function legalTargets(state: GameState, player: PlayerId, catalog: Catalo
   const units = state.players[foeId].field.flatMap((u, slot) =>
     u ? [{ slot, v: viewUnit(state, foeId, u, catalog) }] : [],
   );
-  if (units.some((x) => x.v.guard)) {
+  const through = state.players[player].breakthroughTurn === state.turn;
+  if (!through && units.some((x) => x.v.guard)) {
     return units
       .filter((x) => x.v.guard || x.v.exposed)
       .map((x) => ({ kind: "unit" as const, slot: x.slot }));
@@ -410,12 +424,25 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       } else if (e.to === "enemyMaster") damageLeader(state, foeId, e.amount, emit);
       else if (tgt && tgtOwner && ctx.target) damageUnit(state, tgtOwner, ctx.target.slot, e.amount, emit);
       break;
-    case "expose":
-      if (tgt && tgtOwner && ctx.target) {
-        tgt.exposedUntil = state.turn + 2;
-        status(tgtOwner, ctx.target.slot, tgt, "晒し");
-      }
+    case "expose": {
+      // 晒し者：強化（プラスの分）が消え、相手の次のターンが終わるまでガードを無視して攻撃される
+      const expose = (owner: PlayerId, slot: number, u: Unit) => {
+        u.exposedUntil = state.turn + 2;
+        u.atkBuff = Math.min(0, u.atkBuff);
+        u.hpBuff = Math.min(0, u.hpBuff);
+        status(owner, slot, u, "晒し");
+      };
+      if (e.to === "strongestEnemy") {
+        const slot = strongestEnemy(state, player, catalog);
+        const u = slot >= 0 ? state.players[foeId].field[slot] : null;
+        if (u) expose(foeId, slot, u);
+      } else if (e.to === "allEnemies") {
+        state.players[foeId].field.forEach((u, slot) => {
+          if (u) expose(foeId, slot, u);
+        });
+      } else if (tgt && tgtOwner && ctx.target) expose(tgtOwner, ctx.target.slot, tgt);
       break;
+    }
     case "bind": {
       // 相手の次のターンに攻撃できないようにする
       const sleep = (owner: PlayerId, slot: number, u: Unit) => {
@@ -434,10 +461,73 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       break;
     }
     case "silence":
-      if (tgt && tgtOwner && ctx.target) {
+      if (e.to === "strongestEnemy") {
+        const slot = strongestEnemy(state, player, catalog);
+        const u = slot >= 0 ? state.players[foeId].field[slot] : null;
+        if (u) {
+          u.silenced = true;
+          status(foeId, slot, u, "訂正");
+        }
+      } else if (tgt && tgtOwner && ctx.target) {
         tgt.silenced = true;
         status(tgtOwner, ctx.target.slot, tgt, "訂正");
       }
+      break;
+    case "steal": {
+      const to = me.field.findIndex((u) => !u);
+      if (to < 0) break;
+      const foeField = state.players[foeId].field;
+      let from = -1;
+      let best = -1;
+      foeField.forEach((u, slot) => {
+        if (!u) return;
+        const v = viewUnit(state, foeId, u, catalog);
+        const score = v.attack * 100 + v.hp;
+        if (v.attack <= e.maxAttack && score > best) {
+          from = slot;
+          best = score;
+        }
+      });
+      const u = from >= 0 ? foeField[from] : null;
+      if (!u) break;
+      foeField[from] = null;
+      // 奪ったターンは攻撃できない
+      Object.assign(u, { canAttack: false, attacksLeft: 0 });
+      me.field[to] = u;
+      emit({ type: "stolen", player, from, slot: to, cardId: u.cardId });
+      break;
+    }
+    case "burnPerAlly": {
+      const n = me.field.filter((u) => u).length;
+      if (n > 0) damageLeader(state, foeId, n * e.amount, emit);
+      break;
+    }
+    case "breakthrough":
+      me.breakthroughTurn = state.turn;
+      break;
+    case "sweep":
+      state.players[foeId].field.forEach((u, slot) => {
+        if (!u) return;
+        const v = viewUnit(state, foeId, u, catalog);
+        if (v.hp <= e.maxHp) damageUnit(state, foeId, slot, v.hp, emit);
+      });
+      break;
+    case "extraTurn":
+      me.extraTurns = (me.extraTurns ?? 0) + 1;
+      emit({ type: "extraTurn", player });
+      break;
+    case "rally":
+      me.field.forEach((u, slot) => {
+        if (!u) return;
+        if (!u.canAttack) {
+          u.canAttack = true;
+          u.attacksLeft = hasKeyword(u, "連撃", catalog) ? 2 : 1;
+        }
+        if (slot !== ctx.selfSlot && e.attack) {
+          u.atkBuff += e.attack;
+          emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: 0 });
+        }
+      });
       break;
     case "weaken":
       if (tgt) tgt.atkBuff -= e.attack;
@@ -463,7 +553,52 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       }
       break;
     case "attackPerAlly":
-      break; // 場にいる間ずっと効く（viewUnit で計算）
+    case "extraAttackOnKill":
+    case "focusAura":
+    case "lullaby":
+    case "cheaperPerAlly":
+    case "cheaperPerPost":
+      break; // 場にいる間・手札にある間ずっと効く（それぞれの場所で計算）
+  }
+}
+
+/** ターンの始め：話題力の回復、攻撃の準備、注目、子守唄、ドロー */
+function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Config, emit: Emit) {
+  const p = state.players[pid];
+  const other = opponent(pid);
+  state.active = pid;
+  state.turn += 1;
+  p.maxMana = Math.min(config.maxMana, p.maxMana + 1);
+  // 後攻の最初のターンだけ話題力 +1（先攻有利を和らげる）
+  p.mana = p.maxMana + (state.turn === 2 ? config.secondBonusMana : 0);
+  p.playedThisTurn = 0;
+  emit({ type: "turnStarted", player: pid, turn: state.turn, mana: p.mana });
+  const center = p.field[CENTER_SLOT];
+  const aura = !!center && hasPassive(center, "focusAura", catalog);
+  p.field.forEach((u, slot) => {
+    if (!u) return;
+    u.canAttack = true;
+    u.attacksLeft = hasKeyword(u, "連撃", catalog) ? 2 : 1;
+    // 注目：ターンの始めに攻撃力が伸びる（真ん中の枠なら多く）。センターのトップアイドルがいれば全員
+    if (hasKeyword(u, "注目", catalog) || aura) {
+      const n = slot === CENTER_SLOT ? 2 : 1;
+      u.atkBuff += n;
+      emit({ type: "buffed", player: pid, slot, cardId: u.cardId, attack: n, hp: 0 });
+    }
+  });
+  // 子守唄：相手の場にいれば、攻撃力がいちばん高いアイコンがこのターン眠る
+  if (state.players[other].field.some((u) => u && hasPassive(u, "lullaby", catalog))) {
+    const slot = strongestEnemy(state, other, catalog);
+    const u = slot >= 0 ? p.field[slot] : null;
+    if (u) {
+      u.boundUntil = Math.max(u.boundUntil, state.turn);
+      emit({ type: "status", player: pid, slot, cardId: u.cardId, status: "眠り" });
+    }
+  }
+  if (!draw(state, pid, emit)) {
+    emit({ type: "deckOut", player: pid });
+    state.winner = other;
+    emit({ type: "won", player: other });
   }
 }
 
@@ -504,15 +639,16 @@ export function applyAction(
       if (card.type !== "icon") throw new RuleError("not_icon", "投稿は場に出せません");
       if (action.slot < 0 || action.slot >= SLOTS) throw new RuleError("bad_slot", "その場所には出せません");
       if (me.field[action.slot]) throw new RuleError("slot_taken", "その場所にはすでにアイコンがいます");
-      if (card.cost > me.mana)
-        throw new RuleError("no_mana", `話題力が足りません（必要 ${card.cost}・残り ${me.mana}）`);
-      me.mana -= card.cost;
+      const cost = effectiveCost(state, player, cardId, catalog);
+      if (cost > me.mana)
+        throw new RuleError("no_mana", `話題力が足りません（必要 ${cost}・残り ${me.mana}）`);
+      me.mana -= cost;
       me.hand.splice(action.handIndex, 1);
       me.field[action.slot] = newUnit(state, cardId, catalog, false);
       const playedBefore = me.playedThisTurn++;
-      emit({ type: "played", player, cardId, slot: action.slot, cost: card.cost });
+      emit({ type: "played", player, cardId, slot: action.slot, cost });
       const ctx: Ctx = { state, player, catalog, config, emit, selfSlot: action.slot, playedBefore };
-      for (const e of card.effects) if (!("on" in e) || e.on !== "passive") runEffect(e, ctx);
+      for (const e of card.effects) if (triggerOf(e) === "play") runEffect(e, ctx);
       resolveDeaths(state, catalog, emit);
       break;
     }
@@ -521,21 +657,23 @@ export function applyAction(
       if (cardId === undefined) throw new RuleError("no_card", "そのカードは手札にありません");
       const card = must(catalog, cardId);
       if (card.type !== "post") throw new RuleError("not_post", "アイコンは場に出して使います");
-      if (card.cost > me.mana)
-        throw new RuleError("no_mana", `話題力が足りません（必要 ${card.cost}・残り ${me.mana}）`);
+      const cost = effectiveCost(state, player, cardId, catalog);
+      if (cost > me.mana)
+        throw new RuleError("no_mana", `話題力が足りません（必要 ${cost}・残り ${me.mana}）`);
       if (card.target) {
         const ok = castTargets(state, player, cardId, catalog).some(
           (t) => t.side === action.target?.side && t.slot === action.target?.slot,
         );
         if (!ok) throw new RuleError("bad_target", "その相手には使えません");
       }
-      me.mana -= card.cost;
+      me.mana -= cost;
       me.hand.splice(action.handIndex, 1);
       me.trash.push(cardId);
+      me.postsUsed = (me.postsUsed ?? 0) + 1;
       const playedBefore = me.playedThisTurn++;
-      emit({ type: "cast", player, cardId, cost: card.cost, target: action.target });
+      emit({ type: "cast", player, cardId, cost, target: action.target });
       const ctx: Ctx = { state, player, catalog, config, emit, target: action.target, playedBefore };
-      for (const e of card.effects) runEffect(e, ctx);
+      for (const e of card.effects) if (triggerOf(e) === "play") runEffect(e, ctx);
       resolveDeaths(state, catalog, emit);
       break;
     }
@@ -575,9 +713,17 @@ export function applyAction(
         atk.damage += toAttacker;
         const attackerId = atk.cardId;
         const defenderId = def.cardId;
+        const defWasDark = def.dark;
         // 闇堕ちや破壊の出来事は battle の後に出す
         const after: GameEvent[] = [];
         const destroyed = resolveDeaths(state, catalog, (e) => after.push(e));
+        // 相手を倒したら、もう1回攻撃できる（倒した側が残っていれば）
+        const left = foe.field[t.slot];
+        const killed = !left || left.uid !== def.uid || (left.dark && !defWasDark);
+        const alive = me.field[action.from];
+        if (killed && alive?.uid === atk.uid && hasPassive(alive, "extraAttackOnKill", catalog)) {
+          alive.attacksLeft += 1;
+        }
         emit({
           type: "battle",
           attacker: attackerId,
@@ -591,29 +737,19 @@ export function applyAction(
       break;
     }
     case "endTurn": {
-      state.active = foeId;
-      state.turn += 1;
-      foe.maxMana = Math.min(config.maxMana, foe.maxMana + 1);
-      // 後攻の最初のターンだけ話題力 +1（先攻有利を和らげる）
-      foe.mana = foe.maxMana + (state.turn === 2 ? config.secondBonusMana : 0);
-      foe.playedThisTurn = 0;
-      emit({ type: "turnStarted", player: foeId, turn: state.turn, mana: foe.mana });
-      foe.field.forEach((u, slot) => {
+      // ターンの終わりに働く効果
+      me.field.forEach((u, slot) => {
         if (!u) return;
-        u.canAttack = true;
-        u.attacksLeft = hasKeyword(u, "連撃", catalog) ? 2 : 1;
-        // 注目：ターンの始めに攻撃力が伸びる（真ん中の枠なら多く）
-        if (hasKeyword(u, "注目", catalog)) {
-          const n = slot === CENTER_SLOT ? 2 : 1;
-          u.atkBuff += n;
-          emit({ type: "buffed", player: foeId, slot, cardId: u.cardId, attack: n, hp: 0 });
+        for (const e of effectsOf(u, catalog)) {
+          if (triggerOf(e) !== "turnEnd") continue;
+          runEffect(e, { state, player, catalog, config, emit, selfSlot: slot, playedBefore: 0 });
         }
       });
-      if (!draw(state, foeId, emit)) {
-        emit({ type: "deckOut", player: foeId });
-        state.winner = player;
-        emit({ type: "won", player });
-      }
+      resolveDeaths(state, catalog, emit);
+      // 追加のターンがあれば、相手に渡さずにもう一度自分のターン
+      const next = (me.extraTurns ?? 0) > 0 ? player : foeId;
+      if (next === player) me.extraTurns -= 1;
+      startTurn(state, next, catalog, config, emit);
       break;
     }
   }

@@ -1,4 +1,12 @@
-import { applyAction, canUnitAttack, castTargets, legalTargets, opponent, viewUnit } from "./engine";
+import {
+  applyAction,
+  canUnitAttack,
+  castTargets,
+  effectiveCost,
+  legalTargets,
+  opponent,
+  viewUnit,
+} from "./engine";
 import type { Action, CastTarget, GameState, PlayerId, RuleCard, UnitView } from "./types";
 
 type Catalog = Record<string, RuleCard>;
@@ -63,6 +71,11 @@ function judgePost(
     return big ? { score: 6, target: enemy(big.slot) } : null;
   }
   if (effects.includes("expose")) {
+    // 晒すと強化が消える：強化を重ねた相手がいれば狙う
+    const buffed = foes
+      .map((x) => ({ x, b: Math.max(0, x.v.unit.atkBuff) + Math.max(0, x.v.unit.hpBuff) }))
+      .sort((a, b) => b.b - a.b)[0];
+    if (buffed && buffed.b >= 2) return { score: 8 + buffed.b * 3, target: enemy(buffed.x.slot) };
     if (!foeGuarded || ready.length === 0) return foes[0] ? { score: 2, target: enemy(foes[0].slot) } : null;
     const t = foes.filter((x) => !x.v.guard).sort((a, b) => worth(b.v) - worth(a.v))[0];
     return t ? { score: 14, target: enemy(t.slot) } : null;
@@ -127,12 +140,20 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
     let best: { score: number; action: Action } | null = null;
     me.hand.forEach((id, handIndex) => {
       const card = catalog[id];
-      if (!card || card.cost > me.mana) return;
+      if (!card) return;
+      const cost = effectiveCost(state, player, id, catalog);
+      if (cost > me.mana) return;
       if (card.type === "icon") {
         if (slot < 0) return;
         // 注目のアイコンは真ん中の枠を優先する
-        const center = card.keywords.includes("注目") && !me.field[2] ? 2 : slot;
-        const score = card.cost * 10 + (card.attack ?? 0) + (card.hp ?? 0);
+        const wantsCenter = card.keywords.includes("注目") || card.effects.some((e) => e.do === "focusAura");
+        const center = wantsCenter && !me.field[2] ? 2 : slot;
+        let score = card.cost * 10 + (card.attack ?? 0) + (card.hp ?? 0);
+        // 場のアイコンが多いほど安く・強くなるカードは、ほかを出してから
+        if (card.effects.some((e) => e.do === "cheaperPerAlly")) {
+          const others = me.field.filter((u) => u).length;
+          if (others < 3 && me.hand.length > 1) score -= 100;
+        }
         if (!best || score > best.score)
           best = { score, action: { type: "play", player, handIndex, slot: center } };
       } else {
@@ -193,6 +214,24 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
       } else continue;
       acted = true;
       break; // 盤面が変わったので選び直す
+    }
+    if (!acted && !canFace) {
+      // ガードに阻まれているとき：全員でかかれば倒せるなら、弱いアイコンから削りに行く
+      const guards = targets
+        .flatMap((t) => {
+          if (t.kind !== "unit") return [];
+          const u = foe.field[t.slot];
+          return u ? [{ slot: t.slot, v: viewUnit(state, foeId, u, catalog) }] : [];
+        })
+        .sort((a, b) => a.v.hp - b.v.hp);
+      const g = guards.find((x) => x.v.hp <= readyAttack);
+      if (g) {
+        const weakest = [...mine].sort((a, b) => worth(a.v) - worth(b.v))[0];
+        if (weakest) {
+          step({ type: "attack", player, from: weakest.slot, target: { kind: "unit", slot: g.slot } });
+          acted = true;
+        }
+      }
     }
     if (!acted) break;
   }

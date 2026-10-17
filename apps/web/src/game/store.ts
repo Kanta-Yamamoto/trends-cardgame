@@ -117,7 +117,11 @@ export const useGame = create<GameStore>((set, get) => {
     set({ cpuBusy: true, selection: null });
     const delay = get().cpuDelay;
     const finish = () => {
-      if (my === runId) set({ cpuBusy: false });
+      if (my !== runId) return;
+      set({ cpuBusy: false });
+      // 追加のターンなら、続けてもう一度 CPU が動く
+      const g = get().game;
+      if (g && !g.winner && g.active === CPU) runCpu();
     };
     if (delay <= 0) {
       for (const a of actions) if (!dispatch(a)) break;

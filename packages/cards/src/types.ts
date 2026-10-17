@@ -11,32 +11,62 @@ export type Rarity = 1 | 2 | 3 | 4 | 5;
 export type PostTarget = "enemyIcon" | "allyIcon";
 
 /**
- * カードの効果（データで表す）。
- * アイコンは on（play＝場に出たとき／passive＝場にいる間）、投稿は使ったときに上から順に実行する。
+ * 効果が働くとき。
+ * play＝場に出たとき（投稿は使ったとき。省略時）／passive＝場にいる間ずっと／
+ * turnEnd＝自分のターンの終わり／hand＝手札にある間（コストの補正）
  */
+export type EffectTrigger = "play" | "passive" | "turnEnd" | "hand";
+
+/** カードの効果（データで表す）。on ごとに、上から順に実行する */
 export type CardEffect = (
-  | { on?: "play"; do: "summon"; card: string; count: number }
-  | { on?: "play"; do: "copySelf" }
-  | { on?: "play"; do: "buffSelf"; attack: number; hp: number }
-  | { on?: "play"; do: "buffSelfPerPlayed"; attack: number }
-  | { on?: "play"; do: "buffRandomAlly"; attack: number; hp: number }
+  | { do: "summon"; card: string; count: number }
+  | { do: "copySelf" }
+  | { do: "buffSelf"; attack: number; hp: number }
+  | { do: "buffSelfPerPlayed"; attack: number }
+  | { do: "buffRandomAlly"; attack: number; hp: number }
   /** 自分の場のほかのアイコンすべて */
-  | { on?: "play"; do: "buffAllies"; attack: number; hp: number }
-  | { on?: "play"; do: "heal"; to: "master" | "allAlliesAndMaster" | "allAlliesFull"; amount?: number }
-  | { on?: "play"; do: "draw"; count: number; ifHandAtMost?: number }
-  | { on?: "play"; do: "removeEnemyGuards" }
+  | { do: "buffAllies"; attack: number; hp: number }
+  | { do: "heal"; to: "master" | "allAlliesAndMaster" | "allAlliesFull"; amount?: number }
+  | { do: "draw"; count: number; ifHandAtMost?: number }
+  | { do: "removeEnemyGuards" }
   /** to が無ければ投稿の対象に */
-  | { on?: "play"; do: "damage"; to?: "strongestEnemy" | "allEnemies" | "enemyMaster"; amount: number }
-  | { on?: "passive"; do: "attackPerAlly" }
-  | { do: "expose" }
+  | { do: "damage"; to?: "strongestEnemy" | "allEnemies" | "enemyMaster"; amount: number }
+  /** passive：自分の場のほかのアイコン1体につき攻撃力+1 */
+  | { do: "attackPerAlly" }
+  /** 晒し者にする（強化が消え、ガードを無視して攻撃される）。to が無ければ投稿の対象を */
+  | { do: "expose"; to?: "strongestEnemy" | "allEnemies" }
   /** to が無ければ投稿の対象を眠らせる */
-  | { on?: "play"; do: "bind"; to?: "strongestEnemy" | "allEnemies" }
-  | { do: "silence" }
+  | { do: "bind"; to?: "strongestEnemy" | "allEnemies" }
+  /** to が無ければ投稿の対象を訂正する */
+  | { do: "silence"; to?: "strongestEnemy" }
   | { do: "weaken"; attack: number }
   | { do: "buff"; attack: number; hp: number }
   | { do: "fill"; card: string }
   | { do: "cleanse" }
+  /** 攻撃力 maxAttack 以下の相手のアイコンのうち、いちばん強い1体を自分の場に奪う */
+  | { do: "steal"; maxAttack: number }
+  /** このターンのあとに、もう一度自分のターンを行う */
+  | { do: "extraTurn" }
+  /** 自分のアイコンすべてがすぐ攻撃できるようになり、ほかのアイコンの攻撃力 +attack */
+  | { do: "rally"; attack: number }
+  /** このターン、自分のアイコンはガードを無視して攻撃できる */
+  | { do: "breakthrough" }
+  /** 自分の場のアイコン1体につき、相手のマスターに amount ダメージ */
+  | { do: "burnPerAlly"; amount: number }
+  /** 体力が maxHp 以下の相手のアイコンをすべて倒す */
+  | { do: "sweep"; maxHp: number }
+  /** passive：相手のアイコンを倒すたび、もう1回攻撃できる */
+  | { do: "extraAttackOnKill" }
+  /** passive：センターにいる間、自分のほかのアイコンも注目と同じく伸びる */
+  | { do: "focusAura" }
+  /** passive：相手のターンの始めに、相手の攻撃力がいちばん高いアイコンを眠らせる */
+  | { do: "lullaby" }
+  /** hand：自分の場のアイコン1体につきコスト-1 */
+  | { do: "cheaperPerAlly" }
+  /** hand：このゲームで自分が使った投稿1枚につきコスト-1 */
+  | { do: "cheaperPerPost" }
 ) & {
+  on?: EffectTrigger;
   /** 条件：自分の場（このアイコンを含む）に、その属性のアイコンが atLeast 体以上いるときだけ */
   if?: { allies: Attribute; atLeast: number };
 };

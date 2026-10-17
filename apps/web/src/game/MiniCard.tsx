@@ -53,14 +53,21 @@ export function MiniCard({
       aria-label={
         label ??
         (isPost
-          ? `${name}（投稿・コスト${card.cost}）`
-          : `${name}（コスト${card.cost}・攻撃${attack}・体力${hp}）`)
+          ? `${name}（投稿・コスト${cost ?? card.cost}）`
+          : `${name}（コスト${cost ?? card.cost}・攻撃${attack}・体力${hp}）`)
       }
       onClick={onClick}
       onPointerEnter={onPeek}
       onFocus={onPeek}
     >
-      {cost !== undefined && <span className="mini-cost">{cost}</span>}
+      {cost !== undefined && (
+        <span
+          className={`mini-cost ${cost < card.cost ? "down" : ""}`}
+          title={cost < card.cost ? `元のコスト ${card.cost}` : undefined}
+        >
+          {cost}
+        </span>
+      )}
       <span className="mini-top">
         <span className="mini-attrs" aria-hidden="true">
           {card.attributes.length === 0 && <i style={{ background: "#d5dae3", color: "#2b3240" }}>共</i>}

@@ -18,7 +18,7 @@ describe("HoloCard", () => {
     if (!ren) throw new Error("c2 not found");
     const { container } = render(<HoloCard card={ren} idle={false} />);
     expect(screen.getByRole("img", { name: /炎上系配信者 レン/ })).toBeInTheDocument();
-    expect(container.querySelector(".stat-atk")).toHaveTextContent("5");
+    expect(container.querySelector(".stat-atk")).toHaveTextContent("4");
     expect(container.querySelector(".stat-hp")).toHaveTextContent("4");
     expect(screen.getByText("No. 007 / 100")).toBeInTheDocument();
   });
@@ -32,7 +32,7 @@ describe("イラストのないカード", () => {
     expect(container.querySelector(".kg")).not.toBeNull();
     expect(screen.getByText("柴犬")).toBeInTheDocument();
     expect(container.querySelector(".stat-atk")).toHaveTextContent("2");
-    expect(container.querySelector(".stat-hp")).toHaveTextContent("3");
+    expect(container.querySelector(".stat-hp")).toHaveTextContent("5");
   });
 
   it("効果文が先頭のキーワードで始まっても重複キーにならない", () => {

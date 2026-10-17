@@ -66,6 +66,12 @@ export interface PlayerState {
   trash: string[];
   /** このターンに出した・使ったカードの枚数 */
   playedThisTurn: number;
+  /** このゲームで使った投稿の枚数 */
+  postsUsed: number;
+  /** このターンのあとに続けて行うターンの数 */
+  extraTurns: number;
+  /** このターン数の間、自分のアイコンはガードを無視して攻撃できる */
+  breakthroughTurn: number;
 }
 
 export interface GameState {
@@ -114,6 +120,8 @@ export type GameEvent =
       cardId: string;
       status: "晒し" | "眠り" | "訂正" | "ガード消滅";
     }
+  | { type: "stolen"; player: PlayerId; from: number; slot: number; cardId: string }
+  | { type: "extraTurn"; player: PlayerId }
   | { type: "buffed"; player: PlayerId; slot: number; cardId: string; attack: number; hp: number }
   | { type: "healed"; player: PlayerId; slot: number; cardId: string; amount: number }
   | { type: "leaderDamaged"; player: PlayerId; amount: number; lp: number }

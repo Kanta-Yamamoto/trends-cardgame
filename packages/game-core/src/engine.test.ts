@@ -2,7 +2,7 @@ import { CARDS, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
 import { planTurn } from "./ai";
 import { deckAttributes, validateDeck } from "./deck";
-import { applyAction, createGame, legalTargets, viewUnit } from "./engine";
+import { applyAction, createGame, effectiveCost, legalTargets, viewUnit } from "./engine";
 import { type Action, type GameState, type RuleCard, RuleError } from "./types";
 
 type Extra = Partial<RuleCard>;
@@ -76,6 +76,28 @@ const catalog: Record<string, RuleCard> = {
   voice: icon("voice", 6, 3, 7, { effects: [{ on: "play", do: "bind", to: "allEnemies" }] }),
   asmr: icon("asmr", 3, 2, 4, { effects: [{ on: "play", do: "bind", to: "strongestEnemy" }] }),
   burn: post("burn", 2, { effects: [{ do: "damage", to: "enemyMaster", amount: 3 }] }),
+  chain: icon("chain", 2, 2, 9, {
+    keywords: ["速攻"],
+    effects: [{ on: "passive", do: "extraAttackOnKill" }],
+  }),
+  aura: icon("aura", 3, 1, 5, { keywords: ["注目"], effects: [{ on: "passive", do: "focusAura" }] }),
+  thief: icon("thief", 2, 1, 3, { effects: [{ on: "play", do: "steal", maxAttack: 1 }] }),
+  lull: icon("lull", 2, 1, 7, { effects: [{ on: "passive", do: "lullaby" }] }),
+  reader: icon("reader", 2, 1, 3, { effects: [{ on: "turnEnd", do: "draw", count: 1 }] }),
+  swarm: icon("swarm", 9, 2, 5, {
+    effects: [
+      { on: "hand", do: "cheaperPerAlly" },
+      { on: "play", do: "rally", attack: 2 },
+      { on: "play", do: "breakthrough" },
+    ],
+  }),
+  scholar: icon("scholar", 12, 4, 5, {
+    effects: [
+      { on: "hand", do: "cheaperPerPost" },
+      { on: "play", do: "extraTurn" },
+    ],
+  }),
+  sweeper: icon("sweeper", 3, 2, 3, { effects: [{ on: "play", do: "sweep", maxHp: 1 }] }),
 };
 const F = (n: number) => Array.from({ length: n }, () => "f");
 
@@ -389,5 +411,79 @@ describe("第2弾の効果", () => {
     expect(
       run(t, { type: "attack", player: "p2", from: 0, target: { kind: "leader" } }).state.players.p1.lp,
     ).toBe(19);
+  });
+});
+
+describe("切り札の効果（★4〜5）", () => {
+  it("晒し：強化（プラスの分）が消える。体力の強化が消えて倒れることもある", () => {
+    let s = withFoe(["expose", "expose"], ["f", "f"]);
+    const a = s.players.p2.field[0] as never as { atkBuff: number; hpBuff: number; damage: number };
+    Object.assign(a, { atkBuff: 3, hpBuff: 2 });
+    Object.assign(s.players.p2.field[1] as object, { hpBuff: 2, damage: 2 });
+    s = cast(s, 0, { side: "enemy", slot: 0 });
+    expect(s.players.p2.field[0]).toMatchObject({ atkBuff: 0, hpBuff: 0 });
+    s = cast(s, 0, { side: "enemy", slot: 1 });
+    expect(s.players.p2.field[1]).toBeNull();
+  });
+  it("相手のアイコンを倒すたび、もう1回攻撃できる", () => {
+    let s = play(withFoe(["chain"], ["f", "f"]), 0, 0);
+    s = hit(s, 0, 0).state;
+    s = hit(s, 0, 1).state;
+    expect(s.players.p2.field.every((u) => !u)).toBe(true);
+    // 2体目を倒した分の攻撃も残っている。マスターへの攻撃では増えない
+    s = face(s, 0).state;
+    expect(s.players.p2.lp).toBe(18);
+    expect(() => face(s, 0)).toThrow(RuleError);
+  });
+  it("センターのトップアイドル：自分のほかのアイコンもターンの始めに伸びる", () => {
+    let s = play(play(game(["aura", "f"]), 0, 2), 0, 0);
+    s = end(end(s), "p2");
+    expect(s.players.p1.field[2]?.atkBuff).toBe(2);
+    expect(s.players.p1.field[0]?.atkBuff).toBe(1);
+  });
+  it("推し変：攻撃力が条件以下の相手のアイコンを奪う。奪ったターンは攻撃できない", () => {
+    const s = play(withFoe(["thief"], ["big", "f"]), 0, 0);
+    expect(s.players.p2.field[1]).toBeNull();
+    expect(s.players.p1.field[1]?.cardId).toBe("f");
+    expect(() => face(s, 1)).toThrow(RuleError);
+  });
+  it("子守唄：相手のターンの始めに、相手の攻撃力がいちばん高いアイコンが眠る", () => {
+    let s = play(withFoe(["lull"], ["f", "big"]), 0, 0);
+    s = end(s);
+    expect(() => run(s, { type: "attack", player: "p2", from: 1, target: { kind: "leader" } })).toThrow(
+      /眠って/,
+    );
+    expect(
+      run(s, { type: "attack", player: "p2", from: 0, target: { kind: "leader" } }).state.players.p1.lp,
+    ).toBe(19);
+  });
+  it("ターンの終わりに働く効果（カードを引く）", () => {
+    const s = play(game(["reader"]), 0, 0);
+    const before = s.players.p1.hand.length;
+    expect(end(s).players.p1.hand.length).toBe(before + 1);
+  });
+  it("場のアイコンの数だけ安くなり、出たときに全員すぐ攻撃でき、ガードを無視できる", () => {
+    let s = withFoe(["f", "f", "f", "swarm"], ["guard"]);
+    s = play(play(play(s, 0, 0), 0, 1), 0, 2);
+    expect(effectiveCost(s, "p1", "swarm", catalog)).toBe(6);
+    s = play(s, 0, 3);
+    expect(s.players.p1.mana).toBe(10 - 3 - 6);
+    s = face(s, 0).state;
+    expect(s.players.p2.lp).toBe(20 - 3);
+  });
+  it("使った投稿の数だけ安くなり、出したあとにもう一度自分のターン", () => {
+    let s = game(["scholar"]);
+    s.players.p1.postsUsed = 9;
+    expect(effectiveCost(s, "p1", "scholar", catalog)).toBe(3);
+    s = play(s, 0, 0);
+    const turn = s.turn;
+    s = end(s);
+    expect(s.active).toBe("p1");
+    expect(s.turn).toBe(turn + 1);
+    expect(end(s).active).toBe("p2");
+  });
+  it("体力が1以下の相手のアイコンをすべて倒す", () => {
+    const s = play(withFoe(["sweeper"], ["f", "wall", "f"]), 0, 0);
+    expect(s.players.p2.field.map((u) => u?.cardId ?? null)).toEqual([null, "wall", null, null, null]);
   });
 });

@@ -42,7 +42,7 @@ describe("cards API", () => {
       type: "icon",
       rarity: 5,
       cost: 6,
-      attack: 5,
+      attack: 4,
       hp: 4,
       attributes: ["炎上"],
       keywords: ["連撃"],

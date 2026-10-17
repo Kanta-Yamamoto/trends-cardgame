@@ -4,6 +4,7 @@ import {
   type CastTarget,
   canUnitAttack,
   castTargets,
+  effectiveCost,
   type GameEvent,
   type GameState,
   legalTargets,
@@ -61,6 +62,10 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}の山札が切れた`;
     case "turnStarted":
       return `―― ${e.turn}ターン目：${who(e.player)}（話題力 ${e.mana}）――`;
+    case "stolen":
+      return `${who(e.player)}が ${nameOf(e.cardId)} を奪った（推し変）`;
+    case "extraTurn":
+      return `${who(e.player)}は、このあともう一度ターンを行う`;
     case "won":
       return `${who(e.player)}の勝ち`;
   }
@@ -379,9 +384,10 @@ function Board() {
               {me.hand.map((id, i) => {
                 const card = CATALOG[id];
                 if (!card) return null;
+                const cost = effectiveCost(game, ME, id, CATALOG);
                 const usable =
                   myTurn &&
-                  card.cost <= me.mana &&
+                  cost <= me.mana &&
                   (card.type === "icon"
                     ? freeSlot >= 0
                     : !card.target || castTargets(game, ME, id, CATALOG).length > 0);
@@ -393,7 +399,7 @@ function Board() {
                     key={`${id}-${i}`}
                     inHand
                     card={card}
-                    cost={card.cost}
+                    cost={cost}
                     className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""}`}
                     onClick={() => {
                       setPeek(p);
