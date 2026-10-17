@@ -28,6 +28,30 @@ function judgePost(
   const foeGuarded = foes.some((x) => x.v.guard);
   const enemy = (slot: number): CastTarget => ({ side: "enemy", slot });
 
+  const dmg = (to: string) =>
+    (
+      card.effects.find((e) => e.do === "damage" && "to" in e && e.to === to) as
+        | { amount: number }
+        | undefined
+    )?.amount ?? 0;
+  if (dmg("enemyMaster") > 0) {
+    const n = dmg("enemyMaster");
+    const lethal = state.players[foeId].lp <= n;
+    return { score: lethal ? 100 : 4 + n };
+  }
+  if (dmg("allEnemies") > 0) {
+    const n = dmg("allEnemies");
+    const kills = foes.filter((x) => x.v.hp <= n).reduce((s, x) => s + worth(x.v), 0);
+    const score = kills + foes.length;
+    return score >= 4 ? { score } : null;
+  }
+  if (effects.includes("buffAllies")) {
+    return mine.length >= 2 ? { score: mine.length * 4 } : null;
+  }
+  if (effects.includes("summon")) {
+    const empty = state.players[player].field.filter((u) => !u).length;
+    return empty >= 1 ? { score: Math.min(empty, 2) * 4 + (effects.includes("draw") ? 3 : 0) } : null;
+  }
   if (effects.includes("damage") && card.target === "enemyIcon") {
     const amount = card.effects.find((e) => e.do === "damage" && "amount" in e) as
       | { amount: number }

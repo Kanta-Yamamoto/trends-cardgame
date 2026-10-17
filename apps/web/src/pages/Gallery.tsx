@@ -1,12 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import type { CardDef } from "@trends/cards";
+import { ATTRIBUTES, type CardDef } from "@trends/cards";
 import { useState } from "react";
 import { fetchCards } from "../api/client";
 import { HoloCard } from "../cards/HoloCard";
 
 export function Gallery() {
   const { data, isLoading } = useQuery({ queryKey: ["cards"], queryFn: fetchCards });
-  const cards = data?.cards.filter((c) => !c.token) ?? [];
+  // 属性ごと（共通は最後）に、コストの低い順で並べる
+  const group = (c: CardDef) => (c.attributes[0] ? ATTRIBUTES.indexOf(c.attributes[0]) : ATTRIBUTES.length);
+  const cards = (data?.cards.filter((c) => !c.token) ?? [])
+    .slice()
+    .sort((a, b) => group(a) - group(b) || a.cost - b.cost || a.id.localeCompare(b.id));
   const [zoom, setZoom] = useState<CardDef | null>(null);
   const [textHidden, setTextHidden] = useState(false);
   const open = (c: CardDef) => {

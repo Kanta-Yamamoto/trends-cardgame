@@ -63,6 +63,7 @@ export function MiniCard({
       {cost !== undefined && <span className="mini-cost">{cost}</span>}
       <span className="mini-top">
         <span className="mini-attrs" aria-hidden="true">
+          {card.attributes.length === 0 && <i style={{ background: "#d5dae3", color: "#2b3240" }}>共</i>}
           {card.attributes.map((a) => (
             <i key={a} style={{ background: ATTR_META[a].color, color: ATTR_META[a].deep }}>
               {ATTR_META[a].mark}

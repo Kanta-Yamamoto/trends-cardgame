@@ -89,6 +89,8 @@ const DECK_ATTRS: Record<DeckId, CardDef["attributes"]> = {
   flame: ["炎上", "草"],
   idol: ["メロい", "癒し"],
   expert: ["神", "癒し"],
+  ronpa: ["炎上", "神"],
+  dance: ["草", "メロい"],
 };
 
 function DeckSelect() {

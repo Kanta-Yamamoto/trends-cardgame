@@ -1,6 +1,7 @@
 import { CARDS, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
 import { planTurn } from "./ai";
+import { deckAttributes, validateDeck } from "./deck";
 import { applyAction, createGame, legalTargets, viewUnit } from "./engine";
 import { type Action, type GameState, type RuleCard, RuleError } from "./types";
 
@@ -60,6 +61,21 @@ const catalog: Record<string, RuleCard> = {
   fansa: post("fansa", 2, { target: "allyIcon", effects: [{ do: "buff", attack: 2, hp: 2 }] }),
   meadow: post("meadow", 3, { effects: [{ do: "fill", card: "kusa" }] }),
   cleanse: post("cleanse", 4, { effects: [{ do: "cleanse" }] }),
+  flamer: icon("flamer", 1, 1, 1, { attributes: ["炎上"] }),
+  rider: icon("rider", 2, 2, 2, {
+    attributes: ["炎上"],
+    effects: [{ on: "play", do: "buffSelf", attack: 1, hp: 0, if: { allies: "炎上", atLeast: 2 } }],
+  }),
+  host: icon("host", 5, 3, 5, { effects: [{ on: "play", do: "buffAllies", attack: 1, hp: 0 }] }),
+  queen: icon("queen", 7, 5, 5, {
+    effects: [
+      { on: "play", do: "damage", to: "allEnemies", amount: 2 },
+      { on: "play", do: "damage", to: "enemyMaster", amount: 2 },
+    ],
+  }),
+  voice: icon("voice", 6, 3, 7, { effects: [{ on: "play", do: "bind", to: "allEnemies" }] }),
+  asmr: icon("asmr", 3, 2, 4, { effects: [{ on: "play", do: "bind", to: "strongestEnemy" }] }),
+  burn: post("burn", 2, { effects: [{ do: "damage", to: "enemyMaster", amount: 3 }] }),
 };
 const F = (n: number) => Array.from({ length: n }, () => "f");
 
@@ -312,5 +328,66 @@ describe("CPU", () => {
           }
           expect(s.winner).not.toBeNull();
         }
+  });
+});
+
+describe("デッキの決まり", () => {
+  const real = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string, RuleCard>;
+  it("デモ用デッキはすべて決まりを守っている（属性2つまで＋共通）", () => {
+    for (const [id, deck] of Object.entries(DECKS)) {
+      expect({ id, errors: validateDeck(deck, real) }).toEqual({ id, errors: [] });
+      expect(deckAttributes(deck, real).length).toBeLessThanOrEqual(2);
+    }
+  });
+  it("属性が3つ以上・枚数違い・4枚目・トークンは反則", () => {
+    const three = [...Array(9).fill("f6").slice(0, 3), ...Array(3).fill("m6"), ...Array(3).fill("i7")];
+    const errors = validateDeck([...three, "t-kusa", "f6"], real);
+    expect(errors.some((e) => e.includes("25枚"))).toBe(true);
+    expect(errors.some((e) => e.includes("属性は2つまで"))).toBe(true);
+    expect(errors.some((e) => e.includes("トークン"))).toBe(true);
+    expect(errors.some((e) => e.includes("3枚まで"))).toBe(true);
+  });
+  it("共通カードは属性に数えない", () => {
+    expect(deckAttributes(["n1", "n2", "f6"], real)).toEqual(["炎上"]);
+  });
+});
+
+describe("第2弾の効果", () => {
+  it("条件付き：自分の場に炎上が2体以上いるときだけ強化される", () => {
+    let s = play(game(["rider"]), 0, 0);
+    expect(viewUnit(s, "p1", s.players.p1.field[0] as never, catalog).attack).toBe(2);
+    s = play(play(game(["flamer", "rider"]), 0, 0), 0, 1);
+    expect(viewUnit(s, "p1", s.players.p1.field[1] as never, catalog).attack).toBe(3);
+  });
+  it("ほかのアイコンすべてを強化する（自分は含まない）", () => {
+    const s = play(play(game(["f", "host"]), 0, 0), 0, 1);
+    expect(viewUnit(s, "p1", s.players.p1.field[0] as never, catalog).attack).toBe(2);
+    expect(viewUnit(s, "p1", s.players.p1.field[1] as never, catalog).attack).toBe(3);
+  });
+  it("相手のアイコンすべてと相手のマスターにダメージ", () => {
+    let s = withFoe(["queen"], ["f", "wall"]);
+    s = play(s, 0, 0);
+    expect(s.players.p2.field[0]).toBeNull();
+    expect(s.players.p2.field[1]?.damage).toBe(2);
+    expect(s.players.p2.lp).toBe(18);
+  });
+  it("投稿で相手のマスターにダメージ", () => {
+    const s = cast(game(["burn"]), 0);
+    expect(s.players.p2.lp).toBe(17);
+  });
+  it("相手のアイコンすべて／いちばん強い1体を眠らせる", () => {
+    let s = withFoe(["voice"], ["f", "big"]);
+    s = end(play(s, 0, 0));
+    expect(() => run(s, { type: "attack", player: "p2", from: 1, target: { kind: "leader" } })).toThrow(
+      RuleError,
+    );
+    let t = withFoe(["asmr"], ["f", "big"]);
+    t = end(play(t, 0, 0));
+    expect(() => run(t, { type: "attack", player: "p2", from: 1, target: { kind: "leader" } })).toThrow(
+      RuleError,
+    );
+    expect(
+      run(t, { type: "attack", player: "p2", from: 0, target: { kind: "leader" } }).state.players.p1.lp,
+    ).toBe(19);
   });
 });

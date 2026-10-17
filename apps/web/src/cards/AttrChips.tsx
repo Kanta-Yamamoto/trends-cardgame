@@ -5,6 +5,7 @@ import { ATTR_META } from "./meta";
 export function AttrChips({ card, kaiwai = true }: { card: CardDef; kaiwai?: boolean }) {
   return (
     <span className="chips">
+      {card.attributes.length === 0 && <span className="chip common">共通</span>}
       {card.attributes.map((a) => (
         <span
           key={a}

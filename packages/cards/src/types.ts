@@ -14,23 +14,32 @@ export type PostTarget = "enemyIcon" | "allyIcon";
  * カードの効果（データで表す）。
  * アイコンは on（play＝場に出たとき／passive＝場にいる間）、投稿は使ったときに上から順に実行する。
  */
-export type CardEffect =
+export type CardEffect = (
   | { on?: "play"; do: "summon"; card: string; count: number }
   | { on?: "play"; do: "copySelf" }
+  | { on?: "play"; do: "buffSelf"; attack: number; hp: number }
   | { on?: "play"; do: "buffSelfPerPlayed"; attack: number }
   | { on?: "play"; do: "buffRandomAlly"; attack: number; hp: number }
+  /** 自分の場のほかのアイコンすべて */
+  | { on?: "play"; do: "buffAllies"; attack: number; hp: number }
   | { on?: "play"; do: "heal"; to: "master" | "allAlliesAndMaster" | "allAlliesFull"; amount?: number }
   | { on?: "play"; do: "draw"; count: number; ifHandAtMost?: number }
   | { on?: "play"; do: "removeEnemyGuards" }
-  | { on?: "play"; do: "damage"; to?: "strongestEnemy"; amount: number }
+  /** to が無ければ投稿の対象に */
+  | { on?: "play"; do: "damage"; to?: "strongestEnemy" | "allEnemies" | "enemyMaster"; amount: number }
   | { on?: "passive"; do: "attackPerAlly" }
   | { do: "expose" }
-  | { do: "bind" }
+  /** to が無ければ投稿の対象を眠らせる */
+  | { on?: "play"; do: "bind"; to?: "strongestEnemy" | "allEnemies" }
   | { do: "silence" }
   | { do: "weaken"; attack: number }
   | { do: "buff"; attack: number; hp: number }
   | { do: "fill"; card: string }
-  | { do: "cleanse" };
+  | { do: "cleanse" }
+) & {
+  /** 条件：自分の場（このアイコンを含む）に、その属性のアイコンが atLeast 体以上いるときだけ */
+  if?: { allies: Attribute; atLeast: number };
+};
 
 /** 闇堕ちの姿（一度倒されたときに裏返る） */
 export interface DarkSide {
@@ -53,7 +62,7 @@ export interface CardDef {
   /** アイコンだけが持つ */
   attack?: number;
   hp?: number;
-  /** 1〜2個 */
+  /** 0〜2個。0個は共通カード（どのデッキにも入れられる） */
   attributes: Attribute[];
   /** 0〜2個 */
   kaiwai: Kaiwai[];
@@ -79,4 +88,6 @@ export interface CardDef {
 export const ATTRIBUTES: readonly Attribute[] = ["炎上", "メロい", "癒し", "草", "神"];
 export const KAIWAI: readonly Kaiwai[] = ["ミーム", "アイドル", "配信者", "有識者", "動物"];
 export const DECK_SIZE = 25;
+/** 1つのデッキに入れられる属性の数（共通カードは数えない） */
+export const MAX_DECK_ATTRIBUTES = 2;
 export const MAX_COPIES = 3;

@@ -3,8 +3,10 @@ import { type ComponentType, useEffect, useRef } from "react";
 import { CollageFace } from "./faces/Collage";
 import { ExpertFace } from "./faces/Expert";
 import { GenericFace } from "./faces/Generic";
+import { HibanaFace } from "./faces/Hibana";
 import { IdolFace } from "./faces/Idol";
 import { MinamoFace } from "./faces/Minamo";
+import { NagiFace } from "./faces/Nagi";
 import { RareFace } from "./faces/Rare";
 import { RenFace } from "./faces/Ren";
 import { ShiroganeFace } from "./faces/Shirogane";
@@ -16,6 +18,8 @@ const FACES: Record<string, { cls: string; Face: ComponentType<{ card: CardDef }
   m1: { cls: "s-idol", Face: IdolFace },
   k5: { cls: "s-collage", Face: CollageFace },
   g4: { cls: "s-expert", Face: ExpertFace },
+  c4: { cls: "s-hibana", Face: HibanaFace },
+  c5: { cls: "s-nagi", Face: NagiFace },
 };
 
 /** 専用デザインがないカードは、★4以上なら共通のキラデザイン、それ以外は共通デザインで描く */

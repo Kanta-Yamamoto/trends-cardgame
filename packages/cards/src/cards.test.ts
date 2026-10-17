@@ -20,9 +20,8 @@ describe("cards.json", () => {
     }
   });
 
-  it("属性は1〜2個、界隈は0〜2個で、決められたものだけ", () => {
+  it("属性は0〜2個（0個は共通カード）、界隈は0〜2個で、決められたものだけ", () => {
     for (const c of CARDS) {
-      expect(c.attributes.length).toBeGreaterThanOrEqual(1);
       expect(c.attributes.length).toBeLessThanOrEqual(2);
       expect(c.kaiwai.length).toBeLessThanOrEqual(2);
       for (const a of c.attributes) expect(ATTRIBUTES).toContain(a);

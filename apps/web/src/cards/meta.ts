@@ -15,7 +15,8 @@ export const stars = (n: number) => "★".repeat(n);
 /** カードの背景色（2属性なら斜めに塗り分ける） */
 export function attrBackground(card: Pick<CardDef, "attributes">): string {
   const [a, b] = card.attributes.map((x) => ATTR_META[x]);
-  if (!a) return "#333";
+  // 共通カード（属性なし）は銀色
+  if (!a) return "radial-gradient(120% 75% at 50% 15%, #f4f6fa, #aab3c2 45%, #3c4452)";
   if (!b)
     return `radial-gradient(120% 75% at 50% 15%, color-mix(in srgb, ${a.color} 55%, white), ${a.color} 45%, ${a.deep})`;
   return `linear-gradient(125deg, ${a.color} 0%, ${a.deep} 49.5%, ${b.deep} 50.5%, ${b.color} 100%)`;

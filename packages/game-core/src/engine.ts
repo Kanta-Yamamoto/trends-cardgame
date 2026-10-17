@@ -306,6 +306,12 @@ function runEffect(e: CardEffect, ctx: Ctx) {
   const status = (owner: PlayerId, slot: number, u: Unit, s: "晒し" | "眠り" | "訂正" | "ガード消滅") =>
     emit({ type: "status", player: owner, slot, cardId: u.cardId, status: s });
 
+  const cond = e.if;
+  if (cond) {
+    const n = me.field.filter((u) => u && must(catalog, u.cardId).attributes.includes(cond.allies)).length;
+    if (n < cond.atLeast) return;
+  }
+
   switch (e.do) {
     case "summon":
       for (let i = 0; i < e.count; i++) if (!summon(state, player, e.card, catalog, emit)) break;
@@ -328,6 +334,21 @@ function runEffect(e: CardEffect, ctx: Ctx) {
           hp: 0,
         });
       }
+      break;
+    case "buffSelf":
+      if (self && ctx.selfSlot !== undefined) {
+        self.atkBuff += e.attack;
+        self.hpBuff += e.hp;
+        emit({ type: "buffed", player, slot: ctx.selfSlot, cardId: self.cardId, attack: e.attack, hp: e.hp });
+      }
+      break;
+    case "buffAllies":
+      me.field.forEach((u, slot) => {
+        if (!u || slot === ctx.selfSlot) return;
+        u.atkBuff += e.attack;
+        u.hpBuff += e.hp;
+        emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: e.hp });
+      });
       break;
     case "buffRandomAlly": {
       const others = me.field.flatMap((u, slot) => (u && slot !== ctx.selfSlot ? [slot] : []));
@@ -382,7 +403,12 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       if (e.to === "strongestEnemy") {
         const slot = strongestEnemy(state, player, catalog);
         if (slot >= 0) damageUnit(state, foeId, slot, e.amount, emit);
-      } else if (tgt && tgtOwner && ctx.target) damageUnit(state, tgtOwner, ctx.target.slot, e.amount, emit);
+      } else if (e.to === "allEnemies") {
+        state.players[foeId].field.forEach((u, slot) => {
+          if (u) damageUnit(state, foeId, slot, e.amount, emit);
+        });
+      } else if (e.to === "enemyMaster") damageLeader(state, foeId, e.amount, emit);
+      else if (tgt && tgtOwner && ctx.target) damageUnit(state, tgtOwner, ctx.target.slot, e.amount, emit);
       break;
     case "expose":
       if (tgt && tgtOwner && ctx.target) {
@@ -390,12 +416,23 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         status(tgtOwner, ctx.target.slot, tgt, "晒し");
       }
       break;
-    case "bind":
-      if (tgt && tgtOwner && ctx.target) {
-        tgt.boundUntil = state.turn + 1;
-        status(tgtOwner, ctx.target.slot, tgt, "眠り");
-      }
+    case "bind": {
+      // 相手の次のターンに攻撃できないようにする
+      const sleep = (owner: PlayerId, slot: number, u: Unit) => {
+        u.boundUntil = state.turn + 1;
+        status(owner, slot, u, "眠り");
+      };
+      if (e.to === "strongestEnemy") {
+        const slot = strongestEnemy(state, player, catalog);
+        const u = slot >= 0 ? state.players[foeId].field[slot] : null;
+        if (u) sleep(foeId, slot, u);
+      } else if (e.to === "allEnemies") {
+        state.players[foeId].field.forEach((u, slot) => {
+          if (u) sleep(foeId, slot, u);
+        });
+      } else if (tgt && tgtOwner && ctx.target) sleep(tgtOwner, ctx.target.slot, tgt);
       break;
+    }
     case "silence":
       if (tgt && tgtOwner && ctx.target) {
         tgt.silenced = true;

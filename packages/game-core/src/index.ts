@@ -1,4 +1,5 @@
 export { planTurn } from "./ai";
+export { deckAttributes, validateDeck } from "./deck";
 export type { NewGameInput } from "./engine";
 export {
   applyAction,

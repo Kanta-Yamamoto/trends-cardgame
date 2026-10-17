@@ -16,14 +16,25 @@ import { create } from "zustand";
 export const CATALOG: Record<string, CardDef> = Object.fromEntries(CARDS.map((c) => [c.id, c]));
 
 export const DECK_INFO: Record<DeckId, { name: string; text: string }> = {
-  flame: { name: "大炎上で草", text: "炎上×草。数で押して、同じ相手を叩き続ける。エースは炎上系配信者 レン" },
+  flame: {
+    name: "大炎上で草",
+    text: "炎上×草。速攻と連撃で早めに削る。エースは炎上系配信者 レンと炎上女王 ヒバナ",
+  },
   idol: {
     name: "推しに癒される",
     text: "メロい×癒し。注目で推しを育て、ガードと回復で守り切る。エースはトップアイドル",
   },
   expert: {
-    name: "有識者の論破",
-    text: "神×癒し。コミュニティノートと専門家で相手を崩し、引き続ける。エースは神絵師 シロガネ",
+    name: "有識者の守り",
+    text: "神×癒し。ガードで守りながら引き続け、除去で盤面を取る。エースは神絵師 シロガネと癒しボイス ナギ",
+  },
+  ronpa: {
+    name: "論破で炎上",
+    text: "炎上×神。叩きと除去で相手のアイコンを減らし、押し切る。エースは論破系配信者",
+  },
+  dance: {
+    name: "踊ってみたで草",
+    text: "草×メロい。草を増やして並べ、みんなで強くなる。エースは伝説のコラ画像",
   },
 };
 

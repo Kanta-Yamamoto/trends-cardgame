@@ -1,7 +1,7 @@
 /* ★5 の専用デザイン：トップアイドル（.s-idol）・伝説のコラ画像（.s-collage）・専門家（.s-expert） */
 
 /* ---------- 共通の土台 ---------- */
-.s-idol, .s-collage, .s-expert {
+.s-idol, .s-collage, .s-expert, .s-hibana, .s-nagi {
   --rainbow: repeating-linear-gradient(118deg, #ff7ad9 0%, #ffd36e 4%, #7dffb0 8%, #6ec9ff 12%, #b48cff 16%, #ff7ad9 20%);
   .card {
     --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; --nx: 0; --ny: 0; --g: 0;
@@ -394,6 +394,231 @@
   .glare {
     z-index: 4; pointer-events: none;
     background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #fffbe8cc 0%, #f2c14e22 25%, transparent 55%);
+    mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);
+  }
+}
+
+/* =========================================================
+   ヒバナ：黒い漆と燃えるステージ、ニュースの「速報」テロップ
+   ========================================================= */
+.s-hibana {
+  --ember: #ff5a1f; --blaze: #ffb02e; --blood: #c8102e; --coal: #0d0708;
+  --f-name: "Dela Gothic One", "Hiragino Sans", sans-serif;
+  --f-ui: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+  --f-num: "Cinzel", "Times New Roman", serif;
+
+  .card { color: #fff; background: var(--coal); box-shadow: 0 30px 70px -18px #000, 0 0 60px -10px #ff5a1f88, 0 0 0 1px #ffffff1a; }
+  .lacquer {
+    background:
+      linear-gradient(115deg, transparent 30%, #ffffff22 46%, #ffffff44 50%, #ffffff22 54%, transparent 70%) var(--mx) var(--my) / 260% 260% no-repeat,
+      linear-gradient(160deg, #221012, #070304 45%, #1d0c0e 70%, #050203);
+  }
+  .embers {
+    background: radial-gradient(60% 50% at var(--mx) var(--my), #ffd2a0, var(--ember) 45%, transparent 80%);
+    mask:
+      radial-gradient(circle, #000 0 1px, transparent 1.6px) 0 0 / 17px 17px,
+      radial-gradient(circle, #000 0 0.8px, transparent 1.4px) 6px 9px / 11px 11px;
+    opacity: calc(0.35 + var(--g) * 0.65);
+  }
+  .win { clip-path: inset(4.4% 5.2% 4.4% 5.2% round 1.6%); }
+  .bg {
+    background: url(/assets/cards/c4-art.jpg) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * -8px), calc(var(--ny) * -8px)) scale(1.06);
+  }
+  /* 陽炎（傾けると揺らぐ熱） */
+  .heat {
+    background: repeating-linear-gradient(180deg, transparent 0 0.5em, #ff7a3a18 0.5em 0.6em);
+    background-position: 0 calc(var(--ny) * 20px);
+    mix-blend-mode: screen; opacity: calc(0.2 + var(--g) * 0.4);
+  }
+  .sparks {
+    background: radial-gradient(60% 50% at var(--mx) var(--my), #fff0d0, var(--blaze) 40%, transparent 80%);
+    mask:
+      radial-gradient(circle, #000 0 1.2px, transparent 2px) 0 0 / 23px 29px,
+      radial-gradient(circle, #000 0 0.8px, transparent 1.5px) 9px 13px / 15px 19px;
+    mask-position: calc(var(--nx) * 16px) calc(var(--ny) * 16px);
+    mix-blend-mode: screen; opacity: calc(0.25 + var(--g) * 0.7);
+  }
+  /* 枠の下からせり上がる熱 */
+  .flames {
+    top: auto; height: 30%;
+    background:
+      radial-gradient(40% 60% at 20% 100%, #ffb02e99, transparent 70%),
+      radial-gradient(40% 70% at 60% 100%, #ff5a1faa, transparent 70%),
+      radial-gradient(35% 55% at 90% 100%, #ffb02e88, transparent 70%);
+    background-position: calc(var(--nx) * 8px) 0;
+    mix-blend-mode: screen; opacity: calc(0.5 + var(--g) * 0.4);
+  }
+  .edge {
+    inset: 4.4% 5.2%; border-radius: 1.6%; pointer-events: none;
+    box-shadow: 0 0 0 1.5px #000, 0 0 0 2.5px var(--ember), 0 0 1em 0.2em #ff5a1f88;
+  }
+  .subject {
+    background: url(/assets/cards/c4-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 9px), calc(var(--ny) * 9px)) scale(1.06);
+    filter: drop-shadow(0 8px 12px #000c) drop-shadow(0 0 6px #ff5a1f66); pointer-events: none;
+  }
+  .subject-shine {
+    mask: url(/assets/cards/c4-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 9px), calc(var(--ny) * 9px)) scale(1.06);
+    background: linear-gradient(115deg, transparent 35%, #ffb02e 47%, #fff 50%, #ffb02e 53%, transparent 65%) var(--mx) var(--my) / 260% 260% no-repeat;
+    mix-blend-mode: soft-light; opacity: calc(0.2 + var(--g) * 0.55); pointer-events: none;
+  }
+  /* コスト：燃える王冠のメダル */
+  .cost {
+    position: absolute; left: 2.2%; top: 1.6%; width: 16.5%; aspect-ratio: 1; z-index: 3; border-radius: 50%;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 35% 28%, #4a1a12, #170708 55%, #050203);
+    box-shadow: 0 0 0 0.12em #000, 0 0 0 0.24em var(--ember), 0 0 1.2em -0.1em #ff5a1fcc;
+  }
+  .cost b {
+    font: 800 2.3em/1 var(--f-num);
+    background: linear-gradient(180deg, #fff3c4, var(--blaze) 40%, var(--ember) 70%, var(--blood));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .rarity {
+    position: absolute; right: 7%; top: 6%; z-index: 3; font-size: 0.8em; letter-spacing: 0.15em;
+    padding: 0.4em 0.7em; color: #fff3c4; transform: skewX(-12deg);
+    background: linear-gradient(110deg, var(--blood), #6d0a15); box-shadow: 0 0 0 1px #000, 0 0 0.8em #ff5a1f88;
+  }
+  .plate { position: absolute; left: 5.2%; right: 5.2%; bottom: 5%; z-index: 2; display: grid; gap: 0.3em; }
+  .name { display: flex; align-items: baseline; gap: 0.5em; padding-left: 0.4em; }
+  .name .epi {
+    font: 800 0.7em/1 var(--f-ui); letter-spacing: 0.2em; color: #000; padding: 0.3em 0.5em;
+    background: var(--blaze); transform: skewX(-12deg);
+  }
+  .name h3 {
+    margin: 0; font: 400 2.1em/1 var(--f-name); letter-spacing: 0.08em;
+    background: linear-gradient(180deg, #fff 20%, #fff1c8 50%, var(--blaze) 80%, var(--ember));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 0.04em #000) drop-shadow(0 0 0.04em #000) drop-shadow(0 0.06em 0 #000) drop-shadow(0 0 0.35em #ff5a1fcc);
+  }
+  /* 効果：ニュース速報のテロップ */
+  .ticker { display: grid; gap: 0.35em; background: #0b0606e8; box-shadow: inset 0 0.18em 0 var(--blood), 0 0.3em 1em -0.3em #000; padding: 0 0.8em 0.55em; }
+  .ticker-head { display: flex; align-items: center; justify-content: space-between; margin: 0 -0.8em; }
+  .flash {
+    font: 800 0.85em/1 var(--f-ui); letter-spacing: 0.2em; color: #fff; padding: 0.4em 0.9em 0.4em 0.8em;
+    background: linear-gradient(90deg, var(--blood), #ff2a3c); clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
+  }
+  .ticker-head .chips { padding-right: 0.8em; }
+  .chip { font-size: 0.68em; }
+  .chip.kaiwai { background: #ffffff1c; color: #fff; }
+  .effect { margin: 0; font: 700 0.86em/1.55 var(--f-ui); color: #fff; }
+  .effect .kw { color: var(--blaze); }
+  .foot { display: flex; align-items: center; justify-content: space-between; }
+  .live { font: 800 0.7em/1 var(--f-ui); letter-spacing: 0.12em; color: #ff3b4f; text-shadow: 0 0 0.5em #ff3b4f; }
+  .glare {
+    z-index: 4; pointer-events: none;
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffd6b066 0%, #ff5a1f1c 25%, transparent 55%);
+    mix-blend-mode: screen; opacity: calc(0.25 + var(--g) * 0.6);
+  }
+}
+
+/* =========================================================
+   ナギ：水色のガラス、波形の模様、水の中の光。効果は音声プレイヤー
+   ========================================================= */
+.s-nagi {
+  --aqua: #8fdcff; --aqua-2: #d8f4ff; --deep: #1d4d6e; --lilac: #c9c2ff; --ink: #163a52;
+  --f-name: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif;
+  --f-body: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", sans-serif;
+  --f-num: "Fredoka", "Arial Rounded MT Bold", sans-serif;
+
+  .card { color: var(--ink); background: #eef9ff; box-shadow: 0 30px 60px -20px #000b, 0 0 60px -12px #8fdcff99, 0 0 0 1px #ffffff60; }
+  /* 枠：すりガラス */
+  .glass {
+    background:
+      linear-gradient(120deg, transparent 30%, #ffffffd0 47%, #fff 50%, #ffffffd0 53%, transparent 70%) var(--mx) var(--my) / 250% 250% no-repeat,
+      linear-gradient(160deg, #f2fbff, #c6ebfb 35%, #f6fbff 55%, #b9def5 80%, #e9f6ff);
+  }
+  /* 枠に刻んだ音の波 */
+  .wave-lines {
+    background: repeating-radial-gradient(ellipse 140% 60% at 50% 120%, transparent 0 0.6em, #ffffff90 0.65em 0.72em, transparent 0.77em 1.3em);
+    opacity: calc(0.5 + var(--g) * 0.4);
+  }
+  .win { clip-path: inset(4.4% 5.2% 4.4% 5.2% round 6% 6% 3% 3%); }
+  .bg {
+    background: url(/assets/cards/c5-art.jpg) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * -7px), calc(var(--ny) * -7px)) scale(1.06);
+  }
+  /* 水面からの光の網目（コースティクス） */
+  .caustics {
+    background:
+      repeating-radial-gradient(circle at calc(var(--mx) - 10%) calc(var(--my) - 20%), transparent 0 1.1em, #ffffff55 1.25em 1.35em, transparent 1.5em 2.4em),
+      repeating-radial-gradient(circle at calc(var(--mx) + 15%) calc(var(--my) + 10%), transparent 0 1.6em, #d8f4ff44 1.75em 1.85em, transparent 2em 3.1em);
+    mix-blend-mode: soft-light; opacity: calc(0.25 + var(--g) * 0.5);
+  }
+  .bubbles-soft {
+    background:
+      radial-gradient(circle at 30% 30%, #fff 0 8%, transparent 14%) 0 0 / 3.2em 3.2em,
+      radial-gradient(circle at 60% 60%, #ffffffaa 0 5%, transparent 10%) 1.1em 1.6em / 2.3em 2.3em;
+    background-position: calc(var(--nx) * 10px) calc(var(--ny) * -14px);
+    mask: radial-gradient(55% 45% at var(--mx) var(--my), #000, transparent);
+    mix-blend-mode: screen; opacity: calc(0.15 + var(--g) * 0.5);
+  }
+  .rim {
+    inset: 4.4% 5.2%; border-radius: 6% 6% 3% 3%; pointer-events: none;
+    box-shadow: 0 0 0 0.15em #fff, 0 0 0 0.3em var(--aqua), 0 0 1.2em 0.2em #8fdcff77;
+  }
+  .subject {
+    background: url(/assets/cards/c5-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
+    filter: drop-shadow(0 6px 12px #1d4d6e55); pointer-events: none;
+  }
+  .subject-shine {
+    mask: url(/assets/cards/c5-subject.webp) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
+    background: linear-gradient(120deg, #c9c2ff, #d8f4ff, #fff, #ffd9f0, #c9c2ff); background-size: 300% 300%; background-position: var(--mx) var(--my);
+    mix-blend-mode: soft-light; opacity: calc(0.2 + var(--g) * 0.45); pointer-events: none;
+  }
+  /* コスト：泡 */
+  .cost {
+    position: absolute; left: 2.4%; top: 1.6%; width: 16.5%; aspect-ratio: 1; z-index: 3; border-radius: 50%;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 32% 28%, #fff 0 12%, #e6f8ff 22%, #a9e3fb 60%, #5cb8e6);
+    box-shadow: inset -0.2em -0.3em 0.5em #ffffff80, 0 0 0 0.12em #fff, 0 0.3em 0.8em -0.2em #1d4d6e88;
+  }
+  .cost b { font: 700 2.2em/1 var(--f-num); color: var(--deep); text-shadow: 0 1px 0 #fff; }
+  .rarity {
+    position: absolute; right: 7%; top: 6%; z-index: 3; font-size: 0.8em; letter-spacing: 0.12em; color: var(--deep);
+    padding: 0.35em 0.75em; border-radius: 2em; background: #ffffffd0; box-shadow: 0 0 0 1px var(--aqua);
+  }
+  .dark-tag {
+    position: absolute; right: 7%; top: 12%; z-index: 3; font-size: 0.75em; font-weight: 800;
+    padding: 0.2em 0.6em; border-radius: 99px; background: #1a0d24; color: #c9c2ff; box-shadow: 0 0 0 1px #8f7bff;
+  }
+  .plate { position: absolute; left: 6%; right: 6%; bottom: 5%; z-index: 2; display: grid; gap: 0.3em; }
+  .name { display: grid; justify-items: center; }
+  .name .epi { font: 700 0.72em/1.2 var(--f-body); letter-spacing: 0.3em; color: #fff; text-shadow: 0 0 0.4em #1d4d6e; }
+  .name h3 {
+    margin: 0; font: 800 2.1em/1.05 var(--f-name); letter-spacing: 0.3em; padding-left: 0.3em; color: #fff;
+    text-shadow: 0 0 0.3em #8fdcff, 0 0 0.8em #5cb8e6, 0 0.06em 0.1em #1d4d6e;
+  }
+  /* 効果：音声プレイヤー */
+  .player {
+    display: grid; gap: 0.35em; justify-items: center; text-align: center; padding: 0.6em 0.9em 0.55em; border-radius: 1em;
+    background: #ffffffd8; box-shadow: 0 0 0 0.1em #ffffff, 0 0 0 0.22em #8fdcff80, 0 0.3em 1em -0.3em #1d4d6e66;
+  }
+  .wave { display: flex; align-items: center; gap: 0.12em; width: 100%; height: 1.4em; }
+  .wave i {
+    flex: 1; border-radius: 1em; background: linear-gradient(180deg, var(--lilac), var(--aqua));
+    transform: scaleY(calc(0.7 + var(--g) * 0.3)); transform-origin: center;
+  }
+  .chip { font-size: 0.68em; }
+  .chip.kaiwai { background: var(--aqua-2); color: var(--deep); box-shadow: none; }
+  .effect { margin: 0; font: 700 0.86em/1.55 var(--f-body); color: var(--ink); }
+  .effect .kw { color: #2b8fd0; }
+  .dark-note { margin: 0; font: 700 0.66em/1.4 var(--f-body); color: #6a55c9; }
+  .foot { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 0.6em; }
+  .seek { flex: 1; display: grid; gap: 0.2em; justify-items: start; }
+  .seek .bar {
+    width: 100%; height: 0.25em; border-radius: 1em;
+    background: linear-gradient(90deg, var(--aqua) 0 38%, #d6e4ee 38%);
+    box-shadow: inset 0 0 0 1px #ffffff80;
+  }
+  .seek .time { font: 600 0.6em/1 var(--f-num); color: var(--deep); letter-spacing: 0.06em; }
+  .glare {
+    z-index: 4; pointer-events: none;
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffffffcc 0%, #d8f4ff30 25%, transparent 55%);
     mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);
   }
 }
