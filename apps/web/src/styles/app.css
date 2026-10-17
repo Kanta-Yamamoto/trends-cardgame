@@ -265,8 +265,10 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .stage { position: absolute; left: 50%; top: 50%; width: 960px; height: 540px; transform-origin: center; }
 .stage-grid {
   height: 100%; display: grid; grid-template-columns: 158px minmax(0, 1fr) 214px; gap: 10px;
-  padding: 10px max(10px, env(safe-area-inset-right, 0px)) 10px max(10px, env(safe-area-inset-left, 0px));
+  padding: 10px;
 }
+/* セーフエリア（切り欠き・ホームバー）の大きさを JS で測るための見えない箱 */
+.safe-probe { position: fixed; left: 0; top: 0; visibility: hidden; pointer-events: none; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
 .col-left { display: grid; grid-template-rows: auto 1fr auto; gap: 8px; min-height: 0; }
 .col-left .turn-pill { align-self: center; justify-self: center; }
 .col-left .pbar { flex-direction: column; align-items: stretch; gap: 6px; }
@@ -282,14 +284,14 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .col-left .piles { justify-content: center; }
 
 .stage .board { display: grid; grid-template-rows: auto auto auto 1fr; align-content: start; gap: 6px; padding: 6px 8px; min-height: 0; }
-.stage .row { grid-template-columns: repeat(5, 100px); gap: 8px; justify-content: center; }
+.stage .row { grid-template-columns: repeat(5, var(--slot, 100px)); gap: 8px; justify-content: center; }
 .stage .hint { font-size: 11.5px; min-height: 1.5em; line-height: 1.5; }
 .stage .mini-name { font-size: 10.5px; }
 .stage .mini-name small { font-size: 8px; }
 .stage .mini-kw { font-size: 8.5px; padding: 1px 4px; }
 .stage .hand { display: flex; justify-content: center; align-items: end; padding: 10px 14px 0; }
-.stage .hand .mini { flex: none; width: 92px; }
-.stage .hand .mini + .mini { margin-left: min(6px, calc((100% - 92px * var(--n)) / (var(--n) - 1))); }
+.stage .hand .mini { flex: none; width: calc(var(--slot, 100px) * 0.92); }
+.stage .hand .mini + .mini { margin-left: min(6px, calc((100% - var(--slot, 100px) * 0.92 * var(--n)) / (var(--n) - 1))); }
 .stage .hand .mini:hover, .stage .hand .mini.selected { z-index: 2; }
 
 .col-right { display: grid; grid-template-rows: minmax(0, 1fr) auto auto auto; gap: 8px; min-height: 0; }
@@ -348,7 +350,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 @media (prefers-reduced-motion: reduce) { .foe-reveal, .fx-targeted { animation: none; } }
 
 /* ---------- 手札が多いとき ---------- */
-.stage .hand-more { position: absolute; right: 14px; bottom: 146px; z-index: 3; padding: 5px 10px; border-radius: 99px; border: 1px solid var(--gold); background: #0b1018e6; color: var(--gold); font-weight: 800; font-size: 11px; cursor: pointer; }
+.stage .hand-more { position: absolute; right: 14px; bottom: calc(var(--slot, 100px) * 0.92 * 1.4 + 18px); z-index: 3; padding: 5px 10px; border-radius: 99px; border: 1px solid var(--gold); background: #0b1018e6; color: var(--gold); font-weight: 800; font-size: 11px; cursor: pointer; }
 .hand-sheet h2 { margin: 0 0 10px; font-size: 16px; }
 .hand-grid { width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; max-height: 70dvh; overflow: auto; padding: 4px; }
 .hand-grid .mini { width: 100%; }

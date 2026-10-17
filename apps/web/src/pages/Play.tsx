@@ -74,18 +74,66 @@ function describe(e: GameEvent): string {
   }
 }
 
-/** 画面は 960×540（スマホの横画面と同じ 16:9）で作り、ウィンドウに合わせて拡大・縮小する */
+/**
+ * 対戦画面は「舞台」を作って、画面に合わせて拡大・縮小する。
+ * - 切り欠き・ホームバー（セーフエリア）を除いた範囲に収める（iPhone の横画面で左右が欠けて重なるのを防ぐ）
+ * - 横長の画面ほど舞台を低くして、カードを大きく・横いっぱいに使う（16:9 で 960×540、20:9 で 960×432 まで）
+ * - 舞台の高さに合わせて、場の枠の大きさ（--slot）を決める
+ */
 const STAGE_W = 960;
 const STAGE_H = 540;
-function useStageScale() {
-  const [scale, setScale] = useState(1);
-  useEffect(() => {
-    const on = () => setScale(Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H));
+const STAGE_H_MIN = 432;
+/** 場の枠の幅から決まる、舞台の縦の長さ（余白＋案内＋場2段＋手札）。stage の CSS と合わせる */
+const fitSlot = (height: number) => Math.min(100, Math.floor((height - 84) / 4.08));
+
+interface Stage {
+  width: number;
+  height: number;
+  scale: number;
+  slot: number;
+  cx: number;
+  cy: number;
+}
+
+function safeArea(probe: HTMLElement | null) {
+  if (!probe) return { t: 0, r: 0, b: 0, l: 0 };
+  const cs = getComputedStyle(probe);
+  const px = (v: string) => Number.parseFloat(v) || 0;
+  return { t: px(cs.paddingTop), r: px(cs.paddingRight), b: px(cs.paddingBottom), l: px(cs.paddingLeft) };
+}
+
+export function measureStage(vw: number, vh: number, safe = { t: 0, r: 0, b: 0, l: 0 }): Stage {
+  const w = Math.max(1, vw - safe.l - safe.r);
+  const h = Math.max(1, vh - safe.t - safe.b);
+  const aspect = w / h;
+  const height = Math.min(STAGE_H, Math.max(STAGE_H_MIN, STAGE_W / aspect));
+  const width = Math.max(STAGE_W, height * aspect);
+  return {
+    width,
+    height,
+    scale: Math.min(w / width, h / height),
+    slot: fitSlot(height),
+    cx: safe.l + w / 2,
+    cy: safe.t + h / 2,
+  };
+}
+
+function useStage() {
+  const probe = useRef<HTMLDivElement>(null);
+  const [stage, setStage] = useState<Stage>(() => measureStage(STAGE_W, STAGE_H));
+  useLayoutEffect(() => {
+    const on = () => setStage(measureStage(window.innerWidth, window.innerHeight, safeArea(probe.current)));
     on();
+    // iPhone は向きを変えた直後のサイズが古いことがあるので、少し後にも測り直す
+    const later = () => setTimeout(on, 300);
     window.addEventListener("resize", on);
-    return () => window.removeEventListener("resize", on);
+    window.addEventListener("orientationchange", later);
+    return () => {
+      window.removeEventListener("resize", on);
+      window.removeEventListener("orientationchange", later);
+    };
   }, []);
-  return scale;
+  return { stage, probe };
 }
 
 export function Play() {
@@ -284,7 +332,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
   const seen = useRef(0);
-  const scale = useStageScale();
+  const { stage, probe } = useStage();
 
   // 攻撃の演出を store に登録する（演出が終わってから state を進める）
   useEffect(() => {
@@ -461,7 +509,20 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
 
   return (
     <div className="play-full">
-      <div className="stage" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
+      <div className="safe-probe" ref={probe} aria-hidden="true" />
+      <div
+        className="stage"
+        style={
+          {
+            left: stage.cx,
+            top: stage.cy,
+            width: stage.width,
+            height: stage.height,
+            transform: `translate(-50%, -50%) scale(${stage.scale})`,
+            "--slot": `${stage.slot}px`,
+          } as CSSProperties
+        }
+      >
         <div className="stage-grid">
           <div className="col-left">
             <PlayerBar
