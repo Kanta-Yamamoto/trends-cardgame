@@ -1,14 +1,15 @@
 import type { CardDef } from "@trends/cards";
+import type { UnitView } from "@trends/game-core";
+import { ATTR_META, attrBackground, stars } from "../cards/meta";
 
 interface Props {
   card: CardDef;
-  /** 表示するコスト（補正込み）。省略すると出さない */
+  /** 場のアイコンの今の姿（効果・ダメージ・闇堕ちを反映したもの） */
+  view?: UnitView;
+  /** 表示するコスト。省略すると出さない */
   cost?: number;
-  /** 場のアイコンが受けているダメージ */
-  damage?: number;
-  /** 場のアイコンの番号（演出で要素を探すため） */
+  /** 演出で要素を探すための目印 */
   uid?: number;
-  /** 手札のカードなら true（演出で要素を探すため） */
   inHand?: boolean;
   className?: string;
   disabled?: boolean;
@@ -18,11 +19,11 @@ interface Props {
   children?: React.ReactNode;
 }
 
-/** 対戦画面の手札・場で使う小さいカード。イラストがあれば背景に敷く */
+/** 対戦画面の手札・場で使う小さいカード。イラストがあれば背景に敷き、なければ属性の色で塗る */
 export function MiniCard({
   card,
+  view,
   cost,
-  damage = 0,
   uid,
   inHand,
   className = "",
@@ -32,40 +33,72 @@ export function MiniCard({
   onPeek,
   children,
 }: Props) {
-  const art = card.art ? { backgroundImage: `url(${card.art})` } : undefined;
-  const hp = card.hp - damage;
+  const dark = view?.unit.dark ?? false;
+  const bg =
+    card.art && !dark ? { backgroundImage: `url(${card.art})` } : { background: attrBackground(card) };
+  const name = view?.name ?? card.name;
+  const keywords = view?.keywords ?? card.keywords;
+  const attack = view?.attack ?? card.attack ?? 0;
+  const hp = view?.hp ?? card.hp ?? 0;
+  const hurt = view ? view.hp < view.maxHp : false;
+  const isPost = card.type === "post";
   return (
     <button
       type="button"
-      className={`mini theme-${card.theme} ${card.art ? "has-art" : ""} ${className}`}
-      style={art}
+      className={`mini ${card.art && !dark ? "has-art" : ""} ${dark ? "is-dark" : ""} ${isPost ? "is-post" : ""} ${className}`}
+      style={bg}
       data-uid={uid}
       data-hand-card={inHand ? "" : undefined}
       disabled={disabled}
-      aria-label={label ?? `${card.name}（コスト${card.cost}・攻撃${card.attack}・体力${hp}）`}
+      aria-label={
+        label ??
+        (isPost
+          ? `${name}（投稿・コスト${card.cost}）`
+          : `${name}（コスト${card.cost}・攻撃${attack}・体力${hp}）`)
+      }
       onClick={onClick}
       onPointerEnter={onPeek}
       onFocus={onPeek}
     >
-      {cost !== undefined && <span className={`mini-cost ${cost < card.cost ? "down" : ""}`}>{cost}</span>}
-      <span className="mini-name">{card.name}</span>
-      {card.keywords.length > 0 && (
+      {cost !== undefined && <span className="mini-cost">{cost}</span>}
+      <span className="mini-top">
+        <span className="mini-attrs" aria-hidden="true">
+          {card.attributes.map((a) => (
+            <i key={a} style={{ background: ATTR_META[a].color, color: ATTR_META[a].deep }}>
+              {ATTR_META[a].mark}
+            </i>
+          ))}
+        </span>
+        <span className="mini-stars">{stars(card.rarity)}</span>
+      </span>
+      {card.dark && !dark && <span className="mini-darkmark">闇堕ち</span>}
+      <span className="mini-name">
+        {card.epithet && !dark && <small>{card.epithet}</small>}
+        {name}
+      </span>
+      {(keywords.length > 0 || isPost || view) && (
         <span className="mini-kws">
-          {card.keywords.map((k) => (
+          {isPost && <span className="mini-kw post">投稿</span>}
+          {keywords.map((k) => (
             <span key={k} className="mini-kw">
               {k}
             </span>
           ))}
+          {view?.exposed && <span className="mini-kw st">晒し</span>}
+          {view?.asleep && <span className="mini-kw st">眠り</span>}
+          {view?.unit.silenced && <span className="mini-kw st">訂正</span>}
         </span>
       )}
-      <span className="mini-stats">
-        <span className="mini-atk" title="攻撃力">
-          {card.attack}
+      {!isPost && (
+        <span className="mini-stats">
+          <span className="mini-atk" title="攻撃力">
+            {attack}
+          </span>
+          <span key={hp} className={`mini-hp ${hurt ? "hurt" : ""}`} title="体力">
+            {hp}
+          </span>
         </span>
-        <span key={hp} className={`mini-hp ${damage > 0 ? "hurt" : ""}`} title="体力">
-          {hp}
-        </span>
-      </span>
+      )}
       {children}
     </button>
   );

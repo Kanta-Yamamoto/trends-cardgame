@@ -3,6 +3,7 @@ import {
   type Action,
   type AttackTarget,
   applyAction,
+  type CastTarget,
   createGame,
   type GameEvent,
   type GameState,
@@ -15,8 +16,15 @@ import { create } from "zustand";
 export const CATALOG: Record<string, CardDef> = Object.fromEntries(CARDS.map((c) => [c.id, c]));
 
 export const DECK_INFO: Record<DeckId, { name: string; text: string }> = {
-  heaven: { name: "ヘブン", text: "光輪・蒼空。ガードと拡散で粘り、シロガネとミナモで押し返す" },
-  inferno: { name: "インフェルノ", text: "紅蓮。速攻と炎上で、早めに削り切る" },
+  flame: { name: "大炎上で草", text: "炎上×草。数で押して、同じ相手を叩き続ける。エースは炎上系配信者 レン" },
+  idol: {
+    name: "推しに癒される",
+    text: "メロい×癒し。注目で推しを育て、ガードと回復で守り切る。エースはトップアイドル",
+  },
+  expert: {
+    name: "有識者の論破",
+    text: "神×癒し。コミュニティノートと専門家で相手を崩し、引き続ける。エースは神絵師 シロガネ",
+  },
 };
 
 export const ME: PlayerId = "p1";
@@ -46,6 +54,8 @@ interface GameStore {
   quit: () => void;
   select: (s: Selection) => void;
   play: (slot: number) => void;
+  /** 選んでいる手札の投稿を使う（対象が要るものは target を渡す） */
+  cast: (target?: CastTarget) => void;
   attack: (target: AttackTarget) => void;
   endTurn: () => void;
 }
@@ -130,7 +140,8 @@ export const useGame = create<GameStore>((set, get) => {
       runId++;
       const seed = opts.seed ?? Math.floor(Math.random() * 1e9);
       const first = opts.first ?? (seed % 2 === 0 ? ME : CPU);
-      const cpuDeck: DeckId = deck === "heaven" ? "inferno" : "heaven";
+      const others = (Object.keys(DECKS) as DeckId[]).filter((d) => d !== deck);
+      const cpuDeck = others[seed % others.length] as DeckId;
       const game = createGame({ decks: { [ME]: DECKS[deck], [CPU]: DECKS[cpuDeck] } as never, seed, first });
       set({
         deck,
@@ -160,6 +171,11 @@ export const useGame = create<GameStore>((set, get) => {
       const sel = get().selection;
       if (sel?.kind !== "hand" || get().cpuBusy || get().animating) return;
       if (dispatch({ type: "play", player: ME, handIndex: sel.index, slot })) set({ selection: null });
+    },
+    cast: (target) => {
+      const sel = get().selection;
+      if (sel?.kind !== "hand" || get().cpuBusy || get().animating) return;
+      if (dispatch({ type: "cast", player: ME, handIndex: sel.index, target })) set({ selection: null });
     },
     attack: (target) => {
       const sel = get().selection;

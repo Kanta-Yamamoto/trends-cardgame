@@ -1,191 +1,604 @@
 [
   {
-    "id": "c1",
-    "name": "シロガネ",
-    "epithet": "光輪の招き手",
-    "rarity": "UR",
-    "cost": 8,
-    "attack": 6,
-    "hp": 8,
-    "tribe": "光輪",
-    "effect": "ガード。このアイコンは、場にある他の〈光輪〉アイコン1体につき、コストが1下がる。",
-    "flavor": "「さあ、こちら側へ。光はもう、君を選んでいる」",
-    "number": "001/040",
-    "art": "/assets/cards/c1-art.jpg",
-    "subject": "/assets/cards/c1-subject.webp",
-    "original": "assets/original/c1-shirogane.png",
-    "theme": "light",
-    "keywords": ["ガード"]
-  },
-  {
     "id": "c2",
     "name": "レン",
-    "epithet": "紅蓮の簒奪者",
-    "rarity": "SEC",
+    "epithet": "炎上系配信者",
+    "type": "icon",
+    "rarity": 5,
     "cost": 6,
     "attack": 5,
     "hp": 4,
-    "tribe": "紅蓮",
-    "keywords": ["速攻"],
-    "effect": "速攻。このアイコンが攻撃したとき、相手の手札をランダムに1枚捨てさせる。",
+    "attributes": ["炎上"],
+    "kaiwai": ["配信者"],
+    "keywords": ["連撃"],
+    "effects": [],
+    "effect": "連撃（1ターンに2回攻撃できる）",
     "flavor": "「遅えよ。全部、俺がもらってく」",
+    "dark": {
+      "name": "闇堕ちレン",
+      "attack": 7,
+      "hp": 3,
+      "keywords": ["連撃", "叩き"],
+      "effect": "連撃。叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）"
+    },
     "serial": "No. 007 / 100",
     "art": "/assets/cards/c2-art.jpg",
     "subject": "/assets/cards/c2-subject.webp",
-    "original": "assets/original/c2-ren.png",
-    "theme": "crimson"
+    "original": "assets/original/c2-ren.png"
+  },
+  {
+    "id": "f1",
+    "name": "切り抜き職人",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 1,
+    "cost": 1,
+    "attack": 2,
+    "hp": 1,
+    "attributes": ["炎上"],
+    "kaiwai": ["配信者"],
+    "keywords": ["速攻"],
+    "effects": [],
+    "effect": "速攻（場に出たターンに攻撃できる）",
+    "flavor": "15秒あれば十分だ。"
+  },
+  {
+    "id": "f2",
+    "name": "突撃系配信者",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 2,
+    "cost": 2,
+    "attack": 3,
+    "hp": 2,
+    "attributes": ["炎上"],
+    "kaiwai": ["配信者"],
+    "keywords": ["叩き"],
+    "effects": [],
+    "effect": "叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）",
+    "flavor": "アポなし、許可なし、反省なし。"
+  },
+  {
+    "id": "f3",
+    "name": "粘着アンチ",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 2,
+    "cost": 3,
+    "attack": 3,
+    "hp": 3,
+    "attributes": ["炎上"],
+    "kaiwai": [],
+    "keywords": ["連撃"],
+    "effects": [],
+    "effect": "連撃（1ターンに2回攻撃できる）",
+    "flavor": "見てないって言いながら、全部見てる。"
+  },
+  {
+    "id": "f4",
+    "name": "晒し",
+    "epithet": "",
+    "type": "post",
+    "rarity": 1,
+    "cost": 1,
+    "attributes": ["炎上"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "expose"
+      },
+      {
+        "do": "draw",
+        "count": 1
+      }
+    ],
+    "effect": "相手のアイコン1体を晒し者にする（次の自分のターンが終わるまで、ガードを無視して攻撃できる）。カードを1枚引く。",
+    "flavor": "魚拓は取った。",
+    "target": "enemyIcon"
+  },
+  {
+    "id": "f5",
+    "name": "大炎上",
+    "epithet": "",
+    "type": "post",
+    "rarity": 3,
+    "cost": 3,
+    "attributes": ["炎上"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "damage",
+        "amount": 3
+      },
+      {
+        "do": "expose"
+      }
+    ],
+    "effect": "相手のアイコン1体に3ダメージ。そのアイコンを晒し者にする。",
+    "flavor": "トレンド1位、おめでとう。",
+    "target": "enemyIcon"
+  },
+  {
+    "id": "k1",
+    "name": "猫ミーム",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 3,
+    "cost": 2,
+    "attack": 1,
+    "hp": 2,
+    "attributes": ["草"],
+    "kaiwai": ["ミーム"],
+    "keywords": [],
+    "effects": [
+      {
+        "on": "play",
+        "do": "summon",
+        "card": "t-kusa",
+        "count": 2
+      }
+    ],
+    "effect": "場に出たとき、草を2体生やす。",
+    "flavor": "チピチピチャパチャパ。"
+  },
+  {
+    "id": "k2",
+    "name": "コピペ",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 1,
+    "cost": 2,
+    "attack": 1,
+    "hp": 1,
+    "attributes": ["草"],
+    "kaiwai": ["ミーム"],
+    "keywords": [],
+    "effects": [
+      {
+        "on": "play",
+        "do": "copySelf"
+      }
+    ],
+    "effect": "場に出たとき、空いている枠にこのアイコンのコピーを1体出す（コピーはオワコンに行くと消える）。",
+    "flavor": "↑これ考えたやつ天才"
+  },
+  {
+    "id": "k3",
+    "name": "大喜利職人",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 2,
+    "cost": 2,
+    "attack": 2,
+    "hp": 2,
+    "attributes": ["草"],
+    "kaiwai": ["配信者"],
+    "keywords": [],
+    "effects": [
+      {
+        "on": "play",
+        "do": "buffSelfPerPlayed",
+        "attack": 1
+      }
+    ],
+    "effect": "ノリ：場に出たとき、このターンに出したほかのカード1枚につき攻撃力+1。",
+    "flavor": "お題：こんなカードゲームは嫌だ。"
+  },
+  {
+    "id": "k4",
+    "name": "大草原",
+    "epithet": "",
+    "type": "post",
+    "rarity": 3,
+    "cost": 3,
+    "attributes": ["草"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "fill",
+        "card": "t-kusa"
+      }
+    ],
+    "effect": "自分の空いている枠すべてに草を生やす。",
+    "flavor": "wwwwwwwwwwwwwww"
+  },
+  {
+    "id": "k5",
+    "name": "伝説のコラ画像",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 4,
+    "cost": 5,
+    "attack": 2,
+    "hp": 5,
+    "attributes": ["草"],
+    "kaiwai": ["ミーム"],
+    "keywords": [],
+    "effects": [
+      {
+        "on": "passive",
+        "do": "attackPerAlly"
+      }
+    ],
+    "effect": "自分の場のほかのアイコン1体につき、攻撃力+1。",
+    "flavor": "作者不明。保存数は10万。"
+  },
+  {
+    "id": "t-kusa",
+    "name": "草",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 1,
+    "cost": 0,
+    "attack": 1,
+    "hp": 1,
+    "attributes": ["草"],
+    "kaiwai": ["ミーム"],
+    "keywords": [],
+    "effects": [],
+    "effect": "",
+    "flavor": "w",
+    "token": true
+  },
+  {
+    "id": "m1",
+    "name": "トップアイドル",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 5,
+    "cost": 7,
+    "attack": 4,
+    "hp": 6,
+    "attributes": ["メロい"],
+    "kaiwai": ["アイドル"],
+    "keywords": ["注目"],
+    "effects": [],
+    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）",
+    "flavor": "センターは、譲らない。",
+    "dark": {
+      "name": "闇深アイドル",
+      "attack": 8,
+      "hp": 3,
+      "keywords": ["連撃"],
+      "effect": "連撃。笑顔の裏側は、誰も知らない。"
+    }
+  },
+  {
+    "id": "m2",
+    "name": "地下アイドル",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 2,
+    "cost": 2,
+    "attack": 1,
+    "hp": 3,
+    "attributes": ["メロい"],
+    "kaiwai": ["アイドル"],
+    "keywords": ["注目"],
+    "effects": [],
+    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）",
+    "flavor": "いつか、あのステージへ。"
+  },
+  {
+    "id": "m3",
+    "name": "貢ぐファン",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 1,
+    "cost": 1,
+    "attack": 1,
+    "hp": 1,
+    "attributes": ["メロい"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "on": "play",
+        "do": "buffRandomAlly",
+        "attack": 1,
+        "hp": 1
+      }
+    ],
+    "effect": "場に出たとき、自分のほかのアイコン1体（ランダム）に攻撃力+1・体力+1。",
+    "flavor": "推しは推せるときに推せ。"
+  },
+  {
+    "id": "m4",
+    "name": "親衛隊",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 3,
+    "cost": 3,
+    "attack": 1,
+    "hp": 5,
+    "attributes": ["メロい"],
+    "kaiwai": ["アイドル"],
+    "keywords": ["ガード"],
+    "effects": [],
+    "effect": "ガード（相手はこのアイコンしか攻撃できない）",
+    "flavor": "推しには指一本触れさせない。"
+  },
+  {
+    "id": "m5",
+    "name": "ファンサ",
+    "epithet": "",
+    "type": "post",
+    "rarity": 2,
+    "cost": 2,
+    "attributes": ["メロい"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "buff",
+        "attack": 2,
+        "hp": 2
+      }
+    ],
+    "effect": "自分のアイコン1体に攻撃力+2・体力+2。",
+    "flavor": "今、目が合った。",
+    "target": "allyIcon"
   },
   {
     "id": "c3",
     "name": "ミナモ",
-    "epithet": "天空の歌姫",
-    "rarity": "SP",
+    "epithet": "癒し系VTuber",
+    "type": "icon",
+    "rarity": 5,
     "cost": 5,
-    "attack": 4,
+    "attack": 3,
     "hp": 5,
-    "tribe": "蒼空",
-    "effect": "このアイコンが場に出たとき、自分の山札の上から3枚を見て、〈蒼空〉アイコン1体を手札に加える。",
+    "attributes": ["癒し", "メロい"],
+    "kaiwai": ["配信者"],
+    "keywords": ["注目"],
+    "effects": [
+      {
+        "on": "play",
+        "do": "heal",
+        "to": "allAlliesAndMaster",
+        "amount": 2
+      }
+    ],
+    "effect": "注目。場に出たとき、自分のアイコンすべてと自分のライフを2回復する。",
     "flavor": "「みんなー！ 今日も空から、こんにちはっ！」",
     "number": "023/040",
     "art": "/assets/cards/c3-art.jpg",
     "subject": "/assets/cards/c3-subject.webp",
-    "original": "assets/original/c3-minamo.png",
-    "theme": "water",
-    "keywords": []
+    "original": "assets/original/c3-minamo.png"
   },
   {
-    "id": "l1",
-    "name": "ルミ",
-    "epithet": "見習い天使",
-    "rarity": "C",
+    "id": "i1",
+    "name": "カピバラ",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 1,
     "cost": 1,
-    "attack": 1,
+    "attack": 0,
     "hp": 3,
-    "tribe": "光輪",
-    "keywords": [],
-    "effect": "",
-    "flavor": "「はじめての配信、見てくれる？」",
-    "theme": "light",
-    "number": null
-  },
-  {
-    "id": "l2",
-    "name": "ガーディア",
-    "epithet": "光輪の守り手",
-    "rarity": "R",
-    "cost": 3,
-    "attack": 2,
-    "hp": 5,
-    "tribe": "光輪",
+    "attributes": ["癒し"],
+    "kaiwai": ["動物"],
     "keywords": ["ガード"],
-    "effect": "ガード（このアイコンがいる間、相手は自分のマスターを攻撃できない）",
-    "flavor": "「ここから先は通さない」",
-    "theme": "light",
-    "number": null
+    "effects": [],
+    "effect": "ガード（相手はこのアイコンしか攻撃できない）",
+    "flavor": "動じない。"
   },
   {
-    "id": "l3",
-    "name": "ハレルヤ通知",
-    "epithet": "祝福の",
-    "rarity": "R",
-    "cost": 2,
-    "attack": 2,
-    "hp": 3,
-    "tribe": "光輪",
-    "keywords": ["祝福"],
-    "effect": "祝福（場に出たとき、自分のライフを3回復する）",
-    "flavor": "ピロン、と幸せが届く。",
-    "theme": "light",
-    "number": null
-  },
-  {
-    "id": "s1",
-    "name": "しずく",
-    "epithet": "最前列のファン",
-    "rarity": "C",
+    "id": "i2",
+    "name": "おひるねねこ",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 2,
     "cost": 2,
     "attack": 1,
     "hp": 3,
-    "tribe": "蒼空",
-    "keywords": ["拡散"],
-    "effect": "拡散（場に出たとき、カードを1枚引く）",
-    "flavor": "「推しの話なら一晩いける」",
-    "theme": "water",
-    "number": null
-  },
-  {
-    "id": "s2",
-    "name": "ソラ",
-    "epithet": "雲間のバックダンサー",
-    "rarity": "C",
-    "cost": 3,
-    "attack": 3,
-    "hp": 4,
-    "tribe": "蒼空",
+    "attributes": ["癒し"],
+    "kaiwai": ["動物"],
     "keywords": [],
-    "effect": "",
-    "flavor": "主役より目立たない、のが仕事。",
-    "theme": "water",
-    "number": null
+    "effects": [
+      {
+        "on": "play",
+        "do": "heal",
+        "to": "master",
+        "amount": 3
+      }
+    ],
+    "effect": "場に出たとき、自分のライフを3回復する。",
+    "flavor": "すぴー。"
   },
   {
-    "id": "s3",
-    "name": "アオイ",
-    "epithet": "青空ライブ配信者",
-    "rarity": "R",
+    "id": "i3",
+    "name": "柴犬",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 3,
+    "cost": 3,
+    "attack": 2,
+    "hp": 3,
+    "attributes": ["癒し"],
+    "kaiwai": ["動物"],
+    "keywords": ["ガード"],
+    "effects": [],
+    "effect": "ガード（相手はこのアイコンしか攻撃できない）",
+    "flavor": "おすわり、まて、ガード。"
+  },
+  {
+    "id": "i4",
+    "name": "寝落ち配信",
+    "epithet": "",
+    "type": "post",
+    "rarity": 2,
+    "cost": 2,
+    "attributes": ["癒し"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "bind"
+      }
+    ],
+    "effect": "相手のアイコン1体を眠らせる（次の相手のターン、攻撃できない）。",
+    "flavor": "おやすみ、また明日。",
+    "target": "enemyIcon"
+  },
+  {
+    "id": "i5",
+    "name": "優しい世界",
+    "epithet": "",
+    "type": "post",
+    "rarity": 3,
+    "cost": 3,
+    "attributes": ["癒し"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "heal",
+        "to": "allAlliesFull"
+      },
+      {
+        "do": "heal",
+        "to": "master",
+        "amount": 3
+      }
+    ],
+    "effect": "自分のアイコンすべての体力を全回復し、自分のライフを3回復する。",
+    "flavor": "リプ欄が、あたたかい。"
+  },
+  {
+    "id": "i6",
+    "name": "TL浄化",
+    "epithet": "",
+    "type": "post",
+    "rarity": 4,
     "cost": 4,
-    "attack": 3,
-    "hp": 4,
-    "tribe": "蒼空",
-    "keywords": ["拡散"],
-    "effect": "拡散（場に出たとき、カードを1枚引く）",
-    "flavor": "「同接、まだまだ増えるよ！」",
-    "theme": "water",
-    "number": null
+    "attributes": ["癒し"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "cleanse"
+      }
+    ],
+    "effect": "場のすべてのアイコンの強化と状態を消し、闇堕ちしたアイコンを表に戻す。",
+    "flavor": "殺伐としたTLに、一筋の光。"
   },
   {
-    "id": "r1",
-    "name": "ヒノコ",
-    "epithet": "切り抜き職人",
-    "rarity": "C",
+    "id": "c1",
+    "name": "シロガネ",
+    "epithet": "神絵師",
+    "type": "icon",
+    "rarity": 5,
+    "cost": 7,
+    "attack": 4,
+    "hp": 7,
+    "attributes": ["神"],
+    "kaiwai": ["配信者"],
+    "keywords": ["ガード"],
+    "effects": [
+      {
+        "on": "play",
+        "do": "removeEnemyGuards"
+      }
+    ],
+    "effect": "ガード。場に出たとき、相手のアイコンすべてのガードを消す。",
+    "flavor": "「さあ、こちら側へ。光はもう、君を選んでいる」",
+    "number": "001/040",
+    "art": "/assets/cards/c1-art.jpg",
+    "subject": "/assets/cards/c1-subject.webp",
+    "original": "assets/original/c1-shirogane.png"
+  },
+  {
+    "id": "g1",
+    "name": "雑学博士",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 1,
     "cost": 1,
     "attack": 1,
-    "hp": 1,
-    "tribe": "紅蓮",
-    "keywords": ["速攻"],
-    "effect": "速攻（場に出たターンに攻撃できる）",
-    "flavor": "15秒あれば十分だ。",
-    "theme": "crimson",
-    "number": null
-  },
-  {
-    "id": "r2",
-    "name": "アオリ",
-    "epithet": "紅蓮の煽り屋",
-    "rarity": "C",
-    "cost": 2,
-    "attack": 2,
     "hp": 2,
-    "tribe": "紅蓮",
+    "attributes": ["神"],
+    "kaiwai": ["有識者"],
     "keywords": [],
-    "effect": "",
-    "flavor": "「効いてて草」",
-    "theme": "crimson",
-    "number": null
+    "effects": [
+      {
+        "on": "play",
+        "do": "draw",
+        "count": 1,
+        "ifHandAtMost": 3
+      }
+    ],
+    "effect": "場に出たとき、手札が3枚以下ならカードを1枚引く。",
+    "flavor": "ちなみに、カピバラはネズミの仲間。"
   },
   {
-    "id": "r3",
-    "name": "ZERO",
-    "epithet": "炎上アカウント",
-    "rarity": "R",
-    "cost": 4,
-    "attack": 3,
+    "id": "g2",
+    "name": "有識者ニキ",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 2,
+    "cost": 3,
+    "attack": 2,
     "hp": 3,
-    "tribe": "紅蓮",
-    "keywords": ["炎上"],
-    "effect": "炎上（場に出たとき、お互いのマスターに2ダメージ）",
-    "flavor": "燃えるほど、伸びる。",
-    "theme": "crimson",
-    "number": null
+    "attributes": ["神"],
+    "kaiwai": ["有識者"],
+    "keywords": [],
+    "effects": [
+      {
+        "on": "play",
+        "do": "draw",
+        "count": 1
+      }
+    ],
+    "effect": "場に出たとき、カードを1枚引く。",
+    "flavor": "有識者ニキ、解説頼む。"
+  },
+  {
+    "id": "g3",
+    "name": "コミュニティノート",
+    "epithet": "",
+    "type": "post",
+    "rarity": 3,
+    "cost": 2,
+    "attributes": ["神"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "silence"
+      },
+      {
+        "do": "weaken",
+        "attack": 2
+      }
+    ],
+    "effect": "相手のアイコン1体のキーワードと効果を消し、攻撃力-2。",
+    "flavor": "読者が背景情報を追加しました。",
+    "target": "enemyIcon"
+  },
+  {
+    "id": "g4",
+    "name": "専門家",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 4,
+    "cost": 5,
+    "attack": 4,
+    "hp": 5,
+    "attributes": ["神"],
+    "kaiwai": ["有識者"],
+    "keywords": [],
+    "effects": [
+      {
+        "on": "play",
+        "do": "damage",
+        "to": "strongestEnemy",
+        "amount": 3
+      }
+    ],
+    "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコン1体に3ダメージ。",
+    "flavor": "それ、論文ありますか？"
   }
 ]

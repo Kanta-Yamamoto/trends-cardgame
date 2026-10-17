@@ -85,7 +85,11 @@ export function HoloCard({ card, idle = true, onClick }: Props) {
       ref={cardRef}
       className="card"
       role="img"
-      aria-label={`${card.epithet} ${card.name}（コスト${card.cost}・攻撃${card.attack}・体力${card.hp}）`}
+      aria-label={
+        card.type === "post"
+          ? `${card.name}（投稿・コスト${card.cost}）`
+          : `${card.epithet} ${card.name}（コスト${card.cost}・攻撃${card.attack}・体力${card.hp}）`
+      }
       onPointerMove={onPointerMove}
     >
       <Face card={card} />

@@ -1,6 +1,7 @@
 import type { CardDef } from "@trends/cards";
 import type { CSSProperties } from "react";
 import { cardNo, EffectText } from "../EffectText";
+import { stars } from "../meta";
 import { Stats } from "../Stats";
 
 /** プロトタイプ（legacy/prototype-src）のカードデザインを React に移したもの */
@@ -47,7 +48,7 @@ export function MinamoFace({ card }: { card: CardDef }) {
       <div className="cost">
         <b>{card.cost}</b>
       </div>
-      <div className="rarity">{card.rarity}</div>
+      <div className="rarity">{stars(card.rarity)}</div>
 
       <div className="plate">
         <div className="name">
@@ -55,14 +56,16 @@ export function MinamoFace({ card }: { card: CardDef }) {
           <h3>{card.name}</h3>
         </div>
         <div className="box">
-          <span className="tribe">{card.tribe}</span>
+          <span className="tribe">
+            {[...card.attributes, ...card.kaiwai.map((k) => `${k}界隈`)].join("・")}
+          </span>
           <p className="effect">
             <EffectText text={card.effect} />
           </p>
           <p className="flavor">{card.flavor}</p>
           <div className="foot">
             <span className="no">{cardNo(card)}</span>
-            <Stats card={card} />
+            <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />
           </div>
         </div>
       </div>

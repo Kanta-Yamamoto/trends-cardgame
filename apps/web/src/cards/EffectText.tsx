@@ -1,7 +1,7 @@
 import type { CardDef } from "@trends/cards";
 import { Fragment } from "react";
 
-const KEYWORDS = ["速攻", "ガード", "拡散", "炎上", "祝福"];
+const KEYWORDS = ["速攻", "ガード", "連撃", "叩き", "注目", "闇堕ち", "ノリ"];
 
 /** 効果文の〈種族〉とキーワードを強調する */
 export function EffectText({ text }: { text: string }) {

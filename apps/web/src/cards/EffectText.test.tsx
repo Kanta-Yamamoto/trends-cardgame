@@ -17,7 +17,7 @@ describe("HoloCard", () => {
     const ren = CARDS.find((c) => c.id === "c2");
     if (!ren) throw new Error("c2 not found");
     const { container } = render(<HoloCard card={ren} idle={false} />);
-    expect(screen.getByRole("img", { name: /紅蓮の簒奪者 レン/ })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /炎上系配信者 レン/ })).toBeInTheDocument();
     expect(container.querySelector(".stat-atk")).toHaveTextContent("5");
     expect(container.querySelector(".stat-hp")).toHaveTextContent("4");
     expect(screen.getByText("No. 007 / 100")).toBeInTheDocument();
@@ -26,13 +26,13 @@ describe("HoloCard", () => {
 
 describe("イラストのないカード", () => {
   it("専用デザインがなければ共通デザインで表示する", () => {
-    const guard = CARDS.find((c) => c.id === "l2");
-    if (!guard) throw new Error("l2 not found");
+    const guard = CARDS.find((c) => c.id === "i3");
+    if (!guard) throw new Error("i3 not found");
     const { container } = render(<HoloCard card={guard} idle={false} />);
     expect(container.querySelector(".kg")).not.toBeNull();
-    expect(screen.getByText("ガーディア")).toBeInTheDocument();
+    expect(screen.getByText("柴犬")).toBeInTheDocument();
     expect(container.querySelector(".stat-atk")).toHaveTextContent("2");
-    expect(container.querySelector(".stat-hp")).toHaveTextContent("5");
+    expect(container.querySelector(".stat-hp")).toHaveTextContent("3");
   });
 
   it("効果文が先頭のキーワードで始まっても重複キーにならない", () => {

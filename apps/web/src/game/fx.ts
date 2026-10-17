@@ -1,5 +1,5 @@
-import type { AttackTarget, GameState, PlayerId, RuleCard } from "@trends/game-core";
-import { hpLeft } from "@trends/game-core";
+import type { AttackTarget, GameState, PlayerId, RuleCard, Unit } from "@trends/game-core";
+import { viewUnit } from "@trends/game-core";
 
 /**
  * 対戦画面の演出（DOM を直接アニメーションさせる）。
@@ -153,6 +153,15 @@ export async function animateAttack(
   const defCard = def ? catalog[def.cardId] : undefined;
   const defEl = def ? q(`[data-uid="${def.uid}"]`) : q(`[data-master="${foeId}"]`);
   if (!atk || !atkCard || !atkEl || !defEl) return;
+  const av = viewUnit(game, player, atk, catalog);
+  const dv = def ? viewUnit(game, foeId, def, catalog) : null;
+  const dmg = av.attack + (dv && av.keywords.includes("叩き") && (def?.damage ?? 0) > 0 ? 2 : 0);
+  const counter = dv?.attack ?? 0;
+  /** 倒れたら闇堕ちせずにオワコンへ行くか */
+  const goesToTrash = (u: Unit) => {
+    const c = catalog[u.cardId];
+    return !(c?.dark && !u.dark && !u.darkUsed && !u.silenced);
+  };
 
   const a = atkEl.getBoundingClientRect();
   const d = defEl.getBoundingClientRect();
@@ -184,22 +193,20 @@ export async function animateAttack(
   await wait(820 * 0.58);
   const hit = center(d);
   burst(hit, "#ff5a4a");
-  popNumber(defEl, `-${atkCard.attack}`);
+  popNumber(defEl, `-${dmg}`);
   if (def && defCard) {
     shake(defEl, 1);
-    if (defCard.attack > 0) {
-      popNumber(atkEl, `-${defCard.attack}`);
-    }
+    if (counter > 0) popNumber(atkEl, `-${counter}`);
   } else {
     shake(defEl, 0.6);
-    quake(Math.min(2, 0.6 + atkCard.attack / 4));
+    quake(Math.min(2, 0.6 + dmg / 4));
   }
   await lunge.finished.catch(() => {});
   atkEl.style.zIndex = "";
 
   // 倒れるものはトラッシュへ
-  if (def && defCard && def.damage + atkCard.attack >= defCard.hp) toTrash(defEl, foeId);
-  if (def && defCard && defCard.attack >= hpLeft(atk, catalog)) toTrash(atkEl, player);
+  if (def && dv && dmg >= dv.hp && goesToTrash(def)) toTrash(defEl, foeId);
+  if (def && counter >= av.hp && goesToTrash(atk)) toTrash(atkEl, player);
   await wait(60);
 }
 
@@ -259,4 +266,37 @@ export function popMaster(player: PlayerId, text: string, kind: "dmg" | "heal") 
   const el = q(`[data-master="${player}"]`);
   popNumber(el, text, kind);
   if (kind === "dmg") shake(el, 0.5);
+}
+
+/** 闇堕ち：紫の閃光とともに裏返る（restore なら白く光って表に戻る） */
+export function flipCard(uid: number, kind: "dark" | "restore") {
+  const el = q(`[data-uid="${uid}"]`);
+  if (!el || !canAnimate() || reduced()) return;
+  const glow = kind === "dark" ? "#b06bff" : "#ffffff";
+  el.animate(
+    [
+      { transform: "rotateY(0deg) scale(1)", filter: "brightness(1)" },
+      {
+        transform: "rotateY(90deg) scale(1.15)",
+        filter: `brightness(2) drop-shadow(0 0 18px ${glow})`,
+        offset: 0.45,
+      },
+      {
+        transform: "rotateY(0deg) scale(1.05)",
+        filter: `brightness(1.3) drop-shadow(0 0 24px ${glow})`,
+        offset: 0.75,
+      },
+      { transform: "none", filter: "brightness(1)" },
+    ],
+    { duration: 900, easing: "cubic-bezier(.3,.7,.3,1)" },
+  );
+  const r = el.getBoundingClientRect();
+  burst(center(r), glow);
+}
+
+/** 効果ダメージ（投稿など）の数字 */
+export function popDamage(uid: number, amount: number) {
+  const el = q(`[data-uid="${uid}"]`);
+  popNumber(el, `-${amount}`);
+  shake(el, 0.7);
 }

@@ -1,22 +1,72 @@
-export type Rarity = "UR" | "SEC" | "SP" | "SR" | "R" | "C";
-export type Theme = "light" | "crimson" | "water";
-export type Keyword = "速攻" | "ガード" | "拡散" | "炎上" | "祝福";
+/** 属性：その話題に人がどう反応したか */
+export type Attribute = "炎上" | "メロい" | "癒し" | "草" | "神";
+/** 界隈：そのカードが何者か（いわゆる種族） */
+export type Kaiwai = "ミーム" | "アイドル" | "配信者" | "有識者" | "動物";
+export type Keyword = "ガード" | "速攻" | "連撃" | "叩き" | "注目";
+/** アイコン：場に出て戦う／投稿：使い切りの効果 */
+export type CardType = "icon" | "post";
+/** ★1〜★5（★5 が最高） */
+export type Rarity = 1 | 2 | 3 | 4 | 5;
+/** 投稿の対象 */
+export type PostTarget = "enemyIcon" | "allyIcon";
 
-/** カード1枚（アイコン）の定義。ゲームのルールと表示の両方がここを参照する */
+/**
+ * カードの効果（データで表す）。
+ * アイコンは on（play＝場に出たとき／passive＝場にいる間）、投稿は使ったときに上から順に実行する。
+ */
+export type CardEffect =
+  | { on?: "play"; do: "summon"; card: string; count: number }
+  | { on?: "play"; do: "copySelf" }
+  | { on?: "play"; do: "buffSelfPerPlayed"; attack: number }
+  | { on?: "play"; do: "buffRandomAlly"; attack: number; hp: number }
+  | { on?: "play"; do: "heal"; to: "master" | "allAlliesAndMaster" | "allAlliesFull"; amount?: number }
+  | { on?: "play"; do: "draw"; count: number; ifHandAtMost?: number }
+  | { on?: "play"; do: "removeEnemyGuards" }
+  | { on?: "play"; do: "damage"; to?: "strongestEnemy"; amount: number }
+  | { on?: "passive"; do: "attackPerAlly" }
+  | { do: "expose" }
+  | { do: "bind" }
+  | { do: "silence" }
+  | { do: "weaken"; attack: number }
+  | { do: "buff"; attack: number; hp: number }
+  | { do: "fill"; card: string }
+  | { do: "cleanse" };
+
+/** 闇堕ちの姿（一度倒されたときに裏返る） */
+export interface DarkSide {
+  name: string;
+  attack: number;
+  hp: number;
+  keywords: Keyword[];
+  effect: string;
+}
+
+/** カード1枚の定義。ゲームのルールと表示の両方がここを参照する */
 export interface CardDef {
   id: string;
   name: string;
+  /** 肩書き（名前の上に小さく出す）。無ければ空文字 */
   epithet: string;
+  type: CardType;
   rarity: Rarity;
   cost: number;
-  /** 攻撃力：攻撃したとき・されたときに相手へ与えるダメージ */
-  attack: number;
-  /** 体力：受けたダメージがこの値に達すると破壊される */
-  hp: number;
-  tribe: string;
+  /** アイコンだけが持つ */
+  attack?: number;
+  hp?: number;
+  /** 1〜2個 */
+  attributes: Attribute[];
+  /** 0〜2個 */
+  kaiwai: Kaiwai[];
   keywords: Keyword[];
+  effects: CardEffect[];
+  /** 投稿の対象 */
+  target?: PostTarget;
+  /** カードに書く効果文 */
   effect: string;
   flavor: string;
+  dark?: DarkSide;
+  /** 効果で生まれるだけのカード（デッキには入れられない） */
+  token?: boolean;
   number?: string | null;
   serial?: string;
   /** web の public からのパス。イラストがまだないカードは持たない */
@@ -24,5 +74,9 @@ export interface CardDef {
   subject?: string;
   /** 印刷用の元画像（リポジトリ直下からのパス） */
   original?: string;
-  theme: Theme;
 }
+
+export const ATTRIBUTES: readonly Attribute[] = ["炎上", "メロい", "癒し", "草", "神"];
+export const KAIWAI: readonly Kaiwai[] = ["ミーム", "アイドル", "配信者", "有識者", "動物"];
+export const DECK_SIZE = 25;
+export const MAX_COPIES = 3;

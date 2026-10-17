@@ -6,6 +6,7 @@ import { HoloCard } from "../cards/HoloCard";
 
 export function Gallery() {
   const { data, isLoading } = useQuery({ queryKey: ["cards"], queryFn: fetchCards });
+  const cards = data?.cards.filter((c) => !c.token) ?? [];
   const [zoom, setZoom] = useState<CardDef | null>(null);
 
   return (
@@ -23,7 +24,7 @@ export function Gallery() {
         <p className="muted">読み込み中…</p>
       ) : (
         <div className="gallery">
-          {data?.cards.map((c) => (
+          {cards.map((c) => (
             <HoloCard key={c.id} card={c} onClick={() => setZoom(c)} />
           ))}
         </div>
