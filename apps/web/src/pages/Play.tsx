@@ -352,7 +352,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     const p: Peek = { id, where: "hand", index: i };
     return (
       <MiniCard
-        // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが手札に複数あり得るので位置で区別する
         key={`${id}-${i}`}
         inHand
         card={card}
