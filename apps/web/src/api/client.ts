@@ -1,6 +1,10 @@
 import { CARDS, type CardDef } from "@trends/cards";
 
-export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+/**
+ * API の場所。本番は画面と同じサーバー（空文字＝同じ場所）、開発中は localhost:3001。
+ * VITE_API_URL を入れればそちらを使う。
+ */
+export const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? "" : "http://localhost:3001");
 
 export interface CardsResult {
   cards: CardDef[];

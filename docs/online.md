@@ -41,10 +41,12 @@ pnpm dev
 
 ## Google ログインの準備（本番）
 
+（公開の全体の流れは [deploy.md](deploy.md)）
+
 1. Google Cloud コンソール → 「API とサービス」→「OAuth 同意画面」を作る（外部・テスト中のままでよい。テストユーザーに遊ぶ人の Gmail を足す）
 2. 「認証情報」→「OAuth クライアント ID」→ 種類は「ウェブ アプリケーション」。「承認済みの JavaScript 生成元」に Web の URL（例：`https://trends.example.com`、手元なら `http://localhost:5173`）を入れる
 3. できたクライアント ID を API の `GOOGLE_CLIENT_ID` に入れる（Terraform の `google_client_id`）。画面は `/auth/config` から受け取るので、Web 側の設定は要らない
-4. `SESSION_SECRET` に長いランダムな値を入れ、`AUTH_DEV_LOGIN` は入れない（false）
+4. `AUTH_DEV_LOGIN` は入れない（false）。ログインの鍵（`SESSION_SECRET`）は入れなくても、アプリが初回起動時に作って DB に保存する
 
 ## 今の割り切りと、広げるとき
 

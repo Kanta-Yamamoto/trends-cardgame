@@ -50,6 +50,13 @@
       "when": 1792224545941,
       "tag": "0006_curious_vivisector",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792235879912,
+      "tag": "0007_unique_bedlam",
+      "breakpoints": true
     }
   ]
 }

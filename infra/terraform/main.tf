@@ -8,11 +8,11 @@ terraform {
       version = "~> 6.0"
     }
   }
-  # state は GCS に置く（バケットは最初に手で作る）
-  # backend "gcs" {
-  #   bucket = "YOUR_PROJECT-tfstate"
-  #   prefix = "trends"
-  # }
+  # state は GCS に置く。バケットは init のときに渡す:
+  #   terraform init -backend-config="bucket=YOUR_PROJECT-tfstate"
+  backend "gcs" {
+    prefix = "trends"
+  }
 }
 
 provider "google" {
@@ -27,6 +27,7 @@ locals {
     "secretmanager.googleapis.com",
     "iamcredentials.googleapis.com",
     "sts.googleapis.com",
+    "billingbudgets.googleapis.com",
   ]
 }
 
@@ -53,15 +54,6 @@ resource "google_secret_manager_secret" "database_url" {
   depends_on = [google_project_service.apis]
 }
 
-# ログインのトークンに署名する鍵（値は `openssl rand -base64 48` などで作って入れる）
-resource "google_secret_manager_secret" "session_secret" {
-  secret_id = "session-secret"
-  replication {
-    auto {}
-  }
-  depends_on = [google_project_service.apis]
-}
-
 # API が動くときのサービスアカウント
 resource "google_service_account" "api" {
   account_id   = "trends-api"
@@ -70,12 +62,6 @@ resource "google_service_account" "api" {
 
 resource "google_secret_manager_secret_iam_member" "api_reads_db_url" {
   secret_id = google_secret_manager_secret.database_url.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.api.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "api_reads_session_secret" {
-  secret_id = google_secret_manager_secret.session_secret.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.api.email}"
 }
@@ -111,15 +97,6 @@ resource "google_cloud_run_v2_service" "api" {
         value = var.google_client_id
       }
       env {
-        name = "SESSION_SECRET"
-        value_source {
-          secret_key_ref {
-            secret  = google_secret_manager_secret.session_secret.secret_id
-            version = "latest"
-          }
-        }
-      }
-      env {
         name = "DATABASE_URL"
         value_source {
           secret_key_ref {
@@ -132,6 +109,10 @@ resource "google_cloud_run_v2_service" "api" {
         limits = { cpu = "1", memory = "512Mi" }
       }
     }
+  }
+  # イメージは GitHub Actions（deploy.yml）が差し替えるので、Terraform では追わない
+  lifecycle {
+    ignore_changes = [template[0].containers[0].image, client, client_version]
   }
   depends_on = [google_project_service.apis]
 }

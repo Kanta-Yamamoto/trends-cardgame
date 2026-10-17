@@ -75,3 +75,10 @@ export const matches = pgTable("matches", {
     .$onUpdate(() => new Date()),
 });
 export type MatchRow = typeof matches.$inferSelect;
+
+/** アプリが自分で作って持つ設定（ログインのトークンに署名する鍵など） */
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
