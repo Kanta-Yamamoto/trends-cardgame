@@ -76,6 +76,7 @@ export function createGame(input: NewGameInput): GameState {
       trash: [],
       playedThisTurn: 0,
       postsUsed: 0,
+      heals: 0,
       extraTurns: 0,
       breakthroughTurn: 0,
     };
@@ -144,6 +145,7 @@ export function effectiveCost(state: GameState, player: PlayerId, cardId: string
     if (triggerOf(e) !== "hand") continue;
     if (e.do === "cheaperPerAlly") cost -= me.field.filter((u) => u).length;
     if (e.do === "cheaperPerPost") cost -= me.postsUsed ?? 0;
+    if (e.do === "cheaperPerHeal") cost -= me.heals ?? 0;
   }
   return Math.max(0, cost);
 }
@@ -310,6 +312,29 @@ interface Ctx {
 }
 
 /** 効果を1つ実行する */
+/**
+ * 回復の効果を使ったあと（回復した量が0でも数える）：回数を数え、場の「回復するたびに」の効果を起こす。
+ * 回復の効果を1つ使うごとに1回（アイコンが何体回復しても1回）
+ */
+function afterHeal(ctx: Ctx) {
+  const { state, player, catalog, emit } = ctx;
+  const me = state.players[player];
+  me.heals = (me.heals ?? 0) + 1;
+  me.field.forEach((u, slot) => {
+    if (!u) return;
+    for (const e of effectsOf(u, catalog)) {
+      if (triggerOf(e) !== "passive") continue;
+      if (e.do === "healGrow") {
+        u.atkBuff += e.attack;
+        u.hpBuff += e.hp;
+        emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: e.hp });
+      } else if (e.do === "healBurn") {
+        damageLeader(state, opponent(player), e.amount, emit);
+      }
+    }
+  });
+}
+
 function runEffect(e: CardEffect, ctx: Ctx) {
   const { state, player, catalog, config, emit } = ctx;
   const me = state.players[player];
@@ -399,6 +424,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         });
         if (e.to === "allAlliesAndMaster") healLeader(state, player, e.amount ?? 0, config, emit);
       }
+      afterHeal(ctx);
       break;
     case "draw":
       if (e.ifHandAtMost === undefined || me.hand.length <= e.ifHandAtMost) {

@@ -41,7 +41,7 @@ describe("cards API", () => {
       epithet: "炎上系配信者",
       type: "icon",
       rarity: 5,
-      cost: 6,
+      cost: 5,
       attack: 4,
       hp: 4,
       attributes: ["炎上"],

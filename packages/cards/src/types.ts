@@ -63,6 +63,12 @@ export type CardEffect = (
   | { do: "lullaby" }
   /** hand：自分の場のアイコン1体につきコスト-1 */
   | { do: "cheaperPerAlly" }
+  /** hand：このゲームで自分が回復の効果を使った回数だけコスト-1 */
+  | { do: "cheaperPerHeal" }
+  /** passive：自分が回復の効果を使うたび、このアイコンに攻撃力+attack・体力+hp */
+  | { do: "healGrow"; attack: number; hp: number }
+  /** passive：自分が回復の効果を使うたび、相手のマスターに amount ダメージ */
+  | { do: "healBurn"; amount: number }
   /** hand：このゲームで自分が使った投稿1枚につきコスト-1 */
   | { do: "cheaperPerPost" }
 ) & {

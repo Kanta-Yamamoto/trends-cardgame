@@ -113,7 +113,22 @@ function judgePost(
     const score = missing + Math.min(3, lpMissing);
     return score >= 5 ? { score } : null;
   }
-  return effects.includes("draw") ? { score: 3 } : null;
+  if (effects.includes("weaken")) {
+    const t = foes.sort((a, b) => b.v.attack - a.v.attack)[0];
+    return t && t.v.attack >= 2 ? { score: 4 + t.v.attack * 2, target: enemy(t.slot) } : null;
+  }
+  return effects.includes("draw") ? { score: 3, target: fallbackTarget() } : null;
+
+  /** 対象が要るのに決めていない投稿は、いちばん強い相手（味方向けなら、いちばん強い味方）に使う */
+  function fallbackTarget(): CastTarget | undefined {
+    if (!card?.target) return undefined;
+    if (card.target === "enemyIcon") {
+      const t = [...foes].sort((a, b) => worth(b.v) - worth(a.v))[0];
+      return t ? enemy(t.slot) : undefined;
+    }
+    const t = [...mine].sort((a, b) => worth(b.v) - worth(a.v))[0];
+    return t ? { side: "ally", slot: t.slot } : undefined;
+  }
 }
 
 /**
@@ -159,7 +174,7 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
       } else {
         if (card.target && castTargets(state, player, id, catalog).length === 0) return;
         const j = judgePost(state, player, id, catalog);
-        if (!j) return;
+        if (!j || (card.target && !j.target)) return;
         const score = j.score + card.cost * 2;
         if (!best || score > best.score) {
           best = { score, action: { type: "cast", player, handIndex, target: j.target } };
