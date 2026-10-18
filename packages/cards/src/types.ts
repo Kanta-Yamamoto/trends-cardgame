@@ -87,6 +87,8 @@ export interface DarkSide {
   /** 闇堕ちの姿の絵（web の public からのパス）。無ければ元の絵 */
   art?: string;
   subject?: string;
+  /** 印刷用の元画像（リポジトリ直下からのパス） */
+  original?: string;
 }
 
 /** カード1枚の定義。ゲームのルールと表示の両方がここを参照する */
