@@ -1,4 +1,4 @@
-import type { Attribute, CardDef } from "@trends/cards";
+import type { Attribute, CardDef, Kaiwai } from "@trends/cards";
 
 /** 属性ごとの色とマーク（色だけで区別しないよう、必ずマークも出す） */
 export const ATTR_META: Record<Attribute, { slug: string; color: string; deep: string; mark: string }> = {
@@ -9,10 +9,19 @@ export const ATTR_META: Record<Attribute, { slug: string; color: string; deep: s
   神: { slug: "kami", color: "#f2c14e", deep: "#6b4c06", mark: "✦" },
 };
 
+/** 界隈のマーク（対戦中の小さいカードで、ひと目で分かるように名前の頭の字） */
+export const KAIWAI_META: Record<Kaiwai, { mark: string }> = {
+  配信者: { mark: "配" },
+  アイドル: { mark: "ア" },
+  有識者: { mark: "有" },
+  動物: { mark: "動" },
+  ミーム: { mark: "ミ" },
+};
+
 /** ★の並び（★5 → ★★★★★） */
 export const stars = (n: number) => "★".repeat(n);
 
-/** カードの背景色（2属性なら斜めに塗り分ける） */
+/** カードの背景色（属性の色。2属性のカードは今は無いが、あれば斜めに塗り分ける） */
 export function attrBackground(card: Pick<CardDef, "attributes">): string {
   const [a, b] = card.attributes.map((x) => ATTR_META[x]);
   // 共通カード（属性なし）は銀色

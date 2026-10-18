@@ -91,10 +91,13 @@ button { font: inherit; color: inherit; }
 .mini-cost.down { color: #7dffb0; }
 .mini { grid-template-rows: auto 1fr auto auto auto; grid-template-columns: minmax(0, 1fr); }
 .mini-top > * { min-width: 0; overflow: hidden; }
-.mini-top { grid-row: 1; display: flex; justify-content: space-between; align-items: center; padding: 5px 5px 0 34px; gap: 4px; }
+.mini-top { grid-row: 1; display: flex; align-items: center; padding: 5px 5px 0 32px; gap: 4px; }
 .mini-attrs { display: flex; gap: 2px; }
 .mini-attrs i { width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 9px; font-weight: 900; box-shadow: 0 0 0 1px #ffffffaa; }
-.mini-stars { font-size: 8px; color: #ffe27a; letter-spacing: -1px; text-shadow: 0 1px 2px #000; white-space: nowrap; }
+/* 界隈は属性（丸）と見分けがつくよう、黒い角丸の四角に名前の頭の字 */
+.mini-kaiwai { width: 14px; height: 14px; border-radius: 4px; display: grid; place-items: center; font-size: 9px; font-weight: 900; background: #141824; color: #fff; box-shadow: 0 0 0 1px #ffffffaa; }
+/* ★は属性・界隈の下の段、右寄せ（上の段は「何者か」の印でいっぱいになることがある） */
+.mini-stars { grid-row: 2; justify-self: end; align-self: start; padding: 1px 5px 0; font-size: 8px; color: #ffe27a; letter-spacing: -1px; text-shadow: 0 1px 2px #000; white-space: nowrap; }
 .mini-darkmark { position: absolute; left: 6px; top: 32px; font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 99px; background: #1a0d24e6; color: #d9a8ff; box-shadow: 0 0 0 1px #b06bff; }
 .mini-name { grid-row: 3; padding: 0 6px; font-weight: 800; font-size: 12px; line-height: 1.25; text-shadow: 0 1px 3px #000; display: grid; }
 .mini-name small { font-size: 9px; font-weight: 700; opacity: 0.85; }

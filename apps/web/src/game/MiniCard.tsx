@@ -1,7 +1,7 @@
 import type { CardDef } from "@trends/cards";
 import type { UnitView } from "@trends/game-core";
 import { type CSSProperties, useRef } from "react";
-import { ATTR_META, attrBackground, stars } from "../cards/meta";
+import { ATTR_META, attrBackground, KAIWAI_META, stars } from "../cards/meta";
 
 interface Props {
   card: CardDef;
@@ -75,7 +75,7 @@ export function MiniCard({
         label ??
         (isPost
           ? `${name}（投稿・コスト${cost ?? card.cost}）`
-          : `${name}（コスト${cost ?? card.cost}・攻撃${attack}・体力${hp}）`)
+          : `${name}（${[...card.attributes, ...card.kaiwai.map((k) => `${k}界隈`)].join("・") || "共通"}・コスト${cost ?? card.cost}・攻撃${attack}・体力${hp}）`)
       }
       onClick={() => {
         // 長押しで拡大したあとの指を離した操作は、選択として扱わない
@@ -127,9 +127,14 @@ export function MiniCard({
               {ATTR_META[a].mark}
             </i>
           ))}
+          {card.kaiwai.map((k) => (
+            <b key={k} className="mini-kaiwai" title={`${k}界隈`}>
+              {KAIWAI_META[k].mark}
+            </b>
+          ))}
         </span>
-        <span className="mini-stars">{stars(card.rarity)}</span>
       </span>
+      <span className="mini-stars">{stars(card.rarity)}</span>
       {card.dark && !dark && <span className="mini-darkmark">闇堕ち</span>}
       <span className="mini-name">
         {card.epithet && !dark && <small>{card.epithet}</small>}
