@@ -26,7 +26,8 @@
       "keywords": ["連撃", "叩き"],
       "effect": "連撃。叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）",
       "art": "/assets/cards/c2-dark-art.jpg",
-      "subject": "/assets/cards/c2-dark-subject.webp"
+      "subject": "/assets/cards/c2-dark-subject.webp",
+      "original": "assets/original/c2-dark.webp"
     },
     "serial": "No. 007 / 100",
     "art": "/assets/cards/c2-art.jpg",
@@ -273,7 +274,8 @@
       "keywords": ["叩き"],
       "effect": "叩き。見た者のタイムラインに、必ず流れてくる。",
       "art": "/assets/cards/k5-dark-art.jpg",
-      "subject": "/assets/cards/k5-dark-subject.webp"
+      "subject": "/assets/cards/k5-dark-subject.webp",
+      "original": "assets/original/k5-dark.webp"
     }
   },
   {
@@ -322,7 +324,8 @@
       "keywords": ["連撃"],
       "effect": "連撃。笑顔の裏側は、誰も知らない。",
       "art": "/assets/cards/m1-dark-art.jpg",
-      "subject": "/assets/cards/m1-dark-subject.webp"
+      "subject": "/assets/cards/m1-dark-subject.webp",
+      "original": "assets/original/m1-dark.webp"
     },
     "art": "/assets/cards/m1-art.jpg",
     "subject": "/assets/cards/m1-subject.webp",
@@ -715,7 +718,8 @@
       "keywords": ["連撃"],
       "effect": "連撃。真実は、いつも自分の中にある。",
       "art": "/assets/cards/g4-dark-art.jpg",
-      "subject": "/assets/cards/g4-dark-subject.webp"
+      "subject": "/assets/cards/g4-dark-subject.webp",
+      "original": "assets/original/g4-dark.webp"
     }
   },
   {
@@ -1288,7 +1292,8 @@
       "keywords": ["連撃"],
       "effect": "連撃。やさしい声が、毒に変わる。",
       "art": "/assets/cards/c5-dark-art.jpg",
-      "subject": "/assets/cards/c5-dark-subject.webp"
+      "subject": "/assets/cards/c5-dark-subject.webp",
+      "original": "assets/original/c5-dark.webp"
     },
     "art": "/assets/cards/c5-art.jpg",
     "original": "assets/original/c5.webp"
@@ -1609,7 +1614,9 @@
     "keywords": ["叩き"],
     "effects": [],
     "effect": "叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）",
-    "flavor": "今日も燃えてるねえ。"
+    "flavor": "今日も燃えてるねえ。",
+    "art": "/assets/cards/f11-art.jpg",
+    "original": "assets/original/f11.webp"
   },
   {
     "id": "f12",
@@ -1632,7 +1639,9 @@
     ],
     "effect": "相手のアイコン1体に1ダメージ。そのアイコンを晒し者にする（強化が消える）。",
     "flavor": "そこ、もっと燃えますよ。",
-    "target": "enemyIcon"
+    "target": "enemyIcon",
+    "art": "/assets/cards/f12-art.jpg",
+    "original": "assets/original/f12.webp"
   },
   {
     "id": "f13",
@@ -1654,7 +1663,9 @@
       }
     ],
     "effect": "速攻（場に出たターンに攻撃できる）。場に出たとき、相手のマスターに1ダメージ。",
-    "flavor": "誰でも来い。全部配信する。"
+    "flavor": "誰でも来い。全部配信する。",
+    "art": "/assets/cards/f13-art.jpg",
+    "original": "assets/original/f13.webp"
   },
   {
     "id": "f14",
@@ -1678,7 +1689,9 @@
       }
     ],
     "effect": "相手のアイコンすべてを晒し者にし（強化が消える）、相手のマスターに2ダメージ。",
-    "flavor": "ネットは、忘れない。"
+    "flavor": "ネットは、忘れない。",
+    "art": "/assets/cards/f14-art.jpg",
+    "original": "assets/original/f14.webp"
   },
   {
     "id": "c9",
@@ -1706,7 +1719,9 @@
       }
     ],
     "effect": "速攻。場に出たとき、相手のアイコンすべてに1ダメージ。自分のターンの終わりに、相手のマスターに1ダメージ。",
-    "flavor": "「火種はね、どこにでも落ちてるの」"
+    "flavor": "「火種はね、どこにでも落ちてるの」",
+    "art": "/assets/cards/c9-art.jpg",
+    "original": "assets/original/c9.webp"
   },
   {
     "id": "m11",
@@ -1731,7 +1746,9 @@
     ],
     "effect": "自分のアイコン1体に体力+2。カードを1枚引く。",
     "flavor": "今日の推し、尊かった。",
-    "target": "allyIcon"
+    "target": "allyIcon",
+    "art": "/assets/cards/m11-art.jpg",
+    "original": "assets/original/m11.webp"
   },
   {
     "id": "m12",
@@ -1753,7 +1770,9 @@
       }
     ],
     "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、自分のほかのアイコン1体（ランダム）に体力+2。",
-    "flavor": "推しの前には、誰も通さない。"
+    "flavor": "推しの前には、誰も通さない。",
+    "art": "/assets/cards/m12-art.jpg",
+    "original": "assets/original/m12.webp"
   },
   {
     "id": "m13",
@@ -1769,7 +1788,9 @@
     "keywords": ["注目", "連撃"],
     "effects": [],
     "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。連撃（1ターンに2回攻撃できる）",
-    "flavor": "画面の向こうで、毎日会える。"
+    "flavor": "画面の向こうで、毎日会える。",
+    "art": "/assets/cards/m13-art.jpg",
+    "original": "assets/original/m13.webp"
   },
   {
     "id": "m14",
@@ -1789,7 +1810,9 @@
       }
     ],
     "effect": "自分のアイコンすべてに攻撃力+2・体力+2。",
-    "flavor": "今日は、世界でいちばん特別な日。"
+    "flavor": "今日は、世界でいちばん特別な日。",
+    "art": "/assets/cards/m14-art.jpg",
+    "original": "assets/original/m14.webp"
   },
   {
     "id": "c6",
@@ -1811,7 +1834,9 @@
       }
     ],
     "effect": "注目。ガード。場に出たとき、自分のほかのアイコンすべてに攻撃力+1・体力+1。",
-    "flavor": "「みんなの声、ちゃんと届いてるよ」"
+    "flavor": "「みんなの声、ちゃんと届いてるよ」",
+    "art": "/assets/cards/c6-art.jpg",
+    "original": "assets/original/c6.webp"
   },
   {
     "id": "g10",
@@ -1833,7 +1858,9 @@
       }
     ],
     "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコン1体に1ダメージ。",
-    "flavor": "それ、一次ソースどこですか？"
+    "flavor": "それ、一次ソースどこですか？",
+    "art": "/assets/cards/g10-art.jpg",
+    "original": "assets/original/g10.webp"
   },
   {
     "id": "g11",
@@ -1857,7 +1884,9 @@
     ],
     "effect": "相手のアイコン1体の攻撃力-2。カードを1枚引く。",
     "flavor": "話はそれからだ。",
-    "target": "enemyIcon"
+    "target": "enemyIcon",
+    "art": "/assets/cards/g11-art.jpg",
+    "original": "assets/original/g11.webp"
   },
   {
     "id": "g12",
@@ -1879,7 +1908,9 @@
       }
     ],
     "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、手札が3枚以下ならカードを2枚引く。",
-    "flavor": "要出典。"
+    "flavor": "要出典。",
+    "art": "/assets/cards/g12-art.jpg",
+    "original": "assets/original/g12.webp"
   },
   {
     "id": "g13",
@@ -1905,7 +1936,9 @@
       }
     ],
     "effect": "場に出たとき、相手のアイコンすべてに1ダメージ。カードを1枚引く。",
-    "flavor": "まず前提を整理しましょう。"
+    "flavor": "まず前提を整理しましょう。",
+    "art": "/assets/cards/g13-art.jpg",
+    "original": "assets/original/g13.webp"
   },
   {
     "id": "c7",
@@ -1932,7 +1965,9 @@
       }
     ],
     "effect": "ガード。場に出たとき、カードを2枚引く。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコン1体に2ダメージ。",
-    "flavor": "「知らないことは、まだ調べていないことだけ」"
+    "flavor": "「知らないことは、まだ調べていないことだけ」",
+    "art": "/assets/cards/c7-art.jpg",
+    "original": "assets/original/c7.webp"
   },
   {
     "id": "k11",
@@ -1948,7 +1983,9 @@
     "keywords": ["速攻"],
     "effects": [],
     "effect": "速攻（場に出たターンに攻撃できる）",
-    "flavor": "wwwwwwwwww"
+    "flavor": "wwwwwwwwww",
+    "art": "/assets/cards/k11-art.jpg",
+    "original": "assets/original/k11.webp"
   },
   {
     "id": "k12",
@@ -1968,7 +2005,9 @@
       }
     ],
     "effect": "自分のアイコンすべてに攻撃力+1。",
-    "flavor": "これは笑う。"
+    "flavor": "これは笑う。",
+    "art": "/assets/cards/k12-art.jpg",
+    "original": "assets/original/k12.webp"
   },
   {
     "id": "k13",
@@ -1989,7 +2028,9 @@
       }
     ],
     "effect": "場に出たとき、自分の場のアイコン1体につき、相手のマスターに1ダメージ。",
-    "flavor": "素材は、みんなの悪ノリ。"
+    "flavor": "素材は、みんなの悪ノリ。",
+    "art": "/assets/cards/k13-art.jpg",
+    "original": "assets/original/k13.webp"
   },
   {
     "id": "k14",
@@ -2015,7 +2056,9 @@
       }
     ],
     "effect": "場に出たとき、空いている枠すべてに草を出し、自分のほかのアイコンすべてに攻撃力+1。",
-    "flavor": "来週の流行りは、もう決まってる。"
+    "flavor": "来週の流行りは、もう決まってる。",
+    "art": "/assets/cards/k14-art.jpg",
+    "original": "assets/original/k14.webp"
   },
   {
     "id": "c8",
@@ -2041,7 +2084,9 @@
       }
     ],
     "effect": "自分の場のほかのアイコン1体につき攻撃力+1。場に出たとき、草を2体出す。",
-    "flavor": "「笑ったら、もう仲間だよ」"
+    "flavor": "「笑ったら、もう仲間だよ」",
+    "art": "/assets/cards/c8-art.jpg",
+    "original": "assets/original/c8.webp"
   },
   {
     "id": "i10",
@@ -2065,7 +2110,9 @@
       }
     ],
     "effect": "自分のアイコンすべてと自分のライフを2回復する。カードを1枚引く。",
-    "flavor": "寝る前に、あと1本だけ。"
+    "flavor": "寝る前に、あと1本だけ。",
+    "art": "/assets/cards/i10-art.jpg",
+    "original": "assets/original/i10.webp"
   },
   {
     "id": "i11",
@@ -2088,7 +2135,9 @@
       }
     ],
     "effect": "ガード（相手はこのアイコンしか攻撃できない）。自分のターンの終わりに、自分のライフを1回復する。",
-    "flavor": "いらっしゃいませ、にゃ。"
+    "flavor": "いらっしゃいませ、にゃ。",
+    "art": "/assets/cards/i11-art.jpg",
+    "original": "assets/original/i11.webp"
   },
   {
     "id": "i12",
@@ -2111,7 +2160,9 @@
       }
     ],
     "effect": "自分が回復の効果を使うたび、このアイコンに攻撃力+1・体力+1。",
-    "flavor": "眠れない夜の、いちばん近い声。"
+    "flavor": "眠れない夜の、いちばん近い声。",
+    "art": "/assets/cards/i12-art.jpg",
+    "original": "assets/original/i12.webp"
   },
   {
     "id": "i13",
@@ -2137,7 +2188,9 @@
       }
     ],
     "effect": "このゲームで自分が回復の効果を使った回数だけ、コスト-1。ガード。場に出たとき、自分のアイコンすべてとライフを2回復する。",
-    "flavor": "中の人などいない。"
+    "flavor": "中の人などいない。",
+    "art": "/assets/cards/i13-art.jpg",
+    "original": "assets/original/i13.webp"
   },
   {
     "id": "c10",
@@ -2164,6 +2217,8 @@
       }
     ],
     "effect": "ガード。場に出たとき、自分のライフを3回復する。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
-    "flavor": "「ととのったら、あなたの番」"
+    "flavor": "「ととのったら、あなたの番」",
+    "art": "/assets/cards/c10-art.jpg",
+    "original": "assets/original/c10.webp"
   }
 ]
