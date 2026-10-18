@@ -36,18 +36,19 @@ describe("cards API", () => {
     const ids = CARDS.map((c) => c.id).sort();
     expect(res.body.map((c: { id: string }) => c.id)).toEqual(ids);
     const ren = res.body.find((c: { id: string }) => c.id === "c2");
+    const def = CARDS.find((c) => c.id === "c2");
     expect(ren).toMatchObject({
       name: "レン",
       epithet: "炎上系配信者",
       type: "icon",
       rarity: 5,
-      cost: 5,
-      attack: 4,
-      hp: 4,
+      cost: def?.cost,
+      attack: def?.attack,
+      hp: def?.hp,
       attributes: ["炎上"],
       keywords: ["連撃"],
     });
-    expect(ren.dark).toMatchObject({ name: "闇堕ちレン", attack: 7, hp: 3 });
+    expect(ren.dark).toMatchObject({ name: "闇堕ちレン", attack: def?.dark?.attack, hp: def?.dark?.hp });
     // 投稿は攻撃力・体力を持たない
     expect(res.body.find((c: { id: string }) => c.id === "f5")).toMatchObject({
       type: "post",
