@@ -38,6 +38,7 @@ import {
 import { MiniCard } from "../game/MiniCard";
 import { CATALOG, CPU, DECK_INFO, ME, setPresenter, useGame } from "../game/store";
 import { useDragPlay } from "../game/useDragPlay";
+import { layoutViewport, lockZoom, resetZoom } from "../viewport";
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const SLOT_KEYS = Array.from({ length: SLOTS }, (_, i) => `slot-${i}`);
@@ -147,15 +148,26 @@ function useStage() {
   const probe = useRef<HTMLDivElement>(null);
   const [stage, setStage] = useState<Stage>(() => measureStage(STAGE_W, STAGE_H));
   useLayoutEffect(() => {
-    const on = () => setStage(measureStage(window.innerWidth, window.innerHeight, safeArea(probe.current)));
+    // 拡大の影響を受けない大きさで測る（iPhone で拡大されても舞台が縮まない）
+    const on = () => {
+      const { width, height } = layoutViewport();
+      setStage(measureStage(width, height, safeArea(probe.current)));
+    };
     on();
-    // iPhone は向きを変えた直後のサイズが古いことがあるので、少し後にも測り直す
-    const later = () => setTimeout(on, 300);
+    // iPhone は向きを変えた直後のサイズが古い・倍率が 1 でなくなることがあるので、少し後に戻して測り直す
+    const later = () =>
+      setTimeout(() => {
+        resetZoom();
+        on();
+      }, 300);
     window.addEventListener("resize", on);
     window.addEventListener("orientationchange", later);
+    // 対戦中はピンチ拡大を止める
+    const unlock = lockZoom();
     return () => {
       window.removeEventListener("resize", on);
       window.removeEventListener("orientationchange", later);
+      unlock();
     };
   }, []);
   return { stage, probe };
