@@ -470,3 +470,9 @@
   padding:.3em .65em; border-radius:99px; background:#1a0d24; color:#d9a8ff; box-shadow:0 0 0 1px #b06bff;
 }
 .k2 .dark-note{margin:0; font:700 .6em/1.4 var(--f-body); color:#d9a8ff}
+
+/* 拡大画面で「カードを押すと文字を隠す」を、専用デザイン（文字の板が .plate のもの）にも効かせる */
+.holo .card .plate { transition: opacity 0.25s ease, translate 0.25s ease; }
+.holo .card.text-hidden .plate { opacity: 0; translate: 0 15%; pointer-events: none; }
+/* カードの文字を選択させない（押したときに文字が選ばれて、カーソルが文字選択になるのを防ぐ） */
+.holo .card { user-select: none; -webkit-user-select: none; }
