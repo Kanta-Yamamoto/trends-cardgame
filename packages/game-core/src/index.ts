@@ -1,5 +1,12 @@
 export { planTurn } from "./ai";
-export { deckAttributes, validateDeck } from "./deck";
+export {
+  CUSTOM_DECK_PREFIX,
+  deckAttributes,
+  encodeCustomDeck,
+  isCustomDeckRef,
+  resolveDeckRef,
+  validateDeck,
+} from "./deck";
 export type { AttackPreview, NewGameInput } from "./engine";
 export {
   applyAction,

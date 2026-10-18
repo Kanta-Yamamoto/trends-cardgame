@@ -59,7 +59,7 @@ describe("cards.json", () => {
     }
   });
 
-  it("デッキは25枚、同じカードは3枚まで、トークンは入れられない", () => {
+  it("デッキは30枚、同じカードは3枚まで、トークンは入れられない", () => {
     for (const deck of Object.values(DECKS)) {
       expect(deck).toHaveLength(DECK_SIZE);
       const counts = new Map<string, number>();

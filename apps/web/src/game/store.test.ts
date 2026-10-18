@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { builtinDeck } from "./decks";
 import { CATALOG, CPU, ME, useGame } from "./store";
 
 describe("対戦ストア", () => {
   beforeEach(() => {
     useGame.setState({ cpuDelay: 0 });
-    useGame.getState().start("idol", { seed: 7, first: ME });
+    useGame.getState().start(builtinDeck("idol"), { seed: 7, first: ME });
   });
 
   it("デッキを選ぶと先攻・後攻が決まり、手札が配られる", () => {
@@ -36,7 +37,7 @@ describe("対戦ストア", () => {
   });
 
   it("CPU が先攻ならすぐ CPU が1ターン動く", () => {
-    useGame.getState().start("flame", { seed: 3, first: CPU });
+    useGame.getState().start(builtinDeck("flame"), { seed: 3, first: CPU });
     expect(useGame.getState().game?.active).toBe(ME);
     expect(useGame.getState().game?.turn).toBe(2);
   });

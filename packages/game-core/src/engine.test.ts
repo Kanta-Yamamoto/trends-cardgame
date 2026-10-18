@@ -1,7 +1,7 @@
 import { CARDS, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
 import { planTurn } from "./ai";
-import { deckAttributes, validateDeck } from "./deck";
+import { deckAttributes, encodeCustomDeck, resolveDeckRef, validateDeck } from "./deck";
 import {
   applyAction,
   canDarkFall,
@@ -120,6 +120,10 @@ const catalog: Record<string, RuleCard> = {
   }),
   sweeper: icon("sweeper", 3, 2, 3, { effects: [{ on: "play", do: "sweep", maxHp: 1 }] }),
   nurse: icon("nurse", 3, 2, 3, { effects: [{ on: "play", do: "revive", maxCost: 2 }] }),
+  // 第6弾：変身・場の数で引く・相手全体の攻撃力を下げる
+  meme: post("meme", 3, { target: "enemyIcon", effects: [{ do: "transform", card: "kusa" }] }),
+  replies: post("replies", 2, { effects: [{ do: "drawPerAllies", per: 2, max: 3 }] }),
+  gloom: icon("gloom", 5, 4, 4, { effects: [{ on: "play", do: "weaken", to: "allEnemies", attack: 2 }] }),
   pet: icon("pet", 1, 1, 1, { effects: [{ on: "play", do: "heal", to: "master", amount: 3 }] }),
   dj: icon("dj", 3, 2, 3, { effects: [{ on: "passive", do: "healGrow", attack: 1, hp: 1 }] }),
   sauna: icon("sauna", 6, 3, 6, {
@@ -419,7 +423,7 @@ describe("CPU", () => {
     for (const a of plan) cur = applyAction(cur, a, real).state;
     expect(plan.at(-1)).toEqual({ type: "endTurn", player: "p1" });
   });
-  it("3つのデッキどうしで最後まで対戦でき、必ず決着がつく", () => {
+  it("すべてのデッキどうしで最後まで対戦でき、必ず決着がつく", () => {
     const ids = Object.keys(DECKS) as (keyof typeof DECKS)[];
     for (const a of ids)
       for (const b of ids)
@@ -433,7 +437,8 @@ describe("CPU", () => {
           }
           expect(s.winner).not.toBeNull();
         }
-  });
+    // 15 デッキ × 15 × 2 = 450 試合。CI の遅いマシンでは 5 秒を超える
+  }, 60_000);
 });
 
 describe("デッキの決まり", () => {
@@ -447,22 +452,33 @@ describe("デッキの決まり", () => {
   it("属性が3つ以上・枚数違い・4枚目・トークンは反則", () => {
     const three = [...Array(9).fill("f6").slice(0, 3), ...Array(3).fill("m6"), ...Array(3).fill("i7")];
     const errors = validateDeck([...three, "t-kusa", "f6"], real);
-    expect(errors.some((e) => e.includes("25枚"))).toBe(true);
+    expect(errors.some((e) => e.includes("30枚"))).toBe(true);
     expect(errors.some((e) => e.includes("属性は2つまで"))).toBe(true);
     expect(errors.some((e) => e.includes("トークン"))).toBe(true);
     expect(errors.some((e) => e.includes("3枚まで"))).toBe(true);
   });
+  it("デッキの指し方：構築済みの ID か custom:（カード ID をカンマでつなぐ）", () => {
+    expect(resolveDeckRef("flame", DECKS)).toEqual(DECKS.flame);
+    const ref = encodeCustomDeck(DECKS.idol);
+    expect(ref.startsWith("custom:")).toBe(true);
+    expect(resolveDeckRef(ref, DECKS)).toEqual(DECKS.idol);
+    expect(resolveDeckRef("nope", DECKS)).toBeNull();
+    expect(resolveDeckRef("custom:", DECKS)).toBeNull();
+    expect(resolveDeckRef("custom:f1,../x", DECKS)).toBeNull();
+    expect(resolveDeckRef(42, DECKS)).toBeNull();
+  });
   it("共通カードは属性に数えない", () => {
     expect(deckAttributes(["n1", "n2", "f6"], real)).toEqual(["炎上"]);
   });
-  it("10通りの属性の組み合わせに、デッキが1つずつある", () => {
+  it("10通りの属性の組み合わせと、5つの単属性に、デッキが1つずつある", () => {
     const pairs = Object.values(DECKS).map((d) => [...deckAttributes(d, real)].sort().join("×"));
-    expect(new Set(pairs).size).toBe(10);
+    expect(new Set(pairs).size).toBe(15);
+    expect(pairs.filter((p) => !p.includes("×"))).toHaveLength(5);
   });
-  it("デモ用デッキには、闇堕ちを持つ★5が2〜3枚入っている（1枚だと出せる試合が少なすぎる）", () => {
+  it("デモ用デッキには、闇堕ちを持つ★5が2枚以上入っている（1枚だと出せる試合が少なすぎる）", () => {
     for (const [id, deck] of Object.entries(DECKS)) {
       const aces = deck.filter((c) => real[c]?.rarity === 5 && real[c]?.dark);
-      expect({ id, ok: aces.length >= 2 && aces.length <= 3 }).toEqual({ id, ok: true });
+      expect({ id, ok: aces.length >= 2 }).toEqual({ id, ok: true });
     }
   });
 });
@@ -605,6 +621,29 @@ describe("切り札の効果（★4〜5）", () => {
     expect(r.state.players.p1.trash).toEqual(["big", "block", "pet"]);
     // 戻ったターンは攻撃できない
     expect(() => face(r.state, 0)).toThrow(RuleError);
+  });
+  it("変身：相手のアイコンが草（トークン）になる。元のカードはオワコンにも手札にも行かない", () => {
+    const s = cast(withFoe(["meme"], ["big", "f"]), 0, { side: "enemy", slot: 0 });
+    const u = s.players.p2.field[0];
+    expect(u?.cardId).toBe("kusa");
+    expect(u?.token).toBe(true);
+    expect(s.players.p2.trash).not.toContain("big");
+    expect(s.players.p2.hand).not.toContain("big");
+    expect(s.players.p2.field[1]?.cardId).toBe("f");
+  });
+  it("場のアイコン2体につき1枚引く（最大3枚）。トークンも数える", () => {
+    let s = play(play(game(["cat", "f", "replies", "replies"]), 0, 0), 0, 3);
+    // cat ＋ 草2体 ＋ f ＝ 4体 → 2枚
+    expect(s.players.p1.field.filter((u) => u).length).toBe(4);
+    const before = s.players.p1.hand.length;
+    s = cast(s, 0);
+    expect(s.players.p1.hand.length).toBe(before - 1 + 2);
+  });
+  it("相手のアイコンすべての攻撃力を下げる（0より下にはならない）", () => {
+    const s = play(withFoe(["gloom"], ["big", "f"]), 0, 0);
+    const foe = s.players.p2;
+    expect(viewUnit(s, "p2", foe.field[0] as Unit, catalog).attack).toBe(4);
+    expect(viewUnit(s, "p2", foe.field[1] as Unit, catalog).attack).toBe(0);
   });
   it("蘇生で戻ったカードの「場に出たとき」も働く。戻せるものが無ければ何も起きない", () => {
     const s = game(["nurse", "nurse"]);

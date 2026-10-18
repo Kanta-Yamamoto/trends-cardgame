@@ -12,7 +12,7 @@ export function deckAttributes(deck: readonly string[], catalog: Catalog): strin
 
 /**
  * デッキの決まりを確かめ、守れていないところを日本語で返す（空なら OK）。
- * 25枚・同じカードは3枚まで・トークンは入れられない・属性は2つまで（共通カードはいくつでも）
+ * 30枚・同じカードは3枚まで・トークンは入れられない・属性は2つまで（共通カードはいくつでも）
  */
 export function validateDeck(deck: readonly string[], catalog: Catalog): string[] {
   const errors: string[] = [];
@@ -29,4 +29,32 @@ export function validateDeck(deck: readonly string[], catalog: Catalog): string[
   if (attrs.length > MAX_DECK_ATTRIBUTES)
     errors.push(`属性は${MAX_DECK_ATTRIBUTES}つまでです（今は ${attrs.join("・")}）`);
   return errors;
+}
+
+/**
+ * デッキの指し方。構築済みデッキは ID（"flame" など）、自分で組んだデッキは "custom:" に続けてカード ID をカンマでつなぐ
+ * （例 "custom:f1,f1,f7,…"）。オンライン対戦でサーバーに送るのも、対戦の記録に残すのもこの文字列
+ */
+export const CUSTOM_DECK_PREFIX = "custom:";
+
+export function encodeCustomDeck(cards: readonly string[]): string {
+  return CUSTOM_DECK_PREFIX + cards.join(",");
+}
+
+export function isCustomDeckRef(ref: unknown): ref is string {
+  return typeof ref === "string" && ref.startsWith(CUSTOM_DECK_PREFIX);
+}
+
+/**
+ * デッキの指し方からカードの並びを得る。構築済みの ID なら decks から、custom ならほどいて返す。
+ * どちらでもなければ null。中身の決まり（30枚など）はここでは確かめない（validateDeck を使う）
+ */
+export function resolveDeckRef(ref: unknown, decks: Record<string, readonly string[]>): string[] | null {
+  if (typeof ref !== "string") return null;
+  if (ref in decks) return [...(decks[ref] as readonly string[])];
+  if (!isCustomDeckRef(ref)) return null;
+  const body = ref.slice(CUSTOM_DECK_PREFIX.length);
+  if (body.length === 0 || body.length > 2000) return null;
+  const ids = body.split(",").map((s) => s.trim());
+  return ids.every((s) => /^[a-z0-9-]+$/i.test(s)) ? ids : null;
 }

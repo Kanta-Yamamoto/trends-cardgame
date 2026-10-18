@@ -1,7 +1,7 @@
-/* ★5 の専用デザイン（第3弾）：カグラ（.s-kagura）・アイリ（.s-airi）・ヨミ（.s-yomi）・ワラ（.s-wara）・ユズハ（.s-yuzuha）。第4弾：ルリ（.s-ruri） */
+/* ★5 の専用デザイン（第3弾）：カグラ（.s-kagura）・アイリ（.s-airi）・ヨミ（.s-yomi）・ワラ（.s-wara）・ユズハ（.s-yuzuha）。第4弾：ルリ（.s-ruri）。第6弾：ミレイ（.s-mirei）・ララ（.s-lala） */
 
 /* ---------- 共通の土台（rare5.css と同じ作り） ---------- */
-.s-kagura, .s-airi, .s-yomi, .s-wara, .s-yuzuha, .s-ruri {
+.s-kagura, .s-airi, .s-yomi, .s-wara, .s-yuzuha, .s-ruri, .s-mirei, .s-lala {
   .card {
     --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; --nx: 0; --ny: 0; --g: 0;
     position: relative; width: 100%; aspect-ratio: 63 / 88; border-radius: 4.2% / 3%;
@@ -47,6 +47,8 @@
 .s-wara .card { --art: url(/assets/cards/c8-art.jpg); --subject: url(/assets/cards/c8-subject.webp); }
 .s-yuzuha .card { --art: url(/assets/cards/c10-art.jpg); --subject: url(/assets/cards/c10-subject.webp); }
 .s-ruri .card { --art: url(/assets/cards/c11-art.jpg); --subject: url(/assets/cards/c11-subject.webp); }
+.s-mirei .card { --art: url(/assets/cards/c13-art.jpg); --subject: url(/assets/cards/c13-subject.webp); }
+.s-lala .card { --art: url(/assets/cards/c12-art.jpg); --subject: url(/assets/cards/c12-subject.webp); }
 
 /* =========================================================
    カグラ：黒漆に金の蒔絵、朱の焔。効果は朱の判を押した「依頼状」
@@ -668,3 +670,184 @@
     mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);
   }
 }
+
+/* =========================================================
+   ミレイ：ドームの客席。マゼンタの枠にペンライトの海、効果はセットリスト
+   ========================================================= */
+.s-mirei {
+  --pink: #ff5fb0; --pink-2: #ffd1e8; --magenta: #c2187a; --night: #2a0f2b; --cream: #fff7fb; --ink: #3a1230;
+  --f-name: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif;
+  --f-body: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+  --f-num: "Fredoka", "Arial Rounded MT Bold", sans-serif;
+
+  .card { color: var(--ink); background: var(--night); box-shadow: 0 30px 60px -20px #000c, 0 0 60px -12px #ff5fb0aa, 0 0 0 1px #ffffff40; }
+  /* 枠：暗いドームに、マゼンタのスポットが流れる */
+  .dome {
+    background:
+      linear-gradient(115deg, transparent 32%, #ffffff40 46%, #ffffff80 50%, #ffffff40 54%, transparent 68%) var(--mx) var(--my) / 250% 250% no-repeat,
+      radial-gradient(60% 40% at calc(50% + var(--nx) * 10%) 0%, #ff5fb066, transparent 70%),
+      linear-gradient(170deg, #4a1446, var(--night) 45%, #180818 75%, #3a1040);
+  }
+  /* ペンライトの海（小さな光の列） */
+  .seats {
+    background:
+      radial-gradient(circle at 50% 50%, #ff8fcf 0 0.7px, transparent 1.6px) 0 0 / 1.6em 1.1em,
+      radial-gradient(circle at 50% 50%, #c9b0ff 0 0.5px, transparent 1.3px) 0.8em 0.55em / 1.6em 1.1em;
+    mask: linear-gradient(transparent 55%, #000 80%);
+    opacity: calc(0.6 + var(--g) * 0.4);
+  }
+  .win { clip-path: inset(4.4% 5.2% 4.4% 5.2% round 2.4% 2.4% 6% 6%); }
+  /* スポットライトの帯 */
+  .beams {
+    background:
+      linear-gradient(calc(165deg + var(--nx) * 8deg), transparent 40%, #ffffff33 47%, transparent 54%),
+      linear-gradient(calc(195deg - var(--nx) * 8deg), transparent 42%, #ff8fcf33 48%, transparent 55%);
+    mix-blend-mode: screen; opacity: calc(0.4 + var(--g) * 0.5);
+  }
+  .penlights {
+    background: radial-gradient(circle at 50% 50%, #fff 0 8%, transparent 14%) 0 0 / 2.4em 2.4em;
+    background-position: calc(var(--nx) * 12px) calc(var(--ny) * -10px);
+    mask: linear-gradient(transparent 40%, #000 95%);
+    mix-blend-mode: screen; opacity: calc(0.15 + var(--g) * 0.45);
+  }
+  .rim {
+    inset: 4.4% 5.2%; border-radius: 2.4% 2.4% 6% 6%; pointer-events: none;
+    box-shadow: 0 0 0 0.15em #fff, 0 0 0 0.3em var(--pink), 0 0 1.2em 0.2em #ff5fb088;
+  }
+  .bg, .subject { background-position: center 8%; }
+  .subject { filter: drop-shadow(0 6px 12px #2a0f2b99); }
+  .subject-shine {
+    mask-position: center 8%;
+    background: linear-gradient(120deg, var(--pink-2), #fff, #ffd6f3, #c9b0ff, var(--pink-2)); background-size: 300% 300%; background-position: var(--mx) var(--my);
+  }
+  /* コスト：座席のプレート */
+  .cost {
+    left: 2.4%; top: 1.6%; width: 16.5%; aspect-ratio: 1; border-radius: 0.6em; display: grid; place-items: center; rotate: -4deg;
+    background: linear-gradient(180deg, #fff, var(--pink-2)); box-shadow: 0 0 0 0.12em var(--magenta), 0 0.3em 0.8em -0.2em #000a;
+  }
+  .cost b { font: 700 2.1em/1 var(--f-num); color: var(--magenta); }
+  .rarity {
+    right: 7%; top: 6%; font-size: 0.8em; letter-spacing: 0.12em; color: #fff;
+    padding: 0.35em 0.75em; border-radius: 2em; background: #c2187ad0; box-shadow: 0 0 0 1px #ffffff80, 0 0 0.6em #ff5fb088;
+  }
+  .name { display: grid; justify-items: center; }
+  .name .epi { font: 700 0.72em/1.2 var(--f-body); letter-spacing: 0.3em; color: #fff; text-shadow: 0 0 0.4em var(--magenta), 0 0 0.8em var(--magenta); }
+  .name h3 {
+    margin: 0; font: 800 2.1em/1.05 var(--f-name); letter-spacing: 0.3em; padding-left: 0.3em; color: #fff;
+    text-shadow: 0 0 0.3em var(--pink), 0 0 0.8em var(--magenta), 0 0.06em 0.1em #2a0f2b;
+  }
+  /* 効果：セットリストの紙 */
+  .setlist {
+    display: grid; gap: 0.3em; padding: 0.55em 0.85em 0.5em; border-radius: 0.35em;
+    background:
+      repeating-linear-gradient(180deg, transparent 0 1.3em, #c2187a14 1.3em 1.36em),
+      linear-gradient(180deg, #fff, var(--cream));
+    box-shadow: 0 0 0 0.12em #fff, 0 0 0 0.24em #ff5fb080, 0 0.3em 1em -0.3em #000a;
+  }
+  .label { font: 800 0.72em/1 var(--f-num); letter-spacing: 0.18em; color: var(--magenta); }
+  .chip.kaiwai { background: #c2187a14; color: var(--magenta); box-shadow: inset 0 0 0 1px #c2187a33; }
+  .effect { font: 700 0.86em/1.55 var(--f-body); color: var(--ink); }
+  .effect .kw { color: var(--magenta); background: linear-gradient(transparent 60%, #ffd1e8 60%); }
+  .dark-note { color: #7a3aa0; }
+  .wave { flex: 1; display: flex; align-items: end; gap: 0.15em; height: 1.1em; }
+  .wave i { flex: 1; border-radius: 1em 1em 0 0; background: linear-gradient(180deg, var(--pink), var(--magenta)); }
+  .wave i:nth-child(odd) { height: calc(45% + var(--g) * 40%); }
+  .wave i:nth-child(even) { height: calc(80% + var(--g) * 20%); }
+  .wave i:nth-child(3n) { height: calc(60% + var(--g) * 30%); }
+  .glare {
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffffffcc 0%, #ff5fb030 25%, transparent 55%);
+    mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);
+  }
+}
+
+/* =========================================================
+   ララ：配信画面。黄緑の枠に流れる w、効果はリプ欄のいちばん上
+   ========================================================= */
+.s-lala {
+  --leaf: #8fe04a; --leaf-2: #dbffb0; --moss: #3f8f1e; --deep: #1f5212; --ink: #1d3a12; --paper: #f7ffee;
+  --f-name: "Dela Gothic One", "Hiragino Sans", sans-serif;
+  --f-body: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", sans-serif;
+  --f-num: "Fredoka", "Arial Rounded MT Bold", sans-serif;
+  --www: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='48'%3E%3Cg font-family='Arial,sans-serif' font-weight='700' fill='%23000'%3E%3Ctext x='2' y='16' font-size='13'%3Ewww%3C/text%3E%3Ctext x='60' y='30' font-size='10'%3Ewwww%3C/text%3E%3Ctext x='18' y='44' font-size='12'%3Eww%3C/text%3E%3C/g%3E%3C/svg%3E");
+
+  .card { color: var(--ink); background: #eefbe0; box-shadow: 0 30px 60px -20px #000b, 0 0 60px -12px #8fe04aaa, 0 0 0 1px #ffffff70; }
+  /* 枠：配信画面の若葉色 */
+  .stream {
+    background:
+      linear-gradient(115deg, transparent 30%, #ffffff90 46%, #fff 50%, #ffffff90 54%, transparent 70%) var(--mx) var(--my) / 250% 250% no-repeat,
+      linear-gradient(160deg, var(--leaf-2), #b9f07a 40%, var(--leaf) 75%, var(--leaf-2));
+  }
+  /* 流れる w（傾けると流れる） */
+  .kusa-flow {
+    background: var(--www) 0 0 / 9em 3.6em;
+    background-position: calc(var(--nx) * -40px) calc(var(--ny) * 20px);
+    mask: linear-gradient(#000, transparent 12%, transparent 88%, #000);
+    opacity: calc(0.12 + var(--g) * 0.18);
+  }
+  .win { clip-path: inset(4.4% 5.2% 4.4% 5.2% round 6%); }
+  /* 木漏れ日 */
+  .sunbeam {
+    background:
+      linear-gradient(calc(160deg + var(--nx) * 6deg), transparent 35%, #ffffff55 45%, transparent 52%),
+      radial-gradient(50% 35% at calc(70% + var(--nx) * 8%) 0%, #ffffffaa, transparent 70%);
+    mix-blend-mode: screen; opacity: calc(0.35 + var(--g) * 0.45);
+  }
+  .leaves {
+    background:
+      radial-gradient(ellipse 45% 25% at 50% 50%, #c8ff8a 0 50%, transparent 55%) 0 0 / 3.2em 2.6em,
+      radial-gradient(ellipse 35% 20% at 50% 50%, #ffffffb0 0 50%, transparent 55%) 1.4em 1.2em / 2.4em 2.1em;
+    background-position: calc(var(--nx) * 14px) calc(var(--ny) * -18px);
+    mask: radial-gradient(55% 45% at var(--mx) var(--my), #000, transparent);
+    mix-blend-mode: screen; opacity: calc(0.12 + var(--g) * 0.4);
+  }
+  .rim {
+    inset: 4.4% 5.2%; border-radius: 6%; pointer-events: none;
+    box-shadow: 0 0 0 0.15em #fff, 0 0 0 0.3em var(--leaf), 0 0 1.2em 0.2em #8fe04a88;
+  }
+  .bg, .subject { background-position: center 10%; }
+  .subject { filter: drop-shadow(0 6px 12px #1f521288); }
+  .subject-shine {
+    mask-position: center 10%;
+    background: linear-gradient(120deg, var(--leaf-2), #fff, #fff7b0, var(--leaf-2)); background-size: 300% 300%; background-position: var(--mx) var(--my);
+  }
+  /* LIVE の印 */
+  .live {
+    position: absolute; z-index: 3; right: 7%; top: 12.5%; display: inline-flex; align-items: center; gap: 0.3em; width: auto; height: auto; inset: auto;
+    font: 800 0.6em/1 var(--f-num); letter-spacing: 0.12em; color: #fff; padding: 0.3em 0.6em; border-radius: 0.3em; background: #e8452c; box-shadow: 0 0 0 1px #ffffffa0;
+  }
+  .live i { width: 0.6em; height: 0.6em; border-radius: 50%; background: #fff; animation: lala-blink 1.2s infinite; }
+  .dark-tag { top: 19%; }
+  /* コスト：同接の数 */
+  .cost {
+    left: 2.4%; top: 1.6%; width: 16.5%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
+    background: radial-gradient(circle at 32% 28%, #fff 0 30%, #e8ffd0 60%, #bdf08a); box-shadow: 0 0 0 0.12em #fff, 0 0 0 0.26em var(--moss), 0 0.3em 0.8em -0.2em #000a;
+  }
+  .cost b { font: 700 2.1em/1 var(--f-num); color: var(--deep); }
+  .rarity {
+    right: 7%; top: 6%; font-size: 0.8em; letter-spacing: 0.12em; color: var(--deep);
+    padding: 0.35em 0.75em; border-radius: 2em; background: #ffffffe0; box-shadow: 0 0 0 1px var(--leaf);
+  }
+  .name { display: grid; justify-items: center; }
+  .name .epi { font: 700 0.72em/1.2 var(--f-body); letter-spacing: 0.3em; color: #fff; text-shadow: 0 0 0.4em var(--deep), 0 0 0.8em var(--deep); }
+  .name h3 {
+    margin: 0; font: 400 2.1em/1.05 var(--f-name); letter-spacing: 0.3em; padding-left: 0.3em; color: #fff;
+    text-shadow: 0.05em 0 0 var(--deep), -0.05em 0 0 var(--deep), 0 0.05em 0 var(--deep), 0 -0.05em 0 var(--deep), 0 0.09em 0 var(--deep), 0 0 0.6em var(--leaf);
+  }
+  /* 効果：リプ欄のコメント */
+  .reply {
+    display: grid; gap: 0.3em; padding: 0.55em 0.85em 0.5em; border-radius: 0.9em 0.9em 0.9em 0.2em;
+    background: linear-gradient(180deg, #fff, var(--paper)); box-shadow: 0 0 0 0.12em #fff, 0 0 0 0.24em #8fe04a99, 0 0.3em 1em -0.3em #1f521288;
+  }
+  .label { display: inline-flex; align-items: center; gap: 0.35em; font: 800 0.78em/1 var(--f-body); letter-spacing: 0.2em; color: var(--moss); }
+  .label i { width: 1.2em; height: 1.2em; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, var(--leaf) 55%, var(--moss)); }
+  .chip.kaiwai { background: #3f8f1e14; color: var(--deep); box-shadow: inset 0 0 0 1px #3f8f1e33; }
+  .effect { font: 700 0.86em/1.55 var(--f-body); color: var(--ink); }
+  .effect .kw { color: var(--moss); background: linear-gradient(transparent 60%, #dbffb0 60%); }
+  .dark-note { color: #6a55c9; }
+  .react { flex: 1; font: 700 0.6em/1.2 var(--f-num); color: var(--moss); letter-spacing: 0.04em; }
+  .glare {
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffffffcc 0%, #dbffb040 25%, transparent 55%);
+    mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);
+  }
+}
+@keyframes lala-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }

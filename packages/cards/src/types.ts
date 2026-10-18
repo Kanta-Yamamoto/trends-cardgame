@@ -41,7 +41,8 @@ export type CardEffect = (
   | { do: "bind"; to?: "strongestEnemy" | "allEnemies" }
   /** to が無ければ投稿の対象を訂正する */
   | { do: "silence"; to?: "strongestEnemy" }
-  | { do: "weaken"; attack: number }
+  /** 攻撃力を下げる。to が無ければ投稿の対象、allEnemies なら相手のアイコンすべて */
+  | { do: "weaken"; attack: number; to?: "allEnemies" }
   | { do: "buff"; attack: number; hp: number }
   | { do: "fill"; card: string }
   | { do: "cleanse" }
@@ -82,6 +83,10 @@ export type CardEffect = (
   | { do: "bounce"; to?: "costliestEnemy" }
   /** 次の相手のターンが終わるまで、自分のマスターはダメージを受けない */
   | { do: "shieldMaster" }
+  /** 自分の場のアイコン per 体につき1枚引く（最大 max 枚。トークンも数える） */
+  | { do: "drawPerAllies"; per: number; max: number }
+  /** 変身：相手のアイコンを card（トークン）にする。to が無ければ投稿の対象、strongestEnemy なら攻撃力がいちばん高い相手 */
+  | { do: "transform"; card: string; to?: "strongestEnemy" }
   /**
    * 蘇生：オワコンから、コスト maxCost 以下の自分のアイコン1枚を場に戻す
    * （いちばんコストが高いもの。同じなら、あとにオワコンになったもの。「場に出たとき」の効果も働く）
@@ -153,7 +158,7 @@ export interface CardDef {
 
 export const ATTRIBUTES: readonly Attribute[] = ["炎上", "メロい", "癒し", "草", "神"];
 export const KAIWAI: readonly Kaiwai[] = ["ミーム", "アイドル", "配信者", "有識者", "動物"];
-export const DECK_SIZE = 25;
+export const DECK_SIZE = 30;
 /** 1つのデッキに入れられる属性の数（共通カードは数えない） */
 export const MAX_DECK_ATTRIBUTES = 2;
 export const MAX_COPIES = 3;

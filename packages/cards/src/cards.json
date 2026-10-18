@@ -2964,5 +2964,450 @@
       "subject": "/assets/cards/c11-dark-subject.webp",
       "original": "assets/original/c11-dark.webp"
     }
+  },
+  {
+    "id": "f21",
+    "name": "荒らし",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 2,
+    "cost": 2,
+    "attack": 3,
+    "hp": 1,
+    "attributes": ["炎上"],
+    "kaiwai": ["ミーム"],
+    "keywords": ["速攻"],
+    "effects": [],
+    "effect": "速攻（場に出たターンに攻撃できる）",
+    "flavor": "「構ってほしいだけなんだよ」",
+    "art": "/assets/cards/f21-art.jpg",
+    "original": "assets/original/f21.webp"
+  },
+  {
+    "id": "f22",
+    "name": "プロ炎上家",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 3,
+    "cost": 5,
+    "attack": 4,
+    "hp": 4,
+    "attributes": ["炎上"],
+    "kaiwai": ["配信者"],
+    "keywords": ["叩き"],
+    "effects": [
+      {
+        "on": "play",
+        "do": "damage",
+        "to": "enemyMaster",
+        "amount": 2
+      }
+    ],
+    "effect": "叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）。場に出たとき、相手のマスターに2ダメージ。",
+    "flavor": "「燃えるのも仕事のうち」",
+    "art": "/assets/cards/f22-art.jpg",
+    "original": "assets/original/f22.webp"
+  },
+  {
+    "id": "f23",
+    "name": "炎上まとめ",
+    "epithet": "",
+    "type": "post",
+    "rarity": 2,
+    "cost": 2,
+    "attributes": ["炎上"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "draw",
+        "count": 1
+      },
+      {
+        "do": "damage",
+        "to": "enemyMaster",
+        "amount": 1
+      }
+    ],
+    "effect": "カードを1枚引く。相手のマスターに1ダメージ。",
+    "flavor": "【悲報】まとめられました",
+    "art": "/assets/cards/f23-art.jpg",
+    "original": "assets/original/f23.webp"
+  },
+  {
+    "id": "m19",
+    "name": "ダンスリーダー",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 3,
+    "cost": 4,
+    "attack": 3,
+    "hp": 4,
+    "attributes": ["メロい"],
+    "kaiwai": ["アイドル"],
+    "keywords": ["注目"],
+    "effects": [
+      {
+        "on": "play",
+        "do": "buffAllies",
+        "attack": 0,
+        "hp": 1,
+        "kaiwai": "アイドル"
+      }
+    ],
+    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。場に出たとき、自分のほかのアイドルすべてに体力+1。",
+    "flavor": "「はい、もう一回！」",
+    "art": "/assets/cards/m19-art.jpg",
+    "original": "assets/original/m19.webp"
+  },
+  {
+    "id": "c13",
+    "name": "ミレイ",
+    "epithet": "ドームの歌姫",
+    "type": "icon",
+    "rarity": 5,
+    "cost": 6,
+    "attack": 3,
+    "hp": 5,
+    "attributes": ["メロい"],
+    "kaiwai": ["アイドル"],
+    "keywords": ["注目"],
+    "effects": [
+      {
+        "on": "play",
+        "do": "buffAllies",
+        "attack": 2,
+        "hp": 1
+      },
+      {
+        "on": "play",
+        "do": "rally",
+        "attack": 0
+      }
+    ],
+    "effect": "注目。場に出たとき、自分のほかのアイコンすべてに攻撃力+2・体力+1し、自分のアイコンすべてがすぐ攻撃できるようになる。",
+    "flavor": "「ラスサビ、全員で跳んで！」",
+    "dark": {
+      "name": "病み期のミレイ",
+      "attack": 5,
+      "hp": 5,
+      "keywords": ["注目"],
+      "effects": [
+        {
+          "on": "play",
+          "do": "weaken",
+          "to": "allEnemies",
+          "attack": 2
+        }
+      ],
+      "effect": "注目。闇堕ちしたとき、相手のアイコンすべての攻撃力-2。",
+      "art": "/assets/cards/c13-dark-art.jpg",
+      "original": "assets/original/c13-dark.webp",
+      "subject": "/assets/cards/c13-dark-subject.webp"
+    },
+    "art": "/assets/cards/c13-art.jpg",
+    "original": "assets/original/c13.webp",
+    "subject": "/assets/cards/c13-subject.webp"
+  },
+  {
+    "id": "g18",
+    "name": "大御所コメンテーター",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 3,
+    "cost": 4,
+    "attack": 3,
+    "hp": 4,
+    "attributes": ["神"],
+    "kaiwai": ["有識者"],
+    "keywords": ["ガード"],
+    "effects": [
+      {
+        "on": "play",
+        "do": "draw",
+        "count": 1
+      }
+    ],
+    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、カードを1枚引く。",
+    "flavor": "「私の若いころはですね」",
+    "art": "/assets/cards/g18-art.jpg",
+    "original": "assets/original/g18.webp"
+  },
+  {
+    "id": "g19",
+    "name": "学長",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 4,
+    "cost": 7,
+    "attack": 5,
+    "hp": 7,
+    "attributes": ["神"],
+    "kaiwai": ["有識者"],
+    "keywords": ["ガード"],
+    "effects": [
+      {
+        "on": "play",
+        "do": "damage",
+        "to": "allEnemies",
+        "amount": 2
+      },
+      {
+        "on": "play",
+        "do": "draw",
+        "count": 2
+      }
+    ],
+    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、相手のアイコンすべてに2ダメージ。カードを2枚引く。",
+    "flavor": "「静粛に」",
+    "art": "/assets/cards/g19-art.jpg",
+    "original": "assets/original/g19.webp"
+  },
+  {
+    "id": "k17",
+    "name": "伸びるリプ欄",
+    "epithet": "",
+    "type": "post",
+    "rarity": 2,
+    "cost": 2,
+    "attributes": ["草"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "drawPerAllies",
+        "per": 2,
+        "max": 3
+      }
+    ],
+    "effect": "自分の場のアイコン2体につき、カードを1枚引く（最大3枚）。",
+    "flavor": "リプが止まらない",
+    "art": "/assets/cards/k17-art.jpg",
+    "original": "assets/original/k17.webp"
+  },
+  {
+    "id": "k18",
+    "name": "ネタにされる",
+    "epithet": "",
+    "type": "post",
+    "rarity": 3,
+    "cost": 3,
+    "attributes": ["草"],
+    "kaiwai": [],
+    "keywords": [],
+    "target": "enemyIcon",
+    "effects": [
+      {
+        "do": "transform",
+        "card": "t-kusa"
+      }
+    ],
+    "effect": "相手のアイコン1体を草（1/1）にする。",
+    "flavor": "もう元には戻れない",
+    "art": "/assets/cards/k18-art.jpg",
+    "original": "assets/original/k18.webp"
+  },
+  {
+    "id": "c12",
+    "name": "ララ",
+    "epithet": "バズの申し子",
+    "type": "icon",
+    "rarity": 5,
+    "cost": 6,
+    "attack": 3,
+    "hp": 5,
+    "attributes": ["草"],
+    "kaiwai": ["ミーム", "配信者"],
+    "keywords": [],
+    "effects": [
+      {
+        "on": "play",
+        "do": "fill",
+        "card": "t-kusa"
+      },
+      {
+        "on": "turnEnd",
+        "do": "summon",
+        "card": "t-kusa",
+        "count": 2
+      }
+    ],
+    "effect": "場に出たとき、自分の空いている枠すべてに草を出す。自分のターンの終わりに、草を2体出す。",
+    "flavor": "「はい、全部ネタにしまーす」",
+    "dark": {
+      "name": "黒歴史のララ",
+      "attack": 4,
+      "hp": 4,
+      "keywords": [],
+      "effects": [
+        {
+          "on": "play",
+          "do": "transform",
+          "card": "t-kusa",
+          "to": "strongestEnemy"
+        },
+        {
+          "on": "play",
+          "do": "fill",
+          "card": "t-kusa"
+        }
+      ],
+      "effect": "闇堕ちしたとき、攻撃力がいちばん高い相手のアイコンを草（1/1）にし、自分の空いている枠すべてに草を出す。",
+      "art": "/assets/cards/c12-dark-art.jpg",
+      "original": "assets/original/c12-dark.webp",
+      "subject": "/assets/cards/c12-dark-subject.webp"
+    },
+    "art": "/assets/cards/c12-art.jpg",
+    "original": "assets/original/c12.webp",
+    "subject": "/assets/cards/c12-subject.webp"
+  },
+  {
+    "id": "i18",
+    "name": "子猫",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 1,
+    "cost": 1,
+    "attack": 1,
+    "hp": 2,
+    "attributes": ["癒し"],
+    "kaiwai": ["動物"],
+    "keywords": [],
+    "effects": [
+      {
+        "on": "play",
+        "do": "heal",
+        "to": "master",
+        "amount": 2
+      }
+    ],
+    "effect": "場に出たとき、自分のライフを2回復する。",
+    "flavor": "ちいさな前足で、そっと",
+    "art": "/assets/cards/i18-art.jpg",
+    "original": "assets/original/i18.webp"
+  },
+  {
+    "id": "i19",
+    "name": "保健室の先生",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 3,
+    "cost": 4,
+    "attack": 2,
+    "hp": 5,
+    "attributes": ["癒し"],
+    "kaiwai": ["有識者"],
+    "keywords": ["ガード"],
+    "effects": [
+      {
+        "on": "play",
+        "do": "heal",
+        "to": "allAlliesAndMaster",
+        "amount": 2
+      }
+    ],
+    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、自分のアイコンすべてとライフを2回復する。",
+    "flavor": "「はい、ちょっと休んでいきなさい」",
+    "art": "/assets/cards/i19-art.jpg",
+    "original": "assets/original/i19.webp"
+  },
+  {
+    "id": "i20",
+    "name": "温泉宿の女将",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 4,
+    "cost": 6,
+    "attack": 3,
+    "hp": 6,
+    "attributes": ["癒し"],
+    "kaiwai": ["配信者"],
+    "keywords": ["ガード"],
+    "effects": [
+      {
+        "on": "play",
+        "do": "heal",
+        "to": "allAlliesAndMaster",
+        "amount": 3
+      },
+      {
+        "on": "turnEnd",
+        "do": "heal",
+        "to": "master",
+        "amount": 1
+      }
+    ],
+    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、自分のアイコンすべてとライフを3回復する。自分のターンの終わりに、自分のライフを1回復する。",
+    "flavor": "「今日も湯けむり配信中」",
+    "art": "/assets/cards/i20-art.jpg",
+    "original": "assets/original/i20.webp"
+  },
+  {
+    "id": "n12",
+    "name": "有名人",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 2,
+    "cost": 5,
+    "attack": 4,
+    "hp": 5,
+    "attributes": [],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [],
+    "effect": "",
+    "flavor": "名前は知ってる。何の人かは知らない",
+    "art": "/assets/cards/n12-art.jpg",
+    "original": "assets/original/n12.webp"
+  },
+  {
+    "id": "n13",
+    "name": "レジェンド",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 3,
+    "cost": 6,
+    "attack": 5,
+    "hp": 6,
+    "attributes": [],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "on": "play",
+        "do": "draw",
+        "count": 1
+      }
+    ],
+    "effect": "場に出たとき、カードを1枚引く。",
+    "flavor": "殿堂入り。説明不要",
+    "art": "/assets/cards/n13-art.jpg",
+    "original": "assets/original/n13.webp"
+  },
+  {
+    "id": "n14",
+    "name": "バズ投稿",
+    "epithet": "",
+    "type": "post",
+    "rarity": 2,
+    "cost": 5,
+    "attributes": [],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "draw",
+        "count": 2
+      },
+      {
+        "do": "damage",
+        "to": "enemyMaster",
+        "amount": 2
+      }
+    ],
+    "effect": "カードを2枚引く。相手のマスターに2ダメージ。",
+    "flavor": "通知が止まらない",
+    "art": "/assets/cards/n14-art.jpg",
+    "original": "assets/original/n14.webp"
   }
 ]

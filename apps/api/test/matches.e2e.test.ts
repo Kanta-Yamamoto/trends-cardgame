@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { DECKS } from "@trends/cards";
 import { type Action, type GameState, HIDDEN_CARD } from "@trends/game-core";
 import { io, type Socket } from "socket.io-client";
 import request from "supertest";
@@ -61,6 +62,28 @@ describe("ログインとオンライン対戦", () => {
     const token = await login("たろう");
     const me = await request(app.getHttpServer()).get("/auth/me").set("Authorization", `Bearer ${token}`);
     expect(me.body.name).toBe("たろう");
+  });
+
+  it("自分で組んだデッキ（custom:…）でも部屋を作れる。決まりを守らないデッキは断られる", async () => {
+    const t = await login("くみて");
+    const ok = await request(app.getHttpServer())
+      .post("/matches")
+      .set("Authorization", `Bearer ${t}`)
+      .send({ deck: `custom:${DECKS.idol.join(",")}` })
+      .expect(201);
+    expect(ok.body.players.p1.deck.startsWith("custom:")).toBe(true);
+    // 29 枚
+    await request(app.getHttpServer())
+      .post("/matches")
+      .set("Authorization", `Bearer ${t}`)
+      .send({ deck: `custom:${DECKS.idol.slice(1).join(",")}` })
+      .expect(400);
+    // 存在しないデッキ
+    await request(app.getHttpServer())
+      .post("/matches")
+      .set("Authorization", `Bearer ${t}`)
+      .send({ deck: "nope" })
+      .expect(400);
   });
 
   it("部屋を作り、合言葉で相手が入ると対戦が始まる。操作は両者に届き、相手の手札は見えない", async () => {
