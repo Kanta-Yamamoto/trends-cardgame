@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ATTRIBUTES, type Attribute, type CardDef } from "@trends/cards";
 import { useState } from "react";
-import { useSearchParams } from "react-router";
 import { fetchCards } from "../api/client";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
@@ -25,9 +24,6 @@ export function Gallery() {
   const { data, isLoading } = useQuery({ queryKey: ["cards"], queryFn: fetchCards });
   const [filter, setFilter] = useState<Filter>(null);
   const [zoom, setZoom] = useState<CardDef | null>(null);
-  // 「/?dark」で開くと、拡大画面で闇堕ちの姿に切り替えられる（イラスト確認用。ふだんは秘密）
-  const [params] = useSearchParams();
-  const darkPreview = params.has("dark");
 
   // 同じ★の中は、属性ごと（共通は最後）に、コストの低い順
   const group = (c: CardDef) => (c.attributes[0] ? ATTRIBUTES.indexOf(c.attributes[0]) : ATTRIBUTES.length);
@@ -98,7 +94,7 @@ export function Gallery() {
           </section>
         ))
       )}
-      {zoom && <CardZoom key={zoom.id} card={zoom} darkPreview={darkPreview} onClose={() => setZoom(null)} />}
+      {zoom && <CardZoom key={zoom.id} card={zoom} darkPreview onClose={() => setZoom(null)} />}
     </section>
   );
 }
