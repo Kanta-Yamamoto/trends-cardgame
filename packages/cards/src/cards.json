@@ -3282,7 +3282,9 @@
       }
     ],
     "effect": "場に出たとき、自分のライフを2回復する。",
-    "flavor": "ちいさな前足で、そっと"
+    "flavor": "ちいさな前足で、そっと",
+    "art": "/assets/cards/i18-art.jpg",
+    "original": "assets/original/i18.webp"
   },
   {
     "id": "i19",
@@ -3305,7 +3307,9 @@
       }
     ],
     "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、自分のアイコンすべてとライフを2回復する。",
-    "flavor": "「はい、ちょっと休んでいきなさい」"
+    "flavor": "「はい、ちょっと休んでいきなさい」",
+    "art": "/assets/cards/i19-art.jpg",
+    "original": "assets/original/i19.webp"
   },
   {
     "id": "i20",
@@ -3334,7 +3338,9 @@
       }
     ],
     "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、自分のアイコンすべてとライフを3回復する。自分のターンの終わりに、自分のライフを1回復する。",
-    "flavor": "「今日も湯けむり配信中」"
+    "flavor": "「今日も湯けむり配信中」",
+    "art": "/assets/cards/i20-art.jpg",
+    "original": "assets/original/i20.webp"
   },
   {
     "id": "n12",
@@ -3350,7 +3356,9 @@
     "keywords": [],
     "effects": [],
     "effect": "",
-    "flavor": "名前は知ってる。何の人かは知らない"
+    "flavor": "名前は知ってる。何の人かは知らない",
+    "art": "/assets/cards/n12-art.jpg",
+    "original": "assets/original/n12.webp"
   },
   {
     "id": "n13",
@@ -3372,7 +3380,9 @@
       }
     ],
     "effect": "場に出たとき、カードを1枚引く。",
-    "flavor": "殿堂入り。説明不要"
+    "flavor": "殿堂入り。説明不要",
+    "art": "/assets/cards/n13-art.jpg",
+    "original": "assets/original/n13.webp"
   },
   {
     "id": "n14",
@@ -3396,6 +3406,8 @@
       }
     ],
     "effect": "カードを2枚引く。相手のマスターに2ダメージ。",
-    "flavor": "通知が止まらない"
+    "flavor": "通知が止まらない",
+    "art": "/assets/cards/n14-art.jpg",
+    "original": "assets/original/n14.webp"
   }
 ]
