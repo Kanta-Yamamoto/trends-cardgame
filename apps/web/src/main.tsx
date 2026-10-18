@@ -9,9 +9,12 @@ import "./cards/rare.css";
 import "./cards/rare5.css";
 import "./cards/stats.css";
 import "./styles/app.css";
-import { registerPwa } from "./pwa";
+import { isStandalone, registerPwa } from "./pwa";
+import { lockZoom } from "./viewport";
 
 registerPwa();
+// ホーム画面のアプリとして開いているときは、どの画面でも拡大縮小しない（アプリらしく）
+if (isStandalone()) lockZoom();
 
 const root = document.getElementById("root");
 if (!root) throw new Error("#root がありません");

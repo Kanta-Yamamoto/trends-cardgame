@@ -12,6 +12,8 @@
   --f-mark: "Cinzel", "Times New Roman", serif;
 }
 * { box-sizing: border-box; }
+/* 素早い2回タップで拡大しない（iPhone はメタタグの user-scalable=no を無視するので CSS で止める） */
+html, body { touch-action: manipulation; }
 body {
   margin: 0;
   min-height: 100vh;
