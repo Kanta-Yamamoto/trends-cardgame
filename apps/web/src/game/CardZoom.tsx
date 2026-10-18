@@ -19,7 +19,7 @@ const KEYWORD_HELP: Record<Keyword, string> = {
  * カードを画面いっぱいに大きく見せる（スマホで効果を読むため）。
  * 場のアイコンなら、今の攻撃力・体力・状態も添える。カードを押すと文字を隠して絵だけを見られる。
  * darkPreview のときは、闇堕ちを持つカードの「闇堕ちすると」の姿と効果を添え、絵も切り替えられる
- * （対戦中はいつでも。カード一覧では /?dark のとき）。initialDark で最初から闇堕ちの姿で開く。
+ * （対戦中もカード一覧でも）。initialDark で最初から闇堕ちの姿で開く。
  */
 export function CardZoom({
   card,
@@ -127,9 +127,6 @@ export function CardZoom({
             <button type="button" className="btn ghost" onClick={() => setShowDark((v) => !v)}>
               {showDark ? "元の姿に戻す" : "闇堕ちの姿を見る"}
             </button>
-          )}
-          {!darkPreview && !view && card.dark && (
-            <p className="zs-note">闇堕ちの姿は、闇堕ちするまで分からない</p>
           )}
           <p className="zs-note">カードを押すと、文字を隠して絵だけを見られます</p>
           <button type="button" className="btn" onClick={onClose}>
