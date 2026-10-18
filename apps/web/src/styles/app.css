@@ -52,6 +52,14 @@ button { font: inherit; color: inherit; }
 .deck-pick strong { text-shadow: 0 2px 6px #0009; }
 .deck-pick .deck-attrs { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; }
 .deck-pick:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -12px #000c; }
+/* デッキが10個あるので、スマホの縦持ちでは2列にして縦に長くなりすぎないようにする */
+@media (max-width: 560px) {
+  .decks { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+  .deck-pick { padding: 12px; min-height: 112px; gap: 4px; border-radius: 12px; }
+  .deck-pick strong { font-size: 16px; }
+  .deck-pick .deck-attrs { font-size: 10.5px; }
+  .deck-pick span:last-child { font-size: 11px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+}
 .rules { margin-top: 20px; font-size: 13px; line-height: 1.8; color: var(--muted); }
 .rules summary { cursor: pointer; font-weight: 700; color: var(--text); }
 

@@ -403,6 +403,23 @@ describe("デッキの決まり", () => {
   it("共通カードは属性に数えない", () => {
     expect(deckAttributes(["n1", "n2", "f6"], real)).toEqual(["炎上"]);
   });
+  it("10通りの属性の組み合わせに、デッキが1つずつある", () => {
+    const pairs = Object.values(DECKS).map((d) => [...deckAttributes(d, real)].sort().join("×"));
+    expect(new Set(pairs).size).toBe(10);
+  });
+  it("伝説のコラ画像：仲間がすぐ攻撃できるが、仲間の攻撃力は上がらない（コストは仲間1体につき-1）", () => {
+    let s = createGame({ decks: { p1: DECKS.wiki, p2: DECKS.flame }, seed: 1, first: "p1" });
+    s.players.p1.hand = ["k6", "k6", "k5"];
+    s.players.p1.mana = 10;
+    s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 0 }, real).state;
+    s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 2 }, real).state;
+    // リプ欄の民2体と草2体の4体がいるので、コストは 10 - 4 = 6
+    expect(effectiveCost(s, "p1", "k5", real)).toBe(6);
+    s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 4 }, real).state;
+    const others = s.players.p1.field.filter((u) => u && u.cardId !== "k5");
+    expect(others.every((u) => u?.canAttack)).toBe(true);
+    expect(others.every((u) => viewUnit(s, "p1", u as never, real).attack === 1)).toBe(true);
+  });
 });
 
 describe("第2弾の効果", () => {

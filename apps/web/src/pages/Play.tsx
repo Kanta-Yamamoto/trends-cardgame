@@ -159,6 +159,11 @@ const DECK_ATTRS: Record<DeckId, CardDef["attributes"]> = {
   expert: ["神", "癒し"],
   ronpa: ["炎上", "神"],
   dance: ["草", "メロい"],
+  scandal: ["炎上", "メロい"],
+  phoenix: ["炎上", "癒し"],
+  wiki: ["神", "草"],
+  theory: ["神", "メロい"],
+  chill: ["草", "癒し"],
 };
 
 function DeckSelect() {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { CPU, ME, useGame } from "./store";
+import { CATALOG, CPU, ME, useGame } from "./store";
 
 describe("対戦ストア", () => {
   beforeEach(() => {
@@ -17,7 +17,9 @@ describe("対戦ストア", () => {
   it("反則の操作はエラー文を出して状態を変えない", () => {
     const s = useGame.getState();
     const hand = s.game?.players[ME].hand ?? [];
-    const heavy = hand.findIndex((id) => id !== "l1" && id !== "r1");
+    // 話題力1では出せないアイコン（デッキの中身が変わっても同じことを確かめる）
+    const heavy = hand.findIndex((id) => CATALOG[id]?.type === "icon" && (CATALOG[id]?.cost ?? 0) > 1);
+    expect(heavy).toBeGreaterThanOrEqual(0);
     s.select({ kind: "hand", index: heavy });
     s.play(0);
     expect(useGame.getState().error).toMatch(/話題力が足りません/);
