@@ -1,5 +1,6 @@
 import { type CardDef, DECKS, type DeckId } from "@trends/cards";
 import {
+  type AttackPreview,
   type AttackTarget,
   type CastTarget,
   canUnitAttack,
@@ -9,6 +10,7 @@ import {
   type GameState,
   legalTargets,
   type PlayerId,
+  previewAttack,
   SLOTS,
   type Unit,
   type UnitView,
@@ -30,6 +32,7 @@ import {
 } from "../game/fx";
 import { MiniCard } from "../game/MiniCard";
 import { CATALOG, CPU, DECK_INFO, ME, setPresenter, useGame } from "../game/store";
+import { useDragPlay } from "../game/useDragPlay";
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const SLOT_KEYS = Array.from({ length: SLOTS }, (_, i) => `slot-${i}`);
@@ -353,6 +356,61 @@ function EndTurnConfirm({
 
 type Peek = { id: string; view?: UnitView; where: "hand" | "mine" | "foe" | "trash"; index: number };
 
+/** ドラッグしているもの（手札のカード／攻撃するアイコン） */
+type DragSrc = { kind: "hand"; index: number } | { kind: "unit"; slot: number };
+
+/** 攻撃したときの見込み（与えるダメージ・叩き・倒せるか）を、攻撃先に重ねて出す */
+function AttackBadge({ pv, leader }: { pv: AttackPreview; leader?: boolean }) {
+  const tag = leader
+    ? pv.kills && "とどめ"
+    : pv.kills && pv.dies
+      ? "相打ち"
+      : pv.kills
+        ? "倒せる"
+        : pv.dies
+          ? "倒される"
+          : null;
+  return (
+    <span className={`atk-pv ${pv.kills ? "kill" : ""}`} aria-hidden="true">
+      <b>-{pv.toDefender}</b>
+      {pv.bonus > 0 && <i className="pv-bash">叩き+{pv.bonus}</i>}
+      {tag && <i className={pv.dies && !pv.kills ? "pv-die" : "pv-tag"}>{tag}</i>}
+    </span>
+  );
+}
+
+/** 攻撃するアイコンから指先（攻撃先）へ伸ばす矢印 */
+function AttackArrow({
+  from,
+  to,
+  hot,
+  ally,
+}: {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  hot: boolean;
+  /** 味方を狙う投稿（緑の矢印） */
+  ally?: boolean;
+}) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 4) return null;
+  const ux = dx / len;
+  const uy = dy / len;
+  const head = 18;
+  const bx = to.x - ux * head;
+  const by = to.y - uy * head;
+  const wing = (s: number) => `${bx - uy * 11 * s},${by + ux * 11 * s}`;
+  return (
+    <svg className={`atk-arrow ${hot ? "hot" : ""} ${hot && ally ? "ally" : ""}`} aria-hidden="true">
+      <line x1={from.x} y1={from.y} x2={bx} y2={by} />
+      <polygon points={`${to.x},${to.y} ${wing(1)} ${wing(-1)}`} />
+      <circle cx={from.x} cy={from.y} r={7} />
+    </svg>
+  );
+}
+
 /** 対戦の画面。CPU 戦とオンライン対戦で共通（onQuit を渡すと「戻る」でそれを呼ぶ） */
 export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const {
@@ -398,6 +456,69 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const { stage, probe } = useStage();
   /** ターン終了の確認を出しているか（押し間違いで終わらないように） */
   const [confirmEnd, setConfirmEnd] = useState(false);
+
+  const handUsable = (g: GameState, i: number) => {
+    const id = g.players[ME].hand[i];
+    const card = id ? CATALOG[id] : undefined;
+    if (!id || !card) return false;
+    const p = g.players[ME];
+    return (
+      effectiveCost(g, ME, id, CATALOG) <= p.mana &&
+      (card.type === "icon"
+        ? p.field.some((u) => !u)
+        : !card.target || castTargets(g, ME, id, CATALOG).length > 0)
+    );
+  };
+
+  // 手札を枠・対象へ、場のアイコンを攻撃先へ引っぱって離す（シャドバのような操作。タップでの操作もそのまま使える）
+  const { drag, begin, justDragged } = useDragPlay<DragSrc>({
+    onStart: (src) => {
+      const s = useGame.getState();
+      const g = s.game;
+      if (!g || g.active !== ME || g.winner || s.cpuBusy || s.animating) return false;
+      if (src.kind === "hand") {
+        if (!handUsable(g, src.index)) return false;
+        const id = g.players[ME].hand[src.index] as string;
+        setPeek({ id, where: "hand", index: src.index });
+        select({ kind: "hand", index: src.index });
+        return true;
+      }
+      const u = g.players[ME].field[src.slot];
+      if (!u || !canUnitAttack(g, u)) return false;
+      setPeek({ id: u.cardId, view: viewUnit(g, ME, u, CATALOG), where: "mine", index: src.slot });
+      select({ kind: "attacker", slot: src.slot });
+      return true;
+    },
+    onDrop: (src, over) => {
+      const g = useGame.getState().game;
+      if (!g) return;
+      const [where, n] = (over ?? "").split(":");
+      const slot = Number(n);
+      if (src.kind === "hand") {
+        const card = CATALOG[g.players[ME].hand[src.index] ?? ""];
+        if (!card) return select(null);
+        if (card.type === "icon") return where === "slot" ? play(slot) : select(null);
+        if (card.target) {
+          const ok = castTargets(g, ME, card.id, CATALOG).some(
+            (t) =>
+              (where === "foe" && t.side === "enemy" && t.slot === slot) ||
+              (where === "ally" && t.side === "ally" && t.slot === slot),
+          );
+          return ok ? cast({ side: where === "foe" ? "enemy" : "ally", slot }) : select(null);
+        }
+        // 対象を取らない投稿は、手札より上の場所で離せば使う
+        return over && over !== "hand" ? cast() : select(null);
+      }
+      const legal = legalTargets(g, ME, CATALOG);
+      if (where === "leader" && legal.some((t) => t.kind === "leader")) return attack({ kind: "leader" });
+      if (where === "foe" && legal.some((t) => t.kind === "unit" && t.slot === slot)) {
+        return attack({ kind: "unit", slot });
+      }
+      // 自分の上で離したら、選んだまま（タップで攻撃先を選べる）
+      if (over !== `ally:${src.slot}`) select(null);
+    },
+    onCancel: () => select(null),
+  });
 
   // 攻撃の演出を store に登録する（演出が終わってから state を進める）
   useEffect(() => {
@@ -502,6 +623,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const canHit = (t: AttackTarget) =>
     targets.some((x) => (x.kind === "leader" ? t.kind === "leader" : t.kind === "unit" && t.slot === x.slot));
   const freeSlot = me.field.findIndex((u) => !u);
+  const preview = (t: AttackTarget) =>
+    attacking && canHit(t) ? previewAttack(game, ME, selection.slot, t, CATALOG) : null;
   const foeGuarded = foe.field.some((u) => u && viewUnit(game, CPU, u, CATALOG).guard);
   const peekCard = peek ? CATALOG[peek.id] : null;
   const hint = game.winner
@@ -522,7 +645,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               ? foeGuarded
                 ? "攻撃先を選んでください（ガードがいるので、ガードと晒し者しか攻撃できません）"
                 : "攻撃先を選んでください（光っているところ）"
-              : "手札を選んで場に出す・投稿する／攻撃できるアイコンを選んで攻撃（長押しでカードを拡大）";
+              : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";
 
   const unitCard = (owner: PlayerId, slot: number, u: Unit) => {
     const card = CATALOG[u.cardId] as CardDef;
@@ -532,19 +655,24 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     if (owner === CPU) {
       const hit = attacking && canHit({ kind: "unit", slot });
       const castable = canCastOn("enemy", slot);
+      const pv = preview({ kind: "unit", slot });
       return (
         <MiniCard
           key={u.uid}
           uid={u.uid}
           card={card}
           view={view}
-          className={`unit foe-unit enter ${hit || castable ? "targetable" : ""}`}
-          onClick={() =>
-            castable ? cast({ side: "enemy", slot }) : hit ? attack({ kind: "unit", slot }) : setPeek(p)
-          }
+          drop={`foe:${slot}`}
+          className={`unit foe-unit enter ${hit || castable ? "targetable" : ""} ${drag?.over === `foe:${slot}` && (hit || castable) ? "drop-over" : ""}`}
+          onClick={() => {
+            if (justDragged()) return;
+            castable ? cast({ side: "enemy", slot }) : hit ? attack({ kind: "unit", slot }) : setPeek(p);
+          }}
           onPeek={() => setPeek(p)}
           onLongPress={() => setZoom(p)}
-        />
+        >
+          {pv && <AttackBadge pv={pv} />}
+        </MiniCard>
       );
     }
     const selected = attacking && selection.slot === slot;
@@ -556,8 +684,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         uid={u.uid}
         card={card}
         view={view}
-        className={`unit enter ${ready ? "ready" : "tired"} ${selected ? "selected" : ""} ${castable ? "targetable ally" : ""}`}
+        drop={`ally:${slot}`}
+        className={`unit enter ${ready ? "ready" : "tired"} ${selected ? "selected" : ""} ${castable ? "targetable ally" : ""} ${castable && drag?.over === `ally:${slot}` ? "drop-over" : ""}`}
+        onPress={ready ? (e) => begin(e, { kind: "unit", slot }) : undefined}
         onClick={() => {
+          if (justDragged()) return;
           if (castable) return cast({ side: "ally", slot });
           if (selected) return select(null);
           setPeek(p);
@@ -587,10 +718,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         inHand
         card={card}
         cost={cost}
-        className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""}`}
+        className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""} ${!inSheet && drag?.src.kind === "hand" && drag.src.index === i ? (card.type === "post" && card.target ? "selected" : "drag-src") : ""}`}
         // 手元で扇のように持つ（真ん中からのずれ。広げた一覧では使わない）
         style={inSheet ? undefined : ({ "--f": i - (me.hand.length - 1) / 2 } as CSSProperties)}
+        onPress={inSheet || !usable ? undefined : (e) => begin(e, { kind: "hand", index: i })}
         onClick={() => {
+          if (justDragged()) return;
           setPeek(p);
           if (!myTurn) return;
           if (inSheet) setHandOpen(false);
@@ -632,7 +765,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               active={game.active === CPU}
               guarded={foeGuarded}
               targetable={attacking && canHit({ kind: "leader" })}
-              onClick={() => attack({ kind: "leader" })}
+              dropOver={drag?.over === "leader" && attacking && canHit({ kind: "leader" })}
+              preview={preview({ kind: "leader" })}
+              onClick={() => !justDragged() && attack({ kind: "leader" })}
               piles={
                 <Piles
                   owner={CPU}
@@ -661,7 +796,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             />
           </div>
 
-          <div className={`col-center board turn-${game.active === ME ? "me" : "foe"}`}>
+          <div className={`col-center board turn-${game.active === ME ? "me" : "foe"}`} data-drop="board">
             <div className="row">
               {SLOT_KEYS.map((key, slot) => {
                 const u = foe.field[slot];
@@ -688,7 +823,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                   <button
                     key={key}
                     type="button"
-                    className={`slot ${slot === 2 ? "center" : ""} ${drop ? "droppable" : ""}`}
+                    data-drop={`slot:${slot}`}
+                    className={`slot ${slot === 2 ? "center" : ""} ${drop ? "droppable" : ""} ${drop && drag?.over === `slot:${slot}` ? "drop-over" : ""}`}
                     disabled={!drop}
                     aria-label={`空き枠 ${slot + 1}${slot === 2 ? "（センター）" : ""}`}
                     onClick={() => play(slot)}
@@ -696,7 +832,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                 );
               })}
             </div>
-            <div className="hand" data-hand={ME} style={{ "--n": me.hand.length } as CSSProperties}>
+            <div
+              className="hand"
+              data-hand={ME}
+              data-drop="hand"
+              style={{ "--n": me.hand.length } as CSSProperties}
+            >
               {me.hand.map((id, i) => handCard(id, i))}
             </div>
             {me.hand.length >= 7 && (
@@ -752,6 +893,51 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         </div>
       </div>
       <p className="rotate-hint">スマホは横向きにすると大きく遊べます</p>
+
+      {drag &&
+        (() => {
+          // 対象を取る投稿と攻撃は、カードから指先へ矢印を伸ばす（狙う相手が指やカードで隠れないように）
+          const handId = drag.src.kind === "hand" ? me.hand[drag.src.index] : undefined;
+          const handCard = handId ? CATALOG[handId] : undefined;
+          if (
+            drag.src.kind === "hand" &&
+            handId &&
+            handCard &&
+            !(handCard.type === "post" && handCard.target)
+          ) {
+            return (
+              <div
+                className="drag-ghost"
+                aria-hidden="true"
+                style={{
+                  left: drag.x,
+                  top: drag.y,
+                  width: drag.width,
+                  transform: `translate(-50%, -62%) scale(${stage.scale * 1.08})`,
+                }}
+              >
+                <MiniCard
+                  card={handCard}
+                  cost={effectiveCost(game, ME, handId, CATALOG)}
+                  className="in-hand"
+                />
+              </div>
+            );
+          }
+          const from = { x: drag.rect.left + drag.rect.width / 2, y: drag.rect.top + drag.rect.height / 2 };
+          const [where, n] = (drag.over ?? "").split(":");
+          const slot = Number(n);
+          const hot =
+            drag.src.kind === "unit"
+              ? (where === "leader" && canHit({ kind: "leader" })) ||
+                (where === "foe" && canHit({ kind: "unit", slot }))
+              : (where === "foe" && canCastOn("enemy", slot)) ||
+                (where === "ally" && canCastOn("ally", slot));
+          const el = hot ? document.querySelector(`[data-drop="${drag.over}"]`) : null;
+          const r = el?.getBoundingClientRect();
+          const to = r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: drag.x, y: drag.y };
+          return <AttackArrow from={from} to={to} hot={hot} ally={where === "ally"} />;
+        })()}
 
       {banner && (
         <div
@@ -968,6 +1154,10 @@ interface BarProps {
   /** 場にガードがいてマスターを攻撃できない */
   guarded?: boolean;
   targetable?: boolean;
+  /** ドラッグした攻撃が、いまこのマスターの上にある */
+  dropOver?: boolean;
+  /** 攻撃したときの見込み */
+  preview?: AttackPreview | null;
   onClick?: () => void;
   piles: React.ReactNode;
   children?: React.ReactNode;
@@ -983,6 +1173,8 @@ function PlayerBar({
   active,
   guarded,
   targetable,
+  dropOver,
+  preview,
   onClick,
   piles,
   children,
@@ -1017,6 +1209,7 @@ function PlayerBar({
       <span className="pb-count">
         <span data-hand={side === "me" ? undefined : CPU}>手札 {hand}</span>
       </span>
+      {preview && <AttackBadge pv={preview} leader />}
     </>
   );
   return (
@@ -1025,7 +1218,8 @@ function PlayerBar({
         <button
           type="button"
           data-master={side === "me" ? ME : CPU}
-          className={`pb-main ${active ? "active" : ""} ${targetable ? "targetable" : ""}`}
+          data-drop={side === "foe" ? "leader" : undefined}
+          className={`pb-main ${active ? "active" : ""} ${targetable ? "targetable" : ""} ${dropOver ? "drop-over" : ""}`}
           disabled={!targetable}
           onClick={onClick}
           aria-label={`${name}のマスターを攻撃`}
