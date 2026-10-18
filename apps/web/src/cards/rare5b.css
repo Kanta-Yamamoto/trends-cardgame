@@ -337,6 +337,8 @@
     filter: drop-shadow(0 0.2em 0.3em #000a);
   }
   .bookmark span { writing-mode: vertical-rl; font-size: 0.72em; letter-spacing: 0.1em; color: var(--gold-2); text-shadow: 0 0 0.3em #d8b25a; }
+  /* 闇堕ちの目印は、しおりの紐に重ならないよう、紐の左に置く */
+  .dark-tag { right: auto; left: 21%; top: 5.2%; }
   .name { display: grid; justify-items: center; }
   .name .epi { font: 700 0.7em/1.2 var(--f-name); letter-spacing: 0.4em; color: var(--gold-2); text-shadow: 0 0 0.4em #000; }
   .name h3 {

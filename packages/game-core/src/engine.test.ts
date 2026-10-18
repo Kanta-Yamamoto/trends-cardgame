@@ -426,7 +426,7 @@ describe("デッキの決まり", () => {
     s.players.p1.mana = 10;
     s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 0 }, real).state;
     s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 2 }, real).state;
-    expect(oshiCost(s, "p1", real)).toBe(6);
+    expect(oshiCost(s, "p1", real)).toBe(real.k5?.cost);
     s = applyAction(s, { type: "playOshi", player: "p1", slot: 4 }, real).state;
     const others = s.players.p1.field.filter((u) => u && u.cardId !== "k5");
     expect(others.every((u) => u?.canAttack)).toBe(true);
