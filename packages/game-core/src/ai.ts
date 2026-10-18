@@ -5,6 +5,7 @@ import {
   castTargets,
   darkReady,
   effectiveCost,
+  isShielded,
   opponent,
   viewUnit,
 } from "./engine";
@@ -204,7 +205,8 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
     let targets = attackTargets(state, player, mine[0]?.slot ?? 0, catalog);
     for (const { slot: from, v } of mine) {
       targets = attackTargets(state, player, from, catalog);
-      const canFace = targets.some((t) => t.kind === "leader");
+      // マスターが守られている間は、殴っても意味がない
+      const canFace = !isShielded(state, foeId) && targets.some((t) => t.kind === "leader");
       anyFace ||= canFace;
       if (canFace && foe.lp <= readyAttack) {
         step({ type: "attack", player, from, target: { kind: "leader" } });

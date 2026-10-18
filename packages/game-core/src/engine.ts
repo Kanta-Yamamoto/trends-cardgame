@@ -237,6 +237,8 @@ export function previewAttack(
   const av = viewUnit(state, player, atk, catalog);
   if (target.kind === "leader") {
     const lp = state.players[opponent(player)].lp;
+    if (isShielded(state, opponent(player)))
+      return { toDefender: 0, toAttacker: 0, bonus: 0, kills: false, dies: false };
     return { toDefender: av.attack, toAttacker: 0, bonus: 0, kills: av.attack >= lp, dies: false };
   }
   const foeId = opponent(player);
@@ -284,8 +286,18 @@ function draw(state: GameState, player: PlayerId, emit: Emit): boolean {
   return true;
 }
 
+/** マスターが守られていて、ダメージを受けないか */
+export function isShielded(state: GameState, player: PlayerId): boolean {
+  return state.turn <= (state.players[player].shieldUntil ?? 0);
+}
+
 function damageLeader(state: GameState, player: PlayerId, amount: number, emit: Emit) {
   const p = state.players[player];
+  if (amount <= 0) return;
+  if (isShielded(state, player)) {
+    emit({ type: "shield", player, kind: "blocked", amount });
+    return;
+  }
   p.lp = Math.max(0, p.lp - amount);
   emit({ type: "leaderDamaged", player, amount, lp: p.lp });
 }
@@ -610,6 +622,38 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         const v = viewUnit(state, foeId, u, catalog);
         if (v.hp <= e.maxHp) damageUnit(state, foeId, slot, v.hp, emit);
       });
+      break;
+    case "destroy": {
+      const slot = strongestEnemy(state, player, catalog);
+      const u = slot >= 0 ? state.players[foeId].field[slot] : null;
+      if (u) damageUnit(state, foeId, slot, Math.max(1, viewUnit(state, foeId, u, catalog).hp), emit);
+      break;
+    }
+    case "bounce": {
+      const foe = state.players[foeId];
+      let slot = -1;
+      let best = -1;
+      foe.field.forEach((u, s) => {
+        if (!u) return;
+        const v = viewUnit(state, foeId, u, catalog);
+        const score = must(catalog, u.cardId).cost * 100 + v.attack;
+        if (score > best) {
+          best = score;
+          slot = s;
+        }
+      });
+      const u = slot >= 0 ? foe.field[slot] : null;
+      if (!u) break;
+      foe.field[slot] = null;
+      if (!u.token) foe.hand.push(u.cardId);
+      // 闇堕ちの姿が手札に戻ったら、そのカードの闇堕ちは使い終わり
+      if (u.darkUsed && !u.token) foe.darkSpent = [...(foe.darkSpent ?? []), u.cardId];
+      emit({ type: "bounced", player: foeId, slot, cardId: u.cardId });
+      break;
+    }
+    case "shieldMaster":
+      me.shieldUntil = state.turn + 1;
+      emit({ type: "shield", player, kind: "shielded", amount: 0 });
       break;
     case "extraTurn":
       me.extraTurns = (me.extraTurns ?? 0) + 1;

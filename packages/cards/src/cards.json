@@ -658,8 +658,8 @@
       "effects": [
         {
           "on": "play",
-          "do": "silence",
-          "to": "strongestEnemy"
+          "do": "bounce",
+          "to": "costliestEnemy"
         },
         {
           "on": "play",
@@ -668,7 +668,7 @@
           "amount": 1
         }
       ],
-      "effect": "闇堕ちしたとき、攻撃力がいちばん高い相手のアイコンを訂正し（キーワードと効果が消える）、相手のアイコンすべてに1ダメージ。",
+      "effect": "闇堕ちしたとき、コストがいちばん高い相手のアイコンを手札に戻し、相手のアイコンすべてに1ダメージ。",
       "art": "/assets/cards/c1-dark-art.jpg",
       "subject": "/assets/cards/c1-dark-subject.webp"
     }
@@ -1370,19 +1370,18 @@
     "flavor": "「大丈夫。今日はもう、休んでいいよ」",
     "dark": {
       "name": "病みボイス ナギ",
-      "attack": 6,
+      "attack": 4,
       "hp": 4,
       "keywords": ["連撃"],
-      "effect": "連撃。闇堕ちしたとき、相手のアイコンすべてに2ダメージ。",
+      "effect": "連撃。闇堕ちしたとき、相手のアイコンすべてを眠らせる（次の相手のターン、攻撃できない）。",
       "art": "/assets/cards/c5-dark-art.jpg",
       "subject": "/assets/cards/c5-dark-subject.webp",
       "original": "assets/original/c5-dark.webp",
       "effects": [
         {
           "on": "play",
-          "do": "damage",
-          "to": "allEnemies",
-          "amount": 2
+          "do": "bind",
+          "to": "allEnemies"
         }
       ]
     },
@@ -2085,17 +2084,16 @@
       "effects": [
         {
           "on": "play",
-          "do": "damage",
-          "to": "allEnemies",
-          "amount": 2
+          "do": "destroy",
+          "to": "strongestEnemy"
         },
         {
           "on": "play",
           "do": "draw",
-          "count": 1
+          "count": 2
         }
       ],
-      "effect": "闇堕ちしたとき、相手のアイコンすべてに2ダメージ。カードを1枚引く。",
+      "effect": "闇堕ちしたとき、攻撃力がいちばん高い相手のアイコンを倒す。カードを2枚引く。",
       "art": "/assets/cards/c7-dark-art.jpg",
       "subject": "/assets/cards/c7-dark-subject.webp"
     }
@@ -2235,11 +2233,18 @@
         },
         {
           "on": "play",
-          "do": "fill",
-          "card": "t-kusa"
+          "do": "summon",
+          "card": "t-kusa",
+          "count": 2
+        },
+        {
+          "on": "play",
+          "do": "buffAllies",
+          "attack": 1,
+          "hp": 1
         }
       ],
-      "effect": "自分の場のほかのアイコン1体につき攻撃力+1。闇堕ちしたとき、自分の空いている枠すべてに草を出す。",
+      "effect": "自分の場のほかのアイコン1体につき攻撃力+1。闇堕ちしたとき、草を2体出し、自分のほかのアイコンすべてに攻撃力+1・体力+1。",
       "art": "/assets/cards/c8-dark-art.jpg",
       "subject": "/assets/cards/c8-dark-subject.webp"
     }
@@ -2384,18 +2389,22 @@
       "effects": [
         {
           "on": "play",
+          "do": "shieldMaster"
+        },
+        {
+          "on": "play",
           "do": "damage",
           "to": "allEnemies",
-          "amount": 2
+          "amount": 1
         },
         {
           "on": "play",
           "do": "heal",
           "to": "master",
-          "amount": 2
+          "amount": 3
         }
       ],
-      "effect": "闇堕ちしたとき、相手のアイコンすべてに2ダメージ。自分のライフを2回復する。",
+      "effect": "闇堕ちしたとき、次の相手のターンが終わるまで、自分のマスターはダメージを受けない。相手のアイコンすべてに1ダメージ。自分のライフを3回復する。",
       "art": "/assets/cards/c10-dark-art.jpg",
       "subject": "/assets/cards/c10-dark-subject.webp"
     }

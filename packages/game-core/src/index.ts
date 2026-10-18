@@ -11,6 +11,7 @@ export {
   darkReady,
   effectiveCost,
   hasKeyword,
+  isShielded,
   legalTargets,
   opponent,
   previewAttack,

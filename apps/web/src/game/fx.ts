@@ -98,10 +98,12 @@ function burst(at: { x: number; y: number }, color: string) {
 }
 
 /** 倒されたアイコンの抜け殻を作り、トラッシュへ飛ばす（本体は React がすぐ消すため） */
-function toTrash(el: HTMLElement | null, owner: PlayerId) {
+function toTrash(el: HTMLElement | null, owner: PlayerId, to: "trash" | "hand" = "trash") {
   if (!el) return;
   const from = el.getBoundingClientRect();
-  const pile = q(`[data-pile="trash-${owner}"]`)?.getBoundingClientRect();
+  const pile = q(
+    to === "hand" ? `[data-hand="${owner}"]` : `[data-pile="trash-${owner}"]`,
+  )?.getBoundingClientRect();
   const ghost = el.cloneNode(true) as HTMLElement;
   ghost.classList.add("fx-ghost");
   Object.assign(ghost.style, {
@@ -389,6 +391,8 @@ export function hasVisibleEffects(events: GameEvent[]) {
       "buffed",
       "status",
       "stolen",
+      "bounced",
+      "shield",
       "destroyed",
     ].includes(e.type),
   );
@@ -485,6 +489,26 @@ export async function animateEffects(
         });
         break;
       }
+      case "bounced":
+        hits.push({
+          el: unitEl(e.player, e.slot),
+          color: "#b06bff",
+          land: (el) => {
+            glow(el, "#b06bff");
+            popLabel(el, "手札へ", "#d9b0ff");
+          },
+        });
+        break;
+      case "shield":
+        hits.push({
+          el: masterEl(e.player),
+          color: "#9fd8ff",
+          land: (el) => {
+            glow(el, "#9fd8ff");
+            popLabel(el, e.kind === "blocked" ? "無効" : "無敵", "#cfeeff");
+          },
+        });
+        break;
       case "stolen":
         hits.push({
           el: unitEl(e.player === "p1" ? "p2" : "p1", e.from),
@@ -510,13 +534,21 @@ export async function animateEffects(
   // 当たったところを少し見せてから
   if (hits.length > 0) await wait(520);
 
+  // 手札に戻ったアイコンは手札へ
+  const bounced = new Set(
+    events.flatMap((e) => {
+      const u = e.type === "bounced" ? shown.players[e.player].field[e.slot] : null;
+      return u ? [u.uid] : [];
+    }),
+  );
   // 倒れたアイコン（次の state にいないもの）はオワコンへ
   const alive = new Set(
     (["p1", "p2"] as const).flatMap((p) => next.players[p].field.flatMap((u) => (u ? [u.uid] : []))),
   );
   for (const p of ["p1", "p2"] as const) {
     for (const u of shown.players[p].field) {
-      if (u && !alive.has(u.uid)) toTrash(q(`[data-uid="${u.uid}"]`), p);
+      if (u && !alive.has(u.uid))
+        toTrash(q(`[data-uid="${u.uid}"]`), p, bounced.has(u.uid) ? "hand" : "trash");
     }
   }
   await wait(hits.length > 0 ? 460 : 0);

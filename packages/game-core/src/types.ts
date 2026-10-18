@@ -77,6 +77,8 @@ export interface PlayerState {
   breakthroughTurn: number;
   /** 闇堕ちを使い終えたカード（闇堕ちの姿で倒されて、オワコンに戻ったもの）。同じカードの闇堕ちは1枚につき1回 */
   darkSpent: string[];
+  /** この通算ターンまで、マスターはダメージを受けない（0 なら守られていない） */
+  shieldUntil?: number;
 }
 
 export interface GameState {
@@ -130,6 +132,10 @@ export type GameEvent =
       status: "晒し" | "眠り" | "訂正" | "ガード消滅";
     }
   | { type: "stolen"; player: PlayerId; from: number; slot: number; cardId: string }
+  /** 場のアイコンが持ち主の手札に戻った（player は持ち主） */
+  | { type: "bounced"; player: PlayerId; slot: number; cardId: string }
+  /** マスターが守られた（shielded：守りを得た／blocked：ダメージを防いだ） */
+  | { type: "shield"; player: PlayerId; kind: "shielded" | "blocked"; amount: number }
   | { type: "extraTurn"; player: PlayerId }
   | { type: "buffed"; player: PlayerId; slot: number; cardId: string; attack: number; hp: number }
   | { type: "healed"; player: PlayerId; slot: number; cardId: string; amount: number }
