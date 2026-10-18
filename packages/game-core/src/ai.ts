@@ -95,7 +95,11 @@ function judgePost(
     return t ? { score: t.v.attack * 3, target: enemy(t.slot) } : null;
   }
   if (effects.includes("buff") && card.target === "allyIcon") {
-    const t = (ready.length > 0 ? ready : mine).sort((a, b) => b.v.attack - a.v.attack)[0];
+    const legal = new Set(castTargets(state, player, cardId, catalog).map((t) => t.slot));
+    const pool = (ready.length > 0 ? ready : mine).filter((x) => legal.has(x.slot));
+    const t = (pool.length > 0 ? pool : mine.filter((x) => legal.has(x.slot))).sort(
+      (a, b) => b.v.attack - a.v.attack,
+    )[0];
     return t ? { score: 10, target: { side: "ally", slot: t.slot } } : null;
   }
   if (effects.includes("fill")) {
@@ -119,7 +123,9 @@ function judgePost(
     const t = foes.sort((a, b) => b.v.attack - a.v.attack)[0];
     return t && t.v.attack >= 2 ? { score: 4 + t.v.attack * 2, target: enemy(t.slot) } : null;
   }
-  return effects.includes("draw") ? { score: 3, target: fallbackTarget() } : null;
+  return effects.includes("draw") || effects.includes("tutor")
+    ? { score: 3, target: fallbackTarget() }
+    : null;
 
   /** 対象が要るのに決めていない投稿は、いちばん強い相手（味方向けなら、いちばん強い味方）に使う */
   function fallbackTarget(): CastTarget | undefined {
@@ -128,7 +134,8 @@ function judgePost(
       const t = [...foes].sort((a, b) => worth(b.v) - worth(a.v))[0];
       return t ? enemy(t.slot) : undefined;
     }
-    const t = [...mine].sort((a, b) => worth(b.v) - worth(a.v))[0];
+    const legal = new Set(castTargets(state, player, cardId, catalog).map((x) => x.slot));
+    const t = mine.filter((x) => legal.has(x.slot)).sort((a, b) => worth(b.v) - worth(a.v))[0];
     return t ? { side: "ally", slot: t.slot } : undefined;
   }
 }

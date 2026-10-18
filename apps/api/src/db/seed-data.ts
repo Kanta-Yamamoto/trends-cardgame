@@ -17,6 +17,7 @@ export function cardRows(): (typeof cards.$inferInsert)[] {
     keywords: c.keywords,
     effects: c.effects,
     target: c.target ?? null,
+    targetKaiwai: c.targetKaiwai ?? null,
     effect: c.effect,
     flavor: c.flavor,
     number: c.number ?? null,

@@ -11,6 +11,7 @@ export {
   darkReady,
   effectiveCost,
   hasKeyword,
+  inKaiwai,
   isShielded,
   legalTargets,
   opponent,

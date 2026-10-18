@@ -25,14 +25,16 @@ export type CardEffect = (
   | { do: "buffSelfPerPlayed"; attack: number }
   | { do: "buffRandomAlly"; attack: number; hp: number }
   /** 自分の場のほかのアイコンすべて */
-  | { do: "buffAllies"; attack: number; hp: number }
+  /** 自分のほかのアイコンすべてに。kaiwai を付けると、その界隈だけ */
+  | { do: "buffAllies"; attack: number; hp: number; kaiwai?: Kaiwai }
   | { do: "heal"; to: "master" | "allAlliesAndMaster" | "allAlliesFull"; amount?: number }
   | { do: "draw"; count: number; ifHandAtMost?: number }
   | { do: "removeEnemyGuards" }
   /** to が無ければ投稿の対象に */
   | { do: "damage"; to?: "strongestEnemy" | "allEnemies" | "enemyMaster"; amount: number }
   /** passive：自分の場のほかのアイコン1体につき攻撃力+1 */
-  | { do: "attackPerAlly" }
+  /** 自分の場のほかのアイコン1体につき攻撃力+1。kaiwai を付けると、その界隈だけ数える */
+  | { do: "attackPerAlly"; kaiwai?: Kaiwai }
   /** 晒し者にする（強化が消え、ガードを無視して攻撃される）。to が無ければ投稿の対象を */
   | { do: "expose"; to?: "strongestEnemy" | "allEnemies" }
   /** to が無ければ投稿の対象を眠らせる */
@@ -52,7 +54,7 @@ export type CardEffect = (
   /** このターン、自分のアイコンはガードを無視して攻撃できる */
   | { do: "breakthrough" }
   /** 自分の場のアイコン1体につき、相手のマスターに amount ダメージ */
-  | { do: "burnPerAlly"; amount: number }
+  | { do: "burnPerAlly"; amount: number; kaiwai?: Kaiwai }
   /** 体力が maxHp 以下の相手のアイコンをすべて倒す */
   | { do: "sweep"; maxHp: number }
   /** passive：相手のアイコンを倒すたび、もう1回攻撃できる */
@@ -62,7 +64,9 @@ export type CardEffect = (
   /** passive：相手のターンの始めに、相手の攻撃力がいちばん高いアイコンを眠らせる */
   | { do: "lullaby" }
   /** hand：自分の場のアイコン1体につきコスト-1 */
-  | { do: "cheaperPerAlly" }
+  | { do: "cheaperPerAlly"; kaiwai?: Kaiwai }
+  /** 山札から、その界隈のカードを上から count 枚探して手札に（足りない分は普通に引く） */
+  | { do: "tutor"; kaiwai: Kaiwai; count: number }
   /** hand：このゲームで自分が回復の効果を使った回数だけコスト-1 */
   | { do: "cheaperPerHeal" }
   /** passive：自分が回復の効果を使うたび、このアイコンに攻撃力+attack・体力+hp */
@@ -79,8 +83,8 @@ export type CardEffect = (
   | { do: "shieldMaster" }
 ) & {
   on?: EffectTrigger;
-  /** 条件：自分の場（このアイコンを含む）に、その属性のアイコンが atLeast 体以上いるときだけ */
-  if?: { allies: Attribute; atLeast: number };
+  /** 条件：自分の場（このアイコンを含む）に、その属性（または界隈）のアイコンが atLeast 体以上いるときだけ */
+  if?: { allies: Attribute; atLeast: number } | { kaiwai: Kaiwai; atLeast: number };
 };
 
 /**
@@ -122,6 +126,8 @@ export interface CardDef {
   effects: CardEffect[];
   /** 投稿の対象 */
   target?: PostTarget;
+  /** 投稿の対象を、自分のその界隈のアイコンだけに限る（target が allyIcon のとき） */
+  targetKaiwai?: Kaiwai;
   /** カードに書く効果文 */
   effect: string;
   flavor: string;

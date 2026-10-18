@@ -5,6 +5,7 @@ import { deckAttributes, validateDeck } from "./deck";
 import {
   applyAction,
   canDarkFall,
+  castTargets,
   createGame,
   darkReady,
   effectiveCost,
@@ -126,6 +127,33 @@ const catalog: Record<string, RuleCard> = {
     ],
   }),
   yuru: icon("yuru", 8, 5, 8, { effects: [{ on: "hand", do: "cheaperPerHeal" }] }),
+  // 界隈を読む効果のテスト用（配信者 s1/s2、アイドル idl、無所属 f）
+  s1: icon("s1", 1, 1, 1, { kaiwai: ["配信者"] }),
+  s2: icon("s2", 1, 1, 1, { kaiwai: ["配信者", "アイドル"] }),
+  idl: icon("idl", 1, 1, 1, { kaiwai: ["アイドル"] }),
+  collab: icon("collab", 3, 2, 3, {
+    kaiwai: ["配信者"],
+    effects: [{ on: "passive", do: "attackPerAlly", kaiwai: "配信者" }],
+  }),
+  producer: icon("producer", 5, 2, 5, {
+    effects: [{ on: "play", do: "buffAllies", attack: 2, hp: 1, kaiwai: "アイドル" }],
+  }),
+  critic: icon("critic", 2, 1, 3, {
+    kaiwai: ["有識者"],
+    effects: [
+      { on: "play", do: "draw", count: 1 },
+      { on: "play", do: "draw", count: 1, if: { kaiwai: "アイドル", atLeast: 1 } },
+    ],
+  }),
+  quoteRt: post("quoteRt", 2, { effects: [{ do: "tutor", kaiwai: "有識者", count: 1 }] }),
+  letter: post("letter", 2, {
+    target: "allyIcon",
+    targetKaiwai: "アイドル",
+    effects: [{ do: "buff", attack: 2, hp: 2 }],
+  }),
+  cheapStreamer: icon("cheapStreamer", 5, 3, 3, {
+    effects: [{ on: "hand", do: "cheaperPerAlly", kaiwai: "配信者" }],
+  }),
   kill: post("kill", 3, { effects: [{ do: "destroy", to: "strongestEnemy" }] }),
   back: post("back", 3, { effects: [{ do: "bounce", to: "costliestEnemy" }] }),
   barrier: post("barrier", 2, { effects: [{ do: "shieldMaster" }] }),
@@ -702,5 +730,69 @@ describe("闇堕ちの姿の効果（確定除去・手札に戻す・マスタ�
     expect(r.events.map((e) => e.type)).toContain("shield");
     s = end(r.state, "p2");
     expect(isShielded(s, "p1")).toBe(false);
+  });
+});
+
+describe("界隈を読む効果（自分の側だけ）", () => {
+  it("自分の場のほかの配信者1体につき攻撃力+1。2界隈のカードは両方に数える", () => {
+    let s = game(["collab"]);
+    s.players.p1.hand = ["collab", "s1", "s2", "idl", "f"];
+    s = play(s, 0, 0);
+    const atk = () => viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog).attack;
+    expect(atk()).toBe(2);
+    s = play(s, 0, 1); // 配信者
+    expect(atk()).toBe(3);
+    s = play(s, 0, 2); // 配信者＋アイドル
+    expect(atk()).toBe(4);
+    s = play(s, 0, 3); // アイドルだけ
+    s = play(s, 0, 4); // 無所属
+    expect(atk()).toBe(4);
+  });
+
+  it("自分のほかのアイドルすべてに強化（アイドル以外には付かない）", () => {
+    let s = play(play(play(game(["idl", "s2", "f", "producer"]), 0, 0), 0, 1), 0, 2);
+    s = play(s, 0, 3);
+    const v = (slot: number) => viewUnit(s, "p1", s.players.p1.field[slot] as Unit, catalog);
+    expect([v(0).attack, v(0).maxHp]).toEqual([3, 2]);
+    expect([v(1).attack, v(1).maxHp]).toEqual([3, 2]);
+    expect([v(2).attack, v(2).maxHp]).toEqual([1, 1]);
+    expect([v(3).attack, v(3).maxHp]).toEqual([2, 5]);
+  });
+
+  it("条件「自分の場にアイドルがいれば」：いれば2枚、いなければ1枚引く", () => {
+    let s = game(["critic", "critic", "idl"]);
+    const hand = s.players.p1.hand.length;
+    s = play(s, 0, 0);
+    expect(s.players.p1.hand).toHaveLength(hand - 1 + 1);
+    s = play(s, 1, 1); // アイドルを出してから
+    const before = s.players.p1.hand.length;
+    s = play(s, 0, 2);
+    expect(s.players.p1.hand).toHaveLength(before - 1 + 2);
+  });
+
+  it("山札から有識者を探して手札に加える。なければ普通に1枚引く", () => {
+    let s = game(["quoteRt", "quoteRt"]);
+    s.players.p1.deck = ["f", "f", "critic", "f"];
+    s = cast(s, 0);
+    expect(s.players.p1.hand.at(-1)).toBe("critic");
+    expect(s.players.p1.deck).toEqual(["f", "f", "f"]);
+    s = cast(s, 0);
+    expect(s.players.p1.hand.at(-1)).toBe("f");
+    expect(s.players.p1.deck).toEqual(["f", "f"]);
+  });
+
+  it("自分のアイドルだけを対象にできる投稿", () => {
+    let s = play(play(game(["s1", "s2", "letter"]), 0, 0), 0, 1);
+    expect(castTargets(s, "p1", "letter", catalog)).toEqual([{ side: "ally", slot: 1 }]);
+    expect(() => cast(s, 0, { side: "ally", slot: 0 })).toThrow(/使えません/);
+    s = cast(s, 0, { side: "ally", slot: 1 });
+    expect(viewUnit(s, "p1", s.players.p1.field[1] as Unit, catalog).attack).toBe(3);
+  });
+
+  it("自分の場の配信者1体につきコストが下がる", () => {
+    let s = play(play(game(["s1", "idl", "cheapStreamer"]), 0, 0), 0, 1);
+    expect(effectiveCost(s, "p1", "cheapStreamer", catalog)).toBe(4);
+    s = play(s, 0, 2);
+    expect(s.players.p1.mana).toBe(10 - 1 - 1 - 4);
   });
 });
