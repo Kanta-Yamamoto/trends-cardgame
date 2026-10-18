@@ -1,8 +1,11 @@
 export { planTurn } from "./ai";
-export { deckAttributes, validateDeck } from "./deck";
+export { deckAttributes, validateDeck, validateOshi } from "./deck";
 export type { AttackPreview, NewGameInput } from "./engine";
 export {
   applyAction,
+  attackTargets,
+  canDarkFall,
+  canPlayOshi,
   canUnitAttack,
   castTargets,
   createGame,
@@ -10,6 +13,7 @@ export {
   hasKeyword,
   legalTargets,
   opponent,
+  oshiCost,
   previewAttack,
   viewUnit,
 } from "./engine";

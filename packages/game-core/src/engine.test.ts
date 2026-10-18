@@ -1,9 +1,19 @@
-import { CARDS, DECKS } from "@trends/cards";
+import { CARDS, DECK_OSHI, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
 import { planTurn } from "./ai";
-import { deckAttributes, validateDeck } from "./deck";
-import { applyAction, createGame, effectiveCost, legalTargets, previewAttack, viewUnit } from "./engine";
-import { type Action, type GameState, type RuleCard, RuleError } from "./types";
+import { deckAttributes, validateDeck, validateOshi } from "./deck";
+import {
+  applyAction,
+  attackTargets,
+  canDarkFall,
+  createGame,
+  effectiveCost,
+  legalTargets,
+  oshiCost,
+  previewAttack,
+  viewUnit,
+} from "./engine";
+import { type Action, type GameState, type RuleCard, RuleError, type Unit } from "./types";
 
 type Extra = Partial<RuleCard>;
 const icon = (id: string, cost: number, attack: number, hp: number, extra: Extra = {}): RuleCard => ({
@@ -16,6 +26,7 @@ const icon = (id: string, cost: number, attack: number, hp: number, extra: Extra
   effects: [],
   attributes: ["草"],
   kaiwai: [],
+  rarity: 1,
   ...extra,
 });
 const post = (id: string, cost: number, extra: Extra): RuleCard => ({
@@ -26,6 +37,7 @@ const post = (id: string, cost: number, extra: Extra): RuleCard => ({
   effects: [],
   attributes: ["神"],
   kaiwai: [],
+  rarity: 1,
   ...extra,
 });
 
@@ -50,8 +62,16 @@ const catalog: Record<string, RuleCard> = {
     effects: [{ on: "play", do: "heal", to: "allAlliesAndMaster", amount: 2 }],
   }),
   ren: icon("ren", 6, 5, 4, {
+    rarity: 5,
     keywords: ["連撃"],
-    dark: { name: "闇堕ちレン", attack: 7, hp: 3, keywords: ["連撃", "叩き"], effect: "" },
+    dark: {
+      name: "闇堕ちレン",
+      attack: 7,
+      hp: 3,
+      keywords: ["連撃", "叩き"],
+      effects: [{ on: "play", do: "damage", to: "allEnemies", amount: 1 }],
+      effect: "",
+    },
   }),
   kusa: icon("kusa", 0, 1, 1, { token: true }),
   expose: post("expose", 1, { target: "enemyIcon", effects: [{ do: "expose" }, { do: "draw", count: 1 }] }),
@@ -324,33 +344,13 @@ describe("バトルと闇堕ち", () => {
     s = end(end(r.state), "p2");
     expect(s.players.p2.field[0]?.damage).toBe(2);
   });
-  it("闇堕ち：一度倒されると裏返って場に残り、二度目はオワコンへ", () => {
-    let s = withFoe(["big", "big"], ["ren"]);
-    s = play(play(s, 0, 0), 0, 1);
-    s = end(end(s), "p2");
-    const r = hit(s, 0, 0);
-    expect(r.events.map((e) => e.type)).toContain("darkFall");
-    const u = r.state.players.p2.field[0];
-    expect(u?.dark).toBe(true);
-    expect(viewUnit(r.state, "p2", u as never, catalog)).toMatchObject({
-      attack: 7,
-      hp: 3,
-      name: "闇堕ちレン",
-    });
-    s = hit(r.state, 1, 0).state;
-    expect(s.players.p2.field[0]).toBeNull();
-    expect(s.players.p2.trash).toContain("ren");
-  });
-  it("TL浄化：闇堕ちを表に戻し、強化と状態を消す。戻ったら、また闇堕ちできる", () => {
-    let s = withFoe(["big", "cleanse"], ["ren"]);
+  it("闇堕ちを持つカードでも、推しでなければ倒されたらそのままオワコンへ", () => {
+    let s = withFoe(["big"], ["ren"]);
     s = play(s, 0, 0);
     s = end(end(s), "p2");
-    s = hit(s, 0, 0).state;
-    s.players.p1.mana = 10;
-    s = cast(s, 0);
-    const u = s.players.p2.field[0];
-    expect(u?.dark).toBe(false);
-    expect(u?.darkUsed).toBe(false);
+    const r = hit(s, 0, 0);
+    expect(r.events.map((e) => e.type)).not.toContain("darkFall");
+    expect(r.state.players.p2.field[0]).toBeNull();
   });
   it("ライフが0になったら勝ち、以降は操作できない", () => {
     let s = play(game(["twin"]), 0, 0);
@@ -364,7 +364,11 @@ describe("バトルと闇堕ち", () => {
 describe("CPU", () => {
   const real = Object.fromEntries(CARDS.map((c) => [c.id, c]));
   it("合法な操作だけでターンを終える", () => {
-    const s = createGame({ decks: { p1: DECKS.flame, p2: DECKS.idol }, seed: 3 });
+    const s = createGame({
+      decks: { p1: DECKS.flame, p2: DECKS.idol },
+      oshi: { p1: DECK_OSHI.flame, p2: DECK_OSHI.idol },
+      seed: 3,
+    });
     const plan = planTurn(s, "p1", real);
     let cur = s;
     for (const a of plan) cur = applyAction(cur, a, real).state;
@@ -375,7 +379,11 @@ describe("CPU", () => {
     for (const a of ids)
       for (const b of ids)
         for (const seed of [1, 2]) {
-          let s = createGame({ decks: { p1: DECKS[a], p2: DECKS[b] }, seed });
+          let s = createGame({
+            decks: { p1: DECKS[a], p2: DECKS[b] },
+            oshi: { p1: DECK_OSHI[a], p2: DECK_OSHI[b] },
+            seed,
+          });
           for (let t = 0; t < 100 && !s.winner; t++) {
             for (const x of planTurn(s, s.active, real)) s = applyAction(s, x, real).state;
           }
@@ -407,18 +415,32 @@ describe("デッキの決まり", () => {
     const pairs = Object.values(DECKS).map((d) => [...deckAttributes(d, real)].sort().join("×"));
     expect(new Set(pairs).size).toBe(10);
   });
-  it("伝説のコラ画像：仲間がすぐ攻撃できるが、仲間の攻撃力は上がらない（コストは仲間1体につき-1）", () => {
-    let s = createGame({ decks: { p1: DECKS.wiki, p2: DECKS.flame }, seed: 1, first: "p1" });
-    s.players.p1.hand = ["k6", "k6", "k5"];
+  it("推し（伝説のコラ画像）：推し枠から出すと、仲間がすぐ攻撃できる（仲間の攻撃力は上がらない）", () => {
+    let s = createGame({
+      decks: { p1: DECKS.dance, p2: DECKS.flame },
+      oshi: { p1: DECK_OSHI.dance, p2: DECK_OSHI.flame },
+      seed: 1,
+      first: "p1",
+    });
+    s.players.p1.hand = ["k6", "k6"];
     s.players.p1.mana = 10;
     s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 0 }, real).state;
     s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 2 }, real).state;
-    // リプ欄の民2体と草2体の4体がいるので、コストは 10 - 4 = 6
-    expect(effectiveCost(s, "p1", "k5", real)).toBe(6);
-    s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 4 }, real).state;
+    expect(oshiCost(s, "p1", real)).toBe(6);
+    s = applyAction(s, { type: "playOshi", player: "p1", slot: 4 }, real).state;
     const others = s.players.p1.field.filter((u) => u && u.cardId !== "k5");
     expect(others.every((u) => u?.canAttack)).toBe(true);
     expect(others.every((u) => viewUnit(s, "p1", u as never, real).attack === 1)).toBe(true);
+  });
+  it("デモ用デッキの推しは★5で、闇堕ちの姿を持ち、デッキの属性に合っている", () => {
+    for (const [id, deck] of Object.entries(DECKS)) {
+      const oshi = DECK_OSHI[id as keyof typeof DECKS];
+      expect({ id, errors: validateOshi(oshi, deck, real) }).toEqual({ id, errors: [] });
+      expect(real[oshi]?.dark).toBeTruthy();
+    }
+  });
+  it("★5は山札に入れられない", () => {
+    expect(validateDeck([...Array(24).fill("n1"), "c2"], real).some((e) => e.includes("推し枠"))).toBe(true);
   });
 });
 
@@ -550,5 +572,105 @@ describe("切り札の効果（★4〜5）", () => {
   it("体力が1以下の相手のアイコンをすべて倒す", () => {
     const s = play(withFoe(["sweeper"], ["f", "wall", "f"]), 0, 0);
     expect(s.players.p2.field.map((u) => u?.cardId ?? null)).toEqual([null, "wall", null, null, null]);
+  });
+});
+
+describe("推しと闇堕ち", () => {
+  /** p1 の推しを ren にした対戦（話題力は十分） */
+  function oshiGame(p1: string[] = [], p2: string[] = F(12)): GameState {
+    const s = createGame({
+      decks: { p1: [...p1, ...F(10)], p2: [...p2, ...F(10)] },
+      seed: 42,
+      shuffle: false,
+      oshi: { p1: "ren" },
+    });
+    s.players.p1.mana = 10;
+    s.players.p1.maxMana = 10;
+    return s;
+  }
+  const playOshi = (s: GameState, slot: number) => run(s, { type: "playOshi", player: "p1", slot }).state;
+  const darkFall = (s: GameState, slot: number) => run(s, { type: "darkFall", player: "p1", slot });
+  /** p2 の番に、p2 のアイコンで p1 の推しを倒させて、p1 の番に戻す */
+  function killOshi(s: GameState, slot: number): GameState {
+    s = end(s);
+    s.players.p2.mana = 30;
+    s.players.p2.hand = ["big", "big", ...s.players.p2.hand];
+    s.players.p2.field = s.players.p2.field.map(() => null);
+    s = play(play(s, 0, 0, "p2"), 0, 1, "p2");
+    s.players.p2.field.forEach((u) => {
+      if (u) Object.assign(u, { canAttack: true, attacksLeft: 1 });
+    });
+    for (const from of [0, 1])
+      if (s.players.p1.field[slot])
+        s = run(s, { type: "attack", player: "p2", from, target: { kind: "unit", slot } }).state;
+    s = end(s, "p2");
+    s.players.p1.mana = 10;
+    return s;
+  }
+
+  it("推しは推し枠からコストを払って出し、1回しか出せない", () => {
+    const s = playOshi(oshiGame(), 2);
+    expect(s.players.p1.field[2]?.cardId).toBe("ren");
+    expect(s.players.p1.mana).toBe(4);
+    expect(s.players.p1.oshiState).toBe("field");
+    expect(() => playOshi(s, 0)).toThrow(/推し枠/);
+  });
+
+  it("推し枠にいる間、自分のアイコンが倒されるたびに推しのコストが1下がる（最低3）", () => {
+    let s = oshiGame(["f", "f", "f", "f"]);
+    s = play(play(play(play(s, 0, 0), 0, 1), 0, 2), 0, 3);
+    for (const u of s.players.p1.field) if (u) u.damage = 99;
+    s = end(s);
+    expect(s.players.p1.oshiDiscount).toBe(4);
+    expect(oshiCost(s, "p1", catalog)).toBe(3);
+  });
+
+  it("闇堕ちの姿は、出たターンに相手のアイコンだけを攻撃でき、闇堕ちしたときの効果が働く", () => {
+    let s = playOshi(oshiGame(), 0);
+    s = killOshi(s, 0);
+    expect(s.players.p1.oshiState).toBe("fallen");
+    expect(s.players.p1.trash).toContain("ren");
+    expect(canDarkFall(s, "p1")).toBe(true);
+    const manaBefore = s.players.p1.mana;
+    const r = darkFall(s, 0);
+    s = r.state;
+    expect(r.events.map((e) => e.type)).toContain("darkFall");
+    expect(s.players.p1.mana).toBe(manaBefore);
+    expect(s.players.p1.trash).not.toContain("ren");
+    const u = s.players.p1.field[0];
+    expect(viewUnit(s, "p1", u as never, catalog)).toMatchObject({ attack: 7, hp: 3, name: "闇堕ちレン" });
+    // 闇堕ちしたとき：相手のアイコンすべてに1ダメージ
+    expect(s.players.p2.field.filter((x) => x).every((x) => (x?.damage ?? 0) >= 1)).toBe(true);
+    expect(attackTargets(s, "p1", 0, catalog).every((t) => t.kind === "unit")).toBe(true);
+    expect(() => run(s, { type: "attack", player: "p1", from: 0, target: { kind: "leader" } })).toThrow(
+      /アイコンしか/,
+    );
+    expect(s.players.p1.oshiState).toBe("dark");
+    // 相打ちで闇堕ちの姿が倒れたら、もう出せない
+    const foeSlot = s.players.p2.field.findIndex((x) => x);
+    s = run(s, { type: "attack", player: "p1", from: 0, target: { kind: "unit", slot: foeSlot } }).state;
+    expect(s.players.p1.oshiState).toBe("done");
+  });
+
+  it("推しが倒されたそのターンには、まだ闇堕ちできない", () => {
+    let s = playOshi(oshiGame(), 0);
+    const mine = s.players.p1.field[0] as Unit;
+    s.players.p1.field[0] = { ...mine, damage: 3, canAttack: true, attacksLeft: 1 };
+    s.players.p2.field[0] = { ...mine, uid: 999, oshiOf: undefined, cardId: "big", damage: 0 };
+    s = hit(s, 0, 0).state;
+    expect(s.players.p1.oshiState).toBe("fallen");
+    expect(canDarkFall(s, "p1")).toBe(false);
+    expect(() => darkFall(s, 0)).toThrow(/次の自分のターン/);
+  });
+
+  it("闇堕ちの姿が倒されたら、もう出せない（TL浄化で戻っても、次に倒されたら終わり）", () => {
+    let s = playOshi(oshiGame(["cleanse"]), 0);
+    s = killOshi(s, 0);
+    s = darkFall(s, 0).state;
+    s = cast(s, 0);
+    expect(s.players.p1.field[0]?.dark).toBe(false);
+    s = killOshi(s, 0);
+    expect(s.players.p1.oshiState).toBe("done");
+    expect(canDarkFall(s, "p1")).toBe(false);
   });
 });

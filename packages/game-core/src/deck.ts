@@ -11,6 +11,26 @@ export function deckAttributes(deck: readonly string[], catalog: Catalog): strin
 }
 
 /**
+ * 推しの決まりを確かめる（空なら OK）。推しは★5のアイコンで、属性はデッキの属性の中（共通の推しはどのデッキにも）
+ */
+export function validateOshi(
+  oshi: string | null | undefined,
+  deck: readonly string[],
+  catalog: Catalog,
+): string[] {
+  if (!oshi) return ["推しを選んでください"];
+  const card = catalog[oshi];
+  if (!card) return [`存在しないカードです：${oshi}`];
+  const errors: string[] = [];
+  if (card.type !== "icon" || card.rarity !== 5) errors.push(`推しは★5のアイコンだけです：${oshi}`);
+  const attrs = deckAttributes(deck, catalog);
+  const outside = card.attributes.filter((a) => !attrs.includes(a));
+  if (outside.length > 0 && attrs.length >= MAX_DECK_ATTRIBUTES)
+    errors.push(`推しの属性（${outside.join("・")}）がデッキの属性に入っていません`);
+  return errors;
+}
+
+/**
  * デッキの決まりを確かめ、守れていないところを日本語で返す（空なら OK）。
  * 25枚・同じカードは3枚まで・トークンは入れられない・属性は2つまで（共通カードはいくつでも）
  */
@@ -23,6 +43,7 @@ export function validateDeck(deck: readonly string[], catalog: Catalog): string[
     const card = catalog[id];
     if (!card) errors.push(`存在しないカードです：${id}`);
     else if (card.token) errors.push(`トークンはデッキに入れられません：${id}`);
+    else if (card.rarity === 5) errors.push(`★5は推し枠に置くカードで、山札には入れられません：${id}`);
     if (n > MAX_COPIES) errors.push(`同じカードは${MAX_COPIES}枚までです：${id}（${n}枚）`);
   }
   const attrs = deckAttributes(deck, catalog);

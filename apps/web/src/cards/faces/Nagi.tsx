@@ -46,7 +46,7 @@ export function NagiFace({ card }: { card: CardDef }) {
           <p className="effect">
             <EffectText text={card.effect} />
           </p>
-          {card.dark && <p className="dark-note">闇堕ち：一度倒されたとき、裏返って別の姿になる</p>}
+          {card.dark && <p className="dark-note">推し：倒されたあと1回だけ、闇堕ちして戻ってくる</p>}
           <div className="foot">
             <span className="seek" aria-hidden="true">
               <span className="bar" />

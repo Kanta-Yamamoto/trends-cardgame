@@ -104,7 +104,7 @@ export function CardZoom({
               {showDark ? "元の姿に戻す" : "闇堕ちの姿を見る"}
             </button>
           ) : (
-            !view && card.dark && <p className="zs-note">闇堕ちの姿は、裏返るまで分からない</p>
+            !view && card.dark && <p className="zs-note">闇堕ちの姿は、闇堕ちするまで分からない</p>
           )}
           <p className="zs-note">カードを押すと、文字を隠して絵だけを見られます</p>
           <button type="button" className="btn" onClick={onClose}>

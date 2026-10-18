@@ -157,11 +157,8 @@ export async function animateAttack(
   const dv = def ? viewUnit(game, foeId, def, catalog) : null;
   const dmg = av.attack + (dv && av.keywords.includes("叩き") && (def?.damage ?? 0) > 0 ? 2 : 0);
   const counter = dv?.attack ?? 0;
-  /** 倒れたら闇堕ちせずにオワコンへ行くか */
-  const goesToTrash = (u: Unit) => {
-    const c = catalog[u.cardId];
-    return !(c?.dark && !u.dark && !u.darkUsed && !u.silenced);
-  };
+  /** 倒れたらオワコンへ行く（推しも、闇堕ちはマスターが選んだときだけ） */
+  const goesToTrash = (_u: Unit) => true;
 
   const a = atkEl.getBoundingClientRect();
   const d = defEl.getBoundingClientRect();

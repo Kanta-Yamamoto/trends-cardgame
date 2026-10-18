@@ -1,10 +1,13 @@
 import {
   applyAction,
+  attackTargets,
+  canDarkFall,
+  canPlayOshi,
   canUnitAttack,
   castTargets,
   effectiveCost,
-  legalTargets,
   opponent,
+  oshiCost,
   viewUnit,
 } from "./engine";
 import type { Action, CastTarget, GameState, PlayerId, RuleCard, UnitView } from "./types";
@@ -181,6 +184,20 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
         }
       }
     });
+    // 推し：出せるなら、手札のアイコンと同じように価値を比べる
+    if (slot >= 0 && canPlayOshi(state, player, catalog) && me.oshi) {
+      const card = catalog[me.oshi];
+      const score = oshiCost(state, player, catalog) * 10 + (card?.attack ?? 0) + (card?.hp ?? 0) + 8;
+      if (!best || score > (best as { score: number }).score)
+        best = { score, action: { type: "playOshi", player, slot } };
+    }
+    // 闇堕ち：使えるなら使う（1試合1回の切り札。相手の場にアイコンがいるときに）
+    if (slot >= 0 && canDarkFall(state, player)) {
+      const foes = state.players[foeId].field.filter((u) => u).length;
+      if (foes > 0 || state.players[foeId].lp <= 10) {
+        best = { score: 999, action: { type: "darkFall", player, slot } };
+      }
+    }
     if (!best) break;
     step((best as { action: Action }).action);
   }
@@ -192,11 +209,14 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
     if (mine.length === 0) break;
     mine.sort((a, b) => b.v.attack - a.v.attack);
     const foe = state.players[foeId];
-    const targets = legalTargets(state, player, catalog);
-    const canFace = targets.some((t) => t.kind === "leader");
     const readyAttack = mine.reduce((s, x) => s + x.v.attack * x.v.unit.attacksLeft, 0);
     let acted = false;
+    let anyFace = false;
+    let targets = attackTargets(state, player, mine[0]?.slot ?? 0, catalog);
     for (const { slot: from, v } of mine) {
+      targets = attackTargets(state, player, from, catalog);
+      const canFace = targets.some((t) => t.kind === "leader");
+      anyFace ||= canFace;
       if (canFace && foe.lp <= readyAttack) {
         step({ type: "attack", player, from, target: { kind: "leader" } });
         acted = true;
@@ -230,7 +250,7 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
       acted = true;
       break; // 盤面が変わったので選び直す
     }
-    if (!acted && !canFace) {
+    if (!acted && !anyFace) {
       // ガードに阻まれているとき：全員でかかれば倒せるなら、弱いアイコンから削りに行く
       const guards = targets
         .flatMap((t) => {
