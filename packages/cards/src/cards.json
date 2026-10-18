@@ -2959,7 +2959,10 @@
           "maxCost": 3
         }
       ],
-      "effect": "闇堕ちしたとき、オワコンからコスト3以下の自分のアイコン1体を場に戻す（いちばんコストが高いもの。場に出たときの効果も働く）。"
+      "effect": "闇堕ちしたとき、オワコンからコスト3以下の自分のアイコン1体を場に戻す（いちばんコストが高いもの。場に出たときの効果も働く）。",
+      "art": "/assets/cards/c11-dark-art.jpg",
+      "subject": "/assets/cards/c11-dark-subject.webp",
+      "original": "assets/original/c11-dark.webp"
     }
   }
 ]
