@@ -154,6 +154,18 @@ const catalog: Record<string, RuleCard> = {
   cheapStreamer: icon("cheapStreamer", 5, 3, 3, {
     effects: [{ on: "hand", do: "cheaperPerAlly", kaiwai: "配信者" }],
   }),
+  ronpa: post("ronpa", 4, { target: "enemyIcon", effects: [{ do: "destroy" }] }),
+  oibi: post("oibi", 3, {
+    target: "enemyIcon",
+    targetFilter: { damaged: true },
+    effects: [{ do: "destroy" }],
+  }),
+  block: post("block", 3, { target: "enemyIcon", effects: [{ do: "bounce" }] }),
+  hikinuki: post("hikinuki", 4, {
+    target: "enemyIcon",
+    targetFilter: { maxAttack: 3 },
+    effects: [{ do: "steal", maxAttack: 3 }],
+  }),
   kill: post("kill", 3, { effects: [{ do: "destroy", to: "strongestEnemy" }] }),
   back: post("back", 3, { effects: [{ do: "bounce", to: "costliestEnemy" }] }),
   barrier: post("barrier", 2, { effects: [{ do: "shieldMaster" }] }),
@@ -794,5 +806,41 @@ describe("界隈を読む効果（自分の側だけ）", () => {
     expect(effectiveCost(s, "p1", "cheapStreamer", catalog)).toBe(4);
     s = play(s, 0, 2);
     expect(s.players.p1.mana).toBe(10 - 1 - 1 - 4);
+  });
+});
+
+describe("対象を選ぶ除去の投稿（確定除去・手札に戻す・奪う）", () => {
+  it("完全論破：選んだ相手のアイコンを体力に関係なく倒す", () => {
+    const s = cast(withFoe(["ronpa"], ["wall", "big"]), 0, { side: "enemy", slot: 1 });
+    expect(s.players.p2.field.map((u) => u?.cardId ?? null)).toEqual(["wall", null, null, null, null]);
+    expect(s.players.p2.trash).toContain("big");
+  });
+  it("追い炎上：ダメージを受けている相手にしか使えない", () => {
+    let s = withFoe(["oibi"], ["wall", "big"]);
+    expect(castTargets(s, "p1", "oibi", catalog)).toEqual([]);
+    expect(() => cast(s, 0, { side: "enemy", slot: 1 })).toThrow(/使えません/);
+    (s.players.p2.field[1] as Unit).damage = 1;
+    expect(castTargets(s, "p1", "oibi", catalog)).toEqual([{ side: "enemy", slot: 1 }]);
+    s = cast(s, 0, { side: "enemy", slot: 1 });
+    expect(s.players.p2.field[1]).toBeNull();
+  });
+  it("ブロック：選んだ相手のアイコンを手札に戻す（トークンは消える）", () => {
+    let s = withFoe(["block", "block"], ["big", "cat"]);
+    const hand = s.players.p2.hand.length;
+    s = cast(s, 0, { side: "enemy", slot: 0 });
+    expect(s.players.p2.field[0]).toBeNull();
+    expect(s.players.p2.hand).toHaveLength(hand + 1);
+    const tokenSlot = s.players.p2.field.findIndex((u) => u?.token);
+    s = cast(s, 0, { side: "enemy", slot: tokenSlot });
+    expect(s.players.p2.field[tokenSlot]).toBeNull();
+    expect(s.players.p2.hand).toHaveLength(hand + 1);
+  });
+  it("引き抜き：攻撃力3以下の相手だけを選んで奪える。奪ったターンは攻撃できない", () => {
+    let s = withFoe(["hikinuki"], ["big", "wall"]);
+    expect(castTargets(s, "p1", "hikinuki", catalog)).toEqual([{ side: "enemy", slot: 1 }]);
+    s = cast(s, 0, { side: "enemy", slot: 1 });
+    expect(s.players.p2.field[1]).toBeNull();
+    const mine = s.players.p1.field.find((u) => u?.cardId === "wall");
+    expect(mine?.canAttack).toBe(false);
   });
 });

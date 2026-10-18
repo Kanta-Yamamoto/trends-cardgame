@@ -46,6 +46,7 @@ export type CardEffect = (
   | { do: "fill"; card: string }
   | { do: "cleanse" }
   /** 攻撃力 maxAttack 以下の相手のアイコンのうち、いちばん強い1体を自分の場に奪う */
+  /** 攻撃力 maxAttack 以下の相手のアイコンを奪う（いちばん強いもの。投稿の対象があればそれ） */
   | { do: "steal"; maxAttack: number }
   /** このターンのあとに、もう一度自分のターンを行う */
   | { do: "extraTurn" }
@@ -75,10 +76,10 @@ export type CardEffect = (
   | { do: "healBurn"; amount: number }
   /** hand：このゲームで自分が使った投稿1枚につきコスト-1 */
   | { do: "cheaperPerPost" }
-  /** 攻撃力がいちばん高い相手のアイコンを倒す */
-  | { do: "destroy"; to: "strongestEnemy" }
-  /** 相手のアイコン（いちばんコストが高いもの）を持ち主の手札に戻す。トークンは消える */
-  | { do: "bounce"; to: "costliestEnemy" }
+  /** 相手のアイコンを倒す（体力に関係なく）。to が無ければ投稿の対象 */
+  | { do: "destroy"; to?: "strongestEnemy" }
+  /** 相手のアイコンを持ち主の手札に戻す。トークンは消える。to が無ければ投稿の対象 */
+  | { do: "bounce"; to?: "costliestEnemy" }
   /** 次の相手のターンが終わるまで、自分のマスターはダメージを受けない */
   | { do: "shieldMaster" }
 ) & {
@@ -128,6 +129,8 @@ export interface CardDef {
   target?: PostTarget;
   /** 投稿の対象を、自分のその界隈のアイコンだけに限る（target が allyIcon のとき） */
   targetKaiwai?: Kaiwai;
+  /** 投稿の対象を絞る：ダメージを受けているアイコンだけ／攻撃力が N 以下だけ */
+  targetFilter?: { damaged?: boolean; maxAttack?: number };
   /** カードに書く効果文 */
   effect: string;
   flavor: string;

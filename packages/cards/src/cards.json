@@ -1907,7 +1907,7 @@
     "epithet": "",
     "type": "post",
     "rarity": 4,
-    "cost": 3,
+    "cost": 4,
     "attributes": ["メロい"],
     "kaiwai": [],
     "keywords": [],
@@ -2831,5 +2831,96 @@
     "flavor": "既読、無視、スタンプ。",
     "art": "/assets/cards/f19-art.jpg",
     "original": "assets/original/f19.webp"
+  },
+  {
+    "id": "g17",
+    "name": "完全論破",
+    "epithet": "",
+    "type": "post",
+    "rarity": 3,
+    "cost": 4,
+    "attributes": ["神"],
+    "kaiwai": [],
+    "keywords": [],
+    "target": "enemyIcon",
+    "effects": [
+      {
+        "do": "destroy"
+      }
+    ],
+    "effect": "相手のアイコン1体を倒す。",
+    "flavor": "はい、論破。",
+    "art": "/assets/cards/g17-art.jpg",
+    "original": "assets/original/g17.webp"
+  },
+  {
+    "id": "f20",
+    "name": "追い炎上",
+    "epithet": "",
+    "type": "post",
+    "rarity": 2,
+    "cost": 3,
+    "attributes": ["炎上"],
+    "kaiwai": [],
+    "keywords": [],
+    "target": "enemyIcon",
+    "targetFilter": {
+      "damaged": true
+    },
+    "effects": [
+      {
+        "do": "destroy"
+      }
+    ],
+    "effect": "ダメージを受けている相手のアイコン1体を倒す。",
+    "flavor": "火に油、燃料に薪。",
+    "art": "/assets/cards/f20-art.jpg",
+    "original": "assets/original/f20.webp"
+  },
+  {
+    "id": "i17",
+    "name": "ブロック",
+    "epithet": "",
+    "type": "post",
+    "rarity": 2,
+    "cost": 3,
+    "attributes": ["癒し"],
+    "kaiwai": [],
+    "keywords": [],
+    "target": "enemyIcon",
+    "effects": [
+      {
+        "do": "bounce"
+      }
+    ],
+    "effect": "相手のアイコン1体を持ち主の手札に戻す（トークンは消える）。",
+    "flavor": "見なければ、平和。",
+    "art": "/assets/cards/i17-art.jpg",
+    "original": "assets/original/i17.webp"
+  },
+  {
+    "id": "m18",
+    "name": "引き抜き",
+    "epithet": "",
+    "type": "post",
+    "rarity": 3,
+    "cost": 4,
+    "attributes": ["メロい"],
+    "kaiwai": [],
+    "keywords": [],
+    "target": "enemyIcon",
+    "targetFilter": {
+      "maxAttack": 3
+    },
+    "effects": [
+      {
+        "do": "steal",
+        "maxAttack": 3
+      }
+    ],
+    "effect": "攻撃力が3以下の相手のアイコン1体を自分の場に奪う（奪ったターンは攻撃できない）。",
+    "flavor": "うちの方が、待遇いいよ。",
+    "art": "/assets/cards/m18-art.jpg",
+    "original": "assets/original/m18.webp"
   }
 ]
