@@ -1,4 +1,4 @@
-import { CARDS, DECKS } from "@trends/cards";
+import { CARDS, DECK_OSHI, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
 import { planTurn } from "./ai";
 import { applyAction, createGame } from "./engine";
@@ -20,7 +20,11 @@ const runTurn = (s: GameState, smart: boolean) => {
 
 describe("先読みする CPU（planTurnSearch）", () => {
   it("合法な操作だけで、ターン終了で終わる", () => {
-    const s = createGame({ decks: { p1: DECKS.flame, p2: DECKS.idol }, seed: 5 });
+    const s = createGame({
+      decks: { p1: DECKS.flame, p2: DECKS.idol },
+      oshi: { p1: DECK_OSHI.flame, p2: DECK_OSHI.idol },
+      seed: 5,
+    });
     const plan = planTurnSearch(s, "p1", real);
     let cur = s;
     for (const a of plan) cur = applyAction(cur, a, real).state;
@@ -30,14 +34,22 @@ describe("先読みする CPU（planTurnSearch）", () => {
   it("どのデッキどうしでも最後まで対戦でき、決着がつく", () => {
     for (const a of ids)
       for (const b of ids) {
-        let s = createGame({ decks: { p1: DECKS[a], p2: DECKS[b] }, seed: 11 });
+        let s = createGame({
+          decks: { p1: DECKS[a], p2: DECKS[b] },
+          oshi: { p1: DECK_OSHI[a], p2: DECK_OSHI[b] },
+          seed: 11,
+        });
         for (let t = 0; t < 120 && !s.winner; t++) s = runTurn(s, true);
         expect(s.winner).not.toBeNull();
       }
   }, 60_000);
 
   it("とどめを刺せるときは刺す", () => {
-    let s = createGame({ decks: { p1: DECKS.flame, p2: DECKS.idol }, seed: 2 });
+    let s = createGame({
+      decks: { p1: DECKS.flame, p2: DECKS.idol },
+      oshi: { p1: DECK_OSHI.flame, p2: DECK_OSHI.idol },
+      seed: 2,
+    });
     // お互い数ターン進めてから、相手のライフを1にする
     for (let t = 0; t < 6 && !s.winner; t++) s = runTurn(s, false);
     const me = s.active;
@@ -56,7 +68,11 @@ describe("先読みする CPU（planTurnSearch）", () => {
     for (const a of ids)
       for (const b of ids)
         for (const smart of ["p1", "p2"] as const) {
-          let s = createGame({ decks: { p1: DECKS[a], p2: DECKS[b] }, seed: 21 + (smart === "p1" ? 0 : 1) });
+          let s = createGame({
+            decks: { p1: DECKS[a], p2: DECKS[b] },
+            oshi: { p1: DECK_OSHI[a], p2: DECK_OSHI[b] },
+            seed: 21 + (smart === "p1" ? 0 : 1),
+          });
           for (let t = 0; t < 120 && !s.winner; t++) s = runTurn(s, s.active === smart);
           games++;
           if (s.winner === smart) wins++;

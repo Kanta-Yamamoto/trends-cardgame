@@ -18,8 +18,8 @@ describe("HoloCard", () => {
     if (!ren) throw new Error("c2 not found");
     const { container } = render(<HoloCard card={ren} idle={false} />);
     expect(screen.getByRole("img", { name: /炎上系配信者 レン/ })).toBeInTheDocument();
-    expect(container.querySelector(".stat-atk")).toHaveTextContent("4");
-    expect(container.querySelector(".stat-hp")).toHaveTextContent("4");
+    expect(container.querySelector(".stat-atk")).toHaveTextContent(String(ren.attack));
+    expect(container.querySelector(".stat-hp")).toHaveTextContent(String(ren.hp));
     expect(screen.getByText("No. 007 / 100")).toBeInTheDocument();
   });
 });

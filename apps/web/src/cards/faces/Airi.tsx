@@ -45,7 +45,7 @@ export function AiriFace({ card }: { card: CardDef }) {
             <p className="effect">
               <EffectText text={card.effect} />
             </p>
-            {card.dark && <p className="dark-note">闇堕ち：一度倒されたとき、裏返って別の姿になる</p>}
+            {card.dark && <p className="dark-note">推し：倒されたあと1回だけ、闇堕ちして戻ってくる</p>}
             <div className="foot">
               <span className="admit">♛ 全公演 最前列</span>
               <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />

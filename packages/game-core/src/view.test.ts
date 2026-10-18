@@ -1,11 +1,17 @@
-import { CARDS, DECKS } from "@trends/cards";
+import { CARDS, DECK_OSHI, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
 import { applyAction, createGame } from "./engine";
 import type { RuleCard } from "./types";
 import { actionFor, actionFrom, eventsFor, HIDDEN_CARD, stateFor } from "./view";
 
 const catalog = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string, RuleCard>;
-const game = () => createGame({ decks: { p1: DECKS.flame, p2: DECKS.idol }, seed: 5, first: "p1" });
+const game = () =>
+  createGame({
+    decks: { p1: DECKS.flame, p2: DECKS.idol },
+    oshi: { p1: DECK_OSHI.flame, p2: DECK_OSHI.idol },
+    seed: 5,
+    first: "p1",
+  });
 
 describe("オンライン対戦で渡す形", () => {
   it("相手の手札・両者の山札・乱数の種は隠し、枚数は分かる", () => {

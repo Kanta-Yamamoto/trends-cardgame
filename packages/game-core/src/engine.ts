@@ -1,4 +1,4 @@
-import type { CardEffect, Keyword } from "@trends/cards";
+import { type CardEffect, type Keyword, OSHI_MIN_COST } from "@trends/cards";
 import { nextRandom } from "./rng";
 import {
   type Action,
@@ -25,6 +25,8 @@ export interface NewGameInput {
   config?: Partial<Config>;
   /** false にすると山札を並び替えない（テスト用） */
   shuffle?: boolean;
+  /** 推し（★5）。山札とは別の推し枠に置く */
+  oshi?: Partial<Record<PlayerId, string | null>>;
 }
 
 type Emit = (e: GameEvent) => void;
@@ -61,7 +63,7 @@ export function createGame(input: NewGameInput): GameState {
   const config = { ...DEFAULT_CONFIG, ...input.config };
   let seed = input.seed ?? 1;
   const first = input.first ?? "p1";
-  const mk = (deck: readonly string[], isFirst: boolean): PlayerState => {
+  const mk = (deck: readonly string[], isFirst: boolean, oshi: string | null): PlayerState => {
     let d = [...deck];
     if (input.shuffle !== false) [d, seed] = shuffled(deck, seed);
     // 後攻は1枚多く持って始める（先攻有利を和らげる）
@@ -79,10 +81,14 @@ export function createGame(input: NewGameInput): GameState {
       heals: 0,
       extraTurns: 0,
       breakthroughTurn: 0,
+      oshi,
+      oshiState: oshi ? "ready" : "done",
+      oshiDiscount: 0,
+      oshiFallenTurn: 0,
     };
   };
-  const p1 = mk(input.decks.p1, first === "p1");
-  const p2 = mk(input.decks.p2, first === "p2");
+  const p1 = mk(input.decks.p1, first === "p1", input.oshi?.p1 ?? null);
+  const p2 = mk(input.decks.p2, first === "p2", input.oshi?.p2 ?? null);
   return { turn: 1, active: first, players: { p1, p2 }, winner: null, seed, nextUid: 1 };
 }
 
@@ -96,8 +102,10 @@ function keywordsOf(u: Unit, catalog: Catalog): Keyword[] {
 }
 
 function effectsOf(u: Unit, catalog: Catalog): CardEffect[] {
-  if (u.silenced || u.dark) return [];
-  return must(catalog, u.cardId).effects;
+  if (u.silenced) return [];
+  const card = must(catalog, u.cardId);
+  if (u.dark) return card.dark?.effects ?? [];
+  return card.effects;
 }
 
 const triggerOf = (e: CardEffect) => e.on ?? "play";
@@ -150,6 +158,38 @@ export function effectiveCost(state: GameState, player: PlayerId, cardId: string
   return Math.max(0, cost);
 }
 
+/** 推し（推し枠にいる間）を出すのに払うコスト。自分のアイコンが倒されるたびに1下がる（最低 OSHI_MIN_COST） */
+export function oshiCost(state: GameState, player: PlayerId, catalog: Catalog): number {
+  const me = state.players[player];
+  if (!me.oshi) return Number.POSITIVE_INFINITY;
+  const base = must(catalog, me.oshi).cost;
+  return Math.max(Math.min(base, OSHI_MIN_COST), base - (me.oshiDiscount ?? 0));
+}
+
+/** 推し枠から推しを出せるか（話題力と空いた枠も見る） */
+export function canPlayOshi(state: GameState, player: PlayerId, catalog: Catalog): boolean {
+  const me = state.players[player];
+  return (
+    state.active === player &&
+    !state.winner &&
+    me.oshiState === "ready" &&
+    me.field.some((u) => !u) &&
+    oshiCost(state, player, catalog) <= me.mana
+  );
+}
+
+/** 倒された推しを、闇堕ちの姿で出せるか（推しが倒された次の自分のターンから。空いた枠が要る） */
+export function canDarkFall(state: GameState, player: PlayerId): boolean {
+  const me = state.players[player];
+  return (
+    state.active === player &&
+    !state.winner &&
+    me.oshiState === "fallen" &&
+    state.turn > (me.oshiFallenTurn ?? 0) &&
+    me.field.some((u) => !u)
+  );
+}
+
 /**
  * 今攻撃できる相手。相手の場にガードがいる間は、ガードと晒し者しか攻撃できない（マスターも不可）。
  * ガードがいなければ、マスターと相手のアイコンすべて。
@@ -166,6 +206,19 @@ export function legalTargets(state: GameState, player: PlayerId, catalog: Catalo
       .map((x) => ({ kind: "unit" as const, slot: x.slot }));
   }
   return [{ kind: "leader" as const }, ...units.map((x) => ({ kind: "unit" as const, slot: x.slot }))];
+}
+
+/** そのアイコンが攻撃できる相手（闇堕ちして出てきたターンは、相手のアイコンだけ） */
+export function attackTargets(
+  state: GameState,
+  player: PlayerId,
+  from: number,
+  catalog: Catalog,
+): AttackTarget[] {
+  const u = state.players[player].field[from];
+  const all = legalTargets(state, player, catalog);
+  if (u && state.turn <= (u.iconsOnlyUntil ?? 0)) return all.filter((t) => t.kind === "unit");
+  return all;
 }
 
 /** 攻撃したときの見込み（画面の予告用。実際の攻撃も同じ計算を使う） */
@@ -254,7 +307,13 @@ function healLeader(state: GameState, player: PlayerId, amount: number, config: 
   if (p.lp > before) emit({ type: "leaderHealed", player, amount: p.lp - before, lp: p.lp });
 }
 
-function newUnit(state: GameState, cardId: string, catalog: Catalog, token: boolean): Unit {
+function newUnit(
+  state: GameState,
+  cardId: string,
+  catalog: Catalog,
+  token: boolean,
+  oshiOf?: PlayerId,
+): Unit {
   const card = must(catalog, cardId);
   const rush = card.keywords.includes("速攻");
   return {
@@ -272,6 +331,7 @@ function newUnit(state: GameState, cardId: string, catalog: Catalog, token: bool
     silenced: false,
     noGuard: false,
     token,
+    ...(oshiOf ? { oshiOf } : {}),
   };
 }
 
@@ -292,8 +352,9 @@ function damageUnit(state: GameState, owner: PlayerId, slot: number, amount: num
 }
 
 /**
- * 体力が 0 以下のアイコンを片付ける。闇堕ちを持つアイコンは、最初の1回だけ裏返って場に残る。
- * 倒されたカードの ID を返す。
+ * 体力が 0 以下のアイコンを片付ける。倒されたカードの ID を返す。
+ * 推しが倒されると、持ち主はその次の自分のターンから闇堕ちを選べる（闇堕ちの姿が倒されたら、もう出せない）。
+ * 推しが推し枠にいる間は、自分のアイコンが倒されるたびに推しのコストが1下がる。
  */
 function resolveDeaths(state: GameState, catalog: Catalog, emit: Emit): string[] {
   const destroyed: string[] = [];
@@ -302,24 +363,20 @@ function resolveDeaths(state: GameState, catalog: Catalog, emit: Emit): string[]
     p.field.forEach((u, slot) => {
       if (!u) return;
       if (viewUnit(state, owner, u, catalog).hp > 0) return;
-      const card = must(catalog, u.cardId);
-      if (card.dark && !u.dark && !u.darkUsed && !u.silenced) {
-        Object.assign(u, {
-          dark: true,
-          darkUsed: true,
-          damage: 0,
-          atkBuff: 0,
-          hpBuff: 0,
-          canAttack: false,
-          attacksLeft: 0,
-        });
-        emit({ type: "darkFall", player: owner, slot, cardId: u.cardId });
-        return;
-      }
       p.field[slot] = null;
       if (!u.token) p.trash.push(u.cardId);
       destroyed.push(u.cardId);
       emit({ type: "destroyed", player: owner, cardId: u.cardId });
+      if (u.oshiOf) {
+        const fan = state.players[u.oshiOf];
+        if (u.dark || u.darkUsed) fan.oshiState = "done";
+        else {
+          fan.oshiState = "fallen";
+          fan.oshiFallenTurn = state.turn;
+        }
+      } else if (!u.token && p.oshiState === "ready") {
+        p.oshiDiscount = (p.oshiDiscount ?? 0) + 1;
+      }
     });
   }
   return destroyed;
@@ -615,7 +672,8 @@ function runEffect(e: CardEffect, ctx: Ctx) {
             noGuard: false,
           });
           if (wasDark) {
-            Object.assign(u, { dark: false, darkUsed: false, damage: 0 });
+            // 元の姿に戻る（推しの闇堕ちは1試合1回なので、もう一度は闇堕ちしない）
+            Object.assign(u, { dark: false, damage: 0 });
             emit({ type: "restored", player: owner, slot, cardId: u.cardId });
           }
         });
@@ -727,6 +785,52 @@ export function applyAction(
       resolveDeaths(state, catalog, emit);
       break;
     }
+    case "playOshi": {
+      const cardId = me.oshi;
+      if (!cardId || me.oshiState !== "ready") throw new RuleError("no_oshi", "推しは推し枠にいません");
+      if (action.slot < 0 || action.slot >= SLOTS) throw new RuleError("bad_slot", "その場所には出せません");
+      if (me.field[action.slot]) throw new RuleError("slot_taken", "その場所にはすでにアイコンがいます");
+      const cost = oshiCost(state, player, catalog);
+      if (cost > me.mana)
+        throw new RuleError("no_mana", `話題力が足りません（必要 ${cost}・残り ${me.mana}）`);
+      me.mana -= cost;
+      me.oshiState = "field";
+      me.field[action.slot] = newUnit(state, cardId, catalog, false, player);
+      const playedBefore = me.playedThisTurn++;
+      emit({ type: "played", player, cardId, slot: action.slot, cost, oshi: true });
+      const ctx: Ctx = { state, player, catalog, config, emit, selfSlot: action.slot, playedBefore };
+      for (const e of must(catalog, cardId).effects) if (triggerOf(e) === "play") runEffect(e, ctx);
+      resolveDeaths(state, catalog, emit);
+      break;
+    }
+    case "darkFall": {
+      const cardId = me.oshi;
+      if (!cardId || me.oshiState !== "fallen")
+        throw new RuleError("no_dark", "闇堕ちは、推しが倒されたあとに1回だけ使えます");
+      if (state.turn <= me.oshiFallenTurn)
+        throw new RuleError("dark_wait", "闇堕ちは、推しが倒された次の自分のターンから使えます");
+      if (action.slot < 0 || action.slot >= SLOTS) throw new RuleError("bad_slot", "その場所には出せません");
+      if (me.field[action.slot]) throw new RuleError("slot_taken", "その場所にはすでにアイコンがいます");
+      const card = must(catalog, cardId);
+      const at = me.trash.lastIndexOf(cardId);
+      if (at >= 0) me.trash.splice(at, 1);
+      const u = newUnit(state, cardId, catalog, false, player);
+      // 闇堕ちして出てきたターンから動ける（ただし、そのターンは相手のアイコンだけを攻撃できる）
+      Object.assign(u, {
+        dark: true,
+        darkUsed: true,
+        canAttack: true,
+        attacksLeft: (card.dark?.keywords ?? []).includes("連撃") ? 2 : 1,
+        iconsOnlyUntil: state.turn,
+      });
+      me.field[action.slot] = u;
+      me.oshiState = "dark";
+      emit({ type: "darkFall", player, slot: action.slot, cardId });
+      const ctx: Ctx = { state, player, catalog, config, emit, selfSlot: action.slot, playedBefore: 0 };
+      for (const e of card.dark?.effects ?? []) if (triggerOf(e) === "play") runEffect(e, ctx);
+      resolveDeaths(state, catalog, emit);
+      break;
+    }
     case "cast": {
       const cardId = me.hand[action.handIndex];
       if (cardId === undefined) throw new RuleError("no_card", "そのカードは手札にありません");
@@ -759,8 +863,10 @@ export function applyAction(
         throw new RuleError("asleep", "このアイコンは眠っていて攻撃できません");
       if (!canUnitAttack(state, atk))
         throw new RuleError("cannot_attack", "このアイコンは今は攻撃できません");
-      const legal = legalTargets(state, player, catalog);
+      const legal = attackTargets(state, player, action.from, catalog);
       const t = action.target;
+      if (t.kind === "leader" && state.turn <= (atk.iconsOnlyUntil ?? 0))
+        throw new RuleError("icons_only", "闇堕ちして出てきたターンは、相手のアイコンしか攻撃できません");
       if (
         !legal.some((x) =>
           x.kind === "leader" ? t.kind === "leader" : t.kind === "unit" && t.slot === x.slot,
@@ -791,13 +897,12 @@ export function applyAction(
         atk.damage += toAttacker;
         const attackerId = atk.cardId;
         const defenderId = def.cardId;
-        const defWasDark = def.dark;
         // 闇堕ちや破壊の出来事は battle の後に出す
         const after: GameEvent[] = [];
         const destroyed = resolveDeaths(state, catalog, (e) => after.push(e));
         // 相手を倒したら、もう1回攻撃できる（倒した側が残っていれば）
         const left = foe.field[t.slot];
-        const killed = !left || left.uid !== def.uid || (left.dark && !defWasDark);
+        const killed = !left || left.uid !== def.uid;
         const alive = me.field[action.from];
         if (killed && alive?.uid === atk.uid && hasPassive(alive, "extraAttackOnKill", catalog)) {
           alive.attacksLeft += 1;

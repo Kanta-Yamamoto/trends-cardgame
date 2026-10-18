@@ -60,7 +60,7 @@ export function RareFace({ card }: { card: CardDef }) {
           </p>
           {card.dark && (
             <p className="kr-darktext">
-              闇堕ち：一度倒されたとき、裏返って別の姿になる（姿は裏返るまで秘密）
+              推し：倒されたあと1回だけ、闇堕ちしてオワコンから戻ってくる（姿は闇堕ちするまで秘密）
             </p>
           )}
           {card.type === "icon" && (

@@ -4,7 +4,7 @@
 // 時間ではなく「試す手の数」で探索を打ち切るので、マシンの速さで結果が変わらない。
 import { cpus } from "node:os";
 import { isMainThread, parentPort, Worker, workerData } from "node:worker_threads";
-import { CARDS, DECKS } from "@trends/cards";
+import { CARDS, DECK_OSHI, DECKS } from "@trends/cards";
 import { applyAction, createGame, DEFAULT_SEARCH, planTurnSearch } from "@trends/game-core";
 
 // 対戦で使う CPU と同じ探索の広さ（時間の上限だけ外す）
@@ -13,18 +13,31 @@ const catalog = Object.fromEntries(CARDS.map((c) => [c.id, c]));
 
 function play(a, b, seed) {
   const first = seed % 2 === 0 ? "p1" : "p2";
-  let s = createGame({ decks: { p1: DECKS[a], p2: DECKS[b] }, seed, first });
+  let s = createGame({
+    decks: { p1: DECKS[a], p2: DECKS[b] },
+    oshi: { p1: DECK_OSHI[a], p2: DECK_OSHI[b] },
+    seed,
+    first,
+  });
   let turns = 0;
   const used = { p1: new Set(), p2: new Set() };
+  const own = { p1: 0, p2: 0 };
+  const oshiTurn = { p1: 0, p2: 0 };
+  const darkTurn = { p1: 0, p2: 0 };
   for (; turns < 80 && !s.winner; turns++) {
+    own[s.active]++;
     for (const act of planTurnSearch(s, s.active, catalog, SEARCH)) {
       const r = applyAction(s, act, catalog);
       s = r.state;
-      for (const e of r.events) if (e.type === "played" || e.type === "cast") used[e.player].add(e.cardId);
+      for (const e of r.events) {
+        if (e.type === "played" || e.type === "cast") used[e.player].add(e.cardId);
+        if (e.type === "played" && e.oshi) oshiTurn[e.player] = own[e.player];
+        if (e.type === "darkFall") darkTurn[e.player] = own[e.player];
+      }
       if (s.winner) break;
     }
   }
-  return { winner: s.winner, first, turns, used: { p1: [...used.p1], p2: [...used.p2] } };
+  return { winner: s.winner, first, turns, oshiTurn, darkTurn, used: { p1: [...used.p1], p2: [...used.p2] } };
 }
 
 if (!isMainThread) {
@@ -93,6 +106,39 @@ if (!isMainThread) {
     `試合数 ${results.length}（決着 ${decided}、決着なし ${draws}）、${((Date.now() - t0) / 1000).toFixed(0)} 秒`,
   );
   console.log(`先攻の勝率 ${pct(firstWins / decided)}、平均 ${(turnSum / results.length).toFixed(1)} ターン`);
+  {
+    // 推しと闇堕ち：出した割合・出した自分のターン（平均）、デッキ別
+    const st = Object.fromEntries(ids.map((d) => [d, { n: 0, o: 0, ot: 0, k: 0, kt: 0, kw: 0 }]));
+    for (const r of results)
+      for (const [p, d] of [
+        ["p1", r.a],
+        ["p2", r.b],
+      ]) {
+        const x = st[d];
+        x.n++;
+        if (r.oshiTurn[p]) {
+          x.o++;
+          x.ot += r.oshiTurn[p];
+        }
+        if (r.darkTurn[p]) {
+          x.k++;
+          x.kt += r.darkTurn[p];
+          if (r.winner === p) x.kw++;
+        }
+      }
+    const all = Object.values(st).reduce((a, x) => ({ n: a.n + x.n, o: a.o + x.o, k: a.k + x.k }), {
+      n: 0,
+      o: 0,
+      k: 0,
+    });
+    console.log(`推しを出した ${pct(all.o / all.n)}、闇堕ちした ${pct(all.k / all.n)}`);
+    for (const d of ids) {
+      const x = st[d];
+      console.log(
+        `  ${d.padEnd(8)} 推し ${pct(x.o / x.n)}（平均 ${(x.ot / Math.max(1, x.o)).toFixed(1)} ターン目） 闇堕ち ${pct(x.k / x.n)}（平均 ${(x.kt / Math.max(1, x.k)).toFixed(1)} ターン目、その試合の勝率 ${pct(x.kw / Math.max(1, x.k))}）`,
+      );
+    }
+  }
   console.log("デッキ別の勝率");
   for (const d of [...ids].sort((x, y) => win[y].w / win[y].n - win[x].w / win[x].n))
     console.log(`  ${d.padEnd(8)} ${pct(win[d].w / win[d].n)}  (${win[d].w}/${win[d].n})`);
@@ -139,11 +185,11 @@ if (!isMainThread) {
     return `${k.padEnd(12)} ${CARDS.find((c) => c.id === id)?.name ?? ""}`;
   };
   const top = Number(process.env.BALANCE_CARDS ?? 12);
-  console.log("勝ちに効いているカード（使った試合の勝率 − デッキの勝率）");
+  if (top > 0) console.log("勝ちに効いているカード（使った試合の勝率 − デッキの勝率）");
   for (const r of rows.slice(0, top))
     console.log(`  +${Math.round(r.diff * 100)}  ${pct(r.rate)}  n=${r.n}  ${name(r.k)}`);
-  console.log("効いていないカード");
-  for (const r of rows.slice(-top))
+  if (top > 0) console.log("効いていないカード");
+  for (const r of top > 0 ? rows.slice(-top) : [])
     console.log(`  ${Math.round(r.diff * 100)}  ${pct(r.rate)}  n=${r.n}  ${name(r.k)}`);
   if (process.env.BALANCE_JSON)
     (await import("node:fs")).writeFileSync(process.env.BALANCE_JSON, JSON.stringify(results));

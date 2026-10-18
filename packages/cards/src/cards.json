@@ -5,29 +5,43 @@
     "epithet": "炎上系配信者",
     "type": "icon",
     "rarity": 5,
-    "cost": 5,
-    "attack": 4,
-    "hp": 4,
+    "cost": 4,
+    "attack": 3,
+    "hp": 3,
     "attributes": ["炎上"],
     "kaiwai": ["配信者"],
     "keywords": ["連撃"],
     "effects": [
       {
+        "on": "play",
+        "do": "damage",
+        "to": "strongestEnemy",
+        "amount": 2
+      },
+      {
         "on": "passive",
         "do": "extraAttackOnKill"
       }
     ],
-    "effect": "連撃（1ターンに2回攻撃できる）。相手のアイコンを倒すたび、もう1回攻撃できる。",
+    "effect": "連撃（1ターンに2回攻撃できる）。場に出たとき、攻撃力がいちばん高い相手のアイコンに2ダメージ。相手のアイコンを倒すたび、もう1回攻撃できる。",
     "flavor": "「遅えよ。全部、俺がもらってく」",
     "dark": {
       "name": "闇堕ちレン",
-      "attack": 7,
+      "attack": 6,
       "hp": 3,
       "keywords": ["連撃", "叩き"],
-      "effect": "連撃。叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）",
+      "effect": "連撃。叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）。闇堕ちしたとき、相手のアイコンすべてに1ダメージ。",
       "art": "/assets/cards/c2-dark-art.jpg",
       "subject": "/assets/cards/c2-dark-subject.webp",
-      "original": "assets/original/c2-dark.webp"
+      "original": "assets/original/c2-dark.webp",
+      "effects": [
+        {
+          "on": "play",
+          "do": "damage",
+          "to": "allEnemies",
+          "amount": 1
+        }
+      ]
     },
     "serial": "No. 007 / 100",
     "art": "/assets/cards/c2-art.jpg",
@@ -237,17 +251,13 @@
     "epithet": "",
     "type": "icon",
     "rarity": 5,
-    "cost": 10,
+    "cost": 6,
     "attack": 2,
     "hp": 5,
     "attributes": ["草"],
     "kaiwai": ["ミーム"],
     "keywords": [],
     "effects": [
-      {
-        "on": "hand",
-        "do": "cheaperPerAlly"
-      },
       {
         "on": "passive",
         "do": "attackPerAlly"
@@ -261,7 +271,7 @@
         "do": "breakthrough"
       }
     ],
-    "effect": "自分の場のアイコン1体につき、コスト-1・攻撃力+1。場に出たとき、このターン自分のアイコンすべてがすぐ攻撃でき、ガードを無視できる。",
+    "effect": "自分の場のほかのアイコン1体につき攻撃力+1。場に出たとき、このターン自分のアイコンすべてがすぐ攻撃でき、ガードを無視できる。",
     "flavor": "作者不明。保存数は10万。",
     "art": "/assets/cards/k5-art.jpg",
     "subject": "/assets/cards/k5-subject.webp",
@@ -269,12 +279,19 @@
     "dark": {
       "name": "呪いのコラ画像",
       "attack": 5,
-      "hp": 3,
+      "hp": 4,
       "keywords": ["叩き"],
-      "effect": "叩き。見た者のタイムラインに、必ず流れてくる。",
+      "effect": "叩き。闇堕ちしたとき、自分の空いている枠すべてに草を出す。",
       "art": "/assets/cards/k5-dark-art.jpg",
       "subject": "/assets/cards/k5-dark-subject.webp",
-      "original": "assets/original/k5-dark.webp"
+      "original": "assets/original/k5-dark.webp",
+      "effects": [
+        {
+          "on": "play",
+          "do": "fill",
+          "card": "t-kusa"
+        }
+      ]
     }
   },
   {
@@ -302,29 +319,42 @@
     "epithet": "",
     "type": "icon",
     "rarity": 5,
-    "cost": 7,
-    "attack": 4,
+    "cost": 5,
+    "attack": 3,
     "hp": 5,
     "attributes": ["メロい"],
     "kaiwai": ["アイドル"],
     "keywords": ["注目"],
     "effects": [
       {
+        "on": "play",
+        "do": "buffAllies",
+        "attack": 1,
+        "hp": 1
+      },
+      {
         "on": "passive",
         "do": "focusAura"
       }
     ],
-    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。センターにいる間、自分のほかのアイコンも、ターンの始めに攻撃力+1。",
+    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。場に出たとき、自分のほかのアイコンすべてに攻撃力+1・体力+1。センターにいる間、自分のほかのアイコンも、ターンの始めに攻撃力+1。",
     "flavor": "センターは、譲らない。",
     "dark": {
       "name": "闇深アイドル",
-      "attack": 8,
-      "hp": 3,
+      "attack": 7,
+      "hp": 4,
       "keywords": ["連撃"],
-      "effect": "連撃。笑顔の裏側は、誰も知らない。",
+      "effect": "連撃。闇堕ちしたとき、攻撃力4以下の相手のアイコン1体（いちばん強いもの）を自分の場に奪う。",
       "art": "/assets/cards/m1-dark-art.jpg",
       "subject": "/assets/cards/m1-dark-subject.webp",
-      "original": "assets/original/m1-dark.webp"
+      "original": "assets/original/m1-dark.webp",
+      "effects": [
+        {
+          "on": "play",
+          "do": "steal",
+          "maxAttack": 4
+        }
+      ]
     },
     "art": "/assets/cards/m1-art.jpg",
     "subject": "/assets/cards/m1-subject.webp",
@@ -585,9 +615,9 @@
     "epithet": "神絵師",
     "type": "icon",
     "rarity": 5,
-    "cost": 7,
+    "cost": 6,
     "attack": 4,
-    "hp": 7,
+    "hp": 6,
     "attributes": ["神"],
     "kaiwai": ["配信者"],
     "keywords": ["ガード"],
@@ -597,17 +627,45 @@
         "do": "removeEnemyGuards"
       },
       {
+        "on": "play",
+        "do": "damage",
+        "to": "strongestEnemy",
+        "amount": 3
+      },
+      {
         "on": "turnEnd",
         "do": "draw",
         "count": 1
       }
     ],
-    "effect": "ガード。場に出たとき、相手のアイコンすべてのガードを消す。自分のターンの終わりに、カードを1枚引く。",
+    "effect": "ガード。場に出たとき、相手のアイコンすべてのガードを消し、攻撃力がいちばん高い相手のアイコンに3ダメージ。自分のターンの終わりに、カードを1枚引く。",
     "flavor": "「さあ、こちら側へ。光はもう、君を選んでいる」",
     "number": "001/040",
     "art": "/assets/cards/c1-art.jpg",
     "subject": "/assets/cards/c1-subject.webp",
-    "original": "assets/original/c1-shirogane.png"
+    "original": "assets/original/c1-shirogane.png",
+    "dark": {
+      "name": "堕天のシロガネ",
+      "attack": 7,
+      "hp": 4,
+      "keywords": [],
+      "effects": [
+        {
+          "on": "play",
+          "do": "silence",
+          "to": "strongestEnemy"
+        },
+        {
+          "on": "play",
+          "do": "damage",
+          "to": "allEnemies",
+          "amount": 1
+        }
+      ],
+      "effect": "闇堕ちしたとき、攻撃力がいちばん高い相手のアイコンを訂正し（キーワードと効果が消える）、相手のアイコンすべてに1ダメージ。",
+      "art": "/assets/cards/c1-dark-art.jpg",
+      "subject": "/assets/cards/c1-dark-subject.webp"
+    }
   },
   {
     "id": "g1",
@@ -689,7 +747,7 @@
     "epithet": "",
     "type": "icon",
     "rarity": 5,
-    "cost": 12,
+    "cost": 6,
     "attack": 4,
     "hp": 5,
     "attributes": ["神"],
@@ -697,15 +755,17 @@
     "keywords": [],
     "effects": [
       {
-        "on": "hand",
-        "do": "cheaperPerPost"
+        "on": "play",
+        "do": "sweep",
+        "maxHp": 2
       },
       {
         "on": "play",
-        "do": "extraTurn"
+        "do": "draw",
+        "count": 1
       }
     ],
-    "effect": "このゲームで自分が使った投稿1枚につき、コスト-1。場に出たとき、このターンのあとに、もう一度自分のターンを行う。",
+    "effect": "場に出たとき、体力が2以下の相手のアイコンをすべて倒し、カードを1枚引く。",
     "flavor": "それ、論文ありますか？",
     "art": "/assets/cards/g4-art.jpg",
     "subject": "/assets/cards/g4-subject.webp",
@@ -713,12 +773,25 @@
     "dark": {
       "name": "陰謀論者",
       "attack": 6,
-      "hp": 3,
+      "hp": 4,
       "keywords": ["連撃"],
-      "effect": "連撃。真実は、いつも自分の中にある。",
+      "effect": "連撃。闇堕ちしたとき、相手のアイコンすべてを晒し者にし（強化が消える）、相手のマスターに3ダメージ。",
       "art": "/assets/cards/g4-dark-art.jpg",
       "subject": "/assets/cards/g4-dark-subject.webp",
-      "original": "assets/original/g4-dark.webp"
+      "original": "assets/original/g4-dark.webp",
+      "effects": [
+        {
+          "on": "play",
+          "do": "expose",
+          "to": "allEnemies"
+        },
+        {
+          "on": "play",
+          "do": "damage",
+          "to": "enemyMaster",
+          "amount": 3
+        }
+      ]
     }
   },
   {
@@ -1270,29 +1343,42 @@
     "epithet": "癒しボイス",
     "type": "icon",
     "rarity": 5,
-    "cost": 6,
-    "attack": 3,
-    "hp": 7,
+    "cost": 5,
+    "attack": 2,
+    "hp": 6,
     "attributes": ["癒し"],
     "kaiwai": ["配信者"],
     "keywords": ["ガード"],
     "effects": [
       {
+        "on": "play",
+        "do": "bind",
+        "to": "allEnemies"
+      },
+      {
         "on": "passive",
         "do": "lullaby"
       }
     ],
-    "effect": "ガード。相手のターンの始めに、相手の攻撃力がいちばん高いアイコンを眠らせる（そのターン攻撃できない）。",
+    "effect": "ガード。場に出たとき、相手のアイコンすべてを眠らせる（次の相手のターン、攻撃できない）。相手のターンの始めに、相手の攻撃力がいちばん高いアイコンを眠らせる。",
     "flavor": "「大丈夫。今日はもう、休んでいいよ」",
     "dark": {
       "name": "病みボイス ナギ",
       "attack": 6,
       "hp": 4,
       "keywords": ["連撃"],
-      "effect": "連撃。やさしい声が、毒に変わる。",
+      "effect": "連撃。闇堕ちしたとき、相手のアイコンすべてに2ダメージ。",
       "art": "/assets/cards/c5-dark-art.jpg",
       "subject": "/assets/cards/c5-dark-subject.webp",
-      "original": "assets/original/c5-dark.webp"
+      "original": "assets/original/c5-dark.webp",
+      "effects": [
+        {
+          "on": "play",
+          "do": "damage",
+          "to": "allEnemies",
+          "amount": 2
+        }
+      ]
     },
     "art": "/assets/cards/c5-art.jpg",
     "original": "assets/original/c5.webp"
@@ -1698,8 +1784,8 @@
     "epithet": "炎上請負人",
     "type": "icon",
     "rarity": 5,
-    "cost": 6,
-    "attack": 5,
+    "cost": 5,
+    "attack": 4,
     "hp": 3,
     "attributes": ["炎上"],
     "kaiwai": ["配信者"],
@@ -1720,7 +1806,24 @@
     "effect": "速攻。場に出たとき、相手のアイコンすべてに1ダメージ。自分のターンの終わりに、相手のマスターに1ダメージ。",
     "flavor": "「火種はね、どこにでも落ちてるの」",
     "art": "/assets/cards/c9-art.jpg",
-    "original": "assets/original/c9.webp"
+    "original": "assets/original/c9.webp",
+    "dark": {
+      "name": "業火のカグラ",
+      "attack": 6,
+      "hp": 3,
+      "keywords": ["速攻"],
+      "effects": [
+        {
+          "on": "play",
+          "do": "damage",
+          "to": "allEnemies",
+          "amount": 2
+        }
+      ],
+      "effect": "速攻。闇堕ちしたとき、相手のアイコンすべてに2ダメージ。",
+      "art": "/assets/cards/c9-dark-art.jpg",
+      "subject": "/assets/cards/c9-dark-subject.webp"
+    }
   },
   {
     "id": "m11",
@@ -1947,14 +2050,15 @@
     "rarity": 5,
     "cost": 6,
     "attack": 3,
-    "hp": 7,
+    "hp": 6,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
     "keywords": ["ガード"],
     "effects": [
       {
-        "do": "draw",
-        "count": 2
+        "on": "play",
+        "do": "sweep",
+        "maxHp": 2
       },
       {
         "on": "turnEnd",
@@ -1963,10 +2067,32 @@
         "amount": 2
       }
     ],
-    "effect": "ガード。場に出たとき、カードを2枚引く。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコン1体に2ダメージ。",
+    "effect": "ガード。場に出たとき、体力が2以下の相手のアイコンをすべて倒す。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコンに2ダメージ。",
     "flavor": "「知らないことは、まだ調べていないことだけ」",
     "art": "/assets/cards/c7-art.jpg",
-    "original": "assets/original/c7.webp"
+    "original": "assets/original/c7.webp",
+    "dark": {
+      "name": "禁書のヨミ",
+      "attack": 6,
+      "hp": 5,
+      "keywords": [],
+      "effects": [
+        {
+          "on": "play",
+          "do": "damage",
+          "to": "allEnemies",
+          "amount": 2
+        },
+        {
+          "on": "play",
+          "do": "draw",
+          "count": 1
+        }
+      ],
+      "effect": "闇堕ちしたとき、相手のアイコンすべてに2ダメージ。カードを1枚引く。",
+      "art": "/assets/cards/c7-dark-art.jpg",
+      "subject": "/assets/cards/c7-dark-subject.webp"
+    }
   },
   {
     "id": "k11",
@@ -2065,7 +2191,7 @@
     "epithet": "大草原の主",
     "type": "icon",
     "rarity": 5,
-    "cost": 6,
+    "cost": 5,
     "attack": 2,
     "hp": 5,
     "attributes": ["草"],
@@ -2085,7 +2211,27 @@
     "effect": "自分の場のほかのアイコン1体につき攻撃力+1。場に出たとき、草を2体出す。",
     "flavor": "「笑ったら、もう仲間だよ」",
     "art": "/assets/cards/c8-art.jpg",
-    "original": "assets/original/c8.webp"
+    "original": "assets/original/c8.webp",
+    "dark": {
+      "name": "嘲笑のワラ",
+      "attack": 3,
+      "hp": 4,
+      "keywords": [],
+      "effects": [
+        {
+          "on": "passive",
+          "do": "attackPerAlly"
+        },
+        {
+          "on": "play",
+          "do": "fill",
+          "card": "t-kusa"
+        }
+      ],
+      "effect": "自分の場のほかのアイコン1体につき攻撃力+1。闇堕ちしたとき、自分の空いている枠すべてに草を出す。",
+      "art": "/assets/cards/c8-dark-art.jpg",
+      "subject": "/assets/cards/c8-dark-subject.webp"
+    }
   },
   {
     "id": "i10",
@@ -2197,9 +2343,9 @@
     "epithet": "ととのい師",
     "type": "icon",
     "rarity": 5,
-    "cost": 6,
+    "cost": 5,
     "attack": 3,
-    "hp": 6,
+    "hp": 5,
     "attributes": ["癒し"],
     "kaiwai": ["配信者"],
     "keywords": ["ガード"],
@@ -2218,6 +2364,29 @@
     "effect": "ガード。場に出たとき、自分のライフを3回復する。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
     "flavor": "「ととのったら、あなたの番」",
     "art": "/assets/cards/c10-art.jpg",
-    "original": "assets/original/c10.webp"
+    "original": "assets/original/c10.webp",
+    "dark": {
+      "name": "灼熱のユズハ",
+      "attack": 5,
+      "hp": 5,
+      "keywords": [],
+      "effects": [
+        {
+          "on": "play",
+          "do": "damage",
+          "to": "allEnemies",
+          "amount": 2
+        },
+        {
+          "on": "play",
+          "do": "heal",
+          "to": "master",
+          "amount": 2
+        }
+      ],
+      "effect": "闇堕ちしたとき、相手のアイコンすべてに2ダメージ。自分のライフを2回復する。",
+      "art": "/assets/cards/c10-dark-art.jpg",
+      "subject": "/assets/cards/c10-dark-subject.webp"
+    }
   }
 ]

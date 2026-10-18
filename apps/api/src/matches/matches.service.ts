@@ -6,7 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { CARDS, DECKS, type DeckId } from "@trends/cards";
+import { CARDS, DECK_OSHI, DECKS, type DeckId } from "@trends/cards";
 import {
   type Action,
   actionFrom,
@@ -72,6 +72,7 @@ export class MatchesService {
       const seed = randomInt(1, 2 ** 31 - 1);
       const state = createGame({
         decks: { p1: DECKS[row.p1Deck as DeckId], p2: DECKS[deck] },
+        oshi: { p1: DECK_OSHI[row.p1Deck as DeckId], p2: DECK_OSHI[deck] },
         seed,
         first: randomInt(2) === 0 ? "p1" : "p2",
       });
