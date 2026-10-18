@@ -168,6 +168,49 @@ export function legalTargets(state: GameState, player: PlayerId, catalog: Catalo
   return [{ kind: "leader" as const }, ...units.map((x) => ({ kind: "unit" as const, slot: x.slot }))];
 }
 
+/** 攻撃したときの見込み（画面の予告用。実際の攻撃も同じ計算を使う） */
+export interface AttackPreview {
+  /** 攻撃先に与えるダメージ（叩きの +2 を含む） */
+  toDefender: number;
+  /** 反撃で受けるダメージ（マスターへの攻撃は 0） */
+  toAttacker: number;
+  /** 叩きで上がった分 */
+  bonus: number;
+  /** 攻撃先を倒せる（闇堕ちするアイコンは裏返る） */
+  kills: boolean;
+  /** 反撃で攻撃した側が倒れる */
+  dies: boolean;
+}
+
+export function previewAttack(
+  state: GameState,
+  player: PlayerId,
+  from: number,
+  target: AttackTarget,
+  catalog: Catalog,
+): AttackPreview | null {
+  const atk = state.players[player].field[from];
+  if (!atk) return null;
+  const av = viewUnit(state, player, atk, catalog);
+  if (target.kind === "leader") {
+    const lp = state.players[opponent(player)].lp;
+    return { toDefender: av.attack, toAttacker: 0, bonus: 0, kills: av.attack >= lp, dies: false };
+  }
+  const foeId = opponent(player);
+  const def = state.players[foeId].field[target.slot];
+  if (!def) return null;
+  const dv = viewUnit(state, foeId, def, catalog);
+  const bonus = av.keywords.includes("叩き") && def.damage > 0 ? 2 : 0;
+  const toDefender = av.attack + bonus;
+  return {
+    toDefender,
+    toAttacker: dv.attack,
+    bonus,
+    kills: toDefender >= dv.hp,
+    dies: dv.attack >= av.hp,
+  };
+}
+
 /** 投稿を使える対象（対象を取らない投稿なら空） */
 export function castTargets(
   state: GameState,
@@ -737,10 +780,13 @@ export function applyAction(
       } else {
         // お互いの攻撃力の分だけ、相手の体力を削る（ダメージは残る）
         const def = foe.field[t.slot] as Unit;
-        const dv = viewUnit(state, foeId, def, catalog);
-        const bonus = av.keywords.includes("叩き") && def.damage > 0 ? 2 : 0;
-        const toDefender = av.attack + bonus;
-        const toAttacker = dv.attack;
+        const { toDefender, toAttacker } = previewAttack(
+          state,
+          player,
+          action.from,
+          t,
+          catalog,
+        ) as AttackPreview;
         def.damage += toDefender;
         atk.damage += toAttacker;
         const attackerId = atk.cardId;

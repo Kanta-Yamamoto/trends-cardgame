@@ -21,6 +21,10 @@ interface Props {
   onPeek?: () => void;
   /** 長押し（スマホ）・右クリック（PC）で呼ぶ。カードを大きく見るのに使う */
   onLongPress?: () => void;
+  /** 押し始め（ドラッグで出す・攻撃するのに使う） */
+  onPress?: (e: React.PointerEvent<HTMLButtonElement>) => void;
+  /** ドロップ先の目印（useDragPlay が読む） */
+  drop?: string;
   children?: React.ReactNode;
 }
 
@@ -40,9 +44,12 @@ export function MiniCard({
   onClick,
   onPeek,
   onLongPress,
+  onPress,
+  drop,
   children,
 }: Props) {
   const timer = useRef<number | undefined>(undefined);
+  const start = useRef({ x: 0, y: 0 });
   const longPressed = useRef(false);
   const cancel = () => window.clearTimeout(timer.current);
   const dark = view?.unit.dark ?? false;
@@ -62,6 +69,7 @@ export function MiniCard({
       style={{ ...bg, ...style }}
       data-uid={uid}
       data-hand-card={inHand ? "" : undefined}
+      data-drop={drop}
       disabled={disabled}
       aria-label={
         label ??
@@ -77,7 +85,9 @@ export function MiniCard({
         }
         onClick?.();
       }}
-      onPointerDown={() => {
+      onPointerDown={(e) => {
+        start.current = { x: e.clientX, y: e.clientY };
+        onPress?.(e);
         if (!onLongPress) return;
         longPressed.current = false;
         cancel();
@@ -85,6 +95,10 @@ export function MiniCard({
           longPressed.current = true;
           onLongPress();
         }, LONG_PRESS_MS);
+      }}
+      onPointerMove={(e) => {
+        // 引っぱり始めたら長押しにしない
+        if (Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y) > 8) cancel();
       }}
       onPointerUp={cancel}
       onPointerLeave={cancel}
@@ -121,9 +135,8 @@ export function MiniCard({
         {card.epithet && !dark && <small>{card.epithet}</small>}
         {name}
       </span>
-      {(keywords.length > 0 || isPost || view) && (
+      {(keywords.length > 0 || view) && (
         <span className="mini-kws">
-          {isPost && <span className="mini-kw post">投稿</span>}
           {keywords.map((k) => (
             <span key={k} className="mini-kw">
               {k}
@@ -134,6 +147,8 @@ export function MiniCard({
           {view?.unit.silenced && <span className="mini-kw st">訂正</span>}
         </span>
       )}
+      {/* 投稿は攻撃力・体力の代わりに、吹き出しの「投稿」札を出す（アイコンと見分けやすく） */}
+      {isPost && <span className="mini-postmark">投稿</span>}
       {!isPost && (
         <span className="mini-stats">
           <span className="mini-atk" title="攻撃力">

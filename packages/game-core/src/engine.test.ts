@@ -2,7 +2,7 @@ import { CARDS, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
 import { planTurn } from "./ai";
 import { deckAttributes, validateDeck } from "./deck";
-import { applyAction, createGame, effectiveCost, legalTargets, viewUnit } from "./engine";
+import { applyAction, createGame, effectiveCost, legalTargets, previewAttack, viewUnit } from "./engine";
 import { type Action, type GameState, type RuleCard, RuleError } from "./types";
 
 type Extra = Partial<RuleCard>;
@@ -193,8 +193,30 @@ describe("キーワード", () => {
     let s = withFoe(["basher", "twin"], ["wall"]);
     s = play(play(s, 0, 0), 0, 1);
     s = hit(s, 1, 0).state; // 連撃で 2 ダメージ
+    expect(previewAttack(s, "p1", 0, { kind: "unit", slot: 0 }, catalog)).toMatchObject({
+      toDefender: 4,
+      bonus: 2,
+    });
     const r = hit(s, 0, 0);
     expect(r.events[0]).toMatchObject({ type: "battle", toDefender: 4 });
+  });
+  it("攻撃の見込み：与える・受けるダメージと、倒せるか・倒されるか", () => {
+    let s = withFoe(["basher"], ["wall"]);
+    s = play(s, 0, 0);
+    const before = viewUnit(s, "p2", s.players.p2.field[0] as never, catalog);
+    const p = previewAttack(s, "p1", 0, { kind: "unit", slot: 0 }, catalog);
+    expect(p).toMatchObject({ toDefender: 2, bonus: 0, kills: 2 >= before.hp });
+    const r = hit(s, 0, 0);
+    expect(r.events[0]).toMatchObject({
+      type: "battle",
+      toDefender: p?.toDefender,
+      toAttacker: p?.toAttacker,
+    });
+    expect(previewAttack(s, "p1", 0, { kind: "leader" }, catalog)).toMatchObject({
+      toDefender: 2,
+      toAttacker: 0,
+    });
+    expect(previewAttack(s, "p1", 3, { kind: "leader" }, catalog)).toBeNull();
   });
   it("注目：自分のターンの始めに攻撃力+1、真ん中の枠なら+2", () => {
     let s = play(play(game(["idol", "idol"]), 0, 0), 0, 2);

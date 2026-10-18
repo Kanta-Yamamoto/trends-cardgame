@@ -1,6 +1,6 @@
 export { planTurn } from "./ai";
 export { deckAttributes, validateDeck } from "./deck";
-export type { NewGameInput } from "./engine";
+export type { AttackPreview, NewGameInput } from "./engine";
 export {
   applyAction,
   canUnitAttack,
@@ -10,6 +10,7 @@ export {
   hasKeyword,
   legalTargets,
   opponent,
+  previewAttack,
   viewUnit,
 } from "./engine";
 export { nextRandom } from "./rng";
