@@ -40,7 +40,8 @@ describe("先読みする CPU（planTurnSearch）", () => {
         for (let t = 0; t < 120 && !s.winner; t++) s = runTurn(s, true);
         expect(s.winner).not.toBeNull();
       }
-  }, 60_000);
+    // 15 デッキ × 15 = 225 試合。手元で約 20 秒、CI では 2〜3 倍かかる
+  }, 180_000);
 
   it("とどめを刺せるときは刺す", () => {
     let s = createGame({
@@ -75,5 +76,5 @@ describe("先読みする CPU（planTurnSearch）", () => {
         }
     // 闇堕ちはコストなしで出せる強い手で、貪欲法もすぐ使うため、差は以前より小さい（2026-10 時点で 57%前後）
     expect(wins / games).toBeGreaterThan(0.55);
-  }, 120_000);
+  }, 300_000);
 });

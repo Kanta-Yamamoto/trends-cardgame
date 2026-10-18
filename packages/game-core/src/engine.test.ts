@@ -423,7 +423,7 @@ describe("CPU", () => {
     for (const a of plan) cur = applyAction(cur, a, real).state;
     expect(plan.at(-1)).toEqual({ type: "endTurn", player: "p1" });
   });
-  it("3つのデッキどうしで最後まで対戦でき、必ず決着がつく", () => {
+  it("すべてのデッキどうしで最後まで対戦でき、必ず決着がつく", () => {
     const ids = Object.keys(DECKS) as (keyof typeof DECKS)[];
     for (const a of ids)
       for (const b of ids)
@@ -437,7 +437,8 @@ describe("CPU", () => {
           }
           expect(s.winner).not.toBeNull();
         }
-  });
+    // 15 デッキ × 15 × 2 = 450 試合。CI の遅いマシンでは 5 秒を超える
+  }, 60_000);
 });
 
 describe("デッキの決まり", () => {
