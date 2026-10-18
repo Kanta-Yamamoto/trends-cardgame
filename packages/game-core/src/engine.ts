@@ -286,9 +286,14 @@ export function castTargets(
   const side = card.target === "enemyIcon" ? "enemy" : "ally";
   const owner = side === "enemy" ? opponent(player) : player;
   const k = side === "ally" ? card.targetKaiwai : undefined;
-  return state.players[owner].field.flatMap((u, slot) =>
-    u && (k === undefined || inKaiwai(u, k, catalog)) ? [{ side, slot } as CastTarget] : [],
-  );
+  const f = card.targetFilter;
+  return state.players[owner].field.flatMap((u, slot) => {
+    if (!u) return [];
+    if (k !== undefined && !inKaiwai(u, k, catalog)) return [];
+    if (f?.damaged && u.damage <= 0) return [];
+    if (f?.maxAttack !== undefined && viewUnit(state, owner, u, catalog).attack > f.maxAttack) return [];
+    return [{ side, slot } as CastTarget];
+  });
 }
 
 /** そのアイコンが今攻撃できるか */
@@ -628,15 +633,17 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       const foeField = state.players[foeId].field;
       let from = -1;
       let best = -1;
-      foeField.forEach((u, slot) => {
-        if (!u) return;
-        const v = viewUnit(state, foeId, u, catalog);
-        const score = v.attack * 100 + v.hp;
-        if (v.attack <= e.maxAttack && score > best) {
-          from = slot;
-          best = score;
-        }
-      });
+      if (ctx.target?.side === "enemy") from = ctx.target.slot;
+      else
+        foeField.forEach((u, slot) => {
+          if (!u) return;
+          const v = viewUnit(state, foeId, u, catalog);
+          const score = v.attack * 100 + v.hp;
+          if (v.attack <= e.maxAttack && score > best) {
+            from = slot;
+            best = score;
+          }
+        });
       const u = from >= 0 ? foeField[from] : null;
       if (!u) break;
       foeField[from] = null;
@@ -662,7 +669,13 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       });
       break;
     case "destroy": {
-      const slot = strongestEnemy(state, player, catalog);
+      // to が無ければ投稿の対象（相手のアイコン）
+      const slot =
+        e.to === "strongestEnemy"
+          ? strongestEnemy(state, player, catalog)
+          : ctx.target?.side === "enemy"
+            ? ctx.target.slot
+            : -1;
       const u = slot >= 0 ? state.players[foeId].field[slot] : null;
       if (u) damageUnit(state, foeId, slot, Math.max(1, viewUnit(state, foeId, u, catalog).hp), emit);
       break;
@@ -670,16 +683,18 @@ function runEffect(e: CardEffect, ctx: Ctx) {
     case "bounce": {
       const foe = state.players[foeId];
       let slot = -1;
-      let best = -1;
-      foe.field.forEach((u, s) => {
-        if (!u) return;
-        const v = viewUnit(state, foeId, u, catalog);
-        const score = must(catalog, u.cardId).cost * 100 + v.attack;
-        if (score > best) {
-          best = score;
-          slot = s;
-        }
-      });
+      if (e.to === "costliestEnemy") {
+        let best = -1;
+        foe.field.forEach((u, s) => {
+          if (!u) return;
+          const v = viewUnit(state, foeId, u, catalog);
+          const score = must(catalog, u.cardId).cost * 100 + v.attack;
+          if (score > best) {
+            best = score;
+            slot = s;
+          }
+        });
+      } else if (ctx.target?.side === "enemy") slot = ctx.target.slot;
       const u = slot >= 0 ? foe.field[slot] : null;
       if (!u) break;
       foe.field[slot] = null;
