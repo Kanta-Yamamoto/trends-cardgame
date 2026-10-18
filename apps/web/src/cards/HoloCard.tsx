@@ -1,15 +1,20 @@
 import type { CardDef } from "@trends/cards";
 import { type ComponentType, type CSSProperties, useEffect, useRef } from "react";
+import { AiriFace } from "./faces/Airi";
 import { CollageFace } from "./faces/Collage";
 import { ExpertFace } from "./faces/Expert";
 import { GenericFace } from "./faces/Generic";
 import { HibanaFace } from "./faces/Hibana";
 import { IdolFace } from "./faces/Idol";
+import { KaguraFace } from "./faces/Kagura";
 import { MinamoFace } from "./faces/Minamo";
 import { NagiFace } from "./faces/Nagi";
 import { RareFace } from "./faces/Rare";
 import { RenFace } from "./faces/Ren";
 import { ShiroganeFace } from "./faces/Shirogane";
+import { WaraFace } from "./faces/Wara";
+import { YomiFace } from "./faces/Yomi";
+import { YuzuhaFace } from "./faces/Yuzuha";
 
 const FACES: Record<string, { cls: string; Face: ComponentType<{ card: CardDef }> }> = {
   c1: { cls: "k1", Face: ShiroganeFace },
@@ -20,6 +25,11 @@ const FACES: Record<string, { cls: string; Face: ComponentType<{ card: CardDef }
   g4: { cls: "s-expert", Face: ExpertFace },
   c4: { cls: "s-hibana", Face: HibanaFace },
   c5: { cls: "s-nagi", Face: NagiFace },
+  c6: { cls: "s-airi", Face: AiriFace },
+  c7: { cls: "s-yomi", Face: YomiFace },
+  c8: { cls: "s-wara", Face: WaraFace },
+  c9: { cls: "s-kagura", Face: KaguraFace },
+  c10: { cls: "s-yuzuha", Face: YuzuhaFace },
 };
 
 /** 専用デザインがないカードは、★4以上なら共通のキラデザイン、それ以外は共通デザインで描く */
