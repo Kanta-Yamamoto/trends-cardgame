@@ -78,8 +78,8 @@ export type CardEffect = (
 };
 
 /**
- * 闇堕ちの姿。推し（★5）だけが持つ。推しが倒されたあと、マスターが選んだときに1回だけ、
- * オワコンから闇堕ちの姿で場に出てくる
+ * 闇堕ちの姿。★5 の一部が持つ。そのカードがオワコンに行ったら、自分のターンの好きなときに1回だけ、
+ * コストなしで闇堕ちの姿として場に出せる（出たターンは攻撃できない）
  */
 export interface DarkSide {
   name: string;
@@ -137,5 +137,3 @@ export const DECK_SIZE = 25;
 /** 1つのデッキに入れられる属性の数（共通カードは数えない） */
 export const MAX_DECK_ATTRIBUTES = 2;
 export const MAX_COPIES = 3;
-/** 推し（★5）の最低コスト（自分のアイコンが倒されるたびに下がるが、これより下がらない） */
-export const OSHI_MIN_COST = 3;

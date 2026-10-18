@@ -1,4 +1,4 @@
-import { CARDS, type CardDef, DECK_OSHI, DECKS, type DeckId } from "@trends/cards";
+import { CARDS, type CardDef, DECKS, type DeckId } from "@trends/cards";
 import {
   type Action,
   type AttackTarget,
@@ -18,43 +18,43 @@ export const CATALOG: Record<string, CardDef> = Object.fromEntries(CARDS.map((c)
 export const DECK_INFO: Record<DeckId, { name: string; text: string }> = {
   flame: {
     name: "大炎上で草",
-    text: "炎上×草。速攻と連撃で早めに削る。推しは炎上系配信者 レン",
+    text: "炎上×草。速攻と連撃で早めに削る。エースは炎上系配信者 レン",
   },
   idol: {
     name: "推しに癒される",
-    text: "メロい×癒し。注目で推しを育て、ガードと回復で守り切る。推しはトップアイドル",
+    text: "メロい×癒し。注目で推しを育て、ガードと回復で守り切る。エースはトップアイドル",
   },
   expert: {
     name: "有識者の守り",
-    text: "神×癒し。ガードで守りながら引き続け、除去で盤面を取る。推しは癒しボイス ナギ",
+    text: "神×癒し。ガードで守りながら引き続け、除去で盤面を取る。エースは癒しボイス ナギ",
   },
   ronpa: {
     name: "論破で炎上",
-    text: "炎上×神。叩きと除去で相手のアイコンを減らし、押し切る。推しは専門家",
+    text: "炎上×神。叩きと除去で相手のアイコンを減らし、押し切る。エースは専門家",
   },
   dance: {
     name: "踊ってみたで草",
-    text: "草×メロい。草を増やして並べ、みんなで強くなる。推しは伝説のコラ画像",
+    text: "草×メロい。草を増やして並べ、みんなで強くなる。エースは伝説のコラ画像",
   },
   scandal: {
     name: "推しが炎上",
-    text: "炎上×メロい。速攻と強化で、推しが燃える前に押し込む。推しは炎上請負人 カグラ",
+    text: "炎上×メロい。速攻と強化で、推しが燃える前に押し込む。エースは炎上請負人 カグラ",
   },
   phoenix: {
     name: "燃えても癒える",
-    text: "炎上×癒し。回復するたびに相手を燃やす。推しはととのい師 ユズハ",
+    text: "炎上×癒し。回復するたびに相手を燃やす。エースはととのい師 ユズハ",
   },
   wiki: {
     name: "草にマジレス",
-    text: "神×草。ネタを増やし、一斉に攻めて仕留める。推しは知の番人 ヨミ",
+    text: "神×草。ネタを増やし、一斉に攻めて仕留める。エースは知の番人 ヨミ",
   },
   theory: {
     name: "推しを考察",
-    text: "神×メロい。推しを守りながら、論破と強化で押し切る。推しは神絵師 シロガネ",
+    text: "神×メロい。推しを守りながら、論破と強化で押し切る。エースは神絵師 シロガネ",
   },
   chill: {
     name: "ゆるいTL",
-    text: "草×癒し。草を並べてガードで守り、数で押す。推しは大草原の主 ワラ",
+    text: "草×癒し。草を並べてガードで守り、数で押す。エースは大草原の主 ワラ",
   },
 };
 
@@ -64,10 +64,8 @@ export const CPU: PlayerId = "p2";
 type Selection =
   | { kind: "hand"; index: number }
   | { kind: "attacker"; slot: number }
-  /** 推し枠の推しを選んで、出す枠を待っている */
-  | { kind: "oshi" }
-  /** 闇堕ちを選んで、出す枠を待っている */
-  | { kind: "dark" }
+  /** オワコンの闇堕ちできるカードを選んで、出す枠を待っている */
+  | { kind: "dark"; cardId: string }
   | null;
 
 export interface LogEntry {
@@ -142,7 +140,7 @@ export interface Presenter {
   revealFoe?: (
     game: GameState,
     cardId: string,
-    action: Extract<Action, { type: "play" | "cast" | "playOshi" }>,
+    action: Extract<Action, { type: "play" | "cast" }>,
   ) => Promise<void>;
   /** 闇堕ちの演出（画面全体）。自分・相手どちらの闇堕ちでも、state を進める前に見せる */
   darkFall?: (cardId: string, player: PlayerId) => Promise<void>;
@@ -157,7 +155,7 @@ let link: RemoteLink | null = null;
 let inbox: RemoteUpdate[] = [];
 let draining = false;
 
-type PlaceAction = Extract<Action, { type: "play" | "playOshi" | "darkFall" }>;
+type PlaceAction = Extract<Action, { type: "play" | "darkFall" }>;
 
 /** 出したアイコンだけを場に置いた、効果の前の姿（演出のあいだ画面に出す） */
 function placedOnly(prev: GameState, a: PlaceAction, next: GameState): GameState {
@@ -173,7 +171,6 @@ function placedOnly(prev: GameState, a: PlaceAction, next: GameState): GameState
         ...me,
         mana: after.mana,
         hand: a.type === "play" ? me.hand.filter((_, i) => i !== a.handIndex) : me.hand,
-        oshiState: after.oshiState,
         trash: a.type === "darkFall" ? after.trash : me.trash,
         field: me.field.map((u, i) => (i === a.slot ? unit : u)),
       },
@@ -181,8 +178,7 @@ function placedOnly(prev: GameState, a: PlaceAction, next: GameState): GameState
   };
 }
 
-const isPlace = (a: Action): a is PlaceAction =>
-  a.type === "play" || a.type === "playOshi" || a.type === "darkFall";
+const isPlace = (a: Action): a is PlaceAction => a.type === "play" || a.type === "darkFall";
 const hasEffects = (a: Action) => isPlace(a) || a.type === "cast" || a.type === "endTurn";
 
 export const useGame = create<GameStore>((set, get) => {
@@ -214,19 +210,11 @@ export const useGame = create<GameStore>((set, get) => {
       // 相手が出した・使ったカードは、出来事からカードを知って大きく見せる
       const a = u.action;
       if (a.type === "darkFall" && presenter?.darkFall && g) {
-        const id = g.players[a.player].oshi;
-        if (id) {
-          set({ animating: true });
-          await presenter.darkFall(id, a.player);
-          if (my !== runId) break;
-        }
+        set({ animating: true });
+        await presenter.darkFall(a.cardId, a.player);
+        if (my !== runId) break;
       }
-      if (
-        (a.type === "play" || a.type === "cast" || a.type === "playOshi") &&
-        a.player === CPU &&
-        presenter?.revealFoe &&
-        g
-      ) {
+      if ((a.type === "play" || a.type === "cast") && a.player === CPU && presenter?.revealFoe && g) {
         const ev = u.events.find((e) => e.type === "played" || e.type === "cast");
         if (ev && "cardId" in ev) {
           set({ animating: true });
@@ -299,8 +287,8 @@ export const useGame = create<GameStore>((set, get) => {
     const my = runId;
     set({ animating: true, selection: null, error: null });
     const intro =
-      a.type === "darkFall" && presenter.darkFall && game.players[a.player].oshi
-        ? presenter.darkFall(game.players[a.player].oshi as string, a.player)
+      a.type === "darkFall" && presenter.darkFall
+        ? presenter.darkFall(a.cardId, a.player)
         : Promise.resolve();
     return intro
       .then(() => present(game, a, events, state))
@@ -344,10 +332,6 @@ export const useGame = create<GameStore>((set, get) => {
         const id = g.players[CPU].hand[a.handIndex];
         if (id) await presenter.revealFoe(g, id, a);
       }
-      if (a.type === "playOshi" && presenter?.revealFoe) {
-        const id = g.players[CPU].oshi;
-        if (id) await presenter.revealFoe(g, id, a);
-      }
       if (my !== runId) return;
       if (!(await commit(a))) return finish();
       if (my !== runId) return;
@@ -377,7 +361,6 @@ export const useGame = create<GameStore>((set, get) => {
       const cpuDeck = others[seed % others.length] as DeckId;
       const game = createGame({
         decks: { [ME]: DECKS[deck], [CPU]: DECKS[cpuDeck] } as never,
-        oshi: { [ME]: DECK_OSHI[deck], [CPU]: DECK_OSHI[cpuDeck] },
         seed,
         first,
       });
@@ -417,11 +400,9 @@ export const useGame = create<GameStore>((set, get) => {
       const a: Action | null =
         sel.kind === "hand"
           ? { type: "play", player: ME, handIndex: sel.index, slot }
-          : sel.kind === "oshi"
-            ? { type: "playOshi", player: ME, slot }
-            : sel.kind === "dark"
-              ? { type: "darkFall", player: ME, slot }
-              : null;
+          : sel.kind === "dark"
+            ? { type: "darkFall", player: ME, cardId: sel.cardId, slot }
+            : null;
       if (!a) return;
       then(commit(a), (ok) => ok && set({ selection: null }));
     },

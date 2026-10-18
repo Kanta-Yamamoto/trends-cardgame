@@ -22,7 +22,7 @@ const CRACKS = [
 const DURATION = 2600;
 
 /**
- * 闇堕ちの演出。画面全体が暗くなり、元の推しの絵にひびが入って砕け、闇堕ちの姿が差し込む。
+ * 闇堕ちの演出。画面全体が暗くなり、元の絵にひびが入って砕け、闇堕ちの姿が差し込む。
  * 自分・相手どちらの闇堕ちでも出す。押すと飛ばせる
  */
 export function DarkCutscene({
@@ -52,7 +52,7 @@ export function DarkCutscene({
       className={`dark-cut ${mine ? "mine" : "foe"} ${reduce ? "reduced" : ""}`}
       style={vars}
       onClick={onDone}
-      aria-label={`${ownerName}の推し ${card.name} が闇堕ちした（押すと飛ばせます）`}
+      aria-label={`${ownerName}の ${card.name} が闇堕ちした（押すと飛ばせます）`}
     >
       <span className="dc-veil" />
       <span className="dc-flames" />
@@ -67,7 +67,9 @@ export function DarkCutscene({
       </span>
       <span className="dc-flash" />
       <span className="dc-text">
-        <small>{ownerName}の推し</small>
+        <small>
+          {ownerName}の{card.name}
+        </small>
         <strong>闇堕ち</strong>
         <em>
           {card.name} → {card.dark?.name ?? card.name}

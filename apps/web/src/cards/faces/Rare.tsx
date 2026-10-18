@@ -60,7 +60,7 @@ export function RareFace({ card }: { card: CardDef }) {
           </p>
           {card.dark && (
             <p className="kr-darktext">
-              推し：倒されたあと1回だけ、闇堕ちしてオワコンから戻ってくる（姿は闇堕ちするまで秘密）
+              闇堕ち：オワコンに行ったら、好きなときにコストなしで闇堕ちの姿で出せる（1回だけ。姿は闇堕ちするまで秘密）
             </p>
           )}
           {card.type === "icon" && (

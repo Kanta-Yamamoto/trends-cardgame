@@ -4,7 +4,7 @@
 // 時間ではなく「試す手の数」で探索を打ち切るので、マシンの速さで結果が変わらない。
 import { cpus } from "node:os";
 import { isMainThread, parentPort, Worker, workerData } from "node:worker_threads";
-import { CARDS, DECK_OSHI, DECKS } from "@trends/cards";
+import { CARDS, DECKS } from "@trends/cards";
 import { applyAction, createGame, DEFAULT_SEARCH, planTurnSearch } from "@trends/game-core";
 
 // 対戦で使う CPU と同じ探索の広さ（時間の上限だけ外す）
@@ -15,7 +15,6 @@ function play(a, b, seed) {
   const first = seed % 2 === 0 ? "p1" : "p2";
   let s = createGame({
     decks: { p1: DECKS[a], p2: DECKS[b] },
-    oshi: { p1: DECK_OSHI[a], p2: DECK_OSHI[b] },
     seed,
     first,
   });
@@ -31,7 +30,8 @@ function play(a, b, seed) {
       s = r.state;
       for (const e of r.events) {
         if (e.type === "played" || e.type === "cast") used[e.player].add(e.cardId);
-        if (e.type === "played" && e.oshi) oshiTurn[e.player] = own[e.player];
+        if (e.type === "played" && catalog[e.cardId]?.dark && !oshiTurn[e.player])
+          oshiTurn[e.player] = own[e.player];
         if (e.type === "darkFall") darkTurn[e.player] = own[e.player];
       }
       if (s.winner) break;
@@ -107,7 +107,7 @@ if (!isMainThread) {
   );
   console.log(`先攻の勝率 ${pct(firstWins / decided)}、平均 ${(turnSum / results.length).toFixed(1)} ターン`);
   {
-    // 推しと闇堕ち：出した割合・出した自分のターン（平均）、デッキ別
+    // 闇堕ちを持つ★5：出した割合・出した自分のターン（平均）と、闇堕ちした割合、デッキ別
     const st = Object.fromEntries(ids.map((d) => [d, { n: 0, o: 0, ot: 0, k: 0, kt: 0, kw: 0 }]));
     for (const r of results)
       for (const [p, d] of [
@@ -131,11 +131,11 @@ if (!isMainThread) {
       o: 0,
       k: 0,
     });
-    console.log(`推しを出した ${pct(all.o / all.n)}、闇堕ちした ${pct(all.k / all.n)}`);
+    console.log(`闇堕ちを持つ★5を出した ${pct(all.o / all.n)}、闇堕ちした ${pct(all.k / all.n)}`);
     for (const d of ids) {
       const x = st[d];
       console.log(
-        `  ${d.padEnd(8)} 推し ${pct(x.o / x.n)}（平均 ${(x.ot / Math.max(1, x.o)).toFixed(1)} ターン目） 闇堕ち ${pct(x.k / x.n)}（平均 ${(x.kt / Math.max(1, x.k)).toFixed(1)} ターン目、その試合の勝率 ${pct(x.kw / Math.max(1, x.k))}）`,
+        `  ${d.padEnd(8)} ★5 ${pct(x.o / x.n)}（平均 ${(x.ot / Math.max(1, x.o)).toFixed(1)} ターン目） 闇堕ち ${pct(x.k / x.n)}（平均 ${(x.kt / Math.max(1, x.k)).toFixed(1)} ターン目、その試合の勝率 ${pct(x.kw / Math.max(1, x.k))}）`,
       );
     }
   }

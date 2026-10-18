@@ -1,17 +1,16 @@
-import { type CardDef, DECK_OSHI, DECKS, type DeckId } from "@trends/cards";
+import { type CardDef, DECKS, type DeckId } from "@trends/cards";
 import {
   type AttackPreview,
   type AttackTarget,
   attackTargets,
   type CastTarget,
   canDarkFall,
-  canPlayOshi,
   canUnitAttack,
   castTargets,
+  darkReady,
   effectiveCost,
   type GameEvent,
   type GameState,
-  oshiCost,
   type PlayerId,
   previewAttack,
   SLOTS,
@@ -35,7 +34,6 @@ import {
   popMaster,
 } from "../game/fx";
 import { MiniCard } from "../game/MiniCard";
-import { OshiBox } from "../game/OshiBox";
 import { CATALOG, CPU, DECK_INFO, ME, setPresenter, useGame } from "../game/store";
 import { useDragPlay } from "../game/useDragPlay";
 
@@ -47,7 +45,7 @@ const who = (p: string) => (p === ME ? "あなた" : useGame.getState().foeName)
 function describe(e: GameEvent): string {
   switch (e.type) {
     case "played":
-      return `${who(e.player)}：${e.oshi ? "推しの " : ""}${nameOf(e.cardId)} を出した（話題力 ${e.cost}）`;
+      return `${who(e.player)}：${nameOf(e.cardId)} を出した（話題力 ${e.cost}）`;
     case "cast":
       return `${who(e.player)}：${nameOf(e.cardId)} を投稿（話題力 ${e.cost}）`;
     case "summoned":
@@ -61,7 +59,7 @@ function describe(e: GameEvent): string {
     case "destroyed":
       return `${who(e.player)}の ${nameOf(e.cardId)} がオワコンになった`;
     case "darkFall":
-      return `${who(e.player)}の推し ${nameOf(e.cardId)} が、闇堕ちしてオワコンから戻ってきた！`;
+      return `${who(e.player)}の ${nameOf(e.cardId)} が、闇堕ちしてオワコンから戻ってきた！`;
     case "restored":
       return `${who(e.player)}の ${nameOf(e.cardId)} が表に戻った`;
     case "status":
@@ -199,9 +197,8 @@ function DeckSelect() {
             が減る。体力が 0 になったアイコンはオワコンへ。受けたダメージは残る
           </li>
           <li>相手の場にガードがいる間は、ガード（と晒し者）しか攻撃できない</li>
-          <li>デッキの横の推し枠に、推し（★5）が1枚。話題力を払えばいつでも出せる</li>
           <li>
-            推しが倒されたら、次の自分のターンから1回だけ、オワコンから闇堕ちの姿で出せる（タダ。出たターンから相手のアイコンを攻撃できる）
+            闇堕ちを持つ★5は、オワコンに行ったら自分のターンの好きなときに、コストなしで闇堕ちの姿で出せる（1枚につき1回。出たターンは攻撃できない）
           </li>
         </ul>
       </details>
@@ -296,14 +293,6 @@ function DeckConfirm({
           <span>{DECK_INFO[deck].text}</span>
         </div>
         <ul className="deck-confirm-list">
-          {CATALOG[DECK_OSHI[deck]] && (
-            <li className="dc-oshi">
-              <span className="dc-cost">{CATALOG[DECK_OSHI[deck]]?.cost}</span>
-              <span className="dc-name">推し：{CATALOG[DECK_OSHI[deck]]?.name}</span>
-              <span className="dc-stars">★★★★★</span>
-              <span className="dc-n">推し枠</span>
-            </li>
-          )}
           {list.map(({ card, n }) => (
             <li key={card.id}>
               <span className="dc-cost">{card.cost}</span>
@@ -375,7 +364,7 @@ function EndTurnConfirm({
   );
 }
 
-type Peek = { id: string; view?: UnitView; where: "hand" | "mine" | "foe" | "trash" | "oshi"; index: number };
+type Peek = { id: string; view?: UnitView; where: "hand" | "mine" | "foe" | "trash"; index: number };
 
 /** ドラッグしているもの（手札のカード／攻撃するアイコン） */
 type DragSrc = { kind: "hand"; index: number } | { kind: "unit"; slot: number };
@@ -463,7 +452,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [reveal, setReveal] = useState<{
     id: number;
     cardId: string;
-    kind: "play" | "cast" | "playOshi";
+    kind: "play" | "cast";
     mine?: boolean;
   } | null>(null);
   /** 闇堕ちの演出（画面全体） */
@@ -566,7 +555,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             const from = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
             await animateEffects(shown, events, next, { from, tint });
           }
-        } else if (a.type === "play" || a.type === "playOshi" || a.type === "darkFall") {
+        } else if (a.type === "play" || a.type === "darkFall") {
           if (!visible) return;
           await wait(420); // 出たアイコンが場に着くのを待つ
           const uid = next.players[a.player].field[a.slot]?.uid;
@@ -647,7 +636,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const canCastOn = (side: "enemy" | "ally", slot: number) =>
     castOptions.some((t) => t.side === side && t.slot === slot);
   const targets = attacking ? attackTargets(game, ME, selection.slot, CATALOG) : [];
-  const placing = selection?.kind === "oshi" || selection?.kind === "dark";
+  const placing = selection?.kind === "dark";
+  const myDark = myTurn ? darkReady(game, ME, CATALOG) : [];
+  const foeDark = darkReady(game, CPU, CATALOG);
   const canHit = (t: AttackTarget) =>
     targets.some((x) => (x.kind === "leader" ? t.kind === "leader" : t.kind === "unit" && t.slot === x.slot));
   const freeSlot = me.field.findIndex((u) => !u);
@@ -668,18 +659,16 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             ? "使う相手を選んでください（光っているアイコン）"
             : "もう一度カードを押すと投稿します"
           : selection?.kind === "dark"
-            ? "闇堕ちさせる枠を押してください（もう一度ボタンを押すと、やめます）"
-            : selection?.kind === "oshi"
-              ? "推しを出す枠を押してください（もう一度推しを押すと、選ぶのをやめます）"
-              : selection?.kind === "hand"
-                ? "出す枠を押してください（もう一度カードを押すと、選ぶのをやめます）"
-                : attacking
-                  ? foeGuarded
-                    ? "攻撃先を選んでください（ガードがいるので、ガードと晒し者しか攻撃できません）"
-                    : "攻撃先を選んでください（光っているところ）"
-                  : canDarkFall(game, ME)
-                    ? "推しを闇堕ちさせられます（左の推しを押して、出す枠を選ぶ）"
-                    : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";
+            ? `${nameOf(selection.cardId)} を闇堕ちさせる枠を押してください`
+            : selection?.kind === "hand"
+              ? "出す枠を押してください（もう一度カードを押すと、選ぶのをやめます）"
+              : attacking
+                ? foeGuarded
+                  ? "攻撃先を選んでください（ガードがいるので、ガードと晒し者しか攻撃できません）"
+                  : "攻撃先を選んでください（光っているところ）"
+                : canDarkFall(game, ME, CATALOG)
+                  ? "闇堕ちできるカードがオワコンにあります（左のオワコンを押す）"
+                  : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";
 
   const unitCard = (owner: PlayerId, slot: number, u: Unit) => {
     const card = CATALOG[u.cardId] as CardDef;
@@ -808,13 +797,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                   deck={foe.deck.length}
                   trash={foe.trash}
                   onTrash={() => setTrashView(CPU)}
-                  oshi={
-                    <OshiBox
-                      game={game}
-                      owner={CPU}
-                      onPeek={(id) => setPeek({ id, where: "oshi", index: 0 })}
-                    />
-                  }
+                  dark={foeDark.length > 0 ? "foe" : undefined}
                 />
               }
             />
@@ -837,21 +820,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                   deck={me.deck.length}
                   trash={me.trash}
                   onTrash={() => setTrashView(ME)}
-                  oshi={
-                    <OshiBox
-                      game={game}
-                      owner={ME}
-                      cost={me.oshi ? oshiCost(game, ME, CATALOG) : undefined}
-                      canPlay={myTurn && canPlayOshi(game, ME, CATALOG)}
-                      canDark={myTurn && canDarkFall(game, ME)}
-                      selected={
-                        selection?.kind === "oshi" ? "oshi" : selection?.kind === "dark" ? "dark" : null
-                      }
-                      onPlay={() => select(selection?.kind === "oshi" ? null : { kind: "oshi" })}
-                      onDark={() => select(selection?.kind === "dark" ? null : { kind: "dark" })}
-                      onPeek={(id) => setPeek({ id, where: "oshi", index: 0 })}
-                    />
-                  }
+                  dark={myDark.length > 0 ? "mine" : undefined}
                 />
               }
             />
@@ -1017,9 +986,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       {reveal && CATALOG[reveal.cardId] && (
         <div key={reveal.id} className={`foe-reveal ${reveal.mine ? "mine" : ""}`} aria-live="polite">
           <span className="fr-label">
-            {reveal.mine
-              ? "あなたの投稿"
-              : `${foeName}が${reveal.kind === "playOshi" ? "推しを出した" : reveal.kind === "play" ? "出した" : "投稿した"}`}
+            {reveal.mine ? "あなたの投稿" : `${foeName}が${reveal.kind === "play" ? "出した" : "投稿した"}`}
           </span>
           <div className="fr-card">
             <HoloCard card={CATALOG[reveal.cardId] as CardDef} idle={false} />
@@ -1074,6 +1041,26 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             <h2>
               {trashView === ME ? "あなた" : foeName}のオワコン（{game.players[trashView].trash.length}枚）
             </h2>
+            {trashView === ME && myDark.length > 0 && freeSlot >= 0 && (
+              <div className="dark-pick">
+                <p>闇堕ちの姿で、コストなしで出せます（出たターンは攻撃できません）</p>
+                <div className="dark-pick-row">
+                  {myDark.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className="btn dark-pick-btn"
+                      onClick={() => {
+                        setTrashView(null);
+                        select({ kind: "dark", cardId: id });
+                      }}
+                    >
+                      {nameOf(id)} を闇堕ちさせる
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="trash-grid">
               {game.players[trashView].trash.map((id, i) => {
                 const c = CATALOG[id];
@@ -1174,14 +1161,14 @@ function Piles({
   deck,
   trash,
   onTrash,
-  oshi,
+  dark,
 }: {
   owner: PlayerId;
   deck: number;
   trash: string[];
   onTrash: () => void;
-  /** 推し枠（山札・オワコンの横） */
-  oshi?: React.ReactNode;
+  /** オワコンに闇堕ちできるカードがある（mine＝今出せる／foe＝相手が出してくるかも） */
+  dark?: "mine" | "foe";
 }) {
   const top = trash.at(-1);
   const topCard = top ? CATALOG[top] : null;
@@ -1194,7 +1181,7 @@ function Piles({
       </div>
       <button
         type="button"
-        className="pile"
+        className={`pile ${dark ? `dark-ready ${dark}` : ""}`}
         data-pile={`trash-${owner}`}
         onClick={onTrash}
         disabled={trash.length === 0}
@@ -1215,9 +1202,8 @@ function Piles({
           <span className="trash-empty" />
         )}
         <b className="pile-count">{trash.length}</b>
-        <small>オワコン</small>
+        <small>{dark === "mine" ? "闇堕ち" : "オワコン"}</small>
       </button>
-      {oshi}
     </div>
   );
 }
