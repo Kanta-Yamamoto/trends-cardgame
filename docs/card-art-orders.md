@@ -1256,7 +1256,7 @@
 
 ## 第4弾（10月18日追加の16枚：界隈を読むカード）
 
-絵はまだ無い（対戦画面では属性の色で表示される）。描けたら `apps/web/public/assets/cards/<ID>-art.jpg` に置き、`cards.json` の `art` に登録する。
+10月18日に下の注文で ChatGPT に描いてもらい、取り込み済み（元の画像は `assets/original/<ID>.webp`、対戦用は `apps/web/public/assets/cards/<ID>-art.jpg`）。
 
 ### n11 切り抜き動画
 ```text
