@@ -15,6 +15,7 @@ export type RuleCard = Pick<
   | "token"
   | "kaiwai"
   | "targetKaiwai"
+  | "targetFilter"
   | "attributes"
   | "rarity"
 >;

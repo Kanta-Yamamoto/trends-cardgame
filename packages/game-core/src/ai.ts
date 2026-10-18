@@ -62,6 +62,18 @@ function judgePost(
     const empty = state.players[player].field.filter((u) => !u).length;
     return empty >= 1 ? { score: Math.min(empty, 2) * 4 + (effects.includes("draw") ? 3 : 0) } : null;
   }
+  if (
+    (effects.includes("destroy") || effects.includes("bounce") || effects.includes("steal")) &&
+    card.target === "enemyIcon"
+  ) {
+    // 確定除去・手札に戻す：使える相手の中でいちばん価値の高いアイコンに。安いアイコンには使わない
+    const legal = new Set(castTargets(state, player, cardId, catalog).map((t) => t.slot));
+    const t = foes.filter((x) => legal.has(x.slot)).sort((a, b) => worth(b.v) - worth(a.v))[0];
+    if (!t) return null;
+    const value = worth(t.v) + (t.v.guard ? 3 : 0) + (t.v.unit.dark ? 4 : 0);
+    const need = effects.includes("bounce") ? 6 : 5;
+    return value >= need ? { score: 12 + value, target: enemy(t.slot) } : null;
+  }
   if (effects.includes("damage") && card.target === "enemyIcon") {
     const amount = card.effects.find((e) => e.do === "damage" && "amount" in e) as
       | { amount: number }
