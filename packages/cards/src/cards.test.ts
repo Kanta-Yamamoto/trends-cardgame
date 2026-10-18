@@ -20,13 +20,29 @@ describe("cards.json", () => {
     }
   });
 
-  it("属性は0〜2個（0個は共通カード）、界隈は0〜2個で、決められたものだけ", () => {
+  it("属性は0〜1個（0個は共通カード）、界隈は0〜2個で、決められたものだけ", () => {
     for (const c of CARDS) {
-      expect(c.attributes.length).toBeLessThanOrEqual(2);
+      expect({ id: c.id, n: c.attributes.length }).toEqual({ id: c.id, n: Math.min(1, c.attributes.length) });
       expect(c.kaiwai.length).toBeLessThanOrEqual(2);
       for (const a of c.attributes) expect(ATTRIBUTES).toContain(a);
       for (const k of c.kaiwai) expect(KAIWAI).toContain(k);
       expect([1, 2, 3, 4, 5]).toContain(c.rarity);
+    }
+  });
+
+  it("2つの界隈に入るのは★3以上の少数だけ", () => {
+    const dual = CARDS.filter((c) => c.kaiwai.length === 2);
+    for (const c of dual)
+      expect({ id: c.id, rarity: c.rarity }).toEqual({ id: c.id, rarity: Math.max(3, c.rarity) });
+    expect(dual.length).toBeLessThanOrEqual(10);
+  });
+
+  it("どの界隈も、2つ以上の属性にまたがっている（界隈が属性の言い換えにならないように）", () => {
+    for (const k of KAIWAI) {
+      const attrs = new Set(
+        CARDS.filter((c) => c.type === "icon" && c.kaiwai.includes(k)).flatMap((c) => c.attributes),
+      );
+      expect({ k, attrs: attrs.size >= 2 }).toEqual({ k, attrs: true });
     }
   });
 
