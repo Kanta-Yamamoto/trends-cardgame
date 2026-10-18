@@ -21,6 +21,7 @@ import {
 } from "@trends/game-core";
 import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AttrChips } from "../cards/AttrChips";
+import { EffectText } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { CardZoom } from "../game/CardZoom";
@@ -371,7 +372,14 @@ function EndTurnConfirm({
   );
 }
 
-type Peek = { id: string; view?: UnitView; where: "hand" | "mine" | "foe" | "trash"; index: number };
+type Peek = {
+  id: string;
+  view?: UnitView;
+  where: "hand" | "mine" | "foe" | "trash";
+  index: number;
+  /** 最初から闇堕ちの姿で開く（オワコンから闇堕ちさせる前の確認用） */
+  dark?: boolean;
+};
 
 /** ドラッグしているもの（手札のカード／攻撃するアイコン） */
 type DragSrc = { kind: "hand"; index: number } | { kind: "unit"; slot: number };
@@ -1070,7 +1078,13 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         />
       )}
       {zoom && CATALOG[zoom.id] && (
-        <CardZoom card={CATALOG[zoom.id] as CardDef} view={zoom.view} onClose={() => setZoom(null)} />
+        <CardZoom
+          card={CATALOG[zoom.id] as CardDef}
+          view={zoom.view}
+          darkPreview
+          initialDark={zoom.dark}
+          onClose={() => setZoom(null)}
+        />
       )}
 
       {trashView && (
@@ -1083,21 +1097,44 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             {trashView === ME && myDark.length > 0 && freeSlot >= 0 && (
               <div className="dark-pick">
                 <p>闇堕ちの姿で、コストなしで出せます（出たターンは攻撃できません）</p>
-                <div className="dark-pick-row">
-                  {myDark.map((id) => (
-                    <button
-                      key={id}
-                      type="button"
-                      className="btn dark-pick-btn"
-                      onClick={() => {
-                        setTrashView(null);
-                        select({ kind: "dark", cardId: id });
-                      }}
-                    >
-                      {nameOf(id)} を闇堕ちさせる
-                    </button>
-                  ))}
-                </div>
+                {myDark.map((id) => {
+                  const d = CATALOG[id]?.dark;
+                  if (!d) return null;
+                  return (
+                    <div key={id} className="dark-pick-item">
+                      <div className="dark-pick-info">
+                        <b className="dark-pick-name">
+                          {d.name}
+                          <span className="dark-pick-stats">
+                            <i className="t-atk">{d.attack}</i>／<i className="t-hp">{d.hp}</i>
+                          </span>
+                        </b>
+                        <span className="dark-pick-effect">
+                          <EffectText text={d.effect} />
+                        </span>
+                      </div>
+                      <div className="dark-pick-row">
+                        <button
+                          type="button"
+                          className="btn dark-pick-btn"
+                          onClick={() => {
+                            setTrashView(null);
+                            select({ kind: "dark", cardId: id });
+                          }}
+                        >
+                          {nameOf(id)} を闇堕ちさせる
+                        </button>
+                        <button
+                          type="button"
+                          className="btn ghost small"
+                          onClick={() => setZoom({ id, where: "trash", index: 0, dark: true })}
+                        >
+                          姿を大きく見る
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
             <div className="trash-grid">
