@@ -653,6 +653,30 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       emit({ type: "stolen", player, from, slot: to, cardId: u.cardId });
       break;
     }
+    case "revive": {
+      const slot = me.field.findIndex((u) => !u);
+      if (slot < 0) break;
+      // オワコンの中で、コストが maxCost 以下のアイコンのうち、いちばんコストが高いもの（同じなら、あとにオワコンになったもの）
+      let at = -1;
+      let best = -1;
+      me.trash.forEach((id, i) => {
+        const c = catalog[id];
+        if (c?.type !== "icon" || c.cost > e.maxCost) return;
+        if (c.cost >= best) {
+          best = c.cost;
+          at = i;
+        }
+      });
+      const cardId = at >= 0 ? me.trash[at] : undefined;
+      if (cardId === undefined) break;
+      me.trash.splice(at, 1);
+      me.field[slot] = newUnit(state, cardId, catalog, false);
+      emit({ type: "revived", player, cardId, slot });
+      // 戻ったカードの「場に出たとき」も働く（ハムスターの回復など）
+      const sub: Ctx = { ...ctx, selfSlot: slot, target: undefined, playedBefore: me.playedThisTurn };
+      for (const fx of must(catalog, cardId).effects) if (triggerOf(fx) === "play") runEffect(fx, sub);
+      break;
+    }
     case "burnPerAlly": {
       const n = countAllies(state, player, catalog, e.kaiwai);
       if (n > 0) damageLeader(state, foeId, n * e.amount, emit);

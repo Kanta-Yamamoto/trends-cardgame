@@ -52,6 +52,8 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}：${nameOf(e.cardId)} を投稿（話題力 ${e.cost}）`;
     case "summoned":
       return `${who(e.player)}の場に ${nameOf(e.cardId)} が出た`;
+    case "revived":
+      return `${who(e.player)}の ${nameOf(e.cardId)} が、オワコンから場に戻った（蘇生）`;
     case "battle": {
       const lost = e.destroyed.map(nameOf).join("・");
       return `${nameOf(e.attacker)} → ${nameOf(e.defender)}：${e.toDefender} ダメージ、反撃 ${e.toAttacker}${lost ? `（オワコン：${lost}）` : ""}`;

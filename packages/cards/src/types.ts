@@ -82,6 +82,11 @@ export type CardEffect = (
   | { do: "bounce"; to?: "costliestEnemy" }
   /** 次の相手のターンが終わるまで、自分のマスターはダメージを受けない */
   | { do: "shieldMaster" }
+  /**
+   * 蘇生：オワコンから、コスト maxCost 以下の自分のアイコン1枚を場に戻す
+   * （いちばんコストが高いもの。同じなら、あとにオワコンになったもの。「場に出たとき」の効果も働く）
+   */
+  | { do: "revive"; maxCost: number }
 ) & {
   on?: EffectTrigger;
   /** 条件：自分の場（このアイコンを含む）に、その属性（または界隈）のアイコンが atLeast 体以上いるときだけ */
