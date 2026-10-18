@@ -202,10 +202,12 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
         }
       }
     });
-    // 闇堕ち：オワコンに闇堕ちできるカードがあれば、コストなしなので出す（相手の場にアイコンがいるときに）
+    // 闇堕ち：オワコンに闇堕ちできるカードがあれば、コストなしなので出す（相手の場にアイコンがいるときに。蘇生する闇堕ちは相手の場が空でも）
     const ready = slot >= 0 ? darkReady(state, player, catalog) : [];
-    if (ready.length > 0 && state.players[foeId].field.some((u) => u)) {
-      best = { score: 999, action: { type: "darkFall", player, cardId: ready[0] as string, slot } };
+    const darkId = ready[0];
+    const revives = catalog[darkId ?? ""]?.dark?.effects?.some((e) => e.do === "revive") ?? false;
+    if (darkId !== undefined && (revives || state.players[foeId].field.some((u) => u))) {
+      best = { score: 999, action: { type: "darkFall", player, cardId: darkId, slot } };
     }
     if (!best) break;
     step((best as { action: Action }).action);

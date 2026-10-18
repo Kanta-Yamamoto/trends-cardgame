@@ -112,6 +112,8 @@ export type GameEvent =
   | { type: "played"; player: PlayerId; cardId: string; slot: number; cost: number }
   | { type: "cast"; player: PlayerId; cardId: string; cost: number; target?: CastTarget }
   | { type: "summoned"; player: PlayerId; cardId: string; slot: number }
+  /** 蘇生：オワコンから場に戻った */
+  | { type: "revived"; player: PlayerId; cardId: string; slot: number }
   | {
       type: "battle";
       attacker: string;

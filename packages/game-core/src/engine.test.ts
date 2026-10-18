@@ -119,6 +119,8 @@ const catalog: Record<string, RuleCard> = {
     ],
   }),
   sweeper: icon("sweeper", 3, 2, 3, { effects: [{ on: "play", do: "sweep", maxHp: 1 }] }),
+  nurse: icon("nurse", 3, 2, 3, { effects: [{ on: "play", do: "revive", maxCost: 2 }] }),
+  pet: icon("pet", 1, 1, 1, { effects: [{ on: "play", do: "heal", to: "master", amount: 3 }] }),
   dj: icon("dj", 3, 2, 3, { effects: [{ on: "passive", do: "healGrow", attack: 1, hp: 1 }] }),
   sauna: icon("sauna", 6, 3, 6, {
     effects: [
@@ -593,6 +595,28 @@ describe("切り札の効果（★4〜5）", () => {
   it("体力が1以下の相手のアイコンをすべて倒す", () => {
     const s = play(withFoe(["sweeper"], ["f", "wall", "f"]), 0, 0);
     expect(s.players.p2.field.map((u) => u?.cardId ?? null)).toEqual([null, "wall", null, null, null]);
+  });
+  it("蘇生：オワコンのコスト以下のアイコンのうち、いちばんコストが高いものが場に戻る（投稿・高いものは選ばない）", () => {
+    const s = game(["nurse"]);
+    s.players.p1.trash = ["big", "wall", "block", "pet"];
+    const r = run(s, { type: "play", player: "p1", handIndex: 0, slot: 2 });
+    expect(r.events).toContainEqual({ type: "revived", player: "p1", cardId: "wall", slot: 0 });
+    expect(r.state.players.p1.field[0]?.cardId).toBe("wall");
+    expect(r.state.players.p1.trash).toEqual(["big", "block", "pet"]);
+    // 戻ったターンは攻撃できない
+    expect(() => face(r.state, 0)).toThrow(RuleError);
+  });
+  it("蘇生で戻ったカードの「場に出たとき」も働く。戻せるものが無ければ何も起きない", () => {
+    const s = game(["nurse", "nurse"]);
+    s.players.p1.trash = ["pet", "block"];
+    s.players.p1.lp = 10;
+    let r = run(s, { type: "play", player: "p1", handIndex: 0, slot: 2 });
+    expect(r.state.players.p1.field[0]?.cardId).toBe("pet");
+    expect(r.state.players.p1.lp).toBe(13);
+    expect(r.state.players.p1.heals).toBe(1);
+    r = run(r.state, { type: "play", player: "p1", handIndex: 0, slot: 3 });
+    expect(r.events.some((e) => e.type === "revived")).toBe(false);
+    expect(r.state.players.p1.trash).toEqual(["block"]);
   });
 });
 

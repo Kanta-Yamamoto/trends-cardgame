@@ -1,7 +1,7 @@
-/* ★5 の専用デザイン（第3弾）：カグラ（.s-kagura）・アイリ（.s-airi）・ヨミ（.s-yomi）・ワラ（.s-wara）・ユズハ（.s-yuzuha） */
+/* ★5 の専用デザイン（第3弾）：カグラ（.s-kagura）・アイリ（.s-airi）・ヨミ（.s-yomi）・ワラ（.s-wara）・ユズハ（.s-yuzuha）。第4弾：ルリ（.s-ruri） */
 
 /* ---------- 共通の土台（rare5.css と同じ作り） ---------- */
-.s-kagura, .s-airi, .s-yomi, .s-wara, .s-yuzuha {
+.s-kagura, .s-airi, .s-yomi, .s-wara, .s-yuzuha, .s-ruri {
   .card {
     --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; --nx: 0; --ny: 0; --g: 0;
     position: relative; width: 100%; aspect-ratio: 63 / 88; border-radius: 4.2% / 3%;
@@ -46,6 +46,7 @@
 .s-yomi .card { --art: url(/assets/cards/c7-art.jpg); --subject: url(/assets/cards/c7-subject.webp); }
 .s-wara .card { --art: url(/assets/cards/c8-art.jpg); --subject: url(/assets/cards/c8-subject.webp); }
 .s-yuzuha .card { --art: url(/assets/cards/c10-art.jpg); --subject: url(/assets/cards/c10-subject.webp); }
+.s-ruri .card { --art: url(/assets/cards/c11-art.jpg); --subject: url(/assets/cards/c11-subject.webp); }
 
 /* =========================================================
    カグラ：黒漆に金の蒔絵、朱の焔。効果は朱の判を押した「依頼状」
@@ -561,6 +562,109 @@
   .temps { flex: 1; font: 700 0.56em/1.2 var(--f-body); color: var(--wood-deep); }
   .glare {
     background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #fffbeecc 0%, #ffcf8f30 25%, transparent 55%);
+    mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);
+  }
+}
+
+/* =========================================================
+   ルリ：夜勤の病室。星空の枠に月明かり、効果は夜勤のカルテ
+   ========================================================= */
+.s-ruri {
+  --navy: #0f1a3d; --navy-2: #22346e; --sky: #bfe3ff; --sky-deep: #3b7bc8; --lilac: #cdbcff; --moon: #fff6d6; --paper: #fbfcff; --ink: #1f2a52;
+  --f-name: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif;
+  --f-body: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", sans-serif;
+  --f-num: "Fredoka", "Arial Rounded MT Bold", sans-serif;
+
+  .card { color: var(--ink); background: var(--navy); box-shadow: 0 30px 60px -20px #000c, 0 0 60px -12px #8fc4ff99, 0 0 0 1px #ffffff40; }
+  /* 枠：夜勤の星空（傾けると月明かりが流れる） */
+  .night {
+    background:
+      linear-gradient(115deg, transparent 32%, #ffffff50 46%, #ffffff90 50%, #ffffff50 54%, transparent 68%) var(--mx) var(--my) / 250% 250% no-repeat,
+      radial-gradient(circle at 30% 20%, #fff 0 0.6px, transparent 1.4px) 0 0 / 2.7em 2.1em,
+      radial-gradient(circle at 70% 60%, #ffffffb0 0 0.5px, transparent 1.2px) 1.3em 0.9em / 3.1em 2.6em,
+      radial-gradient(circle at 50% 80%, #cdbcffb0 0 0.4px, transparent 1px) 0.6em 1.6em / 2.2em 2.9em,
+      linear-gradient(165deg, #2a3f82, var(--navy) 40%, #16244f 70%, #2a3f82);
+  }
+  /* ナース帽のふちのような、細かいレース */
+  .lace {
+    background: repeating-radial-gradient(circle at 50% 50%, transparent 0 0.25em, #ffffff18 0.3em 0.36em, transparent 0.42em 0.9em);
+    mask: linear-gradient(#000, transparent 12%, transparent 88%, #000);
+    opacity: calc(0.5 + var(--g) * 0.4);
+  }
+  .win { clip-path: inset(4.4% 5.2% 4.4% 5.2% round 6% 6% 2.4% 2.4%); }
+  /* 月明かり（右上から差す冷たい光） */
+  .moonlight {
+    background:
+      radial-gradient(45% 40% at calc(82% + var(--nx) * 6%) calc(12% + var(--ny) * 6%), #fff6d6aa, transparent 70%),
+      linear-gradient(200deg, #bfe3ff33, transparent 45%);
+    mix-blend-mode: screen; opacity: calc(0.35 + var(--g) * 0.45);
+  }
+  /* 小さなきらめき（シャボン玉の光） */
+  .sparkle {
+    background:
+      radial-gradient(circle at 30% 30%, #fff 0 9%, transparent 15%) 0 0 / 3.4em 3.4em,
+      radial-gradient(circle at 60% 60%, #ffffffb0 0 5%, transparent 10%) 1.2em 1.7em / 2.5em 2.5em;
+    background-position: calc(var(--nx) * 10px) calc(var(--ny) * -14px);
+    mask: radial-gradient(55% 45% at var(--mx) var(--my), #000, transparent);
+    mix-blend-mode: screen; opacity: calc(0.12 + var(--g) * 0.5);
+  }
+  .rim {
+    inset: 4.4% 5.2%; border-radius: 6% 6% 2.4% 2.4%; pointer-events: none;
+    box-shadow: 0 0 0 0.15em #fff, 0 0 0 0.3em var(--sky), 0 0 1.2em 0.2em #8fc4ff77;
+  }
+  /* 絵は上に寄せて、ナース帽まで見せる */
+  .bg, .subject { background-position: center 2%; }
+  .subject { filter: drop-shadow(0 6px 12px #0f1a3d88); }
+  .subject-shine {
+    mask-position: center 2%;
+    background: linear-gradient(120deg, var(--lilac), var(--sky), #fff, var(--moon), var(--lilac)); background-size: 300% 300%; background-position: var(--mx) var(--my);
+  }
+  /* コスト：白い丸薬。右上に青い十字 */
+  .cost {
+    left: 2.4%; top: 1.6%; width: 16.5%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
+    background: radial-gradient(circle at 32% 28%, #fff 0 30%, #eaf4ff 60%, #cfe4fb);
+    box-shadow: inset -0.15em -0.25em 0.5em #bfe3ff80, 0 0 0 0.12em #fff, 0 0 0 0.26em var(--navy-2), 0 0.3em 0.8em -0.2em #000a;
+  }
+  .cost::after {
+    content: ""; position: absolute; right: -4%; top: -4%; width: 34%; aspect-ratio: 1; border-radius: 50%;
+    background:
+      linear-gradient(#fff 0 0) 50% 50% / 52% 14% no-repeat,
+      linear-gradient(#fff 0 0) 50% 50% / 14% 52% no-repeat,
+      var(--sky-deep);
+    box-shadow: 0 0 0 0.08em #fff;
+  }
+  .cost b { font: 700 2.1em/1 var(--f-num); color: var(--navy); }
+  /* ★：リストバンド */
+  .rarity {
+    right: 7%; top: 6%; font-size: 0.8em; letter-spacing: 0.12em; color: var(--sky-deep);
+    padding: 0.35em 0.75em; border-radius: 2em; background: #ffffffe0; box-shadow: 0 0 0 1px var(--sky), 0 0 0.6em #8fc4ff66;
+  }
+  .name { display: grid; justify-items: center; }
+  .name .epi { font: 700 0.72em/1.2 var(--f-body); letter-spacing: 0.3em; color: #fff; text-shadow: 0 0 0.4em var(--navy), 0 0 0.8em var(--navy); }
+  .name h3 {
+    margin: 0; font: 800 2.1em/1.05 var(--f-name); letter-spacing: 0.3em; padding-left: 0.3em; color: #fff;
+    text-shadow: 0 0 0.3em var(--sky), 0 0 0.8em var(--sky-deep), 0 0.06em 0.1em var(--navy);
+  }
+  /* 効果：夜勤のカルテ（クリップ付きの用紙に、うすい罫線） */
+  .chart {
+    position: relative; display: grid; gap: 0.3em; padding: 0.6em 0.85em 0.5em; border-radius: 0.4em;
+    background:
+      repeating-linear-gradient(180deg, transparent 0 1.3em, #3b7bc818 1.3em 1.36em),
+      linear-gradient(180deg, #fff, var(--paper));
+    box-shadow: 0 0 0 0.12em #ffffff, 0 0 0 0.24em #8fc4ff80, 0 0.3em 1em -0.3em #000a;
+  }
+  .chart::before {
+    content: ""; position: absolute; left: 50%; top: -0.45em; width: 2.6em; height: 0.8em; translate: -50% 0; border-radius: 0.25em;
+    background: linear-gradient(180deg, #dbe9f7, #9cc0e8); box-shadow: 0 0 0 1px #ffffffc0, 0 0.15em 0.3em #0f1a3d66;
+  }
+  .label { font: 800 0.78em/1 var(--f-body); letter-spacing: 0.3em; color: var(--sky-deep); }
+  .chip.kaiwai { background: #3b7bc814; color: var(--sky-deep); box-shadow: inset 0 0 0 1px #3b7bc833; }
+  .effect { font: 700 0.86em/1.55 var(--f-body); color: var(--ink); }
+  .effect .kw { color: var(--sky-deep); background: linear-gradient(transparent 60%, #cdbcff80 60%); }
+  .dark-note { color: #6a55c9; }
+  .vital { flex: 1; height: 1.1em; color: var(--sky-deep); opacity: 0.9; filter: drop-shadow(0 0 0.2em #8fc4ff); }
+  .glare {
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffffffcc 0%, #cdbcff30 25%, transparent 55%);
     mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);
   }
 }

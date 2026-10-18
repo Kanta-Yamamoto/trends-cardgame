@@ -11,6 +11,7 @@ import { MinamoFace } from "./faces/Minamo";
 import { NagiFace } from "./faces/Nagi";
 import { RareFace } from "./faces/Rare";
 import { RenFace } from "./faces/Ren";
+import { RuriFace } from "./faces/Ruri";
 import { ShiroganeFace } from "./faces/Shirogane";
 import { WaraFace } from "./faces/Wara";
 import { YomiFace } from "./faces/Yomi";
@@ -30,6 +31,7 @@ const FACES: Record<string, { cls: string; Face: ComponentType<{ card: CardDef }
   c8: { cls: "s-wara", Face: WaraFace },
   c9: { cls: "s-kagura", Face: KaguraFace },
   c10: { cls: "s-yuzuha", Face: YuzuhaFace },
+  c11: { cls: "s-ruri", Face: RuriFace },
 };
 
 /** 専用デザインがないカードは、★4以上なら共通のキラデザイン、それ以外は共通デザインで描く */
