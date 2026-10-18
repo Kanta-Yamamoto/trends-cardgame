@@ -8,6 +8,7 @@ import {
   createGame,
   darkReady,
   effectiveCost,
+  isShielded,
   legalTargets,
   previewAttack,
   viewUnit,
@@ -125,6 +126,9 @@ const catalog: Record<string, RuleCard> = {
     ],
   }),
   yuru: icon("yuru", 8, 5, 8, { effects: [{ on: "hand", do: "cheaperPerHeal" }] }),
+  kill: post("kill", 3, { effects: [{ do: "destroy", to: "strongestEnemy" }] }),
+  back: post("back", 3, { effects: [{ do: "bounce", to: "costliestEnemy" }] }),
+  barrier: post("barrier", 2, { effects: [{ do: "shieldMaster" }] }),
   therapy: post("therapy", 2, { effects: [{ do: "heal", to: "allAlliesAndMaster", amount: 2 }] }),
 };
 const F = (n: number) => Array.from({ length: n }, () => "f");
@@ -649,5 +653,54 @@ describe("闇堕ち（オワコンから）", () => {
       uid: 500 + i,
     }));
     expect(canDarkFall(s, "p1", catalog)).toBe(false);
+  });
+});
+
+describe("闇堕ちの姿の効果（確定除去・手札に戻す・マスターを守る）", () => {
+  it("攻撃力がいちばん高い相手のアイコンを、体力に関係なく倒す", () => {
+    const s = cast(withFoe(["kill"], ["wall", "big", "f"]), 0);
+    expect(s.players.p2.field.map((u) => u?.cardId ?? null)).toEqual(["wall", null, "f", null, null]);
+    expect(s.players.p2.trash).toContain("big");
+  });
+  it("コストがいちばん高い相手のアイコンを手札に戻す（トークンは消える）", () => {
+    let s = withFoe(["back", "back"], ["wall", "big"]);
+    const hand = s.players.p2.hand.length;
+    s = cast(s, 0);
+    expect(s.players.p2.field[1]).toBeNull();
+    expect(s.players.p2.hand).toHaveLength(hand + 1);
+    expect(s.players.p2.hand.at(-1)).toBe("big");
+    s.players.p2.field = s.players.p2.field.map(() => null);
+    s.players.p2.field[0] = {
+      ...(s.players.p2.field[0] ?? play(game(["f"]), 0, 0).players.p1.field[0]),
+      cardId: "kusa",
+      token: true,
+    } as Unit;
+    const r = run(s, { type: "cast", player: "p1", handIndex: 0 });
+    expect(r.state.players.p2.field[0]).toBeNull();
+    expect(r.state.players.p2.hand).toHaveLength(hand + 1);
+  });
+  it("闇堕ちの姿が手札に戻されたら、そのカードの闇堕ちは使い終わり", () => {
+    let s = game(["back"]);
+    s.players.p2.trash = ["ren"];
+    s = end(s);
+    s = run(s, { type: "darkFall", player: "p2", cardId: "ren", slot: 0 }).state;
+    s = end(s, "p2");
+    s.players.p1.mana = 10;
+    s = cast(s, 0);
+    expect(s.players.p2.hand).toContain("ren");
+    expect(s.players.p2.darkSpent).toEqual(["ren"]);
+  });
+  it("マスターを守ると、次の相手のターンが終わるまでダメージを受けない", () => {
+    let s = cast(game(["barrier"]), 0);
+    expect(isShielded(s, "p1")).toBe(true);
+    s = end(s);
+    s.players.p2.mana = 30;
+    s.players.p2.hand = ["twin", ...s.players.p2.hand];
+    s = play(s, 0, 0, "p2");
+    const r = run(s, { type: "attack", player: "p2", from: 0, target: { kind: "leader" } });
+    expect(r.state.players.p1.lp).toBe(20);
+    expect(r.events.map((e) => e.type)).toContain("shield");
+    s = end(r.state, "p2");
+    expect(isShielded(s, "p1")).toBe(false);
   });
 });

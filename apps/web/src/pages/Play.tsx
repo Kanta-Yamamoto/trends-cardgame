@@ -11,6 +11,7 @@ import {
   effectiveCost,
   type GameEvent,
   type GameState,
+  isShielded,
   type PlayerId,
   previewAttack,
   SLOTS,
@@ -80,6 +81,12 @@ function describe(e: GameEvent): string {
       return `―― ${e.turn}ターン目：${who(e.player)}（話題力 ${e.mana}）――`;
     case "stolen":
       return `${who(e.player)}が ${nameOf(e.cardId)} を奪った（推し変）`;
+    case "bounced":
+      return `${who(e.player)}の ${nameOf(e.cardId)} が手札に戻された`;
+    case "shield":
+      return e.kind === "shielded"
+        ? `${who(e.player)}のマスターは、次の相手のターンが終わるまでダメージを受けない`
+        : `${who(e.player)}のマスターへの ${e.amount} ダメージを防いだ`;
     case "extraTurn":
       return `${who(e.player)}は、このあともう一度ターンを行う`;
     case "resigned":
@@ -659,7 +666,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             ? "使う相手を選んでください（光っているアイコン）"
             : "もう一度カードを押すと投稿します"
           : selection?.kind === "dark"
-            ? `${nameOf(selection.cardId)} を闇堕ちさせる枠を押してください`
+            ? `紫に光る空き枠をタップして、${nameOf(selection.cardId)} を闇堕ちの姿で呼び戻す`
             : selection?.kind === "hand"
               ? "出す枠を押してください（もう一度カードを押すと、選ぶのをやめます）"
               : attacking
@@ -787,6 +794,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               hand={foe.hand.length}
               active={game.active === CPU}
               guarded={foeGuarded}
+              shielded={isShielded(game, CPU)}
               targetable={attacking && canHit({ kind: "leader" })}
               dropOver={drag?.over === "leader" && attacking && canHit({ kind: "leader" })}
               preview={preview({ kind: "leader" })}
@@ -814,6 +822,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               maxMana={me.maxMana}
               hand={me.hand.length}
               active={game.active === ME}
+              shielded={isShielded(game, ME)}
               piles={
                 <Piles
                   owner={ME}
@@ -827,6 +836,18 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           </div>
 
           <div className={`col-center board turn-${game.active === ME ? "me" : "foe"}`} data-drop="board">
+            {placing && selection?.kind === "dark" && (
+              <div className="dark-guide" role="status">
+                <div className="dg-card">
+                  <span className="dg-kicker">闇堕ち</span>
+                  <b>{nameOf(selection.cardId)}を、どこに呼び戻す？</b>
+                  <span className="dg-sub">紫に光る空き枠をタップ</span>
+                </div>
+                <button type="button" className="dg-cancel" onClick={() => select(null)}>
+                  やめる
+                </button>
+              </div>
+            )}
             <div className="row">
               {SLOT_KEYS.map((key, slot) => {
                 const u = foe.field[slot];
@@ -849,6 +870,24 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                 const u = me.field[slot];
                 if (u) return unitCard(ME, slot, u);
                 const drop = myTurn && ((selection?.kind === "hand" && !postSelected) || placing);
+                if (placing && drop)
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      data-drop={`slot:${slot}`}
+                      className={`slot ${slot === 2 ? "center" : ""} droppable dark-drop`}
+                      aria-label={`空き枠 ${slot + 1} に闇堕ちさせる`}
+                      onClick={() => play(slot)}
+                    >
+                      <span className="dd-ring" aria-hidden="true" />
+                      <span className="dd-tap" aria-hidden="true">
+                        ここに
+                        <br />
+                        呼び戻す
+                      </span>
+                    </button>
+                  );
                 return (
                   <button
                     key={key}
@@ -1218,6 +1257,8 @@ interface BarProps {
   active: boolean;
   /** 場にガードがいてマスターを攻撃できない */
   guarded?: boolean;
+  /** マスターが守られていて、ダメージを受けない */
+  shielded?: boolean;
   targetable?: boolean;
   /** ドラッグした攻撃が、いまこのマスターの上にある */
   dropOver?: boolean;
@@ -1237,6 +1278,7 @@ function PlayerBar({
   hand,
   active,
   guarded,
+  shielded,
   targetable,
   dropOver,
   preview,
@@ -1252,6 +1294,7 @@ function PlayerBar({
         {name}のマスター
         {active && <i className="turn-dot" title="この人のターン" />}
         {guarded && <span className="pb-guard">ガードで守られている</span>}
+        {shielded && <span className="pb-shield">無敵（次の相手のターンまで）</span>}
       </span>
       <span className="pb-lp">
         ライフ <b key={lp}>{lp}</b>

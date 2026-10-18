@@ -71,6 +71,12 @@ export type CardEffect = (
   | { do: "healBurn"; amount: number }
   /** hand：このゲームで自分が使った投稿1枚につきコスト-1 */
   | { do: "cheaperPerPost" }
+  /** 攻撃力がいちばん高い相手のアイコンを倒す */
+  | { do: "destroy"; to: "strongestEnemy" }
+  /** 相手のアイコン（いちばんコストが高いもの）を持ち主の手札に戻す。トークンは消える */
+  | { do: "bounce"; to: "costliestEnemy" }
+  /** 次の相手のターンが終わるまで、自分のマスターはダメージを受けない */
+  | { do: "shieldMaster" }
 ) & {
   on?: EffectTrigger;
   /** 条件：自分の場（このアイコンを含む）に、その属性のアイコンが atLeast 体以上いるときだけ */
