@@ -463,3 +463,10 @@
 }
 /* 動かないカード（一覧など）は泡のアニメーションも止める */
 .card.is-still .bubbles i{animation-play-state:paused}
+
+/* 闇堕ちを持つカードの目印（トップアイドル・ナギと同じ位置と内容） */
+.k2 .dark-tag{
+  position:absolute; right:7.4%; top:12%; z-index:3; font:800 .72em/1 var(--f-body);
+  padding:.3em .65em; border-radius:99px; background:#1a0d24; color:#d9a8ff; box-shadow:0 0 0 1px #b06bff;
+}
+.k2 .dark-note{margin:0; font:700 .6em/1.4 var(--f-body); color:#d9a8ff}

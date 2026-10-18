@@ -25,6 +25,7 @@ export function CollageFace({ card }: { card: CardDef }) {
         <b>{card.cost}</b>
       </div>
       <div className="rarity">{stars(card.rarity)}</div>
+      {card.dark && <div className="dark-tag">闇堕ち</div>}
 
       <div className="plate">
         <h3 className="ransom" aria-label={card.name}>
@@ -41,6 +42,7 @@ export function CollageFace({ card }: { card: CardDef }) {
           <p className="effect">
             <EffectText text={card.effect} />
           </p>
+          {card.dark && <p className="dark-note">闇堕ち：一度倒されたとき、裏返って別の姿になる</p>}
           <div className="foot">
             <span className="src">出典：不明 / 保存数 10万</span>
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />
