@@ -12,13 +12,13 @@ export const HIDDEN_CARD = "?";
 
 const swapId = (p: PlayerId): PlayerId => opponent(p);
 
-/** オブジェクトの中の player / active / winner / oshiOf を入れ替える（p2 の人が見るとき） */
+/** オブジェクトの中の player / active / winner を入れ替える（p2 の人が見るとき） */
 function swapIds<T>(value: T): T {
   if (Array.isArray(value)) return value.map(swapIds) as T;
   if (!value || typeof value !== "object") return value;
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(value)) {
-    if ((k === "player" || k === "active" || k === "winner" || k === "oshiOf") && (v === "p1" || v === "p2"))
+    if ((k === "player" || k === "active" || k === "winner") && (v === "p1" || v === "p2"))
       out[k] = swapId(v);
     else out[k] = swapIds(v);
   }

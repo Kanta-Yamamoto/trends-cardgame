@@ -50,18 +50,7 @@ export interface Unit {
   noGuard: boolean;
   /** トークン（オワコンに行くと消える） */
   token: boolean;
-  /** 推しなら、その持ち主（奪われても推しの持ち主は変わらない） */
-  oshiOf?: PlayerId;
-  /** このターン数までは、相手のアイコンしか攻撃できない（闇堕ちして出てきたターン） */
-  iconsOnlyUntil?: number;
 }
-
-/**
- * 推しの居場所。
- * ready＝推し枠にいる（コストを払って出せる）／field＝場にいる／fallen＝倒されてオワコンにいる（闇堕ちできる）／
- * dark＝闇堕ちして場にいる／done＝もう出せない
- */
-export type OshiState = "ready" | "field" | "fallen" | "dark" | "done";
 
 /** マスター（操作するプレイヤー）の状態 */
 export interface PlayerState {
@@ -86,13 +75,8 @@ export interface PlayerState {
   extraTurns: number;
   /** このターン数の間、自分のアイコンはガードを無視して攻撃できる */
   breakthroughTurn: number;
-  /** 推し（★5）のカード ID。いなければ null */
-  oshi: string | null;
-  oshiState: OshiState;
-  /** 推しのコストの値引き（推しが推し枠にいる間に、自分のアイコンが倒された数） */
-  oshiDiscount: number;
-  /** 推しが倒されたターン数（その次の自分のターンから闇堕ちできる） */
-  oshiFallenTurn: number;
+  /** 闇堕ちを使い終えたカード（闇堕ちの姿で倒されて、オワコンに戻ったもの）。同じカードの闇堕ちは1枚につき1回 */
+  darkSpent: string[];
 }
 
 export interface GameState {
@@ -113,17 +97,15 @@ export type Action =
   | { type: "play"; player: PlayerId; handIndex: number; slot: number }
   | { type: "cast"; player: PlayerId; handIndex: number; target?: CastTarget }
   | { type: "attack"; player: PlayerId; from: number; target: AttackTarget }
-  /** 推し枠から推しを出す（コストを払う） */
-  | { type: "playOshi"; player: PlayerId; slot: number }
-  /** 倒された推しを、オワコンから闇堕ちの姿で出す（1試合1回・コストなし） */
-  | { type: "darkFall"; player: PlayerId; slot: number }
+  /** オワコンにある闇堕ちを持つカードを、闇堕ちの姿で出す（コストなし・1枚につき1回） */
+  | { type: "darkFall"; player: PlayerId; cardId: string; slot: number }
   | { type: "endTurn"; player: PlayerId }
   /** 降参（相手の勝ちになる。自分のターンでなくてもできる） */
   | { type: "resign"; player: PlayerId };
 
 /** 画面側が演出を付けるための出来事の記録 */
 export type GameEvent =
-  | { type: "played"; player: PlayerId; cardId: string; slot: number; cost: number; oshi?: boolean }
+  | { type: "played"; player: PlayerId; cardId: string; slot: number; cost: number }
   | { type: "cast"; player: PlayerId; cardId: string; cost: number; target?: CastTarget }
   | { type: "summoned"; player: PlayerId; cardId: string; slot: number }
   | {

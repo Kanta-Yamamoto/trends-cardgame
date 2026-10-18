@@ -16,14 +16,14 @@
         "on": "play",
         "do": "damage",
         "to": "strongestEnemy",
-        "amount": 2
+        "amount": 1
       },
       {
         "on": "passive",
         "do": "extraAttackOnKill"
       }
     ],
-    "effect": "連撃（1ターンに2回攻撃できる）。場に出たとき、攻撃力がいちばん高い相手のアイコンに2ダメージ。相手のアイコンを倒すたび、もう1回攻撃できる。",
+    "effect": "連撃（1ターンに2回攻撃できる）。場に出たとき、攻撃力がいちばん高い相手のアイコンに1ダメージ。相手のアイコンを倒すたび、もう1回攻撃できる。",
     "flavor": "「遅えよ。全部、俺がもらってく」",
     "dark": {
       "name": "闇堕ちレン",
@@ -158,7 +158,7 @@
     "epithet": "",
     "type": "icon",
     "rarity": 3,
-    "cost": 3,
+    "cost": 2,
     "attack": 1,
     "hp": 2,
     "attributes": ["草"],
@@ -251,7 +251,7 @@
     "epithet": "",
     "type": "icon",
     "rarity": 5,
-    "cost": 6,
+    "cost": 5,
     "attack": 2,
     "hp": 5,
     "attributes": ["草"],
@@ -333,11 +333,17 @@
         "hp": 1
       },
       {
+        "on": "play",
+        "do": "heal",
+        "to": "allAlliesAndMaster",
+        "amount": 2
+      },
+      {
         "on": "passive",
         "do": "focusAura"
       }
     ],
-    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。場に出たとき、自分のほかのアイコンすべてに攻撃力+1・体力+1。センターにいる間、自分のほかのアイコンも、ターンの始めに攻撃力+1。",
+    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。場に出たとき、自分のほかのアイコンすべてに攻撃力+1・体力+1し、自分のアイコンすべてとライフを2回復する。センターにいる間、自分のほかのアイコンも、ターンの始めに攻撃力+1。",
     "flavor": "センターは、譲らない。",
     "dark": {
       "name": "闇深アイドル",
@@ -747,7 +753,7 @@
     "epithet": "",
     "type": "icon",
     "rarity": 5,
-    "cost": 6,
+    "cost": 5,
     "attack": 4,
     "hp": 5,
     "attributes": ["神"],
@@ -1343,7 +1349,7 @@
     "epithet": "癒しボイス",
     "type": "icon",
     "rarity": 5,
-    "cost": 5,
+    "cost": 6,
     "attack": 2,
     "hp": 6,
     "attributes": ["癒し"],
@@ -1784,7 +1790,7 @@
     "epithet": "炎上請負人",
     "type": "icon",
     "rarity": 5,
-    "cost": 5,
+    "cost": 6,
     "attack": 4,
     "hp": 3,
     "attributes": ["炎上"],
@@ -1811,7 +1817,7 @@
       "name": "業火のカグラ",
       "attack": 6,
       "hp": 3,
-      "keywords": ["速攻"],
+      "keywords": [],
       "effects": [
         {
           "on": "play",
@@ -1820,7 +1826,7 @@
           "amount": 2
         }
       ],
-      "effect": "速攻。闇堕ちしたとき、相手のアイコンすべてに2ダメージ。",
+      "effect": "闇堕ちしたとき、相手のアイコンすべてに2ダメージ。",
       "art": "/assets/cards/c9-dark-art.jpg",
       "subject": "/assets/cards/c9-dark-subject.webp"
     }
@@ -2064,10 +2070,10 @@
         "on": "turnEnd",
         "do": "damage",
         "to": "strongestEnemy",
-        "amount": 2
+        "amount": 1
       }
     ],
-    "effect": "ガード。場に出たとき、体力が2以下の相手のアイコンをすべて倒す。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコンに2ダメージ。",
+    "effect": "ガード。場に出たとき、体力が2以下の相手のアイコンをすべて倒す。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコンに1ダメージ。",
     "flavor": "「知らないことは、まだ調べていないことだけ」",
     "art": "/assets/cards/c7-art.jpg",
     "original": "assets/original/c7.webp",
@@ -2191,7 +2197,7 @@
     "epithet": "大草原の主",
     "type": "icon",
     "rarity": 5,
-    "cost": 5,
+    "cost": 4,
     "attack": 2,
     "hp": 5,
     "attributes": ["草"],
@@ -2206,9 +2212,14 @@
         "do": "summon",
         "card": "t-kusa",
         "count": 2
+      },
+      {
+        "do": "buffAllies",
+        "attack": 1,
+        "hp": 0
       }
     ],
-    "effect": "自分の場のほかのアイコン1体につき攻撃力+1。場に出たとき、草を2体出す。",
+    "effect": "自分の場のほかのアイコン1体につき攻撃力+1。場に出たとき、草を2体出し、自分のほかのアイコンすべてに攻撃力+1。",
     "flavor": "「笑ったら、もう仲間だよ」",
     "art": "/assets/cards/c8-art.jpg",
     "original": "assets/original/c8.webp",
@@ -2343,7 +2354,7 @@
     "epithet": "ととのい師",
     "type": "icon",
     "rarity": 5,
-    "cost": 5,
+    "cost": 4,
     "attack": 3,
     "hp": 5,
     "attributes": ["癒し"],

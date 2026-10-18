@@ -2,10 +2,9 @@ import { planTurn } from "./ai";
 import {
   applyAction,
   attackTargets,
-  canDarkFall,
-  canPlayOshi,
   canUnitAttack,
   castTargets,
+  darkReady,
   effectiveCost,
   opponent,
   viewUnit,
@@ -83,9 +82,9 @@ export function evaluate(state: GameState, player: PlayerId, catalog: Catalog): 
   for (let s = 0; s < me.field.length; s++) score += unitValue(state, player, s, catalog);
   for (let s = 0; s < foe.field.length; s++) score -= unitValue(state, foeId, s, catalog);
   score += (me.hand.length - foe.hand.length) * WEIGHTS.hand;
-  // まだ使える推し・闇堕ちは、先の手札1〜2枚ぶんの価値がある
-  const reserve = (s: string) => (s === "ready" ? 3 : s === "fallen" ? 5 : 0);
-  score += (reserve(me.oshiState) - reserve(foe.oshiState)) * WEIGHTS.hand;
+  // オワコンで待っている闇堕ちは、コストなしで出せる手札のようなもの
+  score +=
+    (darkReady(state, player, catalog).length - darkReady(state, foeId, catalog).length) * 3 * WEIGHTS.hand;
   // 山札切れが近いと危ない
   if (me.deck.length === 0) score -= 6;
   return score;
@@ -112,9 +111,8 @@ function candidates(state: GameState, player: PlayerId, catalog: Catalog): Actio
         out.push({ type: "cast", player, handIndex, target });
     } else out.push({ type: "cast", player, handIndex });
   });
-  if (canPlayOshi(state, player, catalog))
-    for (const slot of slots) out.push({ type: "playOshi", player, slot });
-  if (canDarkFall(state, player)) for (const slot of slots) out.push({ type: "darkFall", player, slot });
+  for (const cardId of darkReady(state, player, catalog))
+    for (const slot of slots) out.push({ type: "darkFall", player, cardId, slot });
   me.field.forEach((u, from) => {
     if (!u || !canUnitAttack(state, u)) return;
     for (const target of attackTargets(state, player, from, catalog))
@@ -134,7 +132,7 @@ function signature(state: GameState): string {
       )
       .join(",");
   const me = state.players[state.active];
-  return `${state.players.p1.lp}|${state.players.p2.lp}|${me.mana}|${me.hand.join(",")}|${me.oshiState}|${f("p1")}|${f("p2")}|${state.winner}`;
+  return `${state.players.p1.lp}|${state.players.p2.lp}|${me.mana}|${me.hand.join(",")}|${me.trash.length}|${f("p1")}|${f("p2")}|${state.winner}`;
 }
 
 interface Node {

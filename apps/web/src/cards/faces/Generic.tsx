@@ -32,7 +32,7 @@ export function GenericFace({ card }: { card: CardDef }) {
         <p className="kg-effect">{card.effect ? <EffectText text={card.effect} /> : <i>効果なし</i>}</p>
         {card.dark && (
           <p className="kg-darktext">
-            推し：倒されたあと1回だけ、闇堕ちしてオワコンから戻ってくる（姿は闇堕ちするまで秘密）
+            闇堕ち：オワコンに行ったら、好きなときにコストなしで闇堕ちの姿で出せる（1回だけ。姿は闇堕ちするまで秘密）
           </p>
         )}
         {card.type === "icon" && (

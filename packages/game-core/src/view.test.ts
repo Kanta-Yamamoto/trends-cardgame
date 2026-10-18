@@ -1,4 +1,4 @@
-import { CARDS, DECK_OSHI, DECKS } from "@trends/cards";
+import { CARDS, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
 import { applyAction, createGame } from "./engine";
 import type { RuleCard } from "./types";
@@ -8,7 +8,6 @@ const catalog = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string
 const game = () =>
   createGame({
     decks: { p1: DECKS.flame, p2: DECKS.idol },
-    oshi: { p1: DECK_OSHI.flame, p2: DECK_OSHI.idol },
     seed: 5,
     first: "p1",
   });

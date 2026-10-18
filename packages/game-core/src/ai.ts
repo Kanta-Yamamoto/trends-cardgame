@@ -1,13 +1,11 @@
 import {
   applyAction,
   attackTargets,
-  canDarkFall,
-  canPlayOshi,
   canUnitAttack,
   castTargets,
+  darkReady,
   effectiveCost,
   opponent,
-  oshiCost,
   viewUnit,
 } from "./engine";
 import type { Action, CastTarget, GameState, PlayerId, RuleCard, UnitView } from "./types";
@@ -184,19 +182,10 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
         }
       }
     });
-    // 推し：出せるなら、手札のアイコンと同じように価値を比べる
-    if (slot >= 0 && canPlayOshi(state, player, catalog) && me.oshi) {
-      const card = catalog[me.oshi];
-      const score = oshiCost(state, player, catalog) * 10 + (card?.attack ?? 0) + (card?.hp ?? 0) + 8;
-      if (!best || score > (best as { score: number }).score)
-        best = { score, action: { type: "playOshi", player, slot } };
-    }
-    // 闇堕ち：使えるなら使う（1試合1回の切り札。相手の場にアイコンがいるときに）
-    if (slot >= 0 && canDarkFall(state, player)) {
-      const foes = state.players[foeId].field.filter((u) => u).length;
-      if (foes > 0 || state.players[foeId].lp <= 10) {
-        best = { score: 999, action: { type: "darkFall", player, slot } };
-      }
+    // 闇堕ち：オワコンに闇堕ちできるカードがあれば、コストなしなので出す（相手の場にアイコンがいるときに）
+    const ready = slot >= 0 ? darkReady(state, player, catalog) : [];
+    if (ready.length > 0 && state.players[foeId].field.some((u) => u)) {
+      best = { score: 999, action: { type: "darkFall", player, cardId: ready[0] as string, slot } };
     }
     if (!best) break;
     step((best as { action: Action }).action);
