@@ -6,7 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { CARDS, DECKS, type DeckId } from "@trends/cards";
+import { CARDS, DECKS } from "@trends/cards";
 import {
   type Action,
   actionFrom,
@@ -16,6 +16,8 @@ import {
   type GameState,
   type PlayerId,
   type RuleCard,
+  resolveDeckRef,
+  validateDeck,
 } from "@trends/game-core";
 import { eq, inArray } from "drizzle-orm";
 import type { Db } from "../db/client";
@@ -26,12 +28,25 @@ const CATALOG = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string
 /** 読み間違えやすい文字（0/O・1/I など）を除いた合言葉の文字 */
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-export const isDeckId = (d: unknown): d is DeckId => typeof d === "string" && d in DECKS;
+/**
+ * デッキの指し方（構築済みの ID か "custom:…"）からカードの並びを得る。決まりを守っていなければ BadRequest。
+ * 自分で組んだデッキも、サーバー側で 30枚・3枚まで・属性2つまでを確かめる
+ */
+export function deckCards(ref: unknown): string[] {
+  const cards = resolveDeckRef(ref, DECKS);
+  if (!cards) throw new BadRequestException("デッキを選んでください");
+  const errors = validateDeck(cards, CATALOG);
+  if (errors.length > 0)
+    throw new BadRequestException(`デッキの決まりを守っていません：${errors.join("、")}`);
+  return cards;
+}
+export const isDeckRef = (d: unknown): d is string => resolveDeckRef(d, DECKS) !== null;
 
 export interface MatchInfo {
   code: string;
   status: string;
-  players: Record<PlayerId, { id: string; name: string; deck: DeckId } | null>;
+  /** deck は、構築済みデッキの ID か "custom:…"（自分で組んだデッキ） */
+  players: Record<PlayerId, { id: string; name: string; deck: string } | null>;
 }
 
 @Injectable()
@@ -43,12 +58,12 @@ export class MatchesService {
 
   /** 部屋を作る（作った人が p1） */
   async create(userId: string, deck: unknown) {
-    if (!isDeckId(deck)) throw new BadRequestException("デッキを選んでください");
+    deckCards(deck);
     for (let i = 0; i < 5; i++) {
       const code = Array.from({ length: 6 }, () => CODE_CHARS[randomInt(CODE_CHARS.length)]).join("");
       const [row] = await this.db
         .insert(matches)
-        .values({ code, p1Id: userId, p1Deck: deck })
+        .values({ code, p1Id: userId, p1Deck: deck as string })
         .onConflictDoNothing()
         .returning();
       if (row) return this.info(row);
@@ -68,16 +83,16 @@ export class MatchesService {
       const row = await this.find(code);
       if (row.p1Id === userId || row.p2Id === userId) return row;
       if (row.p2Id) throw new ForbiddenException("この部屋はもう2人そろっています");
-      if (!isDeckId(deck)) throw new BadRequestException("デッキを選んでください");
+      const p2Cards = deckCards(deck);
       const seed = randomInt(1, 2 ** 31 - 1);
       const state = createGame({
-        decks: { p1: DECKS[row.p1Deck as DeckId], p2: DECKS[deck] },
+        decks: { p1: deckCards(row.p1Deck), p2: p2Cards },
         seed,
         first: randomInt(2) === 0 ? "p1" : "p2",
       });
       const [next] = await this.db
         .update(matches)
-        .set({ p2Id: userId, p2Deck: deck, status: "playing", state })
+        .set({ p2Id: userId, p2Deck: deck as string, status: "playing", state })
         .where(eq(matches.id, row.id))
         .returning();
       return next as MatchRow;
@@ -119,7 +134,7 @@ export class MatchesService {
     const people = await this.db.select().from(users).where(inArray(users.id, ids));
     const who = (id: string | null, deck: string | null) => {
       const u = people.find((p) => p.id === id);
-      return u && isDeckId(deck) ? { id: u.id, name: u.name, deck } : null;
+      return u && isDeckRef(deck) ? { id: u.id, name: u.name, deck } : null;
     };
     return {
       code: row.code,

@@ -12,6 +12,7 @@ import {
   RuleError,
 } from "@trends/game-core";
 import { create } from "zustand";
+import type { DeckSel } from "./decks";
 
 export const CATALOG: Record<string, CardDef> = Object.fromEntries(CARDS.map((c) => [c.id, c]));
 
@@ -56,6 +57,26 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string }> = {
     name: "ゆるいTL",
     text: "草×癒し。ミームと動物を並べ、もふもふタイムで守りながら数で押す。エースは大草原の主 ワラ",
   },
+  solo_flame: {
+    name: "燃やし尽くす",
+    text: "炎上だけ。速攻と叩きで序盤から殴り切り、晒しで強化を消す。エースはレンとカグラ",
+  },
+  solo_idol: {
+    name: "推しに全振り",
+    text: "メロいだけ。アイドルをそろえて育て、ラスサビで全員が跳ぶ。エースはトップアイドルとドームの歌姫 ミレイ",
+  },
+  solo_expert: {
+    name: "有識者会議",
+    text: "神だけ。有識者で引き続け、確実に除去して盤面を取る。エースは専門家・シロガネ・ヨミ",
+  },
+  solo_meme: {
+    name: "草しか生えない",
+    text: "草だけ。草で場を埋めて数で押し、伸びるリプ欄で引き続ける。エースはワラとバズの申し子 ララ",
+  },
+  solo_heal: {
+    name: "癒しの楽園",
+    text: "癒しだけ。回復で粘って、回復するたびに相手を燃やす。エースはユズハ・ルリ・ナギ",
+  },
 };
 
 export const ME: PlayerId = "p1";
@@ -93,8 +114,8 @@ interface GameStore {
   mode: "cpu" | "online";
   /** 相手の名前 */
   foeName: string;
-  /** 自分が選んだデッキ。null ならデッキ選択画面 */
-  deck: DeckId | null;
+  /** 自分が選んだデッキ（構築済みか、自分で組んだもの）。null ならデッキ選択画面 */
+  deck: DeckSel | null;
   game: GameState | null;
   log: LogEntry[];
   error: string | null;
@@ -105,7 +126,7 @@ interface GameStore {
   cpuDelay: number;
   /** 自分の攻撃の演出中は true（操作を受け付けない） */
   animating: boolean;
-  start: (deck: DeckId, opts?: { seed?: number; first?: PlayerId }) => void;
+  start: (deck: DeckSel, opts?: { seed?: number; first?: PlayerId }) => void;
   quit: () => void;
   select: (s: Selection) => void;
   play: (slot: number) => void;
@@ -114,7 +135,7 @@ interface GameStore {
   attack: (target: AttackTarget) => void;
   endTurn: () => void;
   /** オンライン対戦を始める（再接続のときも、届いた状態で呼び直す） */
-  startOnline: (o: { deck: DeckId; foeName: string; state: GameState; link: RemoteLink }) => void;
+  startOnline: (o: { deck: DeckSel; foeName: string; state: GameState; link: RemoteLink }) => void;
   /** サーバーから届いた1手を反映する（攻撃なら演出のあとで） */
   receive: (u: RemoteUpdate) => void;
   resign: () => void;
@@ -357,10 +378,11 @@ export const useGame = create<GameStore>((set, get) => {
       inbox = [];
       const seed = opts.seed ?? Math.floor(Math.random() * 1e9);
       const first = opts.first ?? (seed % 2 === 0 ? ME : CPU);
-      const others = (Object.keys(DECKS) as DeckId[]).filter((d) => d !== deck);
+      // CPU は構築済みデッキから、自分と違うものを使う
+      const others = (Object.keys(DECKS) as DeckId[]).filter((d) => d !== deck.ref);
       const cpuDeck = others[seed % others.length] as DeckId;
       const game = createGame({
-        decks: { [ME]: DECKS[deck], [CPU]: DECKS[cpuDeck] } as never,
+        decks: { [ME]: deck.cards, [CPU]: DECKS[cpuDeck] } as never,
         seed,
         first,
       });
@@ -442,7 +464,7 @@ export const useGame = create<GameStore>((set, get) => {
       });
     },
     startOnline: ({ deck, foeName, state, link: l }) => {
-      const same = get().mode === "online" && get().deck === deck && link === l;
+      const same = get().mode === "online" && get().deck?.ref === deck.ref && link === l;
       if (!same) runId++;
       link = l;
       inbox = [];

@@ -1,17 +1,18 @@
-import type { DeckId } from "@trends/cards";
 import type { Action, GameState } from "@trends/game-core";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { io, type Socket } from "socket.io-client";
 import { API_URL } from "../api/client";
-import { DECK_INFO, type RemoteLink, type RemoteUpdate, useGame } from "../game/store";
+import { type DeckSel, deckFromRef } from "../game/decks";
+import { type RemoteLink, type RemoteUpdate, useGame } from "../game/store";
 import { type AuthConfig, api, loadGoogle, useSession } from "../online/session";
 import { Board, DeckGrid } from "./Play";
 
 interface Seat {
   id: string;
   name: string;
-  deck: DeckId;
+  /** 構築済みデッキの ID か "custom:…"（自分で組んだデッキ） */
+  deck: string;
 }
 interface MatchInfo {
   code: string;
@@ -122,11 +123,15 @@ export function OnlineLobby() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const create = async (deck: DeckId) => {
+  const create = async (sel: DeckSel) => {
     setBusy(true);
     setError(null);
     try {
-      const m = await api<MatchInfo>("/matches", { method: "POST", body: JSON.stringify({ deck }) }, token);
+      const m = await api<MatchInfo>(
+        "/matches",
+        { method: "POST", body: JSON.stringify({ deck: sel.ref }) },
+        token,
+      );
       navigate(`/online/${m.code}`);
     } catch (e) {
       setError((e as Error).message);
@@ -190,7 +195,7 @@ export function OnlineRoom() {
   const [info, setInfo] = useState<MatchInfo | null>(null);
   const [match, setMatch] = useState<MatchMsg | null>(null);
   /** 参加するときに使うデッキ（すでに参加している人は null のまま入れる） */
-  const [deck, setDeck] = useState<DeckId | null>(null);
+  const [deck, setDeck] = useState<DeckSel | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -229,7 +234,7 @@ export function OnlineRoom() {
       resign: () => socket.emit("resign", { code }, () => {}),
     };
     socket.on("connect", () => {
-      socket.emit("join", { code, deck }, (ack: { ok: boolean; error?: string }) => {
+      socket.emit("join", { code, deck: deck?.ref }, (ack: { ok: boolean; error?: string }) => {
         if (!ack.ok) setError(ack.error ?? "部屋に入れませんでした");
       });
     });
@@ -240,7 +245,9 @@ export function OnlineRoom() {
       setMatch(m);
       setError(null);
       if (m.state && m.me && m.opponent) {
-        useGame.getState().startOnline({ deck: m.me.deck, foeName: m.opponent.name, state: m.state, link });
+        const sel = deckFromRef(m.me.deck);
+        if (sel)
+          useGame.getState().startOnline({ deck: sel, foeName: m.opponent.name, state: m.state, link });
       }
     });
     socket.on("update", (u: RemoteUpdate) => useGame.getState().receive(u));
@@ -305,7 +312,9 @@ export function OnlineRoom() {
               {copied ? "コピーしました" : "リンクをコピー"}
             </button>
           </div>
-          {match?.me && <p className="muted">あなたのデッキ：{DECK_INFO[match.me.deck].name}</p>}
+          {match?.me && (
+            <p className="muted">あなたのデッキ：{deckFromRef(match.me.deck)?.name ?? "自分のデッキ"}</p>
+          )}
         </div>
       )}
     </section>

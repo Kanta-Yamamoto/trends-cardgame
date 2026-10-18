@@ -750,8 +750,36 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       });
       break;
     case "weaken":
-      if (tgt) tgt.atkBuff -= e.attack;
+      if (e.to === "allEnemies") {
+        state.players[foeId].field.forEach((u, slot) => {
+          if (!u) return;
+          u.atkBuff -= e.attack;
+          emit({ type: "buffed", player: foeId, slot, cardId: u.cardId, attack: -e.attack, hp: 0 });
+        });
+      } else if (tgt && ctx.target) {
+        tgt.atkBuff -= e.attack;
+      }
       break;
+    case "drawPerAllies": {
+      const n = Math.min(e.max, Math.floor(me.field.filter((u) => u).length / e.per));
+      for (let i = 0; i < n; i++) draw(state, player, emit);
+      break;
+    }
+    case "transform": {
+      const foe = state.players[foeId];
+      let slot = -1;
+      if (e.to === "strongestEnemy") slot = strongestEnemy(state, player, catalog);
+      else if (ctx.target?.side === "enemy") slot = ctx.target.slot;
+      const u = slot >= 0 ? foe.field[slot] : null;
+      if (!u) break;
+      // 元のカードは消える（闇堕ちの姿なら、そのカードの闇堕ちは使い終わり）
+      if (u.darkUsed && !u.token) foe.darkSpent = [...(foe.darkSpent ?? []), u.cardId];
+      const into = newUnit(state, e.card, catalog, true);
+      Object.assign(into, { canAttack: false, attacksLeft: 0 });
+      foe.field[slot] = into;
+      emit({ type: "transformed", player: foeId, slot, cardId: u.cardId, into: e.card });
+      break;
+    }
     case "cleanse":
       for (const owner of ["p1", "p2"] as const) {
         state.players[owner].field.forEach((u, slot) => {

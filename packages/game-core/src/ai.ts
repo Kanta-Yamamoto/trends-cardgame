@@ -62,8 +62,16 @@ function judgePost(
     const empty = state.players[player].field.filter((u) => !u).length;
     return empty >= 1 ? { score: Math.min(empty, 2) * 4 + (effects.includes("draw") ? 3 : 0) } : null;
   }
+  if (effects.includes("drawPerAllies")) {
+    const fx = card.effects.find((e) => e.do === "drawPerAllies") as { per: number; max: number } | undefined;
+    const n = fx ? Math.min(fx.max, Math.floor(mine.length / fx.per)) : 0;
+    return n >= 2 ? { score: 3 * n } : null;
+  }
   if (
-    (effects.includes("destroy") || effects.includes("bounce") || effects.includes("steal")) &&
+    (effects.includes("destroy") ||
+      effects.includes("bounce") ||
+      effects.includes("steal") ||
+      effects.includes("transform")) &&
     card.target === "enemyIcon"
   ) {
     // 確定除去・手札に戻す：使える相手の中でいちばん価値の高いアイコンに。安いアイコンには使わない

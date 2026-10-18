@@ -1,4 +1,4 @@
-import { type CardDef, DECKS, type DeckId } from "@trends/cards";
+import { type CardDef, type DeckId } from "@trends/cards";
 import {
   type AttackPreview,
   type AttackTarget,
@@ -20,12 +20,14 @@ import {
   viewUnit,
 } from "@trends/game-core";
 import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Link } from "react-router";
 import { AttrChips } from "../cards/AttrChips";
 import { EffectText } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { CardZoom } from "../game/CardZoom";
 import { type DarkCut, DarkCutscene } from "../game/DarkCutscene";
+import { builtinDeck, customDeckSel, type DeckSel, loadCustomDecks } from "../game/decks";
 import {
   animateAttack,
   animateDraw,
@@ -55,6 +57,8 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}の場に ${nameOf(e.cardId)} が出た`;
     case "revived":
       return `${who(e.player)}の ${nameOf(e.cardId)} が、オワコンから場に戻った（蘇生）`;
+    case "transformed":
+      return `${who(e.player)}の ${nameOf(e.cardId)} が ${nameOf(e.into)} になった（ネタにされた）`;
     case "battle": {
       const lost = e.destroyed.map(nameOf).join("・");
       return `${nameOf(e.attacker)} → ${nameOf(e.defender)}：${e.toDefender} ダメージ、反撃 ${e.toAttacker}${lost ? `（オワコン：${lost}）` : ""}`;
@@ -178,19 +182,6 @@ export function Play() {
   return <section className="page play">{deck ? <Board /> : <DeckSelect />}</section>;
 }
 
-const DECK_ATTRS: Record<DeckId, CardDef["attributes"]> = {
-  flame: ["炎上", "草"],
-  idol: ["メロい", "癒し"],
-  expert: ["神", "癒し"],
-  ronpa: ["炎上", "神"],
-  dance: ["草", "メロい"],
-  scandal: ["炎上", "メロい"],
-  phoenix: ["炎上", "癒し"],
-  wiki: ["神", "草"],
-  theory: ["神", "メロい"],
-  chill: ["草", "癒し"],
-};
-
 function DeckSelect() {
   const start = useGame((s) => s.start);
   return (
@@ -228,51 +219,75 @@ function DeckSelect() {
   );
 }
 
-/** デッキを選ぶボタンの並び（CPU 戦とオンライン対戦で共通） */
+/** デッキの色（単属性なら左右とも同じ色） */
+function deckGradient(attrs: readonly string[]) {
+  const [a, b = a] = attrs.map((x) => ATTR_META[x as keyof typeof ATTR_META]);
+  if (!a) return "linear-gradient(125deg, #6b7280, #374151)";
+  return `linear-gradient(125deg, ${a.color}, ${a.deep} 50%, ${b?.deep} 50%, ${b?.color})`;
+}
+
 /**
- * デッキを選ぶ。confirmLabel を渡すと、押してすぐには決めず、中身を見せて確かめてから onPick する
+ * デッキを選ぶ（CPU 戦とオンライン対戦で共通）。構築済みデッキと、自分で組んで保存したデッキを並べる。
+ * confirmLabel を渡すと、押してすぐには決めず、中身を見せて確かめてから onPick する
  * （オンライン対戦は選んだらすぐ部屋ができるので、押し間違いを防ぐ）
  */
 export function DeckGrid({
   onPick,
   confirmLabel,
 }: {
-  onPick: (deck: DeckId) => void;
+  onPick: (deck: DeckSel) => void;
   confirmLabel?: string;
 }) {
-  const [pending, setPending] = useState<DeckId | null>(null);
+  const [pending, setPending] = useState<DeckSel | null>(null);
+  const [mine] = useState(() => loadCustomDecks());
+  const pick = (sel: DeckSel) => (confirmLabel ? setPending(sel) : onPick(sel));
+  const button = (sel: DeckSel) => (
+    <button
+      key={sel.ref}
+      type="button"
+      className="deck-pick"
+      style={{ background: deckGradient(sel.attrs) }}
+      onClick={() => pick(sel)}
+    >
+      <span className="deck-attrs">{sel.attrs.length > 0 ? sel.attrs.join(" × ") : "共通"}</span>
+      <strong>{sel.name}</strong>
+      <span>{sel.text}</span>
+    </button>
+  );
   return (
-    <div className="decks">
-      {(Object.keys(DECK_INFO) as DeckId[]).map((id) => {
-        const [a, b] = DECK_ATTRS[id].map((x) => ATTR_META[x]);
-        return (
-          <button
-            key={id}
-            type="button"
-            className="deck-pick"
-            style={{
-              background: `linear-gradient(125deg, ${a?.color}, ${a?.deep} 50%, ${b?.deep} 50%, ${b?.color})`,
+    <>
+      <div className="deck-section">
+        <h2>自分のデッキ</h2>
+        <Link to="/decks" className="btn ghost small">
+          デッキを組む
+        </Link>
+      </div>
+      <div className="decks">
+        {mine.map((d) => customDeckSel(d)).map(button)}
+        {mine.length === 0 && (
+          <p className="muted deck-empty">
+            まだありません。「デッキを組む」から、30枚のデッキを自由に作れます
+          </p>
+        )}
+      </div>
+      <div className="deck-section">
+        <h2>構築済みデッキ</h2>
+      </div>
+      <div className="decks">
+        {(Object.keys(DECK_INFO) as DeckId[]).map((id) => builtinDeck(id)).map(button)}
+        {pending && confirmLabel && (
+          <DeckConfirm
+            deck={pending}
+            label={confirmLabel}
+            onConfirm={() => {
+              setPending(null);
+              onPick(pending);
             }}
-            onClick={() => (confirmLabel ? setPending(id) : onPick(id))}
-          >
-            <span className="deck-attrs">{DECK_ATTRS[id].join(" × ")}</span>
-            <strong>{DECK_INFO[id].name}</strong>
-            <span>{DECK_INFO[id].text}</span>
-          </button>
-        );
-      })}
-      {pending && confirmLabel && (
-        <DeckConfirm
-          deck={pending}
-          label={confirmLabel}
-          onConfirm={() => {
-            setPending(null);
-            onPick(pending);
-          }}
-          onCancel={() => setPending(null)}
-        />
-      )}
-    </div>
+            onCancel={() => setPending(null)}
+          />
+        )}
+      </div>
+    </>
   );
 }
 
@@ -283,7 +298,7 @@ function DeckConfirm({
   onConfirm,
   onCancel,
 }: {
-  deck: DeckId;
+  deck: DeckSel;
   label: string;
   onConfirm: () => void;
   onCancel: () => void;
@@ -294,25 +309,19 @@ function DeckConfirm({
     return () => window.removeEventListener("keydown", onKey);
   }, [onCancel]);
   const counts = new Map<string, number>();
-  for (const id of DECKS[deck]) counts.set(id, (counts.get(id) ?? 0) + 1);
+  for (const id of deck.cards) counts.set(id, (counts.get(id) ?? 0) + 1);
   const list = [...counts]
     .map(([id, n]) => ({ card: CATALOG[id], n }))
     .filter((x): x is { card: CardDef; n: number } => !!x.card)
     .sort((x, y) => y.card.rarity - x.card.rarity || x.card.cost - y.card.cost);
-  const [a, b] = DECK_ATTRS[deck].map((x) => ATTR_META[x]);
   return (
     <div className="zoom-sheet deck-confirm" role="dialog" aria-modal="true" aria-label="デッキの確認">
       <button type="button" className="zoom-sheet-bg" aria-label="選び直す" onClick={onCancel} />
       <div className="deck-confirm-body">
-        <div
-          className="deck-confirm-head"
-          style={{
-            background: `linear-gradient(125deg, ${a?.color}, ${a?.deep} 50%, ${b?.deep} 50%, ${b?.color})`,
-          }}
-        >
-          <span className="deck-attrs">{DECK_ATTRS[deck].join(" × ")}</span>
-          <strong>{DECK_INFO[deck].name}</strong>
-          <span>{DECK_INFO[deck].text}</span>
+        <div className="deck-confirm-head" style={{ background: deckGradient(deck.attrs) }}>
+          <span className="deck-attrs">{deck.attrs.length > 0 ? deck.attrs.join(" × ") : "共通"}</span>
+          <strong>{deck.name}</strong>
+          <span>{deck.text}</span>
         </div>
         <ul className="deck-confirm-list">
           {list.map(({ card, n }) => (

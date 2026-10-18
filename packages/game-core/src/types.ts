@@ -114,6 +114,8 @@ export type GameEvent =
   | { type: "summoned"; player: PlayerId; cardId: string; slot: number }
   /** 蘇生：オワコンから場に戻った */
   | { type: "revived"; player: PlayerId; cardId: string; slot: number }
+  /** 変身：そのアイコンが別のカード（トークン）になった */
+  | { type: "transformed"; player: PlayerId; slot: number; cardId: string; into: string }
   | {
       type: "battle";
       attacker: string;
