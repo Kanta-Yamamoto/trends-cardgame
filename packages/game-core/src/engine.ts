@@ -1,4 +1,4 @@
-import type { CardEffect, Keyword } from "@trends/cards";
+import type { CardEffect, Kaiwai, Keyword } from "@trends/cards";
 import { nextRandom } from "./rng";
 import {
   type Action,
@@ -114,6 +114,24 @@ export function hasKeyword(u: Unit, k: Keyword, catalog: Catalog): boolean {
   return keywordsOf(u, catalog).includes(k);
 }
 
+/** その界隈に入っているか（闇堕ちの姿でも元のカードの界隈のまま） */
+export function inKaiwai(u: Unit, k: Kaiwai, catalog: Catalog): boolean {
+  return must(catalog, u.cardId).kaiwai.includes(k);
+}
+
+/** 自分の場のアイコンの数（界隈で絞れる。except を渡すとそのアイコンは数えない） */
+function countAllies(
+  state: GameState,
+  owner: PlayerId,
+  catalog: Catalog,
+  kaiwai?: Kaiwai,
+  except?: number,
+): number {
+  return state.players[owner].field.filter(
+    (u) => u && u.uid !== except && (kaiwai === undefined || inKaiwai(u, kaiwai, catalog)),
+  ).length;
+}
+
 /** アイコンの攻撃力・体力・キーワードなど、効果を反映した今の値 */
 export function viewUnit(state: GameState, owner: PlayerId, unit: Unit, catalog: Catalog): UnitView {
   const card = must(catalog, unit.cardId);
@@ -121,7 +139,7 @@ export function viewUnit(state: GameState, owner: PlayerId, unit: Unit, catalog:
   let attack = base.attack + unit.atkBuff;
   for (const e of effectsOf(unit, catalog)) {
     if (triggerOf(e) === "passive" && e.do === "attackPerAlly") {
-      attack += state.players[owner].field.filter((x) => x && x.uid !== unit.uid).length;
+      attack += countAllies(state, owner, catalog, e.kaiwai, unit.uid);
     }
   }
   const maxHp = base.hp + unit.hpBuff;
@@ -146,7 +164,7 @@ export function effectiveCost(state: GameState, player: PlayerId, cardId: string
   let cost = card.cost;
   for (const e of card.effects) {
     if (triggerOf(e) !== "hand") continue;
-    if (e.do === "cheaperPerAlly") cost -= me.field.filter((u) => u).length;
+    if (e.do === "cheaperPerAlly") cost -= countAllies(state, player, catalog, e.kaiwai);
     if (e.do === "cheaperPerPost") cost -= me.postsUsed ?? 0;
     if (e.do === "cheaperPerHeal") cost -= me.heals ?? 0;
   }
@@ -267,7 +285,10 @@ export function castTargets(
   if (!card.target) return [];
   const side = card.target === "enemyIcon" ? "enemy" : "ally";
   const owner = side === "enemy" ? opponent(player) : player;
-  return state.players[owner].field.flatMap((u, slot) => (u ? [{ side, slot } as CastTarget] : []));
+  const k = side === "ally" ? card.targetKaiwai : undefined;
+  return state.players[owner].field.flatMap((u, slot) =>
+    u && (k === undefined || inKaiwai(u, k, catalog)) ? [{ side, slot } as CastTarget] : [],
+  );
 }
 
 /** そのアイコンが今攻撃できるか */
@@ -432,7 +453,10 @@ function runEffect(e: CardEffect, ctx: Ctx) {
 
   const cond = e.if;
   if (cond) {
-    const n = me.field.filter((u) => u && must(catalog, u.cardId).attributes.includes(cond.allies)).length;
+    const n =
+      "kaiwai" in cond
+        ? countAllies(state, player, catalog, cond.kaiwai)
+        : me.field.filter((u) => u && must(catalog, u.cardId).attributes.includes(cond.allies)).length;
     if (n < cond.atLeast) return;
   }
 
@@ -469,6 +493,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
     case "buffAllies":
       me.field.forEach((u, slot) => {
         if (!u || slot === ctx.selfSlot) return;
+        if (e.kaiwai && !inKaiwai(u, e.kaiwai, catalog)) return;
         u.atkBuff += e.attack;
         u.hpBuff += e.hp;
         emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: e.hp });
@@ -514,6 +539,19 @@ function runEffect(e: CardEffect, ctx: Ctx) {
     case "draw":
       if (e.ifHandAtMost === undefined || me.hand.length <= e.ifHandAtMost) {
         for (let i = 0; i < e.count; i++) draw(state, player, emit);
+      }
+      break;
+    case "tutor":
+      for (let i = 0; i < e.count; i++) {
+        const at = me.deck.findIndex((id) => must(catalog, id).kaiwai.includes(e.kaiwai));
+        if (at < 0) {
+          draw(state, player, emit);
+          continue;
+        }
+        const [cardId] = me.deck.splice(at, 1);
+        if (cardId === undefined) break;
+        me.hand.push(cardId);
+        emit({ type: "drew", player, cardId });
       }
       break;
     case "removeEnemyGuards":
@@ -609,7 +647,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       break;
     }
     case "burnPerAlly": {
-      const n = me.field.filter((u) => u).length;
+      const n = countAllies(state, player, catalog, e.kaiwai);
       if (n > 0) damageLeader(state, foeId, n * e.amount, emit);
       break;
     }
