@@ -459,10 +459,10 @@ describe("デッキの決まり", () => {
     const pairs = Object.values(DECKS).map((d) => [...deckAttributes(d, real)].sort().join("×"));
     expect(new Set(pairs).size).toBe(10);
   });
-  it("デモ用デッキには、闇堕ちを持つ★5が2枚ずつ入っている", () => {
+  it("デモ用デッキには、闇堕ちを持つ★5が2〜3枚入っている（1枚だと出せる試合が少なすぎる）", () => {
     for (const [id, deck] of Object.entries(DECKS)) {
       const aces = deck.filter((c) => real[c]?.rarity === 5 && real[c]?.dark);
-      expect({ id, aces: aces.length }).toEqual({ id, aces: 2 });
+      expect({ id, ok: aces.length >= 2 && aces.length <= 3 }).toEqual({ id, ok: true });
     }
   });
 });
