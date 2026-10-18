@@ -82,6 +82,8 @@ export function HoloCard({
         keywords: dark.keywords,
         art: dark.art ?? card.art,
         subject: dark.subject ?? card.subject,
+        // 闇堕ちは1回だけ。裏返った姿には「闇堕ち」の目印を出さない
+        dark: undefined,
       }
     : card;
   const darkVars = dark

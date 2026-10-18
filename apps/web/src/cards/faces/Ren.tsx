@@ -26,6 +26,7 @@ export function RenFace({ card }: { card: CardDef }) {
         <b>{card.cost}</b>
       </div>
       <div className="rarity">{stars(card.rarity)}</div>
+      {card.dark && <div className="dark-tag">闇堕ち</div>}
 
       <div className="plate">
         <div className="name">
@@ -39,6 +40,7 @@ export function RenFace({ card }: { card: CardDef }) {
           <p className="effect">
             <EffectText text={card.effect} />
           </p>
+          {card.dark && <p className="dark-note">闇堕ち：一度倒されたとき、裏返って別の姿になる</p>}
           <div className="foot">
             <span className="serial">
               SERIAL<b>{card.serial}</b>

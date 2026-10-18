@@ -622,3 +622,19 @@
     mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);
   }
 }
+
+/* 闇堕ちを持つカードの目印（トップアイドル・ナギと同じ位置と内容） */
+.s-collage {
+  .dark-tag {
+    position: absolute; right: 6%; top: 12.5%; z-index: 4; transform: rotate(3deg); font: 800 0.72em/1 var(--f-ui);
+    padding: 0.3em 0.65em; border-radius: 99px; background: #1a0d24; color: #d9a8ff; box-shadow: 0 0 0 1px #b06bff;
+  }
+  .dark-note { margin: 0; font: 700 0.66em/1.4 var(--f-ui); color: #6b2a8a; }
+}
+.s-expert {
+  .dark-tag {
+    position: absolute; right: 8%; top: 12.5%; z-index: 3; font-size: 0.72em; font-weight: 800;
+    padding: 0.3em 0.65em; border-radius: 99px; background: #1a0d24; color: #d9a8ff; box-shadow: 0 0 0 1px #b06bff;
+  }
+  .dark-note { margin: 0; font: 700 0.64em/1.4 var(--f-name); color: #6b2a8a; }
+}
