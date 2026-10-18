@@ -18,10 +18,23 @@ const KEYWORD_HELP: Record<Keyword, string> = {
 /**
  * カードを画面いっぱいに大きく見せる（スマホで効果を読むため）。
  * 場のアイコンなら、今の攻撃力・体力・状態も添える。カードを押すと文字を隠して絵だけを見られる。
+ * darkPreview のときは、闇堕ちを持つカードの闇堕ちの姿に切り替えられる（確認用。ふだんは秘密のまま）。
  */
-export function CardZoom({ card, view, onClose }: { card: CardDef; view?: UnitView; onClose: () => void }) {
+export function CardZoom({
+  card,
+  view,
+  darkPreview = false,
+  onClose,
+}: {
+  card: CardDef;
+  view?: UnitView;
+  darkPreview?: boolean;
+  onClose: () => void;
+}) {
   const [textHidden, setTextHidden] = useState(false);
-  const dark = !!(view?.unit.dark && card.dark);
+  const [showDark, setShowDark] = useState(false);
+  const canPreview = !view && darkPreview && !!card.dark;
+  const dark = !!card.dark && (view ? !!view.unit.dark : canPreview && showDark);
   const name = dark ? card.dark?.name : card.name;
   const effect = dark ? (card.dark?.effect ?? "") : card.effect;
   const keywords = view?.keywords ?? (dark ? (card.dark?.keywords ?? []) : card.keywords);
@@ -58,9 +71,9 @@ export function CardZoom({ card, view, onClose }: { card: CardDef; view?: UnitVi
           <AttrChips card={card} />
           {card.type === "icon" && (
             <p className="zs-stats">
-              攻撃力 <b className="t-atk">{view?.attack ?? card.attack}</b>
+              攻撃力 <b className="t-atk">{view?.attack ?? (dark ? card.dark?.attack : card.attack)}</b>
               <span>・</span>
-              体力 <b className="t-hp">{view ? view.hp : card.hp}</b>
+              体力 <b className="t-hp">{view ? view.hp : dark ? card.dark?.hp : card.hp}</b>
               {view && view.hp < view.maxHp && <span className="zs-max">／{view.maxHp}</span>}
             </p>
           )}
@@ -86,7 +99,13 @@ export function CardZoom({ card, view, onClose }: { card: CardDef; view?: UnitVi
               {view.unit.silenced && <li>訂正済み：キーワードと効果が消えている</li>}
             </ul>
           )}
-          {!view && card.dark && <p className="zs-note">闇堕ちの姿は、裏返るまで分からない</p>}
+          {canPreview ? (
+            <button type="button" className="btn ghost" onClick={() => setShowDark((v) => !v)}>
+              {showDark ? "元の姿に戻す" : "闇堕ちの姿を見る"}
+            </button>
+          ) : (
+            !view && card.dark && <p className="zs-note">闇堕ちの姿は、裏返るまで分からない</p>
+          )}
           <p className="zs-note">カードを押すと、文字を隠して絵だけを見られます</p>
           <button type="button" className="btn" onClick={onClose}>
             閉じる
