@@ -237,7 +237,7 @@
     "epithet": "",
     "type": "icon",
     "rarity": 5,
-    "cost": 9,
+    "cost": 10,
     "attack": 2,
     "hp": 5,
     "attributes": ["草"],
@@ -254,15 +254,14 @@
       },
       {
         "on": "play",
-        "do": "rally",
-        "attack": 2
+        "do": "rally"
       },
       {
         "on": "play",
         "do": "breakthrough"
       }
     ],
-    "effect": "自分の場のアイコン1体につき、コスト-1・攻撃力+1。場に出たとき、このターン自分のアイコンすべてがすぐ攻撃でき、ガードを無視できる。ほかのアイコンの攻撃力+2。",
+    "effect": "自分の場のアイコン1体につき、コスト-1・攻撃力+1。場に出たとき、このターン自分のアイコンすべてがすぐ攻撃でき、ガードを無視できる。",
     "flavor": "作者不明。保存数は10万。",
     "art": "/assets/cards/k5-art.jpg",
     "subject": "/assets/cards/k5-subject.webp",
@@ -2066,9 +2065,9 @@
     "epithet": "大草原の主",
     "type": "icon",
     "rarity": 5,
-    "cost": 7,
+    "cost": 6,
     "attack": 2,
-    "hp": 4,
+    "hp": 5,
     "attributes": ["草"],
     "kaiwai": ["ミーム"],
     "keywords": [],
