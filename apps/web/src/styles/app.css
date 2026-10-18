@@ -534,7 +534,18 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .pile.dark-ready.foe .trash-top { box-shadow: 0 0 10px #b06bff99; }
 .dark-pick { display: grid; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #2a0d3a88; box-shadow: inset 0 0 0 1px #b06bff66; }
 .dark-pick p { margin: 0; font-size: 13px; color: #e8d0ff; }
-.dark-pick-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.dark-pick-item { display: grid; gap: 6px; padding: 8px 10px; border-radius: 10px; background: #00000033; }
+.dark-pick-info { display: grid; gap: 3px; }
+.dark-pick-name { color: #fff; font-size: 14px; display: flex; align-items: baseline; gap: 8px; }
+.dark-pick-stats { font: 800 13px/1 var(--f-mark); color: #e8d0ff; }
+.dark-pick-stats i { font-style: normal; }
+.dark-pick-effect { font-size: 12.5px; line-height: 1.5; color: #e8d0ff; }
+.dark-pick-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.zs-darkbox { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: #2a0d3a88; box-shadow: inset 0 0 0 1px #b06bff66; }
+.zs-darkbox-head { margin: 0; font-size: 13px; color: #d9a8ff; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.zs-darkbox-head > b { color: #fff; font-size: 15px; }
+.zs-darkbox-stats b { font: 800 15px/1 var(--f-mark); }
+.zs-darkbox-effect { margin: 0; font-size: 14px; line-height: 1.6; color: #fff; }
 .dark-pick-btn { color: #fff; background: linear-gradient(135deg, #8a2bd0, #3a0a4f); border: 1px solid #d9b0ff; box-shadow: 0 0 14px #b06bff88; }
 @keyframes ob-pulse-dark { 50% { box-shadow: 0 0 0 2px #fff, 0 0 26px #b06bff; } }
 

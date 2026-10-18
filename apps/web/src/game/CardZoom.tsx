@@ -18,26 +18,34 @@ const KEYWORD_HELP: Record<Keyword, string> = {
 /**
  * カードを画面いっぱいに大きく見せる（スマホで効果を読むため）。
  * 場のアイコンなら、今の攻撃力・体力・状態も添える。カードを押すと文字を隠して絵だけを見られる。
- * darkPreview のときは、闇堕ちを持つカードの闇堕ちの姿に切り替えられる（確認用。ふだんは秘密のまま）。
+ * darkPreview のときは、闇堕ちを持つカードの「闇堕ちすると」の姿と効果を添え、絵も切り替えられる
+ * （対戦中はいつでも。カード一覧では /?dark のとき）。initialDark で最初から闇堕ちの姿で開く。
  */
 export function CardZoom({
   card,
   view,
   darkPreview = false,
+  initialDark = false,
   onClose,
 }: {
   card: CardDef;
   view?: UnitView;
   darkPreview?: boolean;
+  initialDark?: boolean;
   onClose: () => void;
 }) {
   const [textHidden, setTextHidden] = useState(false);
-  const [showDark, setShowDark] = useState(false);
-  const canPreview = !view && darkPreview && !!card.dark;
-  const dark = !!card.dark && (view ? !!view.unit.dark : canPreview && showDark);
+  const [showDark, setShowDark] = useState(initialDark);
+  const isDarkUnit = !!view?.unit.dark;
+  // まだ闇堕ちしていないカードの、闇堕ちの姿を見られるか
+  const canPreview = darkPreview && !!card.dark && !isDarkUnit;
+  const previewing = canPreview && showDark;
+  const dark = !!card.dark && (isDarkUnit || previewing);
   const name = dark ? card.dark?.name : card.name;
   const effect = dark ? (card.dark?.effect ?? "") : card.effect;
-  const keywords = view?.keywords ?? (dark ? (card.dark?.keywords ?? []) : card.keywords);
+  // 闇堕ちの姿を試しに見ているときは、場の今の値ではなく闇堕ちの姿の値を出す
+  const live = previewing ? undefined : view;
+  const keywords = live?.keywords ?? (dark ? (card.dark?.keywords ?? []) : card.keywords);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -71,10 +79,10 @@ export function CardZoom({
           <AttrChips card={card} />
           {card.type === "icon" && (
             <p className="zs-stats">
-              攻撃力 <b className="t-atk">{view?.attack ?? (dark ? card.dark?.attack : card.attack)}</b>
+              攻撃力 <b className="t-atk">{live?.attack ?? (dark ? card.dark?.attack : card.attack)}</b>
               <span>・</span>
-              体力 <b className="t-hp">{view ? view.hp : dark ? card.dark?.hp : card.hp}</b>
-              {view && view.hp < view.maxHp && <span className="zs-max">／{view.maxHp}</span>}
+              体力 <b className="t-hp">{live ? live.hp : dark ? card.dark?.hp : card.hp}</b>
+              {live && live.hp < live.maxHp && <span className="zs-max">／{live.maxHp}</span>}
             </p>
           )}
           {effect && (
@@ -92,19 +100,36 @@ export function CardZoom({
               ))}
             </dl>
           )}
-          {view && (view.exposed || view.asleep || view.unit.silenced) && (
+          {live && (live.exposed || live.asleep || live.unit.silenced) && (
             <ul className="zs-states">
-              {view.exposed && <li>晒し者：ガードを無視して攻撃される</li>}
-              {view.asleep && <li>眠っている：このターンは攻撃できない</li>}
-              {view.unit.silenced && <li>訂正済み：キーワードと効果が消えている</li>}
+              {live.exposed && <li>晒し者：ガードを無視して攻撃される</li>}
+              {live.asleep && <li>眠っている：このターンは攻撃できない</li>}
+              {live.unit.silenced && <li>訂正済み：キーワードと効果が消えている</li>}
             </ul>
           )}
-          {canPreview ? (
+          {canPreview && card.dark && !previewing && (
+            <div className="zs-darkbox">
+              <p className="zs-darkbox-head">
+                闇堕ちすると <b>{card.dark.name}</b>
+                <span className="zs-darkbox-stats">
+                  <b className="t-atk">{card.dark.attack}</b>／<b className="t-hp">{card.dark.hp}</b>
+                </span>
+              </p>
+              <p className="zs-darkbox-effect">
+                <EffectText text={card.dark.effect} />
+              </p>
+              <p className="zs-note">
+                オワコンに行ったら、自分のターンにコストなしでこの姿で出せる（1回だけ。出たターンは攻撃できない）
+              </p>
+            </div>
+          )}
+          {canPreview && (
             <button type="button" className="btn ghost" onClick={() => setShowDark((v) => !v)}>
               {showDark ? "元の姿に戻す" : "闇堕ちの姿を見る"}
             </button>
-          ) : (
-            !view && card.dark && <p className="zs-note">闇堕ちの姿は、闇堕ちするまで分からない</p>
+          )}
+          {!darkPreview && !view && card.dark && (
+            <p className="zs-note">闇堕ちの姿は、闇堕ちするまで分からない</p>
           )}
           <p className="zs-note">カードを押すと、文字を隠して絵だけを見られます</p>
           <button type="button" className="btn" onClick={onClose}>
