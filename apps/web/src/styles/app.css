@@ -375,6 +375,7 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .ps-post { font: 800 9.5px/1 var(--f-ui); padding: 2px 6px; border-radius: 99px; background: #f6f2ea; color: #1b2230; }
 .ps-effect { font-size: 10.5px; line-height: 1.4; color: #d7deea; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ps-effect em { font-style: normal; font-weight: 800; color: var(--gold); margin-right: 5px; }
+.ps-kw { font-weight: 800; color: var(--gold); margin-right: 5px; }
 .ps-effect .ps-state { color: #ffb4b4; }
 .ps-zoom { flex: none; font-size: 10px; font-weight: 800; color: var(--muted); padding: 4px 7px; border-radius: 99px; border: 1px solid #ffffff30; background: none; cursor: pointer; }
 /* 手札：扇で持ち、横より大きく。選んだカードは上に持ち上げる */

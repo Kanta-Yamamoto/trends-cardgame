@@ -54,6 +54,43 @@ export function EffectText({ text }: { text: string }) {
   );
 }
 
+/** 押すと解説が開く語の札（場のカードのキーワードや、状態）。term は解説の見出し、見た目の文字は children */
+export function HelpTerm({
+  term,
+  className = "",
+  children,
+}: {
+  term: string;
+  className?: string;
+  children?: React.ReactNode;
+}) {
+  const open = useHelp((s) => s.open);
+  if (!HELP[term]) return <span className={className}>{children ?? term}</span>;
+  return (
+    // biome-ignore lint/a11y/useSemanticElements: カードの枠自体がボタンなので、ボタンを入れ子にできない
+    <span
+      className={`${className} kw-help`}
+      role="button"
+      tabIndex={0}
+      aria-label={`${term} の説明を見る`}
+      onClick={(e) => {
+        e.stopPropagation();
+        open(term);
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.stopPropagation();
+          open(term);
+        }
+      }}
+    >
+      {children ?? term}
+    </span>
+  );
+}
+
 /** ★5 の「闇堕ち」の札。押すと闇堕ちの仕組みと、このカードの闇堕ちの姿を見せる */
 export function DarkTag({ card, className = "dark-tag" }: { card: CardDef; className?: string }) {
   const open = useHelp((s) => s.open);

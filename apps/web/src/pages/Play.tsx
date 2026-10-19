@@ -22,7 +22,7 @@ import {
 import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { AttrChips } from "../cards/AttrChips";
-import { EffectText } from "../cards/EffectText";
+import { EffectText, HelpTerm } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { CardZoom } from "../game/CardZoom";
@@ -1411,7 +1411,9 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
             </span>
           </span>
           <span className="ps-effect">
-            {keywords.length > 0 && <em>{keywords.join("・")}</em>}
+            {keywords.map((k) => (
+              <HelpTerm key={k} term={k} className="ps-kw" />
+            ))}
             {states.length > 0 && <em className="ps-state">{states.join("・")}</em>}
             <EffectText text={effect} />
           </span>

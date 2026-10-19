@@ -1,6 +1,7 @@
 import type { CardDef } from "@trends/cards";
 import type { UnitView } from "@trends/game-core";
 import { type CSSProperties, useRef } from "react";
+import { HelpTerm } from "../cards/EffectText";
 import { ATTR_META, attrBackground, KAIWAI_META, stars } from "../cards/meta";
 
 interface Props {
@@ -143,13 +144,23 @@ export function MiniCard({
       {(keywords.length > 0 || view) && (
         <span className="mini-kws">
           {keywords.map((k) => (
-            <span key={k} className="mini-kw">
-              {k}
-            </span>
+            <HelpTerm key={k} term={k} className="mini-kw" />
           ))}
-          {view?.exposed && <span className="mini-kw st">晒し</span>}
-          {view?.asleep && <span className="mini-kw st">眠り</span>}
-          {view?.unit.silenced && <span className="mini-kw st">訂正</span>}
+          {view?.exposed && (
+            <HelpTerm term="晒し者" className="mini-kw st">
+              晒し
+            </HelpTerm>
+          )}
+          {view?.asleep && (
+            <HelpTerm term="眠り" className="mini-kw st">
+              眠り
+            </HelpTerm>
+          )}
+          {view?.unit.silenced && (
+            <HelpTerm term="訂正済み" className="mini-kw st">
+              訂正
+            </HelpTerm>
+          )}
         </span>
       )}
       {/* 投稿は攻撃力・体力の代わりに、吹き出しの「投稿」札を出す（アイコンと見分けやすく） */}

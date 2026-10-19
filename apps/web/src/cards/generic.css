@@ -60,12 +60,12 @@
     transition: opacity 0.25s, transform 0.25s;
   }
   .has-art .kg-effect { min-height: 0; }
-  /* 一覧用：名前と数値だけ */
+  /* 一覧用：種類と二つ名は省き、効果文は出す（小さめ） */
   .card.is-compact .kg-type,
   .card.is-compact .kg-epi,
-  .card.is-compact .kg-effect,
   .card.is-compact .kg-darktext { display: none; }
   .card.is-compact .kg-plate { gap: 0.25em; }
+  .card.is-compact .kg-effect { font-size: 0.86em; line-height: 1.45; }
   /* 押して文字を隠す */
   .card.text-hidden .kg-plate { opacity: 0; transform: translateY(15%); pointer-events: none; }
   /* 属性の色の枠 */

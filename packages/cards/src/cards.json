@@ -29,8 +29,8 @@
       "name": "闇堕ちレン",
       "attack": 6,
       "hp": 3,
-      "keywords": ["連撃"],
-      "effect": "連撃。闇堕ちしたとき、相手のアイコンすべてに1ダメージ。",
+      "keywords": ["凸", "連撃"],
+      "effect": "凸。連撃。闇堕ちしたとき、相手のアイコンすべてに1ダメージ。",
       "art": "/assets/cards/c2-dark-art.jpg",
       "subject": "/assets/cards/c2-dark-subject.webp",
       "original": "assets/original/c2-dark.webp",
@@ -288,8 +288,8 @@
       "name": "呪いのコラ画像",
       "attack": 5,
       "hp": 4,
-      "keywords": [],
-      "effect": "闇堕ちしたとき、自分の空いている枠すべてに草を出す。",
+      "keywords": ["凸"],
+      "effect": "凸。闇堕ちしたとき、自分の空いている枠すべてに草を出す。",
       "art": "/assets/cards/k5-dark-art.jpg",
       "subject": "/assets/cards/k5-dark-subject.webp",
       "original": "assets/original/k5-dark.webp",
@@ -358,8 +358,8 @@
       "name": "闇深アイドル",
       "attack": 7,
       "hp": 4,
-      "keywords": ["連撃"],
-      "effect": "連撃。闇堕ちしたとき、攻撃力4以下の相手のアイコン1体（いちばん強いもの）を自分の場に奪う。",
+      "keywords": ["凸", "連撃"],
+      "effect": "凸。連撃。闇堕ちしたとき、攻撃力4以下の相手のアイコン1体（いちばん強いもの）を自分の場に奪う。",
       "art": "/assets/cards/m1-dark-art.jpg",
       "subject": "/assets/cards/m1-dark-subject.webp",
       "original": "assets/original/m1-dark.webp",
@@ -670,7 +670,7 @@
       "name": "堕天のシロガネ",
       "attack": 7,
       "hp": 4,
-      "keywords": [],
+      "keywords": ["凸"],
       "effects": [
         {
           "on": "play",
@@ -684,7 +684,7 @@
           "amount": 1
         }
       ],
-      "effect": "闇堕ちしたとき、コストがいちばん高い相手のアイコンを手札に戻し、相手のアイコンすべてに1ダメージ。",
+      "effect": "凸。闇堕ちしたとき、コストがいちばん高い相手のアイコンを手札に戻し、相手のアイコンすべてに1ダメージ。",
       "art": "/assets/cards/c1-dark-art.jpg",
       "subject": "/assets/cards/c1-dark-subject.webp"
     }
@@ -796,8 +796,8 @@
       "name": "陰謀論者",
       "attack": 6,
       "hp": 4,
-      "keywords": ["連撃"],
-      "effect": "連撃。闇堕ちしたとき、相手のアイコンすべてを晒し者にし（強化が消える）、相手のマスターに3ダメージ。",
+      "keywords": ["凸", "連撃"],
+      "effect": "凸。連撃。闇堕ちしたとき、相手のアイコンすべてを晒し者にし（強化が消える）、相手のマスターに3ダメージ。",
       "art": "/assets/cards/g4-dark-art.jpg",
       "subject": "/assets/cards/g4-dark-subject.webp",
       "original": "assets/original/g4-dark.webp",
@@ -1401,14 +1401,14 @@
         "do": "lullaby"
       }
     ],
-    "effect": "場に出たとき、相手のアイコンすべてを眠らせる（次の相手のターン、攻撃できない）。相手のターンの始めに、相手の攻撃力がいちばん高いアイコンを眠らせる。",
+    "effect": "ガード。場に出たとき、相手のアイコンすべてを眠らせる（次の相手のターン、攻撃できない）。相手のターンの始めに、相手の攻撃力がいちばん高いアイコンを眠らせる。",
     "flavor": "「大丈夫。今日はもう、休んでいいよ」",
     "dark": {
       "name": "病みボイス ナギ",
       "attack": 4,
       "hp": 4,
-      "keywords": ["連撃"],
-      "effect": "連撃。闇堕ちしたとき、相手のアイコンすべてを眠らせる（次の相手のターン、攻撃できない）。",
+      "keywords": ["凸", "連撃"],
+      "effect": "凸。連撃。闇堕ちしたとき、相手のアイコンすべてを眠らせる（次の相手のターン、攻撃できない）。",
       "art": "/assets/cards/c5-dark-art.jpg",
       "subject": "/assets/cards/c5-dark-subject.webp",
       "original": "assets/original/c5-dark.webp",
@@ -1857,7 +1857,7 @@
       "name": "業火のカグラ",
       "attack": 6,
       "hp": 3,
-      "keywords": [],
+      "keywords": ["凸"],
       "effects": [
         {
           "on": "play",
@@ -1866,7 +1866,7 @@
           "amount": 2
         }
       ],
-      "effect": "闇堕ちしたとき、相手のアイコンすべてに2ダメージ。",
+      "effect": "凸。闇堕ちしたとき、相手のアイコンすべてに2ダメージ。",
       "art": "/assets/cards/c9-dark-art.jpg",
       "subject": "/assets/cards/c9-dark-subject.webp"
     }
@@ -2119,7 +2119,7 @@
         "amount": 1
       }
     ],
-    "effect": "凸。場に出たとき、体力が2以下の相手のアイコンをすべて倒す。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコンに1ダメージ。",
+    "effect": "ガード。凸。場に出たとき、体力が2以下の相手のアイコンをすべて倒す。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコンに1ダメージ。",
     "flavor": "「知らないことは、まだ調べていないことだけ」",
     "art": "/assets/cards/c7-art.jpg",
     "original": "assets/original/c7.webp",
@@ -2127,7 +2127,7 @@
       "name": "禁書のヨミ",
       "attack": 6,
       "hp": 5,
-      "keywords": [],
+      "keywords": ["凸"],
       "effects": [
         {
           "on": "play",
@@ -2140,7 +2140,7 @@
           "count": 2
         }
       ],
-      "effect": "闇堕ちしたとき、攻撃力がいちばん高い相手のアイコンを倒す。カードを2枚引く。",
+      "effect": "凸。闇堕ちしたとき、攻撃力がいちばん高い相手のアイコンを倒す。カードを2枚引く。",
       "art": "/assets/cards/c7-dark-art.jpg",
       "subject": "/assets/cards/c7-dark-subject.webp"
     }
@@ -2273,7 +2273,7 @@
       "name": "嘲笑のワラ",
       "attack": 3,
       "hp": 4,
-      "keywords": [],
+      "keywords": ["凸"],
       "effects": [
         {
           "on": "passive",
@@ -2292,7 +2292,7 @@
           "hp": 1
         }
       ],
-      "effect": "自分の場のほかのアイコン1体につき攻撃力+1。闇堕ちしたとき、草を2体出し、自分のほかのアイコンすべてに攻撃力+1・体力+1。",
+      "effect": "凸。自分の場のほかのアイコン1体につき攻撃力+1。闇堕ちしたとき、草を2体出し、自分のほかのアイコンすべてに攻撃力+1・体力+1。",
       "art": "/assets/cards/c8-dark-art.jpg",
       "subject": "/assets/cards/c8-dark-subject.webp"
     }
@@ -2431,7 +2431,7 @@
         "amount": 2
       }
     ],
-    "effect": "場に出たとき、自分のライフを3回復する。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
+    "effect": "ガード。場に出たとき、自分のライフを3回復する。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
     "flavor": "「ととのったら、あなたの番」",
     "art": "/assets/cards/c10-art.jpg",
     "original": "assets/original/c10.webp",
@@ -2439,7 +2439,7 @@
       "name": "灼熱のユズハ",
       "attack": 5,
       "hp": 5,
-      "keywords": [],
+      "keywords": ["凸"],
       "effects": [
         {
           "on": "play",
@@ -2458,7 +2458,7 @@
           "amount": 3
         }
       ],
-      "effect": "闇堕ちしたとき、次の相手のターンが終わるまで、自分のマスターはダメージを受けない。相手のアイコンすべてに1ダメージ。自分のライフを3回復する。",
+      "effect": "凸。闇堕ちしたとき、次の相手のターンが終わるまで、自分のマスターはダメージを受けない。相手のアイコンすべてに1ダメージ。自分のライフを3回復する。",
       "art": "/assets/cards/c10-dark-art.jpg",
       "subject": "/assets/cards/c10-dark-subject.webp"
     }
@@ -3008,7 +3008,7 @@
       "name": "不眠のルリ",
       "attack": 4,
       "hp": 4,
-      "keywords": [],
+      "keywords": ["凸"],
       "effects": [
         {
           "on": "play",
@@ -3016,7 +3016,7 @@
           "maxCost": 3
         }
       ],
-      "effect": "闇堕ちしたとき、オワコンからコスト3以下の自分のアイコン1体を場に戻す（いちばんコストが高いもの。場に出たときの効果も働く）。",
+      "effect": "凸。闇堕ちしたとき、オワコンからコスト3以下の自分のアイコン1体を場に戻す（いちばんコストが高いもの。場に出たときの効果も働く）。",
       "art": "/assets/cards/c11-dark-art.jpg",
       "subject": "/assets/cards/c11-dark-subject.webp",
       "original": "assets/original/c11-dark.webp"
@@ -3148,7 +3148,7 @@
       "name": "病み期のミレイ",
       "attack": 5,
       "hp": 5,
-      "keywords": ["注目"],
+      "keywords": ["凸", "注目"],
       "effects": [
         {
           "on": "play",
@@ -3157,7 +3157,7 @@
           "attack": 2
         }
       ],
-      "effect": "注目。闇堕ちしたとき、相手のアイコンすべての攻撃力-2。",
+      "effect": "凸。注目。闇堕ちしたとき、相手のアイコンすべての攻撃力-2。",
       "art": "/assets/cards/c13-dark-art.jpg",
       "original": "assets/original/c13-dark.webp",
       "subject": "/assets/cards/c13-dark-subject.webp"
@@ -3301,7 +3301,7 @@
       "name": "黒歴史のララ",
       "attack": 4,
       "hp": 4,
-      "keywords": [],
+      "keywords": ["凸"],
       "effects": [
         {
           "on": "play",
@@ -3315,7 +3315,7 @@
           "card": "t-kusa"
         }
       ],
-      "effect": "闇堕ちしたとき、攻撃力がいちばん高い相手のアイコンを草（1/1）にし、自分の空いている枠すべてに草を出す。",
+      "effect": "凸。闇堕ちしたとき、攻撃力がいちばん高い相手のアイコンを草（1/1）にし、自分の空いている枠すべてに草を出す。",
       "art": "/assets/cards/c12-dark-art.jpg",
       "original": "assets/original/c12-dark.webp",
       "subject": "/assets/cards/c12-dark-subject.webp"
