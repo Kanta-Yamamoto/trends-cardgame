@@ -244,7 +244,7 @@ function DeckSelect() {
           </li>
           <li>相手の場にガードがいる間は、ガード（と晒し者）しか攻撃できない</li>
           <li>
-            闇堕ちを持つ★5は、オワコンに行ったら自分のターンの好きなときに、コストなしで闇堕ちの姿で出せる（1枚につき1回。出たターンは攻撃できない）
+            闇堕ちを持つ★5は、オワコンに行ったら自分のターンの好きなときに、コストなしで闇堕ちの姿で出せる（1枚につき1回。そのターンは相手のアイコンにだけ攻撃できる）
           </li>
         </ul>
       </details>
@@ -440,7 +440,7 @@ type Peek = {
 /** ドラッグしているもの（手札のカード／攻撃するアイコン） */
 type DragSrc = { kind: "hand"; index: number } | { kind: "unit"; slot: number };
 
-/** 攻撃したときの見込み（与えるダメージ・叩き・倒せるか）を、攻撃先に重ねて出す */
+/** 攻撃したときの見込み（与えるダメージ・倒せるか）を、攻撃先に重ねて出す */
 function AttackBadge({ pv, leader }: { pv: AttackPreview; leader?: boolean }) {
   const tag = leader
     ? pv.kills && "とどめ"
@@ -454,7 +454,6 @@ function AttackBadge({ pv, leader }: { pv: AttackPreview; leader?: boolean }) {
   return (
     <span className={`atk-pv ${pv.kills ? "kill" : ""}`} aria-hidden="true">
       <b>-{pv.toDefender}</b>
-      {pv.bonus > 0 && <i className="pv-bash">叩き+{pv.bonus}</i>}
       {tag && <i className={pv.dies && !pv.kills ? "pv-die" : "pv-tag"}>{tag}</i>}
     </span>
   );
@@ -797,7 +796,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         onPeek={() => setPeek(p)}
         onLongPress={() => setZoom(p)}
       >
-        {ready && <em className="mini-ready">{u.attacksLeft > 1 ? "2回攻撃" : "攻撃できる"}</em>}
+        {ready && (
+          <em className="mini-ready">
+            {u.attacksLeft > 1 ? "2回攻撃" : u.rushOnly ? "凸攻撃" : "攻撃できる"}
+          </em>
+        )}
       </MiniCard>
     );
   };
@@ -1246,7 +1249,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             </h2>
             {trashView === ME && myDark.length > 0 && freeSlot >= 0 && (
               <div className="dark-pick">
-                <p>闇堕ちの姿で、コストなしで出せます（出たターンは攻撃できません）</p>
+                <p>闇堕ちの姿で、コストなしで出せます（そのターンは相手のアイコンにだけ攻撃できます）</p>
                 {myDark.map((id) => {
                   const d = CATALOG[id]?.dark;
                   if (!d) return null;
@@ -1376,51 +1379,48 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
       ].filter((x): x is string => !!x)
     : [];
   return (
-    <button
-      type="button"
-      className={`peek-strip ${dark ? "is-dark" : ""} ${card.type === "post" ? "is-post" : ""}`}
-      onClick={onOpen}
-      aria-label={`${name} の説明を大きく見る`}
-    >
-      <span
-        className="ps-art"
-        style={
-          art
-            ? { backgroundImage: `url(${art})` }
-            : { background: ATTR_META[card.attributes[0] ?? "草"].deep }
-        }
-      />
-      <span className="ps-body">
-        <span className="ps-head">
-          <b className="ps-name">
-            {name}
-            {card.epithet && <small>{card.epithet}</small>}
-          </b>
-          <span className="ps-meta">
-            <i className="ps-cost">{card.cost}</i>
-            {card.type === "icon" ? (
-              <>
-                <i className="t-atk">{view?.attack ?? card.attack}</i>／
-                <i className="t-hp">
-                  {view?.hp ?? card.hp}
-                  {view && view.hp < view.maxHp && <small>/{view.maxHp}</small>}
-                </i>
-              </>
-            ) : (
-              <i className="ps-post">投稿</i>
-            )}
+    <div className={`peek-strip ${dark ? "is-dark" : ""} ${card.type === "post" ? "is-post" : ""}`}>
+      <button type="button" className="ps-main" onClick={onOpen} aria-label={`${name} の説明を大きく見る`}>
+        <span
+          className="ps-art"
+          style={
+            art
+              ? { backgroundImage: `url(${art})` }
+              : { background: ATTR_META[card.attributes[0] ?? "草"].deep }
+          }
+        />
+        <span className="ps-body">
+          <span className="ps-head">
+            <b className="ps-name">
+              {name}
+              {card.epithet && <small>{card.epithet}</small>}
+            </b>
+            <span className="ps-meta">
+              <i className="ps-cost">{card.cost}</i>
+              {card.type === "icon" ? (
+                <>
+                  <i className="t-atk">{view?.attack ?? card.attack}</i>／
+                  <i className="t-hp">
+                    {view?.hp ?? card.hp}
+                    {view && view.hp < view.maxHp && <small>/{view.maxHp}</small>}
+                  </i>
+                </>
+              ) : (
+                <i className="ps-post">投稿</i>
+              )}
+            </span>
+          </span>
+          <span className="ps-effect">
+            {keywords.length > 0 && <em>{keywords.join("・")}</em>}
+            {states.length > 0 && <em className="ps-state">{states.join("・")}</em>}
+            <EffectText text={effect} />
           </span>
         </span>
-        <span className="ps-effect">
-          {keywords.length > 0 && <em>{keywords.join("・")}</em>}
-          {states.length > 0 && <em className="ps-state">{states.join("・")}</em>}
-          <EffectText text={effect} />
-        </span>
-      </span>
-      <span className="ps-zoom" aria-hidden="true">
+      </button>
+      <button type="button" className="ps-zoom" onClick={onOpen} aria-label="大きく見る">
         拡大
-      </span>
-    </button>
+      </button>
+    </div>
   );
 }
 

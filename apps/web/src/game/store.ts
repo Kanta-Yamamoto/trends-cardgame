@@ -31,7 +31,7 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string }> = {
   },
   ronpa: {
     name: "論破で炎上",
-    text: "炎上×神。有識者と配信者の両方を使い、叩きと除去で相手のアイコンを減らして押し切る。エースは専門家",
+    text: "炎上×神。有識者と配信者の両方を使い、凸と除去で相手のアイコンを減らして押し切る。エースは専門家",
   },
   dance: {
     name: "踊ってみたで草",
@@ -59,7 +59,7 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string }> = {
   },
   solo_flame: {
     name: "燃やし尽くす",
-    text: "炎上だけ。速攻と叩きで序盤から殴り切り、晒しで強化を消す。エースはレンとカグラ",
+    text: "炎上だけ。速攻と凸で序盤から殴り切り、晒しで強化を消す。エースはレンとカグラ",
   },
   solo_idol: {
     name: "推しに全振り",

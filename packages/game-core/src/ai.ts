@@ -248,7 +248,7 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
         const d = foe.field[t.slot];
         if (!d) continue;
         const dv = viewUnit(state, foeId, d, catalog);
-        const dmg = v.attack + (v.keywords.includes("叩き") && d.damage > 0 ? 2 : 0);
+        const dmg = v.attack;
         const kills = dmg >= dv.hp;
         const survives = dv.attack < v.hp;
         let score: number;

@@ -29,8 +29,8 @@
       "name": "闇堕ちレン",
       "attack": 6,
       "hp": 3,
-      "keywords": ["連撃", "叩き"],
-      "effect": "連撃。叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）。闇堕ちしたとき、相手のアイコンすべてに1ダメージ。",
+      "keywords": ["連撃"],
+      "effect": "連撃。闇堕ちしたとき、相手のアイコンすべてに1ダメージ。",
       "art": "/assets/cards/c2-dark-art.jpg",
       "subject": "/assets/cards/c2-dark-subject.webp",
       "original": "assets/original/c2-dark.webp",
@@ -77,9 +77,9 @@
     "hp": 2,
     "attributes": ["炎上"],
     "kaiwai": ["配信者"],
-    "keywords": ["叩き"],
+    "keywords": ["凸"],
     "effects": [],
-    "effect": "叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）",
+    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。",
     "flavor": "アポなし、許可なし、反省なし。",
     "art": "/assets/cards/f2-art.jpg",
     "original": "assets/original/f2.webp"
@@ -95,9 +95,16 @@
     "hp": 3,
     "attributes": ["炎上"],
     "kaiwai": [],
-    "keywords": ["連撃"],
-    "effects": [],
-    "effect": "連撃（1ターンに2回攻撃できる）",
+    "keywords": ["凸", "連撃"],
+    "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      }
+    ],
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。連撃（1ターンに2回攻撃できる）。",
     "flavor": "見てないって言いながら、全部見てる。",
     "art": "/assets/cards/f3-art.jpg",
     "original": "assets/original/f3.webp"
@@ -281,8 +288,8 @@
       "name": "呪いのコラ画像",
       "attack": 5,
       "hp": 4,
-      "keywords": ["叩き"],
-      "effect": "叩き。闇堕ちしたとき、自分の空いている枠すべてに草を出す。",
+      "keywords": [],
+      "effect": "闇堕ちしたとき、自分の空いている枠すべてに草を出す。",
       "art": "/assets/cards/k5-dark-art.jpg",
       "subject": "/assets/cards/k5-dark-subject.webp",
       "original": "assets/original/k5-dark.webp",
@@ -422,9 +429,16 @@
     "hp": 4,
     "attributes": ["メロい"],
     "kaiwai": ["アイドル"],
-    "keywords": ["ガード"],
-    "effects": [],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）",
+    "keywords": ["凸"],
+    "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      }
+    ],
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。",
     "flavor": "推しには指一本触れさせない。",
     "art": "/assets/cards/m4-art.jpg",
     "original": "assets/original/m4.webp"
@@ -625,10 +639,10 @@
     "rarity": 5,
     "cost": 6,
     "attack": 4,
-    "hp": 6,
+    "hp": 7,
     "attributes": ["神"],
     "kaiwai": ["配信者"],
-    "keywords": ["ガード"],
+    "keywords": ["凸"],
     "effects": [
       {
         "on": "play",
@@ -646,7 +660,7 @@
         "count": 1
       }
     ],
-    "effect": "ガード。場に出たとき、相手のアイコンすべてのガードを消し、攻撃力がいちばん高い相手のアイコンに3ダメージ。自分のターンの終わりに、カードを1枚引く。",
+    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。場に出たとき、相手のアイコンすべてのガードを消し、攻撃力がいちばん高い相手のアイコンに3ダメージ。自分のターンの終わりに、カードを1枚引く。",
     "flavor": "「さあ、こちら側へ。光はもう、君を選んでいる」",
     "number": "001/040",
     "art": "/assets/cards/c1-art.jpg",
@@ -1019,7 +1033,7 @@
     "hp": 2,
     "attributes": ["炎上"],
     "kaiwai": [],
-    "keywords": ["叩き"],
+    "keywords": [],
     "effects": [
       {
         "on": "play",
@@ -1027,7 +1041,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）。場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（強化が消える）。",
+    "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（強化が消える）。",
     "flavor": "なになに、燃えてるの？",
     "art": "/assets/cards/f6-art.jpg",
     "original": "assets/original/f6.webp"
@@ -1094,8 +1108,14 @@
     "hp": 3,
     "attributes": ["炎上"],
     "kaiwai": ["有識者"],
-    "keywords": [],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 2,
+        "hp": 2
+      },
       {
         "on": "play",
         "do": "damage",
@@ -1103,7 +1123,7 @@
         "amount": 1
       }
     ],
-    "effect": "場に出たとき、相手のアイコンすべてに1ダメージ。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+2・体力+2。場に出たとき、相手のアイコンすべてに1ダメージ。",
     "flavor": "【悲報】が、今日もよく伸びる。",
     "art": "/assets/cards/f9-art.jpg",
     "original": "assets/original/f9.webp"
@@ -1119,14 +1139,14 @@
     "hp": 4,
     "attributes": ["炎上"],
     "kaiwai": ["配信者"],
-    "keywords": ["速攻", "叩き"],
+    "keywords": ["速攻"],
     "effects": [
       {
         "do": "expose",
         "to": "strongestEnemy"
       }
     ],
-    "effect": "速攻。叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）。場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（強化が消える）。",
+    "effect": "速攻。場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（強化が消える）。",
     "flavor": "次は、あなたの番。",
     "art": "/assets/cards/f10-art.jpg",
     "original": "assets/original/f10.webp"
@@ -1199,9 +1219,16 @@
     "hp": 3,
     "attributes": ["メロい"],
     "kaiwai": ["配信者"],
-    "keywords": ["注目"],
-    "effects": [],
-    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）",
+    "keywords": ["凸", "注目"],
+    "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      }
+    ],
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。",
     "flavor": "歌ってみた、100万回再生。",
     "art": "/assets/cards/m7-art.jpg",
     "original": "assets/original/m7.webp"
@@ -1310,15 +1337,21 @@
     "hp": 4,
     "attributes": ["癒し"],
     "kaiwai": ["配信者"],
-    "keywords": [],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      },
       {
         "on": "play",
         "do": "bind",
         "to": "strongestEnemy"
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコン1体を眠らせる（次の相手のターン、攻撃できない）。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。場に出たとき、攻撃力がいちばん高い相手のアイコン1体を眠らせる（次の相手のターン、攻撃できない）。",
     "flavor": "……耳、かしてね。",
     "art": "/assets/cards/i8-art.jpg",
     "original": "assets/original/i8.webp"
@@ -1368,7 +1401,7 @@
         "do": "lullaby"
       }
     ],
-    "effect": "ガード。場に出たとき、相手のアイコンすべてを眠らせる（次の相手のターン、攻撃できない）。相手のターンの始めに、相手の攻撃力がいちばん高いアイコンを眠らせる。",
+    "effect": "場に出たとき、相手のアイコンすべてを眠らせる（次の相手のターン、攻撃できない）。相手のターンの始めに、相手の攻撃力がいちばん高いアイコンを眠らせる。",
     "flavor": "「大丈夫。今日はもう、休んでいいよ」",
     "dark": {
       "name": "病みボイス ナギ",
@@ -1426,8 +1459,14 @@
     "hp": 3,
     "attributes": ["草"],
     "kaiwai": ["ミーム"],
-    "keywords": [],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      },
       {
         "on": "play",
         "do": "buffAllies",
@@ -1439,7 +1478,7 @@
         }
       }
     ],
-    "effect": "場に出たとき、自分の場に草が2体以上いれば、ほかのアイコンすべてに攻撃力+1。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。場に出たとき、自分の場に草が2体以上いれば、ほかのアイコンすべてに攻撃力+1。",
     "flavor": "今日も一発、当ててくる。",
     "art": "/assets/cards/k7-art.jpg",
     "original": "assets/original/k7.webp"
@@ -1653,7 +1692,7 @@
     "hp": 3,
     "attributes": ["炎上"],
     "kaiwai": ["配信者", "有識者"],
-    "keywords": ["叩き"],
+    "keywords": ["凸"],
     "effects": [
       {
         "on": "play",
@@ -1662,7 +1701,7 @@
         "amount": 2
       }
     ],
-    "effect": "叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）。場に出たとき、攻撃力がいちばん高い相手のアイコン1体に2ダメージ。",
+    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。場に出たとき、攻撃力がいちばん高い相手のアイコン1体に2ダメージ。",
     "flavor": "はい、論破。",
     "art": "/assets/cards/x1-art.jpg",
     "original": "assets/original/x1.webp"
@@ -1703,9 +1742,9 @@
     "hp": 2,
     "attributes": ["炎上"],
     "kaiwai": [],
-    "keywords": ["叩き"],
+    "keywords": ["凸"],
     "effects": [],
-    "effect": "叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）",
+    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。",
     "flavor": "今日も燃えてるねえ。",
     "art": "/assets/cards/f11-art.jpg",
     "original": "assets/original/f11.webp"
@@ -1870,7 +1909,7 @@
     "hp": 2,
     "attributes": ["メロい"],
     "kaiwai": ["アイドル"],
-    "keywords": ["ガード"],
+    "keywords": [],
     "effects": [
       {
         "do": "buffRandomAlly",
@@ -1878,7 +1917,7 @@
         "hp": 2
       }
     ],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、自分のほかのアイコン1体（ランダム）に体力+2。",
+    "effect": "場に出たとき、自分のほかのアイコン1体（ランダム）に体力+2。",
     "flavor": "推しの前には、誰も通さない。",
     "art": "/assets/cards/m12-art.jpg",
     "original": "assets/original/m12.webp"
@@ -1931,10 +1970,10 @@
     "rarity": 5,
     "cost": 5,
     "attack": 3,
-    "hp": 5,
+    "hp": 6,
     "attributes": ["メロい"],
     "kaiwai": ["アイドル"],
-    "keywords": ["注目", "ガード"],
+    "keywords": ["注目"],
     "effects": [
       {
         "do": "buffAllies",
@@ -1942,7 +1981,7 @@
         "hp": 1
       }
     ],
-    "effect": "注目。ガード。場に出たとき、自分のほかのアイコンすべてに攻撃力+1・体力+1。",
+    "effect": "注目。場に出たとき、自分のほかのアイコンすべてに攻撃力+1・体力+1。",
     "flavor": "「みんなの声、ちゃんと届いてるよ」",
     "art": "/assets/cards/c6-art.jpg",
     "original": "assets/original/c6.webp"
@@ -2008,15 +2047,21 @@
     "hp": 3,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": ["ガード"],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      },
       {
         "do": "draw",
         "count": 2,
         "ifHandAtMost": 3
       }
     ],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、手札が3枚以下ならカードを2枚引く。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。場に出たとき、手札が3枚以下ならカードを2枚引く。",
     "flavor": "要出典。",
     "art": "/assets/cards/g12-art.jpg",
     "original": "assets/original/g12.webp"
@@ -2032,7 +2077,7 @@
     "hp": 5,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": [],
+    "keywords": ["凸"],
     "effects": [
       {
         "do": "damage",
@@ -2044,7 +2089,7 @@
         "count": 1
       }
     ],
-    "effect": "場に出たとき、相手のアイコンすべてに1ダメージ。カードを1枚引く。",
+    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。場に出たとき、相手のアイコンすべてに1ダメージ。カードを1枚引く。",
     "flavor": "まず前提を整理しましょう。",
     "art": "/assets/cards/g13-art.jpg",
     "original": "assets/original/g13.webp"
@@ -2060,7 +2105,7 @@
     "hp": 6,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": ["ガード"],
+    "keywords": ["ガード", "凸"],
     "effects": [
       {
         "on": "play",
@@ -2074,7 +2119,7 @@
         "amount": 1
       }
     ],
-    "effect": "ガード。場に出たとき、体力が2以下の相手のアイコンをすべて倒す。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコンに1ダメージ。",
+    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。場に出たとき、体力が2以下の相手のアイコンをすべて倒す。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコンに1ダメージ。",
     "flavor": "「知らないことは、まだ調べていないことだけ」",
     "art": "/assets/cards/c7-art.jpg",
     "original": "assets/original/c7.webp",
@@ -2314,8 +2359,14 @@
     "hp": 3,
     "attributes": ["癒し"],
     "kaiwai": ["配信者"],
-    "keywords": [],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      },
       {
         "on": "passive",
         "do": "healGrow",
@@ -2323,7 +2374,7 @@
         "hp": 1
       }
     ],
-    "effect": "自分が回復の効果を使うたび、このアイコンに攻撃力+1・体力+1。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。自分が回復の効果を使うたび、このアイコンに攻撃力+1・体力+1。",
     "flavor": "眠れない夜の、いちばん近い声。",
     "art": "/assets/cards/i12-art.jpg",
     "original": "assets/original/i12.webp"
@@ -2380,7 +2431,7 @@
         "amount": 2
       }
     ],
-    "effect": "ガード。場に出たとき、自分のライフを3回復する。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
+    "effect": "場に出たとき、自分のライフを3回復する。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
     "flavor": "「ととのったら、あなたの番」",
     "art": "/assets/cards/c10-art.jpg",
     "original": "assets/original/c10.webp",
@@ -2754,8 +2805,14 @@
     "hp": 2,
     "attributes": ["草"],
     "kaiwai": ["動物"],
-    "keywords": [],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      },
       {
         "on": "play",
         "do": "summon",
@@ -2763,7 +2820,7 @@
         "count": 1
       }
     ],
-    "effect": "場に出たとき、草を1体出す。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。場に出たとき、草を1体出す。",
     "flavor": "再生数は飼い主の給料より上。",
     "art": "/assets/cards/k16-art.jpg",
     "original": "assets/original/k16.webp"
@@ -2807,9 +2864,9 @@
     "hp": 2,
     "attributes": ["炎上"],
     "kaiwai": ["ミーム"],
-    "keywords": ["叩き"],
+    "keywords": ["凸"],
     "effects": [],
-    "effect": "叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）",
+    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。",
     "flavor": "一言多いのが芸風。",
     "art": "/assets/cards/f18-art.jpg",
     "original": "assets/original/f18.webp"
@@ -2931,10 +2988,10 @@
     "rarity": 5,
     "cost": 5,
     "attack": 3,
-    "hp": 5,
+    "hp": 6,
     "attributes": ["癒し"],
     "kaiwai": ["配信者", "有識者"],
-    "keywords": ["ガード"],
+    "keywords": [],
     "effects": [
       {
         "on": "play",
@@ -2942,7 +2999,7 @@
         "to": "costliestEnemy"
       }
     ],
-    "effect": "ガード。場に出たとき、コストがいちばん高い相手のアイコン1体を持ち主の手札に戻す（トークンは消える）。",
+    "effect": "場に出たとき、コストがいちばん高い相手のアイコン1体を持ち主の手札に戻す（トークンは消える）。",
     "flavor": "「しーっ。今日はもう、おやすみ」",
     "art": "/assets/cards/c11-art.jpg",
     "subject": "/assets/cards/c11-subject.webp",
@@ -2994,7 +3051,7 @@
     "hp": 4,
     "attributes": ["炎上"],
     "kaiwai": ["配信者"],
-    "keywords": ["叩き"],
+    "keywords": ["凸"],
     "effects": [
       {
         "on": "play",
@@ -3003,7 +3060,7 @@
         "amount": 2
       }
     ],
-    "effect": "叩き（ダメージを受けているアイコンを攻撃するとき、攻撃力+2）。場に出たとき、相手のマスターに2ダメージ。",
+    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。場に出たとき、相手のマスターに2ダメージ。",
     "flavor": "「燃えるのも仕事のうち」",
     "art": "/assets/cards/f22-art.jpg",
     "original": "assets/original/f22.webp"
@@ -3120,15 +3177,21 @@
     "hp": 4,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": ["ガード"],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 2,
+        "hp": 2
+      },
       {
         "on": "play",
         "do": "draw",
         "count": 1
       }
     ],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、カードを1枚引く。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+2・体力+2。場に出たとき、カードを1枚引く。",
     "flavor": "「私の若いころはですね」",
     "art": "/assets/cards/g18-art.jpg",
     "original": "assets/original/g18.webp"

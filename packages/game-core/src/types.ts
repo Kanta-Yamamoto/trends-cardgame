@@ -52,6 +52,8 @@ export interface Unit {
   noGuard: boolean;
   /** トークン（オワコンに行くと消える） */
   token: boolean;
+  /** このターンは相手のアイコンにだけ攻撃できる（凸・闇堕ちした直後） */
+  rushOnly?: boolean;
 }
 
 /** マスター（操作するプレイヤー）の状態 */

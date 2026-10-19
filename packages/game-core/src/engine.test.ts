@@ -4,6 +4,7 @@ import { planTurn } from "./ai";
 import { deckAttributes, encodeCustomDeck, resolveDeckRef, validateDeck } from "./deck";
 import {
   applyAction,
+  attackTargets,
   canDarkFall,
   castTargets,
   createGame,
@@ -48,7 +49,12 @@ const catalog: Record<string, RuleCard> = {
   big: icon("big", 4, 6, 6),
   rush: icon("rush", 1, 1, 1, { keywords: ["速攻"] }),
   twin: icon("twin", 2, 2, 3, { keywords: ["速攻", "連撃"] }),
-  basher: icon("basher", 2, 2, 5, { keywords: ["速攻", "叩き"] }),
+  basher: icon("basher", 2, 2, 5, { keywords: ["速攻"] }),
+  totsu: icon("totsu", 2, 2, 2, { keywords: ["凸"] }),
+  charger: icon("charger", 3, 2, 3, {
+    keywords: ["凸"],
+    effects: [{ on: "rush", do: "buffSelf", attack: 2, hp: 2 }],
+  }),
   idol: icon("idol", 2, 1, 3, { keywords: ["注目"] }),
   guard: icon("guard", 2, 1, 5, { keywords: ["ガード"] }),
   cat: icon("cat", 3, 1, 2, { effects: [{ on: "play", do: "summon", card: "kusa", count: 2 }] }),
@@ -69,7 +75,7 @@ const catalog: Record<string, RuleCard> = {
       name: "闇堕ちレン",
       attack: 7,
       hp: 3,
-      keywords: ["連撃", "叩き"],
+      keywords: ["連撃"],
       effects: [{ on: "play", do: "damage", to: "allEnemies", amount: 1 }],
       effect: "",
     },
@@ -258,23 +264,35 @@ describe("キーワード", () => {
     expect(s.players.p2.lp).toBe(16);
     expect(() => face(s, 0)).toThrow(/攻撃できません/);
   });
-  it("叩き：ダメージを受けている相手を攻撃すると攻撃力+2", () => {
-    let s = withFoe(["basher", "twin"], ["wall"]);
-    s = play(play(s, 0, 0), 0, 1);
-    s = hit(s, 1, 0).state; // 連撃で 2 ダメージ
-    expect(previewAttack(s, "p1", 0, { kind: "unit", slot: 0 }, catalog)).toMatchObject({
-      toDefender: 4,
-      bonus: 2,
-    });
+  it("凸：場に出たターンに相手のアイコンにだけ攻撃できる（マスターは不可）。次のターンからは普通", () => {
+    let s = withFoe(["totsu"], ["wall"]);
+    s = play(s, 0, 0);
+    expect(attackTargets(s, "p1", 0, catalog)).toEqual([{ kind: "unit", slot: 0 }]);
+    expect(() => face(s, 0)).toThrow(/攻撃/);
+    s = hit(s, 0, 0).state;
+    expect(s.players.p2.field[0]?.damage).toBe(2);
+    s = end(end(s), "p2");
+    expect(attackTargets(s, "p1", 0, catalog)).toContainEqual({ kind: "leader" });
+  });
+  it("凸で攻撃したとき：上がった攻撃力で殴り、強化は残る。次のターン以降や、マスターへの攻撃では働かない", () => {
+    let s = withFoe(["charger"], ["wall"]);
+    s = play(s, 0, 0);
     const r = hit(s, 0, 0);
-    expect(r.events[0]).toMatchObject({ type: "battle", toDefender: 4 });
+    expect(r.events.map((e) => e.type)).toEqual(["buffed", "battle"]);
+    expect(r.events[1]).toMatchObject({ type: "battle", toDefender: 4, toAttacker: 1 });
+    s = r.state;
+    expect(viewUnit(s, "p1", s.players.p1.field[0] as never, catalog)).toMatchObject({ attack: 4, hp: 4 });
+    // 次のターンは普通の攻撃（凸の効果は出たターンだけ）
+    s = end(end(s), "p2");
+    const r2 = hit(s, 0, 0);
+    expect(r2.events.map((e) => e.type)).not.toContain("buffed");
   });
   it("攻撃の見込み：与える・受けるダメージと、倒せるか・倒されるか", () => {
     let s = withFoe(["basher"], ["wall"]);
     s = play(s, 0, 0);
     const before = viewUnit(s, "p2", s.players.p2.field[0] as never, catalog);
     const p = previewAttack(s, "p1", 0, { kind: "unit", slot: 0 }, catalog);
-    expect(p).toMatchObject({ toDefender: 2, bonus: 0, kills: 2 >= before.hp });
+    expect(p).toMatchObject({ toDefender: 2, kills: 2 >= before.hp });
     const r = hit(s, 0, 0);
     expect(r.events[0]).toMatchObject({
       type: "battle",
@@ -706,14 +724,21 @@ describe("闇堕ち（オワコンから）", () => {
     expect(s.players.p2.field.filter((x) => x).every((x) => (x?.damage ?? 0) >= 1)).toBe(true);
   });
 
-  it("闇堕ちの姿は、出たターンには攻撃できない（次の自分のターンから）", () => {
-    let s = play(game(["ren"]), 0, 0);
+  it("闇堕ちの姿は、戻ってきたターンから相手のアイコンに攻撃できる（凸。マスターは次のターンから）", () => {
+    let s = withFoe(["ren"], ["wall"]);
+    s = play(s, 0, 0);
     s = darkFall(killRen(s), 0).state;
-    expect(s.players.p1.field[0]?.canAttack).toBe(false);
+    const u = s.players.p1.field[0];
+    expect(u?.canAttack).toBe(true);
+    expect(u?.attacksLeft).toBe(2); // 連撃
+    const targets = attackTargets(s, "p1", 0, catalog);
+    expect(targets.length).toBeGreaterThan(0);
+    expect(targets.every((t) => t.kind === "unit")).toBe(true);
     expect(() => face(s, 0)).toThrow();
-    expect(() => hit(s, 0, 0)).toThrow();
+    const slot = (targets[0] as { slot: number }).slot;
+    expect(hit(s, 0, slot).events[0]).toMatchObject({ type: "battle", toDefender: 7 });
     s = end(end(s), "p2");
-    expect(s.players.p1.field[0]?.canAttack).toBe(true);
+    expect(attackTargets(s, "p1", 0, catalog)).toContainEqual({ kind: "leader" });
   });
 
   it("倒されたそのターンのうちにも、すぐ闇堕ちできる", () => {
