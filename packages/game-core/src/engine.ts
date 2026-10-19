@@ -355,6 +355,13 @@ function exposeUnit(owner: PlayerId, slot: number, u: Unit, emit: Emit) {
   emit({ type: "status", player: owner, slot, cardId: u.cardId, status: "晒し" });
 }
 
+/** 差し出し待ちのとき、その人が選べる自分のアイコンの枠（効果を出したアイコンは選べない） */
+export function sacrificeCandidates(state: GameState, player: PlayerId): number[] {
+  const p = state.pending;
+  if (p?.kind !== "sacrifice") return [];
+  return state.players[player].field.flatMap((u, slot) => (u && u.uid !== p.sourceUid ? [slot] : []));
+}
+
 /** 今のフィールド（どちらかの場にフィールドを出すアイコンがいれば、その種類と持ち主）。画面の背景に使う */
 export function fieldOf(state: GameState, catalog: Catalog): { kind: "sauna"; owner: PlayerId } | null {
   for (const owner of [state.active, opponent(state.active)] as const)
@@ -646,6 +653,24 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         u.exposeAtTurnEnd = true;
         emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: 0 });
       }
+      break;
+    }
+    case "sacrifice": {
+      // 差し出し：選べるアイコンがいる側だけ、選ぶ番になる（自分はこのアイコン以外から）
+      if (!self) break;
+      const pend = {
+        kind: "sacrifice" as const,
+        source: player,
+        sourceUid: self.uid,
+        waiting: [],
+        picks: {},
+      };
+      const waiting = (["p1", "p2"] as const).filter(
+        (pid) => sacrificeCandidates({ ...state, pending: pend }, pid).length > 0,
+      );
+      if (waiting.length === 0) break;
+      state.pending = { ...pend, waiting };
+      emit({ type: "sacrificeAsk", player, waiting });
       break;
     }
     case "damagePerEnemy": {
@@ -985,6 +1010,37 @@ export function applyAction(
     emit({ type: "won", player: state.winner });
     return { state, events };
   }
+  // 差し出し待ち：選ぶ番の人の「差し出し」だけを受け付ける
+  if (state.pending) {
+    if (action.type !== "sacrifice")
+      throw new RuleError(
+        "pending",
+        state.pending.waiting.includes(action.player)
+          ? "差し出す自分のアイコンを1体選んでください"
+          : "相手が差し出すアイコンを選ぶまで待ってください",
+      );
+    if (!state.pending.waiting.includes(action.player))
+      throw new RuleError("not_waiting", "あなたはもう選んでいます");
+    if (!sacrificeCandidates(state, action.player).includes(action.slot))
+      throw new RuleError("bad_slot", "そのアイコンは選べません");
+    const pend = state.pending;
+    pend.picks[action.player] = action.slot;
+    pend.waiting = pend.waiting.filter((p) => p !== action.player);
+    if (pend.waiting.length === 0) {
+      // 全員が選び終えたら、一度に倒す
+      for (const [pid, slot] of Object.entries(pend.picks) as [PlayerId, number][]) {
+        const u = state.players[pid].field[slot];
+        if (!u) continue;
+        emit({ type: "sacrificed", player: pid, slot, cardId: u.cardId });
+        u.damage += Math.max(1, viewUnit(state, pid, u, catalog).hp);
+      }
+      state.pending = null;
+      resolveDeaths(state, catalog, emit);
+      checkWinner(state, pend.source, emit);
+    }
+    return { state, events };
+  }
+  if (action.type === "sacrifice") throw new RuleError("no_pending", "今は差し出す場面ではありません");
   if (action.player !== state.active) throw new RuleError("not_your_turn", "相手のターンです");
   const player = action.player;
   const me = state.players[player];

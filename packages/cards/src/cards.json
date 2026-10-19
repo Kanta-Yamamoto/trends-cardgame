@@ -3362,6 +3362,26 @@
     }
   },
   {
+    "id": "c15",
+    "name": "『フィクサー』",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 5,
+    "cost": 4,
+    "attack": 2,
+    "hp": 3,
+    "attributes": [],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "sacrifice"
+      }
+    ],
+    "effect": "場に出たとき、自分と相手は、それぞれ自分のアイコンを1体選ぶ。選ばれたアイコンは倒される。",
+    "flavor": "その闇堕ち、仕込みです。"
+  },
+  {
     "id": "i18",
     "name": "子猫",
     "epithet": "",

@@ -1,4 +1,4 @@
-export { planTurn } from "./ai";
+export { autoSacrifice, planTurn } from "./ai";
 export {
   CUSTOM_DECK_PREFIX,
   deckAttributes,
@@ -24,6 +24,7 @@ export {
   legalTargets,
   opponent,
   previewAttack,
+  sacrificeCandidates,
   viewUnit,
 } from "./engine";
 export { nextRandom } from "./rng";

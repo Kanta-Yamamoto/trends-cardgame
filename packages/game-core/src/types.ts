@@ -100,6 +100,19 @@ export interface GameState {
   winner: PlayerId | null;
   seed: number;
   nextUid: number;
+  /**
+   * 差し出し待ち（フィクサー）：waiting のプレイヤーが、自分のアイコンを1体選ぶまで、ほかの操作はできない。
+   * 選ばれたアイコンは picks に入り、全員が選び終えたら一度に倒される
+   */
+  pending?: {
+    kind: "sacrifice";
+    /** 効果を出したプレイヤー（この人の手番の途中） */
+    source: PlayerId;
+    /** 効果を出したアイコン（自分の差し出しには選べない） */
+    sourceUid: number;
+    waiting: PlayerId[];
+    picks: Partial<Record<PlayerId, number>>;
+  } | null;
 }
 
 export type AttackTarget = { kind: "leader" } | { kind: "unit"; slot: number };
@@ -113,6 +126,8 @@ export type Action =
   /** オワコンにある闇堕ちを持つカードを、闇堕ちの姿で出す（コストなし・1枚につき1回） */
   | { type: "darkFall"; player: PlayerId; cardId: string; slot: number }
   | { type: "endTurn"; player: PlayerId }
+  /** 差し出し（フィクサー）：自分のアイコンを1体選ぶ。相手の手番の途中でも、選ぶ番の人が行う */
+  | { type: "sacrifice"; player: PlayerId; slot: number }
   /** 降参（相手の勝ちになる。自分のターンでなくてもできる） */
   | { type: "resign"; player: PlayerId };
 
@@ -160,6 +175,10 @@ export type GameEvent =
   | { type: "deckOut"; player: PlayerId }
   /** フィールド「サウナ」：熱（ターンの始めに全員へダメージ）と回復（ターンの終わりに全員を回復）。player はフィールドの持ち主 */
   | { type: "sauna"; player: PlayerId; phase: "heat" | "heal"; amount: number }
+  /** 差し出し待ちが始まった（waiting の人が自分のアイコンを1体選ぶ） */
+  | { type: "sacrificeAsk"; player: PlayerId; waiting: PlayerId[] }
+  /** 差し出し：選ばれたアイコンが倒された（player はそのアイコンの持ち主） */
+  | { type: "sacrificed"; player: PlayerId; slot: number; cardId: string }
   /** 特殊勝利（陰謀論者：山札が0枚で自分のターンを始めた） */
   | { type: "specialWin"; player: PlayerId; cardId: string }
   /** 手札が上限で、引いたカードがオワコンへ行った */

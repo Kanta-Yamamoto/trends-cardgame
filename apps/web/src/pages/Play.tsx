@@ -16,6 +16,7 @@ import {
   type PlayerId,
   previewAttack,
   SLOTS,
+  sacrificeCandidates,
   type Unit,
   type UnitView,
   viewUnit,
@@ -88,6 +89,10 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}の手札がいっぱいで、引いた ${nameOf(e.cardId)} はオワコンへ`;
     case "deckOut":
       return `${who(e.player)}の山札が切れた`;
+    case "sacrificeAsk":
+      return "『フィクサー』：自分と相手は、それぞれ自分のアイコンを1体差し出す";
+    case "sacrificed":
+      return `${who(e.player)}の ${nameOf(e.cardId)} が差し出された`;
     case "sauna":
       return e.phase === "heat"
         ? `サウナの熱：場のアイコンすべてに ${e.amount} ダメージ`
@@ -568,6 +573,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     cast,
     attack,
     endTurn,
+    sacrifice,
     start,
     quit: quitGame,
     mode,
@@ -595,6 +601,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   /** 画面いっぱいに大きく見ているカード（スマホで効果を読むため） */
   const [zoom, setZoom] = useState<Peek | null>(null);
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
+  /** 『フィクサー』の登場（画面全体の暗転とスポットライト）と、差し出されたアイコンの名前 */
+  const [fixer, setFixer] = useState<{ id: number; mine: boolean; gone?: string[] } | null>(null);
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
   /** 対戦の記録（縦の舞台では下から出る一覧） */
   const [logOpen, setLogOpen] = useState(false);
@@ -751,6 +759,18 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       } else if (e.type === "damaged") {
         const uid = uidAt(e.player, e.slot);
         if (uid) setTimeout(() => popDamage(uid, e.amount), t);
+      } else if (e.type === "played" && CATALOG[e.cardId]?.effects.some((x) => x.do === "sacrifice")) {
+        // 『フィクサー』の登場：ほかのカードに無い、画面全体の暗転
+        const intro = { id, mine: e.player === ME };
+        setTimeout(() => setFixer(intro), t);
+        t += 1400;
+      } else if (e.type === "sacrificed") {
+        const name = `${CATALOG[e.cardId]?.name ?? ""}（${e.player === ME ? "あなた" : "相手"}）`;
+        setTimeout(
+          () =>
+            setFixer((f) => ({ id: f?.id ?? id, mine: f?.mine ?? false, gone: [...(f?.gone ?? []), name] })),
+          t,
+        );
       } else if (e.type === "sauna") {
         const pulse = { id, phase: e.phase };
         setTimeout(() => setFieldPulse(pulse), t);
@@ -764,7 +784,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   if (!game || !deck) return null;
   const me = game.players[ME];
   const foe = game.players[CPU];
-  const myTurn = game.active === ME && !game.winner && !cpuBusy && !animating;
+  // 差し出し待ち（『フィクサー』）の間は、ほかの操作はできない
+  const myTurn = game.active === ME && !game.winner && !cpuBusy && !animating && !game.pending;
+  const sacSlots = game.pending?.waiting.includes(ME) ? sacrificeCandidates(game, ME) : [];
   const attacking = selection?.kind === "attacker";
   const selectedCard = selection?.kind === "hand" ? CATALOG[me.hand[selection.index] ?? ""] : undefined;
   const postSelected = selectedCard?.type === "post";
@@ -787,31 +809,35 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const peekCard = (peek ? CATALOG[peek.id] : null) ?? null;
   const hint = game.winner
     ? ""
-    : game.active === CPU
-      ? online
-        ? `${foeName}のターンです`
-        : "CPU が考えています…"
-      : !myTurn
-        ? ""
-        : postSelected
-          ? selectedCard?.target
-            ? "使う相手を選んでください（光っているアイコン）"
-            : "もう一度カードを押すと投稿します"
-          : selection?.kind === "dark"
-            ? `紫に光る空き枠をタップして、${nameOf(selection.cardId)} を闇堕ちの姿で呼び戻す`
-            : selection?.kind === "hand"
-              ? "出す枠を押してください（もう一度カードを押すと、選ぶのをやめます）"
-              : attacking
-                ? foeGuarded
-                  ? "攻撃先を選んでください（ガードがいるので、ガードしか攻撃できません）"
-                  : "攻撃先を選んでください（光っているところ）"
-                : canDarkFall(game, ME, CATALOG)
-                  ? stage.portrait
-                    ? "闇堕ちできるカードがオワコンにあります（自分のオワコンを押す）"
-                    : "闇堕ちできるカードがオワコンにあります（左のオワコンを押す）"
-                  : stage.portrait
-                    ? "手札を場へ引っぱって出す・投稿／アイコンを相手へ引っぱって攻撃（長押しで拡大）"
-                    : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";
+    : game.pending
+      ? sacSlots.length > 0
+        ? "『フィクサー』：差し出す自分のアイコンを1体選んでください（赤く光っているアイコン）"
+        : "相手が差し出すアイコンを選んでいます…"
+      : game.active === CPU
+        ? online
+          ? `${foeName}のターンです`
+          : "CPU が考えています…"
+        : !myTurn
+          ? ""
+          : postSelected
+            ? selectedCard?.target
+              ? "使う相手を選んでください（光っているアイコン）"
+              : "もう一度カードを押すと投稿します"
+            : selection?.kind === "dark"
+              ? `紫に光る空き枠をタップして、${nameOf(selection.cardId)} を闇堕ちの姿で呼び戻す`
+              : selection?.kind === "hand"
+                ? "出す枠を押してください（もう一度カードを押すと、選ぶのをやめます）"
+                : attacking
+                  ? foeGuarded
+                    ? "攻撃先を選んでください（ガードがいるので、ガードしか攻撃できません）"
+                    : "攻撃先を選んでください（光っているところ）"
+                  : canDarkFall(game, ME, CATALOG)
+                    ? stage.portrait
+                      ? "闇堕ちできるカードがオワコンにあります（自分のオワコンを押す）"
+                      : "闇堕ちできるカードがオワコンにあります（左のオワコンを押す）"
+                    : stage.portrait
+                      ? "手札を場へ引っぱって出す・投稿／アイコンを相手へ引っぱって攻撃（長押しで拡大）"
+                      : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";
 
   const unitCard = (owner: PlayerId, slot: number, u: Unit) => {
     const card = CATALOG[u.cardId] as CardDef;
@@ -845,6 +871,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     const selected = attacking && selection.slot === slot;
     const ready = myTurn && canUnitAttack(game, u);
     const castable = canCastOn("ally", slot);
+    const sac = sacSlots.includes(slot);
     return (
       <MiniCard
         key={u.uid}
@@ -853,10 +880,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         view={view}
         onField
         drop={`ally:${slot}`}
-        className={`unit enter ${ready ? "ready" : "tired"} ${selected ? "selected" : ""} ${castable ? "targetable ally" : ""} ${castable && drag?.over === `ally:${slot}` ? "drop-over" : ""}`}
+        className={`unit enter ${ready ? "ready" : "tired"} ${selected ? "selected" : ""} ${castable ? "targetable ally" : ""} ${sac ? "targetable sac" : ""} ${castable && drag?.over === `ally:${slot}` ? "drop-over" : ""}`}
         onPress={ready ? (e) => begin(e, { kind: "unit", slot }) : undefined}
         onClick={() => {
           if (justDragged()) return;
+          if (sac) return sacrifice(slot);
           if (castable) return cast({ side: "ally", slot });
           if (selected) return select(null);
           setPeek(p);
@@ -1242,6 +1270,25 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           return <AttackArrow from={from} to={to} hot={hot} ally={where === "ally"} />;
         })()}
 
+      {fixer && (
+        <div
+          key={fixer.id}
+          className={`fixer-cut ${fixer.gone ? "gone" : ""}`}
+          aria-hidden="true"
+          onAnimationEnd={(e) => e.target === e.currentTarget && setFixer(null)}
+        >
+          <div className="fx-beam" />
+          <div className="fx-title">
+            <small>{fixer.mine ? "あなたの" : "相手の"}裏で、誰かが糸を引いている</small>
+            <b>『フィクサー』</b>
+            {fixer.gone ? (
+              <span>差し出された：{fixer.gone.join("・")}</span>
+            ) : (
+              <span>自分と相手は、それぞれ自分のアイコンを1体差し出す</span>
+            )}
+          </div>
+        </div>
+      )}
       {banner && (
         <div
           key={banner.id}

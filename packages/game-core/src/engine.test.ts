@@ -99,6 +99,7 @@ const catalog: Record<string, RuleCard> = {
   plotter: icon("plotter", 1, 4, 4, { effects: [{ on: "passive", do: "conspiracyWin" }] }),
   eater: icon("eater", 3, 1, 3, { effects: [{ on: "passive", do: "attackPerLostToken", card: "kusa" }] }),
   oldcard: icon("oldcard", 1, 1, 1, { retired: true }),
+  fixer: icon("fixer", 4, 2, 3, { effects: [{ do: "sacrifice" }] }),
   yuzu: icon("yuzu", 4, 3, 4, {
     effects: [
       { on: "passive", do: "saunaField", heat: 1, heal: 2 },
@@ -481,6 +482,50 @@ describe("★5 の作り直し（ヒバナ・カグラ・専門家・陰謀論�
   });
   it("お蔵入りのカードはデッキに入れられない", () => {
     expect(validateDeck(["oldcard"], catalog).some((e) => e.includes("お蔵入り"))).toBe(true);
+  });
+});
+
+describe("差し出し（フィクサー）", () => {
+  it("自分と相手がそれぞれ自分のアイコンを1体選び、両方そろったら一度に倒される。選ぶまでほかの操作はできない", () => {
+    let s = withFoe(["wall", "fixer", "rush"], ["big", "guard"]);
+    s = play(s, 0, 0);
+    const r = run(s, { type: "play", player: "p1", handIndex: 0, slot: 1 });
+    s = r.state;
+    expect(r.events).toContainEqual({ type: "sacrificeAsk", player: "p1", waiting: ["p1", "p2"] });
+    expect(() => play(s, 0, 2)).toThrow(/差し出す/);
+    // フィクサー自身は選べない
+    expect(() => run(s, { type: "sacrifice", player: "p1", slot: 1 })).toThrow(/選べません/);
+    // 相手は自分の手番でなくても選べる
+    s = run(s, { type: "sacrifice", player: "p2", slot: 1 }).state;
+    expect(s.players.p2.field[1]).not.toBeNull();
+    expect(() => run(s, { type: "sacrifice", player: "p2", slot: 0 })).toThrow(/もう選んで/);
+    const done = run(s, { type: "sacrifice", player: "p1", slot: 0 });
+    s = done.state;
+    expect(s.pending).toBeNull();
+    expect(s.players.p1.field[0]).toBeNull();
+    expect(s.players.p2.field[1]).toBeNull();
+    expect(s.players.p1.field[1]?.cardId).toBe("fixer");
+    expect(done.events.filter((e) => e.type === "sacrificed")).toHaveLength(2);
+    // そのあとは普通に続けられる
+    s = play(s, 0, 2);
+    expect(s.players.p1.field[2]?.cardId).toBe("rush");
+  });
+  it("選べるアイコンが無い側は選ばない。どちらにも無ければ何も起きない", () => {
+    let s = withFoe(["fixer"], ["big"]);
+    s = play(s, 0, 0);
+    expect(s.pending?.waiting).toEqual(["p2"]);
+    let t = game(["fixer"]);
+    t = play(t, 0, 0);
+    expect(t.pending ?? null).toBeNull();
+  });
+  it("CPU：自分の差し出しは闇堕ちを使っていない★5を優先し、相手の選ぶ番で手を止める", () => {
+    let s = withFoe(["wall", "fixer"], ["big"]);
+    s = play(s, 0, 0);
+    const plan = planTurn(s, "p1", catalog);
+    const at = plan.findIndex((a) => a.type === "play" && s.players.p1.hand[a.handIndex] === "fixer");
+    expect(at).toBeGreaterThanOrEqual(0);
+    expect(plan[at + 1]).toEqual({ type: "sacrifice", player: "p1", slot: 0 });
+    expect(plan.at(-1)?.type).toBe("sacrifice");
   });
 });
 

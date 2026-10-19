@@ -55,4 +55,26 @@ describe("オンライン対戦で渡す形", () => {
     expect(r.state.winner).toBe("p1");
     expect(r.events.map((e) => e.type)).toEqual(["resigned", "won"]);
   });
+  it("差し出し待ち（フィクサー）も、見る人の向きにそろえる", () => {
+    const g = {
+      ...game(),
+      pending: {
+        kind: "sacrifice" as const,
+        source: "p1" as const,
+        sourceUid: 1,
+        waiting: ["p2" as const],
+        picks: { p1: 0 },
+      },
+    };
+    const v = stateFor(g, "p2");
+    expect(v.pending).toEqual({
+      kind: "sacrifice",
+      source: "p2",
+      sourceUid: 1,
+      waiting: ["p1"],
+      picks: { p2: 0 },
+    });
+    const [e] = eventsFor([{ type: "sacrificeAsk", player: "p1", waiting: ["p1", "p2"] }], "p2");
+    expect(e).toEqual({ type: "sacrificeAsk", player: "p2", waiting: ["p2", "p1"] });
+  });
 });

@@ -46,4 +46,40 @@ describe("対戦ストア", () => {
     for (let i = 0; i < 40 && !useGame.getState().game?.winner; i++) useGame.getState().endTurn();
     expect(useGame.getState().game?.winner).toBe(CPU);
   });
+  it("『フィクサー』：CPU はすぐ差し出し、自分が選ぶと両方が倒される", () => {
+    const g = structuredClone(useGame.getState().game);
+    if (!g) throw new Error("no game");
+    g.players[ME].mana = 30;
+    g.players[ME].hand = ["n1", "c15"];
+    g.players[CPU].field[0] = {
+      uid: 900,
+      cardId: "n5",
+      damage: 0,
+      canAttack: false,
+      attacksLeft: 0,
+      atkBuff: 0,
+      hpBuff: 0,
+      dark: false,
+      darkUsed: false,
+      exposed: false,
+      boundUntil: 0,
+      silenced: false,
+      noGuard: false,
+      token: false,
+    };
+    useGame.setState({ game: g });
+    const s = useGame.getState();
+    s.select({ kind: "hand", index: 0 });
+    useGame.getState().play(0);
+    useGame.getState().select({ kind: "hand", index: 0 });
+    useGame.getState().play(1);
+    // CPU はもう選んだので、待っているのは自分だけ
+    expect(useGame.getState().game?.pending?.waiting).toEqual([ME]);
+    useGame.getState().sacrifice(0);
+    const after = useGame.getState().game;
+    expect(after?.pending ?? null).toBeNull();
+    expect(after?.players[ME].field[0]).toBeNull();
+    expect(after?.players[CPU].field[0]).toBeNull();
+    expect(after?.players[ME].field[1]?.cardId).toBe("c15");
+  });
 });
