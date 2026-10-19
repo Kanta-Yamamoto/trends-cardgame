@@ -88,6 +88,23 @@ const catalog: Record<string, RuleCard> = {
   fansa: post("fansa", 2, { target: "allyIcon", effects: [{ do: "buff", attack: 2, hp: 2 }] }),
   meadow: post("meadow", 3, { effects: [{ do: "fill", card: "kusa" }] }),
   cleanse: post("cleanse", 4, { effects: [{ do: "cleanse" }] }),
+  cleanseFoes: post("cleanseFoes", 3, { effects: [{ do: "cleanse", to: "allEnemies" }] }),
+  hype: post("hype", 2, {
+    target: "allyIcon",
+    effects: [{ do: "hype", attack: 3 }],
+  }),
+  hibana: icon("hibana", 7, 2, 3, { effects: [{ do: "damagePerEnemy", per: 2 }] }),
+  hyper: icon("hyper", 6, 4, 3, { keywords: ["速攻"], effects: [{ do: "hype", attack: 3 }] }),
+  safeDeck: icon("safeDeck", 5, 3, 4, { effects: [{ on: "passive", do: "noDeckOut" }] }),
+  plotter: icon("plotter", 1, 4, 4, { effects: [{ on: "passive", do: "conspiracyWin" }] }),
+  eater: icon("eater", 3, 1, 3, { effects: [{ on: "passive", do: "attackPerLostToken", card: "kusa" }] }),
+  oldcard: icon("oldcard", 1, 1, 1, { retired: true }),
+  hagashi: post("hagashi", 3, {
+    effects: [
+      { do: "damage", to: "allEnemies", amount: 1 },
+      { do: "damage", to: "allEnemies", amount: 1, if: { kaiwai: "アイドル", atLeast: 1 } },
+    ],
+  }),
   flamer: icon("flamer", 1, 1, 1, { attributes: ["炎上"] }),
   rider: icon("rider", 2, 2, 2, {
     attributes: ["炎上"],
@@ -332,15 +349,132 @@ describe("キーワード", () => {
     expect(() => face(s, 0)).toThrow(/ガード/);
     expect(() => hit(s, 0, 1)).toThrow(/ガード/);
   });
-  it("晒し者はガードがいても攻撃でき、次の自分のターンが終わると元に戻る", () => {
+  it("晒し者はガードを失い、それまでの強化が消える。ずっと続く", () => {
     let s = withFoe(["expose", "rush"], ["guard", "wall"]);
-    s = cast(s, 0, { side: "enemy", slot: 1 });
+    (s.players.p2.field[0] as Unit).atkBuff = 2;
+    (s.players.p2.field[0] as Unit).hpBuff = 2;
+    // ガードの裏のアイコンは、晒しても殴れない（例外のルールは無い）
+    expect(legalTargets(s, "p1", catalog)).toEqual([{ kind: "unit", slot: 0 }]);
+    s = cast(s, 0, { side: "enemy", slot: 0 });
     s = play(s, 0, 0);
-    expect(legalTargets(s, "p1", catalog)).toContainEqual({ kind: "unit", slot: 1 });
+    const v = viewUnit(s, "p2", s.players.p2.field[0] as Unit, catalog);
+    expect(v.exposed).toBe(true);
+    expect(v.guard).toBe(false);
+    expect([v.attack, v.maxHp]).toEqual([1, 5]);
+    expect(legalTargets(s, "p1", catalog)).toContainEqual({ kind: "leader" });
+    for (let i = 0; i < 3; i++) s = end(end(s), "p2");
+    expect(viewUnit(s, "p2", s.players.p2.field[0] as Unit, catalog).guard).toBe(false);
+    expect(legalTargets(s, "p1", catalog)).toContainEqual({ kind: "leader" });
+  });
+  it("晒されたあとに受けた強化は消えない", () => {
+    let s = withFoe(["expose"], ["guard"]);
+    s = cast(s, 0, { side: "enemy", slot: 0 });
+    (s.players.p2.field[0] as Unit).atkBuff += 2;
     s = end(end(s), "p2");
-    expect(legalTargets(s, "p1", catalog)).toContainEqual({ kind: "unit", slot: 1 });
+    expect(viewUnit(s, "p2", s.players.p2.field[0] as Unit, catalog).attack).toBe(3);
+  });
+});
+
+describe("炎上商法・TL浄化・剥がし", () => {
+  it("炎上商法：このターン攻撃力+3。自分のターンの終わりに、そのアイコンが晒し者になる", () => {
+    let s = game(["guard", "hype"]);
+    s = play(s, 0, 0);
+    (s.players.p1.field[0] as Unit).atkBuff = 1;
+    s = cast(s, 0, { side: "ally", slot: 0 });
+    let v = viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog);
+    expect(v.attack).toBe(5);
+    expect(v.exposed).toBe(false);
+    expect(v.guard).toBe(true);
+    const r = run(s, { type: "endTurn", player: "p1" });
+    expect(r.events).toContainEqual(
+      expect.objectContaining({ type: "status", player: "p1", status: "晒し" }),
+    );
+    v = viewUnit(r.state, "p1", r.state.players.p1.field[0] as Unit, catalog);
+    expect(v.exposed).toBe(true);
+    expect(v.guard).toBe(false);
+    expect(v.attack).toBe(1);
+  });
+  it("炎上商法のアイコンがそのターンに倒されたら、何も起きない", () => {
+    let s = game(["rush", "hype"]);
+    s = play(s, 0, 0);
+    s = cast(s, 0, { side: "ally", slot: 0 });
+    s.players.p1.field[0] = null;
+    expect(() => end(s)).not.toThrow();
+  });
+  it("TL浄化（相手だけ）：相手の強化と晒しを消し、自分の強化は残す", () => {
+    let s = withFoe(["rush", "expose", "cleanseFoes"], ["guard", "wall"]);
+    s = play(s, 0, 0);
+    (s.players.p1.field[0] as Unit).atkBuff = 2;
+    s = cast(s, 0, { side: "enemy", slot: 0 });
+    (s.players.p2.field[1] as Unit).atkBuff = 3;
+    s = cast(s, 0);
+    const g = viewUnit(s, "p2", s.players.p2.field[0] as Unit, catalog);
+    expect([g.exposed, g.guard]).toEqual([false, true]);
+    expect((s.players.p2.field[1] as Unit).atkBuff).toBe(0);
+    expect((s.players.p1.field[0] as Unit).atkBuff).toBe(2);
+  });
+  it("剥がし：相手全体に1ダメージ。自分の場にアイドルがいれば、さらに1ダメージ", () => {
+    let s = withFoe(["hagashi"], ["wall", "big"]);
+    s = cast(s, 0);
+    expect(s.players.p2.field.map((u) => u?.damage)).toEqual([1, 1, undefined, undefined, undefined]);
+    let t = withFoe(["idl", "hagashi"], ["wall", "big"]);
+    t = play(t, 0, 0);
+    t = cast(t, 0);
+    expect(t.players.p2.field.map((u) => u?.damage)).toEqual([2, 2, undefined, undefined, undefined]);
+  });
+});
+
+describe("★5 の作り直し（ヒバナ・カグラ・専門家・陰謀論者・クサハミ）", () => {
+  it("ヒバナ：相手のアイコンの数×2 のダメージを、相手のアイコンすべてに", () => {
+    let s = withFoe(["hibana"], ["wall"]);
+    s = play(s, 0, 0);
+    expect(s.players.p2.field[0]?.damage).toBe(2);
+    let t = withFoe(["hibana"], ["wall", "big", "guard"]);
+    t = play(t, 0, 0);
+    expect(t.players.p2.field.filter((u) => u)).toHaveLength(0);
+  });
+  it("場に出たときの炎上商法（カグラ）：自分がこのターン攻撃力+3、ターンの終わりに晒し者", () => {
+    let s = game(["hyper"]);
+    s = play(s, 0, 0);
+    expect(viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog).attack).toBe(7);
+    s = end(s);
+    const v = viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog);
+    expect([v.attack, v.exposed]).toEqual([4, true]);
+  });
+  it("専門家が場にいれば、山札が無くて引けなくても負けない", () => {
+    let s = game(["safeDeck"]);
+    s = play(s, 0, 0);
+    s.players.p1.deck = [];
     s = end(end(s), "p2");
-    expect(legalTargets(s, "p1", catalog)).not.toContainEqual({ kind: "unit", slot: 1 });
+    expect(s.winner).toBeNull();
+    expect(s.active).toBe("p1");
+  });
+  it("陰謀論者：場にいる間、山札が0枚で自分のターンを始めたら勝ち", () => {
+    let s = game(["plotter"]);
+    s = play(s, 0, 0);
+    s = end(s);
+    expect(s.winner).toBeNull();
+    s.players.p1.deck = [];
+    const r = run(s, { type: "endTurn", player: "p2" });
+    expect(r.state.winner).toBe("p1");
+    expect(r.events).toContainEqual(expect.objectContaining({ type: "specialWin", player: "p1" }));
+    // 山札が残っていれば勝ちにならない
+    let t = game(["plotter"]);
+    t = play(t, 0, 0);
+    t = end(end(t), "p2");
+    expect(t.winner).toBeNull();
+  });
+  it("クサハミ：自分の草がオワコンに行った数だけ攻撃力+1", () => {
+    let s = game(["eater", "cat"]);
+    s = play(s, 0, 0);
+    s = play(s, 0, 1);
+    for (const u of s.players.p1.field) if (u?.cardId === "kusa") u.damage = 1;
+    s = end(s);
+    expect(s.players.p1.tokensLost).toEqual({ kusa: 2 });
+    expect(viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog).attack).toBe(3);
+  });
+  it("お蔵入りのカードはデッキに入れられない", () => {
+    expect(validateDeck(["oldcard"], catalog).some((e) => e.includes("お蔵入り"))).toBe(true);
   });
 });
 
@@ -926,7 +1060,7 @@ describe("界隈を読む効果（自分の側だけ）", () => {
       hpBuff: 0,
       dark: false,
       darkUsed: false,
-      exposedUntil: 0,
+      exposed: false,
       boundUntil: 0,
       silenced: false,
       noGuard: false,

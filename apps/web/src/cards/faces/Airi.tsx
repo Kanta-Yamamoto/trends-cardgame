@@ -5,7 +5,7 @@ import { stars } from "../meta";
 import { Stats } from "../Stats";
 import "../rare5b.css";
 
-/** アイリ（★5）：ローズゴールドとティアラ。効果はライブの「チケット」（もぎり付き） */
+/** アイリ（★5）：ラベンダーとシャンパンゴールドのティアラ（メロいのピンクと被らないように）。効果はライブの「チケット」（もぎり付き） */
 export function AiriFace({ card }: { card: CardDef }) {
   return (
     <div className="card-inner">

@@ -87,6 +87,8 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}の手札がいっぱいで、引いた ${nameOf(e.cardId)} はオワコンへ`;
     case "deckOut":
       return `${who(e.player)}の山札が切れた`;
+    case "specialWin":
+      return `${who(e.player)}の山札が切れた。陰謀論者「これは世界のせいだ」──特殊勝利`;
     case "turnStarted":
       return `―― ${e.turn}ターン目：${who(e.player)}（話題力 ${e.mana}）――`;
     case "stolen":
@@ -244,7 +246,7 @@ function DeckSelect() {
             <b className="t-hp">体力</b>
             が減る。体力が 0 になったアイコンはオワコンへ。受けたダメージは残る
           </li>
-          <li>相手の場にガードがいる間は、ガード（と晒し者）しか攻撃できない</li>
+          <li>相手の場にガードがいる間は、ガードしか攻撃できない。晒し者になるとガードを失う</li>
           <li>
             闇堕ちを持つ★5は、オワコンに行ったら自分のターンの好きなときに、コストなしで闇堕ちの姿で出せる（1枚につき1回。そのターンは相手のアイコンにだけ攻撃できる）
           </li>
@@ -749,7 +751,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               ? "出す枠を押してください（もう一度カードを押すと、選ぶのをやめます）"
               : attacking
                 ? foeGuarded
-                  ? "攻撃先を選んでください（ガードがいるので、ガードと晒し者しか攻撃できません）"
+                  ? "攻撃先を選んでください（ガードがいるので、ガードしか攻撃できません）"
                   : "攻撃先を選んでください（光っているところ）"
                 : canDarkFall(game, ME, CATALOG)
                   ? stage.portrait
@@ -1351,7 +1353,8 @@ function PeekCard({ card, view, onOpen }: { card: CardDef; view?: UnitView; onOp
             攻撃 <b className="t-atk">{view.attack}</b>・体力 <b className="t-hp">{view.hp}</b>/{view.maxHp}
           </span>
           {view.keywords.length > 0 && <span>{view.keywords.join("・")}</span>}
-          {view.exposed && <span>晒し者（ガードを無視して攻撃される）</span>}
+          {view.exposed && <span>晒し者（ガードを失い、強化が消えた）</span>}
+          {view.unit.exposeAtTurnEnd && <span>ターンの終わりに晒し者になる（炎上商法）</span>}
           {view.asleep && <span>眠っている（このターンは攻撃できない）</span>}
           {view.unit.silenced && <span>訂正済み（キーワードと効果が消えている）</span>}
         </div>
@@ -1386,6 +1389,7 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
   const states = view
     ? [
         view.exposed && "晒し者",
+        view.unit.exposeAtTurnEnd && "ターンの終わりに晒される",
         view.asleep && "眠っている",
         view.unit.silenced && "訂正済み",
         view.hp < view.maxHp && "ダメージあり",

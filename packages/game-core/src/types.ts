@@ -13,6 +13,7 @@ export type RuleCard = Pick<
   | "target"
   | "dark"
   | "token"
+  | "retired"
   | "kaiwai"
   | "targetKaiwai"
   | "targetFilter"
@@ -42,8 +43,10 @@ export interface Unit {
   /** 闇堕ちの姿になっているか／一度闇堕ちしたか */
   dark: boolean;
   darkUsed: boolean;
-  /** このターン数までは晒し者（ガードを無視して攻撃される） */
-  exposedUntil: number;
+  /** 晒し者（ガードを失い、晒された時点で強化が消えた。ずっと続く。TL浄化で消える） */
+  exposed: boolean;
+  /** 自分のターンの終わりに晒し者になる（炎上商法） */
+  exposeAtTurnEnd?: boolean;
   /** このターン数までは眠っていて攻撃できない */
   boundUntil: number;
   /** キーワードと効果が消されている（コミュニティノート） */
@@ -77,6 +80,8 @@ export interface PlayerState {
   postsUsed: number;
   /** このゲームで回復の効果を使った回数（癒しの「回復するたびに」で使う） */
   heals: number;
+  /** このゲームで、自分のトークンがオワコンに行った数（カード ID ごと。クサハミで使う） */
+  tokensLost?: Record<string, number>;
   /** このターンのあとに続けて行うターンの数 */
   extraTurns: number;
   /** このターン数の間、自分のアイコンはガードを無視して攻撃できる */
@@ -153,6 +158,8 @@ export type GameEvent =
   | { type: "leaderHealed"; player: PlayerId; amount: number; lp: number }
   | { type: "drew"; player: PlayerId; cardId: string }
   | { type: "deckOut"; player: PlayerId }
+  /** 特殊勝利（陰謀論者：山札が0枚で自分のターンを始めた） */
+  | { type: "specialWin"; player: PlayerId; cardId: string }
   /** 手札が上限で、引いたカードがオワコンへ行った */
   | { type: "burned"; player: PlayerId; cardId: string }
   | { type: "resigned"; player: PlayerId }

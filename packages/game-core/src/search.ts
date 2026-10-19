@@ -6,6 +6,7 @@ import {
   castTargets,
   darkReady,
   effectiveCost,
+  hasPassive,
   opponent,
   viewUnit,
 } from "./engine";
@@ -68,7 +69,6 @@ function unitValue(state: GameState, owner: PlayerId, slot: number, catalog: Cat
     if (lasting) value += WEIGHTS.lasting;
   }
   if (v.asleep) value -= v.attack * 0.5;
-  if (v.exposed) value -= 0.5;
   return value;
 }
 
@@ -85,8 +85,18 @@ export function evaluate(state: GameState, player: PlayerId, catalog: Catalog): 
   // オワコンで待っている闇堕ちは、コストなしで出せる手札のようなもの
   score +=
     (darkReady(state, player, catalog).length - darkReady(state, foeId, catalog).length) * 3 * WEIGHTS.hand;
-  // 山札切れが近いと危ない
-  if (me.deck.length === 0) score -= 6;
+  // 山札切れが近いと危ない（専門家・陰謀論者が場にいれば負けない）
+  const safe = (pid: PlayerId) =>
+    state.players[pid].field.some(
+      (u) => u && (hasPassive(u, "noDeckOut", catalog) || hasPassive(u, "conspiracyWin", catalog)),
+    );
+  if (me.deck.length === 0 && !safe(player)) score -= 6;
+  // 陰謀論者：山札が少ないほど特殊勝利に近い。相手の陰謀論者は早く倒したい
+  const plot = (pid: PlayerId) =>
+    state.players[pid].field.some((u) => u && hasPassive(u, "conspiracyWin", catalog))
+      ? 40 / (1 + state.players[pid].deck.length)
+      : 0;
+  score += plot(player) - plot(foeId);
   return score;
 }
 
@@ -127,7 +137,7 @@ function signature(state: GameState): string {
     state.players[p].field
       .map((u) =>
         u
-          ? `${u.cardId}.${u.damage}.${u.attacksLeft}.${u.atkBuff}.${u.hpBuff}.${+u.dark}.${u.exposedUntil}.${+!!u.rushOnly}`
+          ? `${u.cardId}.${u.damage}.${u.attacksLeft}.${u.atkBuff}.${u.hpBuff}.${+u.dark}.${+!!u.exposed}.${+!!u.exposeAtTurnEnd}.${+!!u.rushOnly}`
           : "_",
       )
       .join(",");

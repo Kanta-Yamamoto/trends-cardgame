@@ -107,7 +107,7 @@ function effectsOf(u: Unit, catalog: Catalog): CardEffect[] {
 const triggerOf = (e: CardEffect) => e.on ?? "play";
 
 /** 場にいる間ずっと効く効果を持っているか */
-function hasPassive(u: Unit, kind: CardEffect["do"], catalog: Catalog): boolean {
+export function hasPassive(u: Unit, kind: CardEffect["do"], catalog: Catalog): boolean {
   return effectsOf(u, catalog).some((e) => triggerOf(e) === "passive" && e.do === kind);
 }
 
@@ -142,6 +142,8 @@ export function viewUnit(state: GameState, owner: PlayerId, unit: Unit, catalog:
     if (triggerOf(e) === "passive" && e.do === "attackPerAlly") {
       attack += countAllies(state, owner, catalog, e.kaiwai, unit.uid);
     }
+    if (triggerOf(e) === "passive" && e.do === "attackPerLostToken")
+      attack += state.players[owner].tokensLost?.[e.card] ?? 0;
   }
   const maxHp = base.hp + unit.hpBuff;
   const keywords = keywordsOf(unit, catalog);
@@ -153,7 +155,7 @@ export function viewUnit(state: GameState, owner: PlayerId, unit: Unit, catalog:
     maxHp,
     keywords,
     guard: keywords.includes("ガード"),
-    exposed: state.turn <= unit.exposedUntil,
+    exposed: !!unit.exposed,
     asleep: state.turn <= unit.boundUntil,
   };
 }
@@ -203,7 +205,8 @@ export function canDarkFall(state: GameState, player: PlayerId, catalog: Catalog
 }
 
 /**
- * 今攻撃できる相手。相手の場にガードがいる間は、ガードと晒し者しか攻撃できない（マスターも不可）。
+ * 今攻撃できる相手。相手の場にガードがいる間は、ガードしか攻撃できない（マスターも不可）。
+ * 晒し者はガードを失うので、ガードとしては数えない。
  * ガードがいなければ、マスターと相手のアイコンすべて。
  */
 export function legalTargets(state: GameState, player: PlayerId, catalog: Catalog): AttackTarget[] {
@@ -213,9 +216,7 @@ export function legalTargets(state: GameState, player: PlayerId, catalog: Catalo
   );
   const through = state.players[player].breakthroughTurn === state.turn;
   if (!through && units.some((x) => x.v.guard)) {
-    return units
-      .filter((x) => x.v.guard || x.v.exposed)
-      .map((x) => ({ kind: "unit" as const, slot: x.slot }));
+    return units.filter((x) => x.v.guard).map((x) => ({ kind: "unit" as const, slot: x.slot }));
   }
   return [{ kind: "leader" as const }, ...units.map((x) => ({ kind: "unit" as const, slot: x.slot }))];
 }
@@ -340,6 +341,20 @@ function healLeader(state: GameState, player: PlayerId, amount: number, config: 
   if (p.lp > before) emit({ type: "leaderHealed", player, amount: p.lp - before, lp: p.lp });
 }
 
+/**
+ * 晒し者にする：ガードを失い、それまでの強化（プラスの分）がすべて消える。ずっと続く（TL浄化で消える）。
+ * 晒されたあとに受けた強化は消えない
+ */
+function exposeUnit(owner: PlayerId, slot: number, u: Unit, emit: Emit) {
+  u.exposed = true;
+  u.exposeAtTurnEnd = false;
+  u.noGuard = true;
+  u.atkBuff = Math.min(0, u.atkBuff);
+  u.tempAtk = 0;
+  u.hpBuff = Math.min(0, u.hpBuff);
+  emit({ type: "status", player: owner, slot, cardId: u.cardId, status: "晒し" });
+}
+
 function newUnit(state: GameState, cardId: string, catalog: Catalog, token: boolean): Unit {
   const card = must(catalog, cardId);
   const rush = card.keywords.includes("速攻");
@@ -356,7 +371,7 @@ function newUnit(state: GameState, cardId: string, catalog: Catalog, token: bool
     hpBuff: 0,
     dark: false,
     darkUsed: false,
-    exposedUntil: 0,
+    exposed: false,
     boundUntil: 0,
     silenced: false,
     noGuard: false,
@@ -403,6 +418,7 @@ function resolveDeaths(state: GameState, catalog: Catalog, emit: Emit): string[]
       if (viewUnit(state, owner, u, catalog).hp > 0) return;
       p.field[slot] = null;
       if (!u.token) p.trash.push(u.cardId);
+      if (u.token) p.tokensLost = { ...p.tokensLost, [u.cardId]: (p.tokensLost?.[u.cardId] ?? 0) + 1 };
       destroyed.push(u.cardId);
       emit({ type: "destroyed", player: owner, cardId: u.cardId });
       if (u.darkUsed && !u.token) p.darkSpent = [...(p.darkSpent ?? []), u.cardId];
@@ -600,15 +616,28 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       } else if (e.to === "enemyMaster") damageLeader(state, foeId, e.amount, emit);
       else if (tgt && tgtOwner && ctx.target) damageUnit(state, tgtOwner, ctx.target.slot, e.amount, emit);
       break;
+    case "hype": {
+      // 炎上商法：投稿なら対象の自分のアイコン、アイコンの効果なら自分
+      const slot = ctx.target ? ctx.target.slot : ctx.selfSlot;
+      const u = ctx.target ? tgt : self;
+      if (u && slot !== undefined) {
+        u.tempAtk = (u.tempAtk ?? 0) + e.attack;
+        u.exposeAtTurnEnd = true;
+        emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: 0 });
+      }
+      break;
+    }
+    case "damagePerEnemy": {
+      // 相手の場が賑わっているほど大きく燃える。数えるのは効果が働いた瞬間
+      const foeField = state.players[foeId].field;
+      const amount = foeField.filter((u) => u).length * e.per;
+      foeField.forEach((u, slot) => {
+        if (u) damageUnit(state, foeId, slot, amount, emit);
+      });
+      break;
+    }
     case "expose": {
-      // 晒し者：強化（プラスの分）が消え、相手の次のターンが終わるまでガードを無視して攻撃される
-      const expose = (owner: PlayerId, slot: number, u: Unit) => {
-        u.exposedUntil = state.turn + 2;
-        u.atkBuff = Math.min(0, u.atkBuff);
-        u.tempAtk = 0;
-        u.hpBuff = Math.min(0, u.hpBuff);
-        status(owner, slot, u, "晒し");
-      };
+      const expose = (owner: PlayerId, slot: number, u: Unit) => exposeUnit(owner, slot, u, emit);
       if (e.to === "strongestEnemy") {
         const slot = strongestEnemy(state, player, catalog);
         const u = slot >= 0 ? state.players[foeId].field[slot] : null;
@@ -806,7 +835,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       break;
     }
     case "cleanse":
-      for (const owner of ["p1", "p2"] as const) {
+      for (const owner of e.to === "allEnemies" ? [foeId] : (["p1", "p2"] as const)) {
         state.players[owner].field.forEach((u, slot) => {
           if (!u) return;
           const wasDark = u.dark;
@@ -814,7 +843,8 @@ function runEffect(e: CardEffect, ctx: Ctx) {
             atkBuff: 0,
             tempAtk: 0,
             hpBuff: 0,
-            exposedUntil: 0,
+            exposed: false,
+            exposeAtTurnEnd: false,
             boundUntil: 0,
             silenced: false,
             noGuard: false,
@@ -828,6 +858,9 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       }
       break;
     case "attackPerAlly":
+    case "attackPerLostToken":
+    case "noDeckOut":
+    case "conspiracyWin":
     case "extraAttackOnKill":
     case "focusAura":
     case "lullaby":
@@ -871,7 +904,20 @@ function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Co
       emit({ type: "status", player: pid, slot, cardId: u.cardId, status: "眠り" });
     }
   }
+  // 陰謀論者：山札が0枚で自分のターンを始めたら勝ち（ドローより先に見る）
+  const plotter = p.field.find((u) => u && hasPassive(u, "conspiracyWin", catalog));
+  if (plotter && p.deck.length === 0) {
+    emit({ type: "specialWin", player: pid, cardId: plotter.cardId });
+    state.winner = pid;
+    emit({ type: "won", player: pid });
+    return;
+  }
   if (!draw(state, pid, emit)) {
+    // 専門家・陰謀論者が場にいれば、引けなくても負けない
+    const safe = p.field.some(
+      (u) => u && (hasPassive(u, "noDeckOut", catalog) || hasPassive(u, "conspiracyWin", catalog)),
+    );
+    if (safe) return;
     emit({ type: "deckOut", player: pid });
     state.winner = other;
     emit({ type: "won", player: other });
@@ -1003,7 +1049,7 @@ export function applyAction(
           "guarded",
           t.kind === "unit" && !foe.field[t.slot]
             ? "攻撃先のアイコンがいません"
-            : "相手の場にガードがいる間は、ガード（と晒し者）しか攻撃できません",
+            : "相手の場にガードがいる間は、ガードしか攻撃できません",
         );
       }
       atk.attacksLeft -= 1;
@@ -1057,6 +1103,10 @@ export function applyAction(
       // このターンだけの強化を消す（両者の場）
       for (const owner of ["p1", "p2"] as const)
         for (const u of state.players[owner].field) if (u) u.tempAtk = 0;
+      // 炎上商法：ターンの終わりに晒し者になる
+      me.field.forEach((u, slot) => {
+        if (u?.exposeAtTurnEnd) exposeUnit(player, slot, u, emit);
+      });
       // ターンの終わりに働く効果
       me.field.forEach((u, slot) => {
         if (!u) return;
