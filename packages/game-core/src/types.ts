@@ -171,9 +171,9 @@ export const MAX_HAND = 9;
 export const DEFAULT_CONFIG: Config = {
   maxMana: 10,
   startLp: 20,
-  startHand: 4,
-  secondExtra: 0,
-  secondBonusMana: 2,
+  startHand: 3,
+  secondExtra: 1,
+  secondBonusMana: 1,
 };
 
 /** 画面や CPU が使う、アイコンの今の姿 */

@@ -65,7 +65,7 @@ export function createGame(input: NewGameInput): GameState {
   const mk = (deck: readonly string[], isFirst: boolean): PlayerState => {
     let d = [...deck];
     if (input.shuffle !== false) [d, seed] = shuffled(deck, seed);
-    // 後攻の追加の手札（今は 0。先攻有利は最初のターンの話題力で和らげる）
+    // 後攻は1枚多く持って始める（先攻 3 枚・後攻 4 枚。先攻有利を和らげる）
     const hand = config.startHand + (isFirst ? 0 : config.secondExtra);
     return {
       lp: config.startLp,

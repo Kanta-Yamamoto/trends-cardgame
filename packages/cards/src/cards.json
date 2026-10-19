@@ -429,7 +429,7 @@
     "hp": 4,
     "attributes": ["メロい"],
     "kaiwai": ["アイドル"],
-    "keywords": ["凸"],
+    "keywords": ["ガード", "凸"],
     "effects": [
       {
         "on": "rush",
@@ -438,7 +438,7 @@
         "hp": 1
       }
     ],
-    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。",
+    "effect": "ガード。凸。凸で攻撃したとき、攻撃力+1・体力+1。",
     "flavor": "推しには指一本触れさせない。",
     "art": "/assets/cards/m4-art.jpg",
     "original": "assets/original/m4.webp"
