@@ -1,4 +1,4 @@
-import { DECK_SIZE, MAX_COPIES, MAX_DECK_ATTRIBUTES } from "@trends/cards";
+import { DECK_SIZE, MAX_ACE_KINDS, MAX_COPIES, MAX_DECK_ATTRIBUTES } from "@trends/cards";
 import type { RuleCard } from "./types";
 
 type Catalog = Record<string, RuleCard>;
@@ -12,7 +12,7 @@ export function deckAttributes(deck: readonly string[], catalog: Catalog): strin
 
 /**
  * デッキの決まりを確かめ、守れていないところを日本語で返す（空なら OK）。
- * 30枚・同じカードは3枚まで・トークンは入れられない・属性は MAX_DECK_ATTRIBUTES（今は1つ）まで（共通カードはいくつでも）
+ * 30枚・同じカードは3枚まで・トークンは入れられない・属性のある★5は MAX_ACE_KINDS（1種類）まで（共通の★5は数えない）・属性は MAX_DECK_ATTRIBUTES（今は1つ）まで（共通カードはいくつでも）
  */
 export function validateDeck(deck: readonly string[], catalog: Catalog): string[] {
   const errors: string[] = [];
@@ -26,6 +26,14 @@ export function validateDeck(deck: readonly string[], catalog: Catalog): string[
     else if (card.retired) errors.push(`お蔵入りのカードはデッキに入れられません：${id}`);
     if (n > MAX_COPIES) errors.push(`同じカードは${MAX_COPIES}枚までです：${id}（${n}枚）`);
   }
+  // 属性のある★5（エース）は1種類まで。共通の★5（『フィクサー』）は、どのパーティにも加われる黒幕なので数えない
+  const aces = [...counts.keys()].filter(
+    (id) => catalog[id]?.rarity === 5 && (catalog[id]?.attributes.length ?? 0) > 0,
+  );
+  if (aces.length > MAX_ACE_KINDS)
+    errors.push(
+      `属性のある★5は${MAX_ACE_KINDS}種類までです（1つの軸に沿ったデッキにします。今は${aces.length}種類。共通の★5は数えません）`,
+    );
   const attrs = deckAttributes(deck, catalog);
   if (attrs.length > MAX_DECK_ATTRIBUTES)
     errors.push(`属性は${MAX_DECK_ATTRIBUTES}つまでです（共通カードは数えません。今は ${attrs.join("・")}）`);

@@ -23,8 +23,11 @@ export type PostTarget = "enemyIcon" | "allyIcon";
  * play＝場に出たとき（投稿は使ったとき。省略時）／passive＝場にいる間ずっと／
  * turnEnd＝自分のターンの終わり／hand＝手札にある間（コストの補正）
  */
-/** play＝場に出たとき／passive＝場にいる間／turnEnd＝自分のターンの終わり／hand＝手札にある間／rush＝凸で攻撃したとき（出たターンに相手のアイコンへ） */
-export type EffectTrigger = "play" | "passive" | "turnEnd" | "hand" | "rush";
+/**
+ * play＝場に出たとき／passive＝場にいる間／turnEnd＝自分のターンの終わり／hand＝手札にある間／rush＝凸で攻撃したとき（出たターンに相手のアイコンへ）／
+ * death＝倒されたとき（差し出されたときも。持ち主の効果として働く）
+ */
+export type EffectTrigger = "play" | "passive" | "turnEnd" | "hand" | "rush" | "death";
 
 /** カードの効果（データで表す）。on ごとに、上から順に実行する */
 export type CardEffect = (
@@ -75,6 +78,8 @@ export type CardEffect = (
   | { do: "noDeckOut" }
   /** passive：このアイコンが場にいる間、自分の山札が0枚で自分のターンを始めたら勝ち。引けなくても負けない（陰謀論者） */
   | { do: "conspiracyWin" }
+  /** turnEnd：自分の山札が0枚なら、このアイコンはその場で闇堕ちの姿になる（闇堕ちの1回を使う。専門家→陰謀論者） */
+  | { do: "conspire" }
   /** passive：自分のトークン card（草など）がこのゲームでオワコンに行った数だけ攻撃力+1（クサハミ） */
   | { do: "attackPerLostToken"; card: string }
   /** to が無ければ投稿の対象を眠らせる */
@@ -205,3 +210,7 @@ export const DECK_SIZE = 30;
 /** 1つのデッキに入れられる属性の数（共通カードは数えない）。初期リリースは単属性だけ（2026-10-19 に 2→1） */
 export const MAX_DECK_ATTRIBUTES = 1;
 export const MAX_COPIES = 3;
+/** 1つのデッキに入れられる★5の種類（1つの軸に沿ったパーティにする。2026-10-20） */
+export const MAX_ACE_KINDS = 1;
+/** 闇堕ちは1試合に、プレイヤーごとにこの回数まで（2026-10-20。それまでは★5 1枚につき1回） */
+export const DARK_FALLS_PER_GAME = 1;

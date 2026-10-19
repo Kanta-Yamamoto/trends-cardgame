@@ -88,6 +88,8 @@ export interface PlayerState {
   breakthroughTurn: number;
   /** 闇堕ちを使い終えたカード（闇堕ちの姿で倒されて、オワコンに戻ったもの）。同じカードの闇堕ちは1枚につき1回 */
   darkSpent: string[];
+  /** このゲームで闇堕ちした回数（DARK_FALLS_PER_GAME まで） */
+  darkFalls?: number;
   /** この通算ターンまで、マスターはダメージを受けない（0 なら守られていない） */
   shieldUntil?: number;
 }
@@ -123,7 +125,7 @@ export type Action =
   | { type: "play"; player: PlayerId; handIndex: number; slot: number }
   | { type: "cast"; player: PlayerId; handIndex: number; target?: CastTarget }
   | { type: "attack"; player: PlayerId; from: number; target: AttackTarget }
-  /** オワコンにある闇堕ちを持つカードを、闇堕ちの姿で出す（コストなし・1枚につき1回） */
+  /** オワコンにある闇堕ちを持つカードを、闇堕ちの姿で出す（コストなし・1試合に1回） */
   | { type: "darkFall"; player: PlayerId; cardId: string; slot: number }
   | { type: "endTurn"; player: PlayerId }
   /** 差し出し（フィクサー）：自分のアイコンを1体選ぶ。相手の手番の途中でも、選ぶ番の人が行う */
