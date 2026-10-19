@@ -1,4 +1,4 @@
-import type { CardEffect, Kaiwai, Keyword } from "@trends/cards";
+import { BUZZ_COST, type CardEffect, type Kaiwai, type Keyword } from "@trends/cards";
 import { nextRandom } from "./rng";
 import {
   type Action,
@@ -219,24 +219,36 @@ export function legalTargets(state: GameState, player: PlayerId, catalog: Catalo
   return [{ kind: "leader" as const }, ...units.map((x) => ({ kind: "unit" as const, slot: x.slot }))];
 }
 
-/** そのアイコンが攻撃できる相手（今は全員 legalTargets と同じ。アイコンごとの制限を足すときの入口） */
+/** そのアイコンが攻撃できる相手。凸（出たターン・闇堕ちした直後・バズ）のアイコンは、相手のアイコンにだけ攻撃できる */
 export function attackTargets(
   state: GameState,
   player: PlayerId,
-  _from: number,
+  from: number,
   catalog: Catalog,
 ): AttackTarget[] {
-  return legalTargets(state, player, catalog);
+  const targets = legalTargets(state, player, catalog);
+  const u = state.players[player].field[from];
+  return u?.rushOnly ? targets.filter((t) => t.kind !== "leader") : targets;
+}
+
+/** バズを今使えるか（自分のターンに出したバズ持ちで、まだ使っておらず、話題力が足りる） */
+export function canBuzz(state: GameState, player: PlayerId, slot: number, catalog: Catalog): boolean {
+  const u = state.players[player].field[slot];
+  if (!u || state.active !== player || state.winner) return false;
+  return (
+    hasKeyword(u, "バズ", catalog) &&
+    u.playedTurn === state.turn &&
+    !u.buzzed &&
+    state.players[player].mana >= BUZZ_COST
+  );
 }
 
 /** 攻撃したときの見込み（画面の予告用。実際の攻撃も同じ計算を使う） */
 export interface AttackPreview {
-  /** 攻撃先に与えるダメージ（叩きの +2 を含む） */
+  /** 攻撃先に与えるダメージ */
   toDefender: number;
   /** 反撃で受けるダメージ（マスターへの攻撃は 0） */
   toAttacker: number;
-  /** 叩きで上がった分 */
-  bonus: number;
   /** 攻撃先を倒せる（闇堕ちするアイコンは裏返る） */
   kills: boolean;
   /** 反撃で攻撃した側が倒れる */
@@ -256,19 +268,17 @@ export function previewAttack(
   if (target.kind === "leader") {
     const lp = state.players[opponent(player)].lp;
     if (isShielded(state, opponent(player)))
-      return { toDefender: 0, toAttacker: 0, bonus: 0, kills: false, dies: false };
-    return { toDefender: av.attack, toAttacker: 0, bonus: 0, kills: av.attack >= lp, dies: false };
+      return { toDefender: 0, toAttacker: 0, kills: false, dies: false };
+    return { toDefender: av.attack, toAttacker: 0, kills: av.attack >= lp, dies: false };
   }
   const foeId = opponent(player);
   const def = state.players[foeId].field[target.slot];
   if (!def) return null;
   const dv = viewUnit(state, foeId, def, catalog);
-  const bonus = av.keywords.includes("叩き") && def.damage > 0 ? 2 : 0;
-  const toDefender = av.attack + bonus;
+  const toDefender = av.attack;
   return {
     toDefender,
     toAttacker: dv.attack,
-    bonus,
     kills: toDefender >= dv.hp,
     dies: dv.attack >= av.hp,
   };
@@ -338,12 +348,16 @@ function healLeader(state: GameState, player: PlayerId, amount: number, config: 
 function newUnit(state: GameState, cardId: string, catalog: Catalog, token: boolean): Unit {
   const card = must(catalog, cardId);
   const rush = card.keywords.includes("速攻");
+  // 凸：出たターンは相手のアイコンにだけ攻撃できる（速攻があれば速攻が優先）
+  const totsu = !rush && card.keywords.includes("凸");
   return {
     uid: state.nextUid++,
     cardId,
     damage: 0,
-    canAttack: rush,
-    attacksLeft: rush ? (card.keywords.includes("連撃") ? 2 : 1) : 0,
+    canAttack: rush || totsu,
+    attacksLeft: rush || totsu ? (card.keywords.includes("連撃") ? 2 : 1) : 0,
+    rushOnly: totsu,
+    playedTurn: state.turn,
     atkBuff: 0,
     hpBuff: 0,
     dark: false,
@@ -647,8 +661,8 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       const u = from >= 0 ? foeField[from] : null;
       if (!u) break;
       foeField[from] = null;
-      // 奪ったターンは攻撃できない
-      Object.assign(u, { canAttack: false, attacksLeft: 0 });
+      // 奪ったターンは攻撃できない（バズも使えない）
+      Object.assign(u, { canAttack: false, attacksLeft: 0, rushOnly: false, playedTurn: -1 });
       me.field[to] = u;
       emit({ type: "stolen", player, from, slot: to, cardId: u.cardId });
       break;
@@ -743,6 +757,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
           u.canAttack = true;
           u.attacksLeft = hasKeyword(u, "連撃", catalog) ? 2 : 1;
         }
+        u.rushOnly = false;
         if (slot !== ctx.selfSlot && e.attack) {
           u.atkBuff += e.attack;
           emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: 0 });
@@ -775,7 +790,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       // 元のカードは消える（闇堕ちの姿なら、そのカードの闇堕ちは使い終わり）
       if (u.darkUsed && !u.token) foe.darkSpent = [...(foe.darkSpent ?? []), u.cardId];
       const into = newUnit(state, e.card, catalog, true);
-      Object.assign(into, { canAttack: false, attacksLeft: 0 });
+      Object.assign(into, { canAttack: false, attacksLeft: 0, rushOnly: false });
       foe.field[slot] = into;
       emit({ type: "transformed", player: foeId, slot, cardId: u.cardId, into: e.card });
       break;
@@ -828,6 +843,7 @@ function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Co
     if (!u) return;
     u.canAttack = true;
     u.attacksLeft = hasKeyword(u, "連撃", catalog) ? 2 : 1;
+    u.rushOnly = false;
     // 注目：ターンの始めに攻撃力が伸びる（真ん中の枠なら多く）。センターのトップアイドルがいれば全員
     if (hasKeyword(u, "注目", catalog) || aura) {
       const n = slot === CENTER_SLOT ? 2 : 1;
@@ -918,18 +934,43 @@ export function applyAction(
       if (me.field[action.slot]) throw new RuleError("slot_taken", "その場所にはすでにアイコンがいます");
       const card = must(catalog, cardId);
       me.trash.splice(me.trash.lastIndexOf(cardId), 1);
-      // 闇堕ちの姿は、出たターンには攻撃できない（速攻のように殴りかかることはしない）
-      const u = Object.assign(newUnit(state, cardId, catalog, false), {
-        dark: true,
-        darkUsed: true,
-        canAttack: false,
-        attacksLeft: 0,
+      // 闇堕ちの姿は、戻ってきたターンから相手のアイコンに攻撃できる（凸。速攻を持つ姿ならマスターも）
+      const u = Object.assign(newUnit(state, cardId, catalog, false), { dark: true, darkUsed: true });
+      const darkRush = hasKeyword(u, "速攻", catalog);
+      Object.assign(u, {
+        canAttack: true,
+        attacksLeft: hasKeyword(u, "連撃", catalog) ? 2 : 1,
+        rushOnly: !darkRush,
       });
       me.field[action.slot] = u;
       emit({ type: "darkFall", player, slot: action.slot, cardId });
       const ctx: Ctx = { state, player, catalog, config, emit, selfSlot: action.slot, playedBefore: 0 };
       for (const e of card.dark?.effects ?? []) if (triggerOf(e) === "play") runEffect(e, ctx);
       resolveDeaths(state, catalog, emit);
+      break;
+    }
+    case "buzz": {
+      const u = me.field[action.slot];
+      if (!u) throw new RuleError("no_unit", "バズらせるアイコンがいません");
+      if (!hasKeyword(u, "バズ", catalog))
+        throw new RuleError("no_buzz", "このアイコンはバズを持っていません");
+      if (u.playedTurn !== state.turn)
+        throw new RuleError("buzz_late", "バズは、出したターンにしか使えません");
+      if (u.buzzed) throw new RuleError("buzz_used", "バズは1体につき1回です");
+      if (me.mana < BUZZ_COST)
+        throw new RuleError("no_mana", `話題力が足りません（必要 ${BUZZ_COST}・残り ${me.mana}）`);
+      me.mana -= BUZZ_COST;
+      u.buzzed = true;
+      u.atkBuff += 1;
+      u.hpBuff += 1;
+      // 凸：まだ攻撃できなければ、このターン相手のアイコンにだけ攻撃できる（速攻で動けるならそのまま）
+      if (!u.canAttack) {
+        u.canAttack = true;
+        u.attacksLeft = hasKeyword(u, "連撃", catalog) ? 2 : 1;
+        u.rushOnly = true;
+      }
+      emit({ type: "buzzed", player, slot: action.slot, cardId: u.cardId });
+      emit({ type: "buffed", player, slot: action.slot, cardId: u.cardId, attack: 1, hp: 1 });
       break;
     }
     case "cast": {

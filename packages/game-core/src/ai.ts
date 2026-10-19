@@ -1,6 +1,7 @@
 import {
   applyAction,
   attackTargets,
+  canBuzz,
   canUnitAttack,
   castTargets,
   darkReady,
@@ -221,6 +222,14 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
     step((best as { action: Action }).action);
   }
 
+  // 1.5 バズ：出したターンのバズ持ちは、相手の場にアイコンがいて話題力が余っていれば +1/+1 して凸で殴りに行く
+  for (let slot = 0; slot < state.players[player].field.length; slot++) {
+    if (state.winner) return actions;
+    if (!canBuzz(state, player, slot, catalog)) continue;
+    if (!state.players[foeId].field.some((u) => u)) break;
+    step({ type: "buzz", player, slot });
+  }
+
   // 2. 攻撃
   for (let guard = 0; guard < 20; guard++) {
     if (state.winner) return actions;
@@ -248,7 +257,7 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
         const d = foe.field[t.slot];
         if (!d) continue;
         const dv = viewUnit(state, foeId, d, catalog);
-        const dmg = v.attack + (v.keywords.includes("叩き") && d.damage > 0 ? 2 : 0);
+        const dmg = v.attack;
         const kills = dmg >= dv.hp;
         const survives = dv.attack < v.hp;
         let score: number;

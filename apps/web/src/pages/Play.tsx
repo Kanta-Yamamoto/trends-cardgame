@@ -4,6 +4,7 @@ import {
   type AttackTarget,
   attackTargets,
   type CastTarget,
+  canBuzz,
   canDarkFall,
   canUnitAttack,
   castTargets,
@@ -69,6 +70,8 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}の ${nameOf(e.cardId)} がオワコンになった`;
     case "darkFall":
       return `${who(e.player)}の ${nameOf(e.cardId)} が、闇堕ちしてオワコンから戻ってきた！`;
+    case "buzzed":
+      return `${who(e.player)}の ${nameOf(e.cardId)} がバズった（攻撃力+1・体力+1。このターン相手のアイコンに攻撃できる）`;
     case "restored":
       return `${who(e.player)}の ${nameOf(e.cardId)} が表に戻った`;
     case "status":
@@ -244,7 +247,7 @@ function DeckSelect() {
           </li>
           <li>相手の場にガードがいる間は、ガード（と晒し者）しか攻撃できない</li>
           <li>
-            闇堕ちを持つ★5は、オワコンに行ったら自分のターンの好きなときに、コストなしで闇堕ちの姿で出せる（1枚につき1回。出たターンは攻撃できない）
+            闇堕ちを持つ★5は、オワコンに行ったら自分のターンの好きなときに、コストなしで闇堕ちの姿で出せる（1枚につき1回。そのターンは相手のアイコンにだけ攻撃できる）
           </li>
         </ul>
       </details>
@@ -440,7 +443,7 @@ type Peek = {
 /** ドラッグしているもの（手札のカード／攻撃するアイコン） */
 type DragSrc = { kind: "hand"; index: number } | { kind: "unit"; slot: number };
 
-/** 攻撃したときの見込み（与えるダメージ・叩き・倒せるか）を、攻撃先に重ねて出す */
+/** 攻撃したときの見込み（与えるダメージ・倒せるか）を、攻撃先に重ねて出す */
 function AttackBadge({ pv, leader }: { pv: AttackPreview; leader?: boolean }) {
   const tag = leader
     ? pv.kills && "とどめ"
@@ -454,7 +457,6 @@ function AttackBadge({ pv, leader }: { pv: AttackPreview; leader?: boolean }) {
   return (
     <span className={`atk-pv ${pv.kills ? "kill" : ""}`} aria-hidden="true">
       <b>-{pv.toDefender}</b>
-      {pv.bonus > 0 && <i className="pv-bash">叩き+{pv.bonus}</i>}
       {tag && <i className={pv.dies && !pv.kills ? "pv-die" : "pv-tag"}>{tag}</i>}
     </span>
   );
@@ -506,6 +508,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     play,
     cast,
     attack,
+    buzz,
     endTurn,
     start,
     quit: quitGame,
@@ -719,6 +722,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     attacking && canHit(t) ? previewAttack(game, ME, selection.slot, t, CATALOG) : null;
   const foeGuarded = foe.field.some((u) => u && viewUnit(game, CPU, u, CATALOG).guard);
   const peekCard = (peek ? CATALOG[peek.id] : null) ?? null;
+  /** 今バズできる自分のアイコンの枠 */
+  const buzzSlots = myTurn
+    ? me.field.flatMap((u, slot) => (u && canBuzz(game, ME, slot, CATALOG) ? [slot] : []))
+    : [];
+  /** 押して見ているアイコンがバズできるなら、その枠 */
+  const peekBuzz = peek?.where === "mine" && buzzSlots.includes(peek.index) ? peek.index : null;
   const hint = game.winner
     ? ""
     : game.active === CPU
@@ -739,13 +748,15 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                 ? foeGuarded
                   ? "攻撃先を選んでください（ガードがいるので、ガードと晒し者しか攻撃できません）"
                   : "攻撃先を選んでください（光っているところ）"
-                : canDarkFall(game, ME, CATALOG)
-                  ? stage.portrait
-                    ? "闇堕ちできるカードがオワコンにあります（自分のオワコンを押す）"
-                    : "闇堕ちできるカードがオワコンにあります（左のオワコンを押す）"
-                  : stage.portrait
-                    ? "手札を場へ引っぱって出す・投稿／アイコンを相手へ引っぱって攻撃（長押しで拡大）"
-                    : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";
+                : buzzSlots.length > 0
+                  ? "バズできるアイコンがいます（押して「バズらせる」。話題力 1 で攻撃力+1・体力+1）"
+                  : canDarkFall(game, ME, CATALOG)
+                    ? stage.portrait
+                      ? "闇堕ちできるカードがオワコンにあります（自分のオワコンを押す）"
+                      : "闇堕ちできるカードがオワコンにあります（左のオワコンを押す）"
+                    : stage.portrait
+                      ? "手札を場へ引っぱって出す・投稿／アイコンを相手へ引っぱって攻撃（長押しで拡大）"
+                      : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";
 
   const unitCard = (owner: PlayerId, slot: number, u: Unit) => {
     const card = CATALOG[u.cardId] as CardDef;
@@ -797,7 +808,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         onPeek={() => setPeek(p)}
         onLongPress={() => setZoom(p)}
       >
-        {ready && <em className="mini-ready">{u.attacksLeft > 1 ? "2回攻撃" : "攻撃できる"}</em>}
+        {ready && (
+          <em className="mini-ready">
+            {u.attacksLeft > 1 ? "2回攻撃" : u.rushOnly ? "凸攻撃" : "攻撃できる"}
+          </em>
+        )}
+        {!ready && buzzSlots.includes(slot) && <em className="mini-ready mini-buzz">バズ 1</em>}
       </MiniCard>
     );
   };
@@ -1048,7 +1064,16 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               {meRow}
             </div>
             {meBar}
-            <PeekStrip card={peekCard} view={peek?.view} onOpen={() => setZoom(peek)} />
+            <PeekStrip
+              card={peekCard}
+              view={peek?.view}
+              onOpen={() => setZoom(peek)}
+              action={
+                peekBuzz !== null
+                  ? { label: "バズらせる（話題力 1）", onClick: () => buzz(peekBuzz) }
+                  : undefined
+              }
+            />
             <button
               type="button"
               className="plog-ticker"
@@ -1091,6 +1116,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                     card={peekCard}
                     view={peek?.view}
                     onOpen={() => setZoom(peek)}
+                    action={
+                      peekBuzz !== null
+                        ? { label: "バズらせる（話題力 1）", onClick: () => buzz(peekBuzz) }
+                        : undefined
+                    }
                   />
                 ) : (
                   <p className="muted">カードを押すと、ここに表示します。長押しで画面いっぱいに拡大</p>
@@ -1246,7 +1276,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             </h2>
             {trashView === ME && myDark.length > 0 && freeSlot >= 0 && (
               <div className="dark-pick">
-                <p>闇堕ちの姿で、コストなしで出せます（出たターンは攻撃できません）</p>
+                <p>闇堕ちの姿で、コストなしで出せます（そのターンは相手のアイコンにだけ攻撃できます）</p>
                 {myDark.map((id) => {
                   const d = CATALOG[id]?.dark;
                   if (!d) return null;
@@ -1317,7 +1347,20 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
 }
 
 /** 大きく表示するカード。場のアイコンなら今の状態（闇堕ち・ダメージ・強化）も添える */
-function PeekCard({ card, view, onOpen }: { card: CardDef; view?: UnitView; onOpen: () => void }) {
+/** 押して見ているカードに対して今できる操作（バズなど） */
+type PeekAction = { label: string; onClick: () => void };
+
+function PeekCard({
+  card,
+  view,
+  onOpen,
+  action,
+}: {
+  card: CardDef;
+  view?: UnitView;
+  onOpen: () => void;
+  action?: PeekAction;
+}) {
   const dark = view?.unit.dark && card.dark;
   return (
     <>
@@ -1325,6 +1368,11 @@ function PeekCard({ card, view, onOpen }: { card: CardDef; view?: UnitView; onOp
       <div className={dark ? "peek-dark" : undefined}>
         <HoloCard card={card} darkForm={!!dark} interactive idle={false} onClick={onOpen} />
       </div>
+      {action && (
+        <button type="button" className="btn buzz-btn" onClick={action.onClick}>
+          {action.label}
+        </button>
+      )}
       <button type="button" className="btn ghost peek-zoom" onClick={onOpen}>
         大きく見る
       </button>
@@ -1354,7 +1402,17 @@ function PeekCard({ card, view, onOpen }: { card: CardDef; view?: UnitView; onOp
  * 縦の舞台で、押したカードの説明を1本の帯で見せる（大きなカードを置く場所がないため）。
  * 絵・名前・コスト・攻撃力/体力・効果文（2行まで）。押すと画面いっぱいに拡大して全文を読める
  */
-function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitView; onOpen: () => void }) {
+function PeekStrip({
+  card,
+  view,
+  onOpen,
+  action,
+}: {
+  card: CardDef | null;
+  view?: UnitView;
+  onOpen: () => void;
+  action?: PeekAction;
+}) {
   if (!card) {
     return (
       <div className="peek-strip empty">
@@ -1376,51 +1434,54 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
       ].filter((x): x is string => !!x)
     : [];
   return (
-    <button
-      type="button"
-      className={`peek-strip ${dark ? "is-dark" : ""} ${card.type === "post" ? "is-post" : ""}`}
-      onClick={onOpen}
-      aria-label={`${name} の説明を大きく見る`}
-    >
-      <span
-        className="ps-art"
-        style={
-          art
-            ? { backgroundImage: `url(${art})` }
-            : { background: ATTR_META[card.attributes[0] ?? "草"].deep }
-        }
-      />
-      <span className="ps-body">
-        <span className="ps-head">
-          <b className="ps-name">
-            {name}
-            {card.epithet && <small>{card.epithet}</small>}
-          </b>
-          <span className="ps-meta">
-            <i className="ps-cost">{card.cost}</i>
-            {card.type === "icon" ? (
-              <>
-                <i className="t-atk">{view?.attack ?? card.attack}</i>／
-                <i className="t-hp">
-                  {view?.hp ?? card.hp}
-                  {view && view.hp < view.maxHp && <small>/{view.maxHp}</small>}
-                </i>
-              </>
-            ) : (
-              <i className="ps-post">投稿</i>
-            )}
+    <div className={`peek-strip ${dark ? "is-dark" : ""} ${card.type === "post" ? "is-post" : ""}`}>
+      <button type="button" className="ps-main" onClick={onOpen} aria-label={`${name} の説明を大きく見る`}>
+        <span
+          className="ps-art"
+          style={
+            art
+              ? { backgroundImage: `url(${art})` }
+              : { background: ATTR_META[card.attributes[0] ?? "草"].deep }
+          }
+        />
+        <span className="ps-body">
+          <span className="ps-head">
+            <b className="ps-name">
+              {name}
+              {card.epithet && <small>{card.epithet}</small>}
+            </b>
+            <span className="ps-meta">
+              <i className="ps-cost">{card.cost}</i>
+              {card.type === "icon" ? (
+                <>
+                  <i className="t-atk">{view?.attack ?? card.attack}</i>／
+                  <i className="t-hp">
+                    {view?.hp ?? card.hp}
+                    {view && view.hp < view.maxHp && <small>/{view.maxHp}</small>}
+                  </i>
+                </>
+              ) : (
+                <i className="ps-post">投稿</i>
+              )}
+            </span>
+          </span>
+          <span className="ps-effect">
+            {keywords.length > 0 && <em>{keywords.join("・")}</em>}
+            {states.length > 0 && <em className="ps-state">{states.join("・")}</em>}
+            <EffectText text={effect} />
           </span>
         </span>
-        <span className="ps-effect">
-          {keywords.length > 0 && <em>{keywords.join("・")}</em>}
-          {states.length > 0 && <em className="ps-state">{states.join("・")}</em>}
-          <EffectText text={effect} />
-        </span>
-      </span>
-      <span className="ps-zoom" aria-hidden="true">
-        拡大
-      </span>
-    </button>
+      </button>
+      {action ? (
+        <button type="button" className="btn buzz-btn small" onClick={action.onClick}>
+          {action.label}
+        </button>
+      ) : (
+        <button type="button" className="ps-zoom" onClick={onOpen} aria-label="大きく見る">
+          拡大
+        </button>
+      )}
+    </div>
   );
 }
 

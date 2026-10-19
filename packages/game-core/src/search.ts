@@ -2,6 +2,7 @@ import { planTurn } from "./ai";
 import {
   applyAction,
   attackTargets,
+  canBuzz,
   canUnitAttack,
   castTargets,
   darkReady,
@@ -60,7 +61,7 @@ function unitValue(state: GameState, owner: PlayerId, slot: number, catalog: Cat
   if (v.guard) value += WEIGHTS.guard + v.hp * 0.3;
   if (v.keywords.includes("連撃")) value += v.attack * 0.7;
   if (v.keywords.includes("注目")) value += (slot === CENTER_SLOT ? 2 : 1) * WEIGHTS.focus;
-  if (v.keywords.includes("叩き")) value += 0.5;
+  if (v.keywords.includes("凸") || v.keywords.includes("バズ")) value += 0.3;
   if (!u.silenced && card) {
     const lasting = card.effects.some((e) => {
       return e.on === "passive" || e.on === "turnEnd";
@@ -113,6 +114,9 @@ function candidates(state: GameState, player: PlayerId, catalog: Catalog): Actio
   });
   for (const cardId of darkReady(state, player, catalog))
     for (const slot of slots) out.push({ type: "darkFall", player, cardId, slot });
+  me.field.forEach((_u, slot) => {
+    if (canBuzz(state, player, slot, catalog)) out.push({ type: "buzz", player, slot });
+  });
   me.field.forEach((u, from) => {
     if (!u || !canUnitAttack(state, u)) return;
     for (const target of attackTargets(state, player, from, catalog))
@@ -127,7 +131,7 @@ function signature(state: GameState): string {
     state.players[p].field
       .map((u) =>
         u
-          ? `${u.cardId}.${u.damage}.${u.attacksLeft}.${u.atkBuff}.${u.hpBuff}.${+u.dark}.${u.exposedUntil}`
+          ? `${u.cardId}.${u.damage}.${u.attacksLeft}.${u.atkBuff}.${u.hpBuff}.${+u.dark}.${u.exposedUntil}.${+!!u.rushOnly}.${+!!u.buzzed}`
           : "_",
       )
       .join(",");

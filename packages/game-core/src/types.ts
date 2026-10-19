@@ -52,6 +52,12 @@ export interface Unit {
   noGuard: boolean;
   /** トークン（オワコンに行くと消える） */
   token: boolean;
+  /** このターンは相手のアイコンにだけ攻撃できる（凸・闇堕ちした直後・バズ） */
+  rushOnly?: boolean;
+  /** 場に出たターン（バズは出したターンだけ使える） */
+  playedTurn?: number;
+  /** バズを使ったか（1体1回） */
+  buzzed?: boolean;
 }
 
 /** マスター（操作するプレイヤー）の状態 */
@@ -103,6 +109,8 @@ export type Action =
   | { type: "attack"; player: PlayerId; from: number; target: AttackTarget }
   /** オワコンにある闇堕ちを持つカードを、闇堕ちの姿で出す（コストなし・1枚につき1回） */
   | { type: "darkFall"; player: PlayerId; cardId: string; slot: number }
+  /** バズ：出したターンのアイコンに話題力 1 を払って、+1/+1 と凸を付ける */
+  | { type: "buzz"; player: PlayerId; slot: number }
   | { type: "endTurn"; player: PlayerId }
   /** 降参（相手の勝ちになる。自分のターンでなくてもできる） */
   | { type: "resign"; player: PlayerId };
@@ -129,6 +137,7 @@ export type GameEvent =
   | { type: "damaged"; player: PlayerId; slot: number; cardId: string; amount: number }
   | { type: "destroyed"; player: PlayerId; cardId: string }
   | { type: "darkFall"; player: PlayerId; slot: number; cardId: string }
+  | { type: "buzzed"; player: PlayerId; slot: number; cardId: string }
   | { type: "restored"; player: PlayerId; slot: number; cardId: string }
   | {
       type: "status";
