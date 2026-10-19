@@ -811,7 +811,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .field-layer { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; }
 .field-sauna.field-layer {
   background:
-    linear-gradient(180deg, #2a160acc, #1a0f08aa 40%, #2a160acc),
+    linear-gradient(180deg, #1a0d06b8, #1a0f0866 45%, #1a0d06b8),
     var(--field-sauna-img, none) center / cover no-repeat,
     repeating-linear-gradient(90deg, #6b3f22 0 22px, #5a331b 22px 24px, #74462a 24px 46px, #5a331b 46px 48px);
   --field-sauna-img: url(/assets/fields/sauna.jpg);
@@ -858,15 +858,55 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
   clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%); filter: blur(2px);
   animation: fx-beam 2.4s ease-out forwards;
 }
+/* 『フィクサー』の顔：左半分はそのまま、右半分は帯が横に跳ねるホログラム */
+.fx-face {
+  position: absolute; left: 50%; top: 50%; height: min(86dvh, 132vw); aspect-ratio: 2 / 3; translate: -50% -50%;
+  background: url(/assets/cards/c15-art.jpg) center / cover no-repeat;
+  mask: radial-gradient(48% 46% at 50% 40%, #000 55%, transparent 100%);
+  filter: grayscale(0.2) contrast(1.1) brightness(0.8);
+  animation: fx-face 2.4s ease-out forwards;
+}
+.fx-face::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 6px, #ffffff40 6px 7px, transparent 7px 15px),
+    linear-gradient(115deg, #00e5ff, #9dff6e, #fff36e, #ff2bd6, #8a7bff);
+  mask: linear-gradient(90deg, transparent 48%, #000 62%);
+  mix-blend-mode: color-dodge; opacity: 0.35;
+}
+.fx-face i {
+  position: absolute; inset: 0; background: inherit; clip-path: inset(100% 0 0 0);
+  filter: drop-shadow(-4px 0 0 #ff2bd6) drop-shadow(4px 0 0 #00e5ff);
+  animation: fx-face-slice 2.4s steps(1) forwards;
+}
+.fx-face i:nth-child(2) { animation-delay: 0.12s; }
+.fx-face i:nth-child(3) { animation-delay: 0.27s; }
+@keyframes fx-face {
+  0% { opacity: 0; scale: 1.08; }
+  18% { opacity: 1; scale: 1; }
+  100% { opacity: 1; scale: 1.02; }
+}
+@keyframes fx-face-slice {
+  0%, 100% { clip-path: inset(100% 0 0 0); translate: 0 0; }
+  20% { clip-path: inset(18% 0 70% 50%); translate: 14px 0; }
+  26% { clip-path: inset(44% 0 44% 52%); translate: -10px 0; }
+  32% { clip-path: inset(66% 0 22% 55%); translate: 18px 0; }
+  38% { clip-path: inset(100% 0 0 0); }
+  58% { clip-path: inset(30% 0 58% 50%); translate: -16px 0; }
+  62% { clip-path: inset(100% 0 0 0); }
+}
 .fx-title { position: relative; display: grid; gap: 10px; text-align: center; color: #fff; padding: 0 16px; }
 .fx-title small { font-size: 13px; letter-spacing: 0.3em; color: #ff8a9b; }
+.fx-title { margin-top: 34dvh; }
+.fixer-cut.gone .fx-title { margin-top: 0; }
 .fx-title b {
-  font-size: clamp(34px, 9vmin, 72px); font-weight: 900; letter-spacing: 0.12em;
-  text-shadow: 0 0 2px #fff, 0 0 18px #ff2a4a, 0 0 48px #ff2a4a99;
+  font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
+  font-size: clamp(34px, 9vmin, 72px); font-weight: 800; letter-spacing: 0.06em;
+  text-shadow: -3px 0 0 #e0102fd0, 3px 0 0 #00e5ffa8, 0 0 18px #ff2a4a, 0 0 48px #000;
   animation: fx-title 2.4s cubic-bezier(.2,.8,.2,1) forwards;
 }
 .fx-title span { font-size: 13px; color: #ffd5dc; }
 @keyframes fixer-cut { 0% { opacity: 0; } 12% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes fx-beam { 0% { opacity: 0; transform: translateX(-50%) scaleX(0.2); } 25% { opacity: 1; transform: translateX(-50%) scaleX(1); } }
 @keyframes fx-title { 0% { opacity: 0; transform: scale(1.4); filter: blur(6px); } 25% { opacity: 1; transform: scale(1); filter: blur(0); } }
-@media (prefers-reduced-motion: reduce) { .fx-beam, .fx-title b { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .fx-beam, .fx-title b, .fx-face i { animation: none; } }

@@ -1278,6 +1278,13 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           onAnimationEnd={(e) => e.target === e.currentTarget && setFixer(null)}
         >
           <div className="fx-beam" />
+          {!fixer.gone && (
+            <div className="fx-face">
+              <i />
+              <i />
+              <i />
+            </div>
+          )}
           <div className="fx-title">
             <small>{fixer.mine ? "あなたの" : "相手の"}裏で、誰かが糸を引いている</small>
             <b>『フィクサー』</b>

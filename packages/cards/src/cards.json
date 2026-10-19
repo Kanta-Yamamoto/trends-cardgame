@@ -3379,7 +3379,10 @@
       }
     ],
     "effect": "場に出たとき、自分と相手は、それぞれ自分のアイコンを1体選ぶ。選ばれたアイコンは倒される。",
-    "flavor": "その闇堕ち、仕込みです。"
+    "flavor": "その闇堕ち、仕込みです。",
+    "art": "/assets/cards/c15-art.jpg",
+    "subject": "/assets/cards/c15-subject.webp",
+    "original": "assets/original/c15.webp"
   },
   {
     "id": "i18",

@@ -3,6 +3,7 @@ import { type ComponentType, type CSSProperties, useEffect, useRef } from "react
 import { AiriFace } from "./faces/Airi";
 import { CollageFace } from "./faces/Collage";
 import { ExpertFace } from "./faces/Expert";
+import { FixerFace } from "./faces/Fixer";
 import { GenericFace } from "./faces/Generic";
 import { HibanaFace } from "./faces/Hibana";
 import { IdolFace } from "./faces/Idol";
@@ -36,6 +37,7 @@ const FACES: Record<string, { cls: string; Face: ComponentType<{ card: CardDef }
   c11: { cls: "s-ruri", Face: RuriFace },
   c12: { cls: "s-lala", Face: LalaFace },
   c13: { cls: "s-mirei", Face: MireiFace },
+  c15: { cls: "s-fixer", Face: FixerFace },
 };
 
 /** 専用デザインがないカードは、★4以上なら共通のキラデザイン、それ以外は共通デザインで描く */
