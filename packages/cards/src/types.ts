@@ -31,8 +31,11 @@ export type CardEffect = (
   | {
       do: "summon";
       card: string;
-      count: number /** センター（真ん中の枠）に出したときの数 */;
+      count: number;
+      /** センター（真ん中の枠）に出したときの数 */
       centerCount?: number;
+      /** このアイコンの両隣（左、右の順）から埋める。埋まっていれば左から空いた枠へ */
+      flank?: boolean;
     }
   | { do: "copySelf" }
   | { do: "buffSelf"; attack: number; hp: number }

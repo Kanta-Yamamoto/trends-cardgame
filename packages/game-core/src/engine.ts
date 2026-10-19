@@ -364,9 +364,19 @@ function newUnit(state: GameState, cardId: string, catalog: Catalog, token: bool
   };
 }
 
-function summon(state: GameState, player: PlayerId, cardId: string, catalog: Catalog, emit: Emit): boolean {
+function summon(
+  state: GameState,
+  player: PlayerId,
+  cardId: string,
+  catalog: Catalog,
+  emit: Emit,
+  near?: number,
+): boolean {
   const field = state.players[player].field;
-  const slot = field.findIndex((u) => !u);
+  // 両隣を先に（左、右の順）。どちらも埋まっていれば、左から空いた枠へ
+  const flank =
+    near === undefined ? [] : [near - 1, near + 1].filter((s) => s >= 0 && s < field.length && !field[s]);
+  const slot = flank[0] ?? field.findIndex((u) => !u);
   if (slot < 0) return false;
   field[slot] = newUnit(state, cardId, catalog, true);
   emit({ type: "summoned", player, cardId, slot });
@@ -476,7 +486,8 @@ function runEffect(e: CardEffect, ctx: Ctx) {
   switch (e.do) {
     case "summon": {
       const n = e.centerCount !== undefined && ctx.selfSlot === CENTER_SLOT ? e.centerCount : e.count;
-      for (let i = 0; i < n; i++) if (!summon(state, player, e.card, catalog, emit)) break;
+      const near = e.flank ? ctx.selfSlot : undefined;
+      for (let i = 0; i < n; i++) if (!summon(state, player, e.card, catalog, emit, near)) break;
       break;
     }
     case "copySelf":

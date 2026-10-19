@@ -866,7 +866,7 @@ describe("界隈を読む効果（自分の側だけ）", () => {
     const local = {
       ...catalog,
       top: icon("top", 1, 3, 5, {
-        effects: [{ on: "play", do: "summon", card: "f", count: 1, centerCount: 2 }],
+        effects: [{ on: "play", do: "summon", card: "f", count: 1, centerCount: 2, flank: true }],
       }),
     };
     const mk = () => {
@@ -882,7 +882,16 @@ describe("界隈を読む効果（自分の側だけ）", () => {
     const side = applyAction(mk(), { type: "play", player: "p1", handIndex: 0, slot: 0 }, local).state;
     expect(side.players.p1.field.filter((u) => u).length).toBe(2);
     const center = applyAction(mk(), { type: "play", player: "p1", handIndex: 0, slot: 2 }, local).state;
-    expect(center.players.p1.field.filter((u) => u).length).toBe(3);
+    expect(center.players.p1.field.map((u) => u?.cardId ?? null)).toEqual([null, "f", "top", "f", null]);
+    // 右端に出したら左隣に。両隣が埋まっていれば、左から空いた枠へ
+    const right = applyAction(mk(), { type: "play", player: "p1", handIndex: 0, slot: 4 }, local).state;
+    expect(right.players.p1.field.map((u) => u?.cardId ?? null)).toEqual([null, null, null, "f", "top"]);
+    const busy = mk();
+    const filler = side.players.p1.field.find((u) => u?.cardId === "f") as Unit;
+    busy.players.p1.field[1] = { ...filler, uid: 777 };
+    busy.players.p1.field[3] = { ...filler, uid: 778 };
+    const blocked = applyAction(busy, { type: "play", player: "p1", handIndex: 0, slot: 2 }, local).state;
+    expect(blocked.players.p1.field.map((u) => u?.cardId ?? null)).toEqual(["f", "f", "top", "f", "f"]);
   });
 
   it("このターンだけの強化：ターンの終わりに消える", () => {
