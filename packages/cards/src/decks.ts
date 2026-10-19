@@ -6,7 +6,7 @@ const build = (spec: Record<string, number>): string[] =>
   Object.entries(spec).flatMap(([id, n]) => Array.from({ length: n }, () => id));
 
 export const DECKS = {
-  /** 炎上だけ：速攻と凸で序盤から殴り切り、デジタルタトゥーで押し込む。レンとカグラ */
+  /** 炎上だけ：速攻と凸で序盤から殴り切る。カグラの炎上商法で押し込み、ヒバナで盤面を返す。レン・カグラ・ヒバナ */
   solo_flame: build({
     f1: 3,
     f19: 2,
@@ -21,7 +21,7 @@ export const DECKS = {
     c9: 3,
     f16: 2,
     f14: 1,
-    f7: 1,
+    c4: 1,
   }),
   /** メロいだけ：アイドルをそろえて育て、ラスサビで全員跳ぶ。トップアイドルとミレイ */
   solo_idol: build({
@@ -60,7 +60,7 @@ export const DECKS = {
     g13: 2,
     g3: 2,
   }),
-  /** 草だけ：草で埋めて数で押す。ワラ・伝説のコラ画像・ララ */
+  /** 草だけ：草で埋めて数で押し、倒された草を食べたクサハミで仕留める。ワラ・伝説のコラ画像・クサハミ */
   solo_meme: build({
     k6: 3,
     k2: 2,
@@ -76,8 +76,7 @@ export const DECKS = {
     k9: 1,
     k5: 1,
     k10: 1,
-    c12: 1,
-    k14: 1,
+    c14: 2,
     k13: 1,
     k15: 2,
     k16: 2,

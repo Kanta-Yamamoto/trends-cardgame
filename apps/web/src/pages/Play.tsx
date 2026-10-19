@@ -87,6 +87,8 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}の手札がいっぱいで、引いた ${nameOf(e.cardId)} はオワコンへ`;
     case "deckOut":
       return `${who(e.player)}の山札が切れた`;
+    case "specialWin":
+      return `${who(e.player)}の山札が切れた。陰謀論者「これは世界のせいだ」──特殊勝利`;
     case "turnStarted":
       return `―― ${e.turn}ターン目：${who(e.player)}（話題力 ${e.mana}）――`;
     case "stolen":

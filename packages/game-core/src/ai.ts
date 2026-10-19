@@ -116,9 +116,9 @@ function judgePost(
       .sort((a, b) => worth(b.v) - worth(a.v))[0];
     return t ? { score: t.v.attack * 3, target: enemy(t.slot) } : null;
   }
-  if (effects.includes("buff") && card.target === "allyIcon") {
+  if ((effects.includes("buff") || effects.includes("hype")) && card.target === "allyIcon") {
     // このターンだけの強化（炎上商法）は、今攻撃できるアイコンにしか意味がない
-    const temporary = card.effects.some((e) => e.do === "buff" && e.thisTurn);
+    const temporary = card.effects.some((e) => e.do === "hype");
     if (temporary && ready.length === 0) return null;
     const legal = new Set(castTargets(state, player, cardId, catalog).map((t) => t.slot));
     const pool = (ready.length > 0 ? ready : mine).filter((x) => legal.has(x.slot));

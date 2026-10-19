@@ -164,13 +164,13 @@
    アイリ：ローズゴールドのサテン、ティアラ、スパンコール。効果はライブのチケット
    ========================================================= */
 .s-airi {
-  --rose: #f7a6c1; --rose-2: #ffe1ea; --rosegold: #d9918a; --champ: #f6dcb4; --berry: #b42a68; --ink: #5a2140;
+  --rose: #c3a6f2; --rose-2: #efe6ff; --rosegold: #b39ad8; --champ: #f3e6c6; --berry: #6b3fb8; --ink: #33245a;
   --f-name: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif;
   --f-body: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", sans-serif;
   --f-num: "Fredoka", "Arial Rounded MT Bold", sans-serif;
   --crown: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 40'%3E%3Cpath d='M4 36 10 10 34 26 60 2 86 26 110 10 116 36z'/%3E%3C/svg%3E");
 
-  .card { color: var(--ink); background: #fff3f6; box-shadow: 0 30px 60px -20px #000b, 0 0 60px -12px #f7a6c1aa, 0 0 0 1px #ffffff70; }
+  .card { color: var(--ink); background: #f7f3ff; box-shadow: 0 30px 60px -20px #000b, 0 0 60px -12px #c3a6f2aa, 0 0 0 1px #ffffff70; }
   /* 枠：ローズゴールドのサテン（傾けると光沢が流れる） */
   .satin {
     background:
@@ -178,7 +178,7 @@
       linear-gradient(160deg, var(--rose-2), var(--rose) 30%, var(--champ) 55%, var(--rosegold) 80%, var(--rose-2));
   }
   .sequins {
-    background: linear-gradient(120deg, #ffb3d1, #fff1c2, #c8f3ff, #e2c6ff, #ffb3d1); background-size: 300% 300%; background-position: var(--mx) var(--my);
+    background: linear-gradient(120deg, #cdb3ff, #fff1c2, #c8f3ff, #e2c6ff, #cdb3ff); background-size: 300% 300%; background-position: var(--mx) var(--my);
     mask:
       radial-gradient(circle, #000 0 1.4px, transparent 2px) 0 0 / 10px 10px,
       radial-gradient(circle, #000 0 1px, transparent 1.6px) 5px 5px / 10px 10px;
@@ -190,7 +190,7 @@
     mix-blend-mode: soft-light; opacity: calc(0.3 + var(--g) * 0.5);
   }
   .confetti {
-    background: radial-gradient(60% 50% at var(--mx) var(--my), #fff, #ffd1e0 45%, transparent 80%);
+    background: radial-gradient(60% 50% at var(--mx) var(--my), #fff, #e2d4ff 45%, transparent 80%);
     mask:
       linear-gradient(45deg, #000 0 0) 0 0 / 0 0,
       radial-gradient(circle, #000 0 1.6px, transparent 2.4px) 0 0 / 26px 31px,
@@ -201,38 +201,38 @@
   /* 窓のふち：真珠の粒 */
   .pearl {
     inset: 4.4% 5.2%; border-radius: 9% 9% 2% 2%; pointer-events: none;
-    box-shadow: 0 0 0 0.16em #fff, 0 0 0 0.3em var(--rosegold), 0 0 1.2em 0.2em #f7a6c180;
+    box-shadow: 0 0 0 0.16em #fff, 0 0 0 0.3em var(--rosegold), 0 0 1.2em 0.2em #c3a6f280;
   }
   .pearl::before {
     content: ""; position: absolute; inset: -0.5em; border-radius: 10% 10% 3% 3%;
-    border: 0.34em dotted #fffdf6; filter: drop-shadow(0 0 1px #d9918a);
+    border: 0.34em dotted #fffdf6; filter: drop-shadow(0 0 1px #b39ad8);
   }
   /* 窓の上に乗るティアラ（人物より手前） */
   .tiara {
     inset: 0.4% 36% auto; height: 4.6%; z-index: 3;
     background: linear-gradient(180deg, #fff, var(--champ) 40%, var(--rosegold));
     mask: var(--crown) center / contain no-repeat;
-    filter: drop-shadow(0 0.08em 0.1em #b42a6866);
+    filter: drop-shadow(0 0.08em 0.1em #6b3fb866);
   }
-  .subject { filter: drop-shadow(0 6px 10px #b42a6844); }
+  .subject { filter: drop-shadow(0 6px 10px #6b3fb844); }
   .subject-shine {
-    background: linear-gradient(115deg, transparent 35%, #ffd1e0 46%, #fff 50%, #fff1c2 54%, transparent 65%) var(--mx) var(--my) / 260% 260% no-repeat;
+    background: linear-gradient(115deg, transparent 35%, #e2d4ff 46%, #fff 50%, #fff1c2 54%, transparent 65%) var(--mx) var(--my) / 260% 260% no-repeat;
   }
   /* コスト：ローズゴールドのメダル */
   .cost {
     left: 2.4%; top: 1.6%; width: 16.5%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
     background: radial-gradient(circle at 34% 28%, #fff 0 10%, var(--rose-2) 22%, var(--rose) 55%, var(--berry));
-    box-shadow: 0 0 0 0.12em #fff, 0 0 0 0.26em var(--rosegold), 0 0.3em 0.8em -0.2em #b42a6899;
+    box-shadow: 0 0 0 0.12em #fff, 0 0 0 0.26em var(--rosegold), 0 0.3em 0.8em -0.2em #6b3fb899;
   }
   .cost b { font: 700 2.2em/1 var(--f-num); color: #fff; text-shadow: 0 0.06em 0 var(--berry), 0 0 0.3em #fff8; }
   .rarity {
     right: 7%; top: 6%; font-size: 0.8em; letter-spacing: 0.12em; color: #fff; padding: 0.35em 0.9em; border-radius: 99px;
-    background: linear-gradient(90deg, var(--rosegold), var(--berry)); box-shadow: 0 0 0 0.1em #fff, 0 0 0.8em #f7a6c1;
+    background: linear-gradient(90deg, var(--rosegold), var(--berry)); box-shadow: 0 0 0 0.1em #fff, 0 0 0.8em #c3a6f2;
   }
   .name { display: grid; justify-items: center; }
   .name .epi {
     font: 700 0.68em/1 var(--f-body); letter-spacing: 0.3em; color: #fff; padding: 0.35em 1em; border-radius: 99px;
-    background: linear-gradient(90deg, #b42a68cc, #d9918acc);
+    background: linear-gradient(90deg, #6b3fb8cc, #b39ad8cc);
   }
   .name h3 {
     margin: 0.05em 0 0; font: 800 2.2em/1.05 var(--f-name); letter-spacing: 0.3em; padding-left: 0.3em; color: #fff;
@@ -241,8 +241,8 @@
   /* 効果：チケット（左にもぎり、境目は点線と切り欠き） */
   .ticket {
     display: grid; grid-template-columns: 2.1em 1fr;
-    background: linear-gradient(180deg, #fffdfd, #fff3f6);
-    border-radius: 0.6em; box-shadow: 0 0 0 0.12em var(--rosegold), 0 0.3em 1em -0.3em #b42a6866;
+    background: linear-gradient(180deg, #fffdfd, #f7f3ff);
+    border-radius: 0.6em; box-shadow: 0 0 0 0.12em var(--rosegold), 0 0.3em 1em -0.3em #6b3fb866;
     mask:
       radial-gradient(circle at 2.1em 0, transparent 0.42em, #000 0.45em) top / 100% 51% no-repeat,
       radial-gradient(circle at 2.1em 100%, transparent 0.42em, #000 0.45em) bottom / 100% 51% no-repeat;
@@ -258,10 +258,10 @@
   .label { font: 700 0.62em/1 var(--f-num); letter-spacing: 0.3em; color: var(--berry); }
   .chip.kaiwai { background: var(--rose-2); color: var(--berry); box-shadow: none; }
   .effect { font: 700 0.84em/1.55 var(--f-body); color: var(--ink); }
-  .effect .kw { color: var(--berry); background: linear-gradient(transparent 60%, #ffd1e0 60%); }
+  .effect .kw { color: var(--berry); background: linear-gradient(transparent 60%, #e2d4ff 60%); }
   .admit { font: 700 0.62em/1.2 var(--f-body); letter-spacing: 0.08em; color: var(--rosegold); }
   .glare {
-    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffffffcc 0%, #ffd1e030 25%, transparent 55%);
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffffffcc 0%, #e2d4ff30 25%, transparent 55%);
     mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);
   }
 }

@@ -23,6 +23,7 @@ export function validateDeck(deck: readonly string[], catalog: Catalog): string[
     const card = catalog[id];
     if (!card) errors.push(`存在しないカードです：${id}`);
     else if (card.token) errors.push(`トークンはデッキに入れられません：${id}`);
+    else if (card.retired) errors.push(`お蔵入りのカードはデッキに入れられません：${id}`);
     if (n > MAX_COPIES) errors.push(`同じカードは${MAX_COPIES}枚までです：${id}（${n}枚）`);
   }
   const attrs = deckAttributes(deck, catalog);

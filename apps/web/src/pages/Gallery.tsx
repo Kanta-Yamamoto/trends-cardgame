@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { ATTRIBUTES, type Attribute, type CardDef } from "@trends/cards";
+import { ATTRIBUTES, type Attribute, CARDS, type CardDef } from "@trends/cards";
 import { useState } from "react";
 import { fetchCards } from "../api/client";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { CardZoom } from "../game/CardZoom";
+
+/** お蔵入りのカード（同梱データの印で見る。API の DB には印の列が無い） */
+const RETIRED = new Set(CARDS.filter((c) => c.retired).map((c) => c.id));
 
 type Filter = Attribute | "共通" | null;
 
@@ -29,7 +32,7 @@ export function Gallery() {
   const group = (c: CardDef) => (c.attributes[0] ? ATTRIBUTES.indexOf(c.attributes[0]) : ATTRIBUTES.length);
   const match = (c: CardDef) =>
     !filter || (filter === "共通" ? c.attributes.length === 0 : c.attributes.includes(filter));
-  const cards = (data?.cards.filter((c) => !c.token && match(c)) ?? [])
+  const cards = (data?.cards.filter((c) => !c.token && !RETIRED.has(c.id) && match(c)) ?? [])
     .slice()
     .sort(
       (a, b) => b.rarity - a.rarity || group(a) - group(b) || a.cost - b.cost || a.id.localeCompare(b.id),
