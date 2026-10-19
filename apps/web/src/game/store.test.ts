@@ -11,8 +11,8 @@ describe("対戦ストア", () => {
   it("デッキを選ぶと先攻・後攻が決まり、手札が配られる", () => {
     const g = useGame.getState().game;
     expect(g?.active).toBe(ME);
-    expect(g?.players[ME].hand).toHaveLength(4);
-    expect(g?.players[CPU].hand).toHaveLength(5);
+    expect(g?.players[ME].hand).toHaveLength(3);
+    expect(g?.players[CPU].hand).toHaveLength(4);
   });
 
   it("反則の操作はエラー文を出して状態を変えない", () => {

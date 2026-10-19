@@ -151,26 +151,21 @@ export function MiniCard({
       {(keywords.length > 0 || view) && (
         <span className="mini-kws">
           {/* 場では本当に要る札だけ：ガードと状態。ほかのキーワードは押して見る */}
+          {/* 場の札は押しても解説を開かない（攻撃先を選ぶときの誤タップを防ぐ。解説は説明の帯から） */}
           {keywords
             .filter((k) => !onField || k === "ガード")
-            .map((k) => (
-              <HelpTerm key={k} term={k} className="mini-kw" />
-            ))}
-          {view?.exposed && (
-            <HelpTerm term="晒し者" className="mini-kw st">
-              晒し
-            </HelpTerm>
-          )}
-          {view?.asleep && (
-            <HelpTerm term="眠り" className="mini-kw st">
-              眠り
-            </HelpTerm>
-          )}
-          {view?.unit.silenced && (
-            <HelpTerm term="訂正済み" className="mini-kw st">
-              訂正
-            </HelpTerm>
-          )}
+            .map((k) =>
+              onField ? (
+                <span key={k} className="mini-kw">
+                  {k}
+                </span>
+              ) : (
+                <HelpTerm key={k} term={k} className="mini-kw" />
+              ),
+            )}
+          {view?.exposed && <span className="mini-kw st">晒し</span>}
+          {view?.asleep && <span className="mini-kw st">眠り</span>}
+          {view?.unit.silenced && <span className="mini-kw st">訂正</span>}
         </span>
       )}
       {/* 投稿は攻撃力・体力の代わりに、吹き出しの「投稿」札を出す（アイコンと見分けやすく） */}
