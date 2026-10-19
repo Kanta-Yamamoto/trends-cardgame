@@ -761,6 +761,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           uid={u.uid}
           card={card}
           view={view}
+          onField
           drop={`foe:${slot}`}
           className={`unit foe-unit enter ${hit || castable ? "targetable" : ""} ${drag?.over === `foe:${slot}` && (hit || castable) ? "drop-over" : ""}`}
           onClick={() => {
@@ -783,6 +784,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         uid={u.uid}
         card={card}
         view={view}
+        onField
         drop={`ally:${slot}`}
         className={`unit enter ${ready ? "ready" : "tired"} ${selected ? "selected" : ""} ${castable ? "targetable ally" : ""} ${castable && drag?.over === `ally:${slot}` ? "drop-over" : ""}`}
         onPress={ready ? (e) => begin(e, { kind: "unit", slot }) : undefined}
@@ -797,9 +799,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         onLongPress={() => setZoom(p)}
       >
         {ready && (
-          <em className="mini-ready">
-            {u.attacksLeft > 1 ? "2回攻撃" : u.rushOnly ? "凸攻撃" : "攻撃できる"}
-          </em>
+          <em className="mini-ready">{u.attacksLeft > 1 ? "2回攻撃可" : u.rushOnly ? "凸" : "攻撃可"}</em>
         )}
       </MiniCard>
     );

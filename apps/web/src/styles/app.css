@@ -118,7 +118,7 @@ button { font: inherit; color: inherit; }
 .mini-hp.hurt { color: var(--hurt); animation: hit 0.45s ease-out; }
 .t-atk { color: #ff6b74; }
 .t-hp { color: #6fb2ff; }
-.mini-ready { position: absolute; top: 6px; right: 6px; font-style: normal; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 99px; background: var(--gold); color: var(--night); }
+.mini-ready { position: absolute; top: 5px; right: 5px; font-style: normal; font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 99px; background: var(--gold); color: var(--night); }
 .mini.unit.tired { filter: saturate(0.6) brightness(0.8); }
 .mini.unit.ready { box-shadow: 0 0 0 1.5px var(--gold), 0 10px 22px -12px #000; }
 .mini.selected { transform: translateY(-8px) scale(1.04); box-shadow: 0 0 0 2px var(--gold), 0 0 26px #f2cf7a99; }
@@ -774,3 +774,12 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .help-dark-stats i { font-style: normal; }
 .help-dark-kw { font-size: 12px; font-weight: 800; color: var(--gold); }
 .help-dark-effect { margin: 0; font-size: 14px; line-height: 1.6; color: #fff; }
+
+/* ---------- 場のアイコン：絵と数値だけ（名前・属性・★は出さない。ガードと状態の札だけ、数値は小さめ） ---------- */
+.mini.on-field { grid-template-rows: 1fr auto auto; }
+.mini.on-field::before { background: linear-gradient(180deg, transparent 55%, #000a 100%); }
+.mini.on-field .mini-kws { grid-row: 2; justify-content: center; padding: 0 4px 2px; }
+.mini.on-field .mini-stats { grid-row: 3; padding: 0 4px 4px; }
+.mini.on-field .mini-atk, .mini.on-field .mini-hp { min-width: 21px; height: 21px; font-size: 12px; }
+.mini.on-field .mini-kw { font-size: 9px; padding: 1px 5px; }
+.mini.on-field.is-dark::before { background: linear-gradient(180deg, #2a0d3a22 40%, #07020bcc 100%); }
