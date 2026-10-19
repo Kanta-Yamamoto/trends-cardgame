@@ -1,6 +1,6 @@
 import { CARDS, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
-import { planTurn } from "./ai";
+import { autoSacrifice, planTurn } from "./ai";
 import { applyAction, createGame } from "./engine";
 import { planTurnSearch } from "./search";
 import type { GameState, RuleCard } from "./types";
@@ -10,7 +10,16 @@ const ids = Object.keys(DECKS) as (keyof typeof DECKS)[];
 
 // テストは軽めの設定で、時間制限なし（遅いマシンでも結果が変わらないように）
 const LIGHT = { beam: 8, maxNodes: 2500, finalists: 12, timeLimitMs: Number.POSITIVE_INFINITY };
+/** 『フィクサー』の差し出し待ちなら、待っている人が CPU の決め方で選ぶ（相手の手番の途中でも） */
+const settle = (s: GameState) => {
+  while (s.pending && !s.winner) {
+    const who = s.pending.waiting[0] ?? s.active;
+    s = applyAction(s, { type: "sacrifice", player: who, slot: autoSacrifice(s, who, real) }, real).state;
+  }
+  return s;
+};
 const runTurn = (s: GameState, smart: boolean) => {
+  s = settle(s);
   for (const a of smart ? planTurnSearch(s, s.active, real, LIGHT) : planTurn(s, s.active, real)) {
     s = applyAction(s, a, real).state;
     if (s.winner) break;

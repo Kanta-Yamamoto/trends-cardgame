@@ -1,6 +1,6 @@
 import { ATTRIBUTES, CARDS, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
-import { planTurn } from "./ai";
+import { autoSacrifice, planTurn } from "./ai";
 import { deckAttributes, encodeCustomDeck, resolveDeckRef, validateDeck } from "./deck";
 import {
   applyAction,
@@ -679,6 +679,15 @@ describe("CPU", () => {
             seed,
           });
           for (let t = 0; t < 100 && !s.winner; t++) {
+            // 『フィクサー』の差し出し待ちは、待っている人が選んでから続ける
+            while (s.pending && !s.winner) {
+              const who = s.pending.waiting[0] ?? s.active;
+              s = applyAction(
+                s,
+                { type: "sacrifice", player: who, slot: autoSacrifice(s, who, real) },
+                real,
+              ).state;
+            }
             for (const x of planTurn(s, s.active, real)) s = applyAction(s, x, real).state;
           }
           expect(s.winner).not.toBeNull();
