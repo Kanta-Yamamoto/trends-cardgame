@@ -165,7 +165,7 @@
     "epithet": "",
     "type": "icon",
     "rarity": 3,
-    "cost": 3,
+    "cost": 2,
     "attack": 1,
     "hp": 1,
     "attributes": ["草"],
@@ -1402,8 +1402,8 @@
     "epithet": "",
     "type": "icon",
     "rarity": 1,
-    "cost": 2,
-    "attack": 1,
+    "cost": 1,
+    "attack": 0,
     "hp": 1,
     "attributes": ["草"],
     "kaiwai": ["ミーム"],
@@ -1686,7 +1686,7 @@
     "epithet": "",
     "type": "icon",
     "rarity": 3,
-    "cost": 4,
+    "cost": 3,
     "attack": 2,
     "hp": 3,
     "attributes": ["草"],
@@ -2212,8 +2212,8 @@
     "type": "icon",
     "rarity": 5,
     "cost": 4,
-    "attack": 1,
-    "hp": 2,
+    "attack": 2,
+    "hp": 3,
     "attributes": ["草"],
     "kaiwai": ["ミーム"],
     "keywords": ["凸"],
@@ -2396,11 +2396,17 @@
       },
       {
         "on": "passive",
+        "do": "saunaField",
+        "heat": 1,
+        "heal": 2
+      },
+      {
+        "on": "passive",
         "do": "healBurn",
         "amount": 2
       }
     ],
-    "effect": "場に出たとき、自分のライフを3回復する。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
+    "effect": "場に出たとき、自分のライフを3回復する。場にいる間、フィールド「サウナ」。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
     "flavor": "「ととのったら、あなたの番」",
     "art": "/assets/cards/c10-art.jpg",
     "original": "assets/original/c10.webp",
@@ -2567,9 +2573,9 @@
     "epithet": "",
     "type": "icon",
     "rarity": 2,
-    "cost": 3,
+    "cost": 2,
     "attack": 1,
-    "hp": 3,
+    "hp": 2,
     "attributes": ["草"],
     "kaiwai": ["アイドル"],
     "keywords": [],
@@ -2767,7 +2773,7 @@
     "rarity": 2,
     "cost": 3,
     "attack": 2,
-    "hp": 2,
+    "hp": 3,
     "attributes": ["草"],
     "kaiwai": ["動物"],
     "keywords": ["凸"],
@@ -3354,6 +3360,29 @@
       ],
       "effect": "速攻。自分の草が、このゲームでオワコンに行った数だけ攻撃力+1。"
     }
+  },
+  {
+    "id": "c15",
+    "name": "『フィクサー』",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 5,
+    "cost": 4,
+    "attack": 2,
+    "hp": 3,
+    "attributes": [],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "sacrifice"
+      }
+    ],
+    "effect": "場に出たとき、自分と相手は、それぞれ自分のアイコンを1体選ぶ。選ばれたアイコンは倒される。",
+    "flavor": "その闇堕ち、仕込みです。",
+    "art": "/assets/cards/c15-art.jpg",
+    "subject": "/assets/cards/c15-subject.webp",
+    "original": "assets/original/c15.webp"
   },
   {
     "id": "i18",

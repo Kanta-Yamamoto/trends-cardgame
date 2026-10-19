@@ -18,6 +18,24 @@ export interface DeckSel {
   text: string;
   cards: string[];
   attrs: Attribute[];
+  /** デッキ選択のサムネに出す★5（エース）のカード ID */
+  ace?: string;
+}
+
+/**
+ * デッキのエース：入っている★5のうち、枚数が多く、コストが高いもの（絵のあるものだけ）。
+ * ★5が無ければ、いちばん★とコストが高いアイコン
+ */
+export function aceOf(cards: readonly string[]): string | undefined {
+  const counts = new Map<string, number>();
+  for (const id of cards) counts.set(id, (counts.get(id) ?? 0) + 1);
+  const pool = [...counts.keys()]
+    .map((id) => CATALOG[id] as CardDef | undefined)
+    .filter((c): c is CardDef => !!c && c.type === "icon" && !!c.art);
+  pool.sort(
+    (a, b) => b.rarity - a.rarity || (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0) || b.cost - a.cost,
+  );
+  return pool[0]?.id;
 }
 
 /** 自分で組んで端末に保存したデッキ */
@@ -36,7 +54,15 @@ export const attrsOf = (cards: readonly string[]) => deckAttributes(cards, CATAL
 
 export function builtinDeck(id: DeckId): DeckSel {
   const cards = [...DECKS[id]];
-  return { ref: id, name: DECK_INFO[id].name, text: DECK_INFO[id].text, cards, attrs: attrsOf(cards) };
+  const info = DECK_INFO[id];
+  return {
+    ref: id,
+    name: info.name,
+    text: info.text,
+    cards,
+    attrs: attrsOf(cards),
+    ace: info.ace ?? aceOf(cards),
+  };
 }
 
 export function customDeckSel(d: CustomDeck): DeckSel {
@@ -48,6 +74,7 @@ export function customDeckSel(d: CustomDeck): DeckSel {
     text: `${attrs.length > 0 ? attrs.join("×") : "共通"}。自分で組んだデッキ`,
     cards,
     attrs,
+    ace: aceOf(cards),
   };
 }
 

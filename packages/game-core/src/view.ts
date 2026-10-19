@@ -25,6 +25,14 @@ function swapIds<T>(value: T): T {
   return out as T;
 }
 
+/** 差し出し待ち（フィクサー）を、見る人の向きにする */
+function pendingFor(pending: GameState["pending"], viewer: PlayerId): GameState["pending"] {
+  if (!pending || viewer === "p1") return pending ?? null;
+  const picks: Partial<Record<PlayerId, number>> = {};
+  for (const [pid, slot] of Object.entries(pending.picks) as [PlayerId, number][]) picks[swapId(pid)] = slot;
+  return { ...pending, source: swapId(pending.source), waiting: pending.waiting.map(swapId), picks };
+}
+
 /** 見る人から見た対戦の状態（相手の手札・山札・乱数の種は隠す） */
 export function stateFor(state: GameState, viewer: PlayerId): GameState {
   const foe = opponent(viewer);
@@ -36,6 +44,7 @@ export function stateFor(state: GameState, viewer: PlayerId): GameState {
     seed: 0,
     active: viewer === "p1" ? state.active : swapId(state.active),
     winner: state.winner && (viewer === "p1" ? state.winner : swapId(state.winner)),
+    pending: pendingFor(state.pending, viewer),
     players: {
       p1: { ...mine, deck: hide(mine.deck) },
       p2: { ...theirs, deck: hide(theirs.deck), hand: hide(theirs.hand) },
@@ -47,7 +56,10 @@ export function stateFor(state: GameState, viewer: PlayerId): GameState {
 export function eventsFor(events: GameEvent[], viewer: PlayerId): GameEvent[] {
   return events.map((e) => {
     const hidden = e.type === "drew" && e.player !== viewer ? { ...e, cardId: HIDDEN_CARD } : e;
-    return viewer === "p1" ? hidden : swapIds(hidden);
+    if (viewer === "p1") return hidden;
+    const swapped = swapIds(hidden);
+    // 差し出しを待つ人の一覧も入れ替える
+    return swapped.type === "sacrificeAsk" ? { ...swapped, waiting: swapped.waiting.map(swapId) } : swapped;
   });
 }
 

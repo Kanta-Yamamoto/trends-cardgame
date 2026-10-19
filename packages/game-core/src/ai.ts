@@ -7,6 +7,7 @@ import {
   effectiveCost,
   isShielded,
   opponent,
+  sacrificeCandidates,
   viewUnit,
 } from "./engine";
 import type { Action, CastTarget, GameState, PlayerId, RuleCard, UnitView } from "./types";
@@ -179,10 +180,47 @@ function judgePost(
  */
 export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): Action[] {
   const actions: Action[] = [];
+  try {
+    return planTurnInner(start, player, catalog, actions);
+  } catch (e) {
+    // 相手の差し出し（フィクサー）を待つところで止める。続きは相手が選んだあとに考え直す
+    if (e === WAIT_FOE) return actions;
+    throw e;
+  }
+}
+
+const WAIT_FOE = Symbol("wait-foe");
+
+/**
+ * 差し出し（フィクサー）で差し出すアイコン。闇堕ちをまだ使っていない★5（倒されたら闇堕ちできる）があればそれを、
+ * なければいちばん価値の低いアイコン（トークンを先に）
+ */
+export function autoSacrifice(state: GameState, player: PlayerId, catalog: Catalog): number {
+  const slots = sacrificeCandidates(state, player);
+  const dark = slots.find((slot) => {
+    const u = state.players[player].field[slot];
+    return !!u && !u.token && !u.dark && !u.darkUsed && !!catalog[u.cardId]?.dark;
+  });
+  if (dark !== undefined) return dark;
+  const value = (slot: number) => {
+    const u = state.players[player].field[slot];
+    if (!u) return 0;
+    return (u.token ? 0 : 1) * 100 + worth(viewUnit(state, player, u, catalog));
+  };
+  return [...slots].sort((a, b) => value(a) - value(b))[0] ?? -1;
+}
+
+function planTurnInner(start: GameState, player: PlayerId, catalog: Catalog, actions: Action[]): Action[] {
   let state = start;
   const step = (a: Action) => {
     state = applyAction(state, a, catalog).state;
     actions.push(a);
+    if (state.pending?.waiting.includes(player)) {
+      const pick: Action = { type: "sacrifice", player, slot: autoSacrifice(state, player, catalog) };
+      state = applyAction(state, pick, catalog).state;
+      actions.push(pick);
+    }
+    if (state.pending) throw WAIT_FOE;
   };
   const foeId = opponent(player);
 

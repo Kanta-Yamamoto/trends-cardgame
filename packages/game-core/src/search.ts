@@ -1,4 +1,4 @@
-import { planTurn } from "./ai";
+import { autoSacrifice, planTurn } from "./ai";
 import {
   applyAction,
   attackTargets,
@@ -8,6 +8,7 @@ import {
   effectiveCost,
   hasPassive,
   opponent,
+  sacrificeCandidates,
   viewUnit,
 } from "./engine";
 import { type Action, CENTER_SLOT, type GameState, type PlayerId, type RuleCard } from "./types";
@@ -100,8 +101,30 @@ export function evaluate(state: GameState, player: PlayerId, catalog: Catalog): 
   return score;
 }
 
+/**
+ * 差し出し待ち（フィクサー）を、読みのためだけに片付けた盤面。待っている人は autoSacrifice で選んだことにする
+ */
+function settle(state: GameState, catalog: Catalog): GameState {
+  let s = state;
+  for (let i = 0; i < 2 && s.pending; i++) {
+    const pid = s.pending.waiting[0];
+    if (!pid) break;
+    s = applyAction(
+      s,
+      { type: "sacrifice", player: pid, slot: autoSacrifice(s, pid, catalog) },
+      catalog,
+    ).state;
+  }
+  return s;
+}
+
 /** 試す操作の一覧（同じカードの重複や、意味の同じ枠は省く） */
 function candidates(state: GameState, player: PlayerId, catalog: Catalog): Action[] {
+  // 差し出し待ち：自分が選ぶ番なら差し出す候補だけ。相手が選ぶ番なら、ここで手を止める
+  if (state.pending) {
+    if (!state.pending.waiting.includes(player)) return [];
+    return sacrificeCandidates(state, player).map((slot) => ({ type: "sacrifice" as const, player, slot }));
+  }
   const me = state.players[player];
   const out: Action[] = [];
   const empty = me.field.flatMap((u, slot) => (u ? [] : [slot]));
@@ -153,8 +176,9 @@ interface Node {
 
 /** ターンを終えて、相手が場のアイコンだけで殴り返したあとの盤面の点数 */
 function scoreAfterReply(node: Node, player: PlayerId, catalog: Catalog): number {
-  if (node.state.winner) return evaluate(node.state, player, catalog);
-  let s = applyAction(node.state, { type: "endTurn", player }, catalog).state;
+  const settled = settle(node.state, catalog);
+  if (settled.winner) return evaluate(settled, player, catalog);
+  let s = applyAction(settled, { type: "endTurn", player }, catalog).state;
   if (s.winner || s.active === player) return evaluate(s, player, catalog); // 追加ターンなど
   const foeId = opponent(player);
   // 相手の手札は分からないので、空にして「攻撃だけ」させる
@@ -213,7 +237,11 @@ export function planTurnSearch(
         }
         const sig = signature(state);
         if (all.has(sig)) continue;
-        const child: Node = { state, actions: [...node.actions, a], score: evaluate(state, player, catalog) };
+        const child: Node = {
+          state,
+          actions: [...node.actions, a],
+          score: evaluate(state.pending ? settle(state, catalog) : state, player, catalog),
+        };
         all.set(sig, child);
         if (state.winner === player) return [...child.actions];
         next.push(child);
@@ -233,5 +261,7 @@ export function planTurnSearch(
       best = n;
     }
   }
+  // 相手の差し出しを待つところで終わる手なら、ターン終了は付けない（相手が選んだあとに考え直す）
+  if (best.state.pending) return [...best.actions];
   return [...best.actions, { type: "endTurn", player }];
 }

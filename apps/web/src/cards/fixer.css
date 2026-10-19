@@ -1,0 +1,206 @@
+/* ★5 『フィクサー』（.s-fixer）だけのデザイン。白・黒・赤の3色。右半分だけがグリッチのホログラムになる */
+
+.s-fixer {
+  --red: #e0102f; --red-hi: #ff4d64; --silver: #d9d9de; --ink: #050506;
+  --cyan: #00e5ff; --mag: #ff2bd6;
+  --f-name: "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
+  --f-ui: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+  --f-num: "Cinzel", "Times New Roman", serif;
+  /* 右半分だけを見せるマスク（真ん中で少しぼかす） */
+  --right-half: linear-gradient(90deg, transparent 46%, #000 60%);
+
+  .card {
+    --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; --nx: 0; --ny: 0; --g: 0;
+    --art: url(/assets/cards/c15-art.jpg); --subject: url(/assets/cards/c15-subject.webp);
+    position: relative; width: 100%; aspect-ratio: 63 / 88; border-radius: 4.2% / 3%;
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transition: transform 0.12s ease-out;
+    overflow: hidden; isolation: isolate;
+    color: #fff; background: var(--ink);
+    box-shadow: 0 30px 70px -18px #000, 0 0 0 1px #ffffff26, 0 0 40px -14px #e0102f88;
+  }
+  .card-inner { position: absolute; inset: 0; font-size: calc(var(--w, 360px) / 24); }
+  .layer { position: absolute; inset: 0; }
+  .stats { font-size: 0.95em; }
+
+  /* 地：漆黒に、細い銀の格子（左は整い、右は横にずれる） */
+  .fx-ink {
+    background:
+      repeating-linear-gradient(90deg, #ffffff0c 0 1px, transparent 1px 1.6em),
+      repeating-linear-gradient(0deg, #ffffff08 0 1px, transparent 1px 1.6em),
+      linear-gradient(160deg, #18181b, #050506 45%, #111114 75%, #030304);
+  }
+  .fx-ink::after {
+    content: ""; position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 0.9em, #ff2bd61f 0.9em 1em, transparent 1em 2.3em, #00e5ff1c 2.3em 2.38em),
+      linear-gradient(90deg, transparent, #ffffff10);
+    mask: var(--right-half);
+    transform: translateX(calc(var(--nx) * 6px));
+  }
+
+  /* 窓：角を丸めない、切り抜いたような四角 */
+  .win { clip-path: inset(4.4% 5.2% 4.4% 5.2%); }
+  .bg {
+    background: var(--art) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * -7px), calc(var(--ny) * -7px)) scale(1.06);
+  }
+  /* 右半分の帯が、ときどき横に跳ねる（触れるカードだけ動く） */
+  .fx-slice {
+    background: var(--art) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * -7px), calc(var(--ny) * -7px)) scale(1.06);
+    clip-path: inset(100% 0 0 0);
+    filter: drop-shadow(-0.15em 0 0 #ff2bd6aa) drop-shadow(0.15em 0 0 #00e5ffaa);
+  }
+  /* 虹のホログラム：右半分だけ。傾けると流れる */
+  .fx-holo {
+    background:
+      repeating-linear-gradient(0deg, transparent 0 0.35em, #ffffff55 0.35em 0.42em, transparent 0.42em 1.1em),
+      linear-gradient(115deg, var(--cyan), #9dff6e, #fff36e, var(--mag), #8a7bff, var(--cyan));
+    background-size: 100% 100%, 300% 300%;
+    background-position: 0 calc(var(--ny) * 30px), var(--mx) var(--my);
+    mask: var(--right-half);
+    mix-blend-mode: color-dodge; opacity: calc(0.16 + var(--g) * 0.38);
+  }
+  /* 走査線 */
+  .fx-scan {
+    background: repeating-linear-gradient(180deg, #0000 0 2px, #00000014 2px 3px);
+    mask: var(--right-half);
+  }
+
+  /* 上から垂れる糸（裏で糸を引く）。傾けると揺れる */
+  .fx-strings {
+    background:
+      linear-gradient(90deg, transparent calc(14% - 0.5px), #ffffff55 14%, transparent calc(14% + 0.5px)),
+      linear-gradient(90deg, transparent calc(31% - 0.5px), #ffffff40 31%, transparent calc(31% + 0.5px)),
+      linear-gradient(90deg, transparent calc(63% - 0.5px), #ffffff4a 63%, transparent calc(63% + 0.5px)),
+      linear-gradient(90deg, transparent calc(86% - 0.5px), #ffffff38 86%, transparent calc(86% + 0.5px));
+    mask: linear-gradient(180deg, #000 0%, #000 30%, transparent 62%);
+    transform-origin: 50% 0; transform: skewX(calc(var(--nx) * -5deg));
+    opacity: calc(0.35 + var(--g) * 0.5); pointer-events: none;
+  }
+  .fx-strings::after {
+    /* 糸の先の小さな銀の環 */
+    content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 14% 33%, transparent 0.18em, #ffffffaa 0.2em 0.28em, transparent 0.3em),
+      radial-gradient(circle at 86% 28%, transparent 0.18em, #ffffff99 0.2em 0.28em, transparent 0.3em);
+  }
+
+  /* 窓のふち：左は銀の実線、右は赤と水色にずれて途切れる */
+  .fx-edge-l {
+    inset: 4.4% 5.2%; pointer-events: none;
+    box-shadow: 0 0 0 1px #000, 0 0 0 2px var(--silver), 0 0 0.8em #0009;
+    clip-path: inset(-1em 50% -1em -1em);
+  }
+  .fx-edge-r {
+    inset: 4.4% 5.2%; pointer-events: none;
+    clip-path: inset(-1em -1em -1em 50%);
+    background:
+      repeating-linear-gradient(180deg, var(--silver) 0 1.4em, transparent 1.4em 1.8em, var(--silver) 1.8em 2.1em, transparent 2.1em 2.9em) right / 2px 100% no-repeat,
+      repeating-linear-gradient(90deg, var(--silver) 0 1.6em, transparent 1.6em 2em, var(--silver) 2em 2.2em, transparent 2.2em 3em) top / 100% 2px no-repeat,
+      repeating-linear-gradient(90deg, var(--silver) 0 1.1em, transparent 1.1em 1.7em) bottom / 100% 2px no-repeat;
+    filter: drop-shadow(-2px 0 0 var(--red)) drop-shadow(2px 0 0 var(--cyan));
+    transform: translateX(calc(var(--nx) * 2px));
+  }
+
+  /* 切り抜き（左半分の「本物」の体だけ）が枠から上にはみ出す */
+  .subject {
+    background: var(--subject) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
+    clip-path: inset(0 5.2% 0 5.2%);
+    filter: drop-shadow(0 8px 12px #000a) drop-shadow(0 0 1px #000); pointer-events: none;
+  }
+  .subject-shine {
+    mask: var(--subject) center 20% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
+    clip-path: inset(0 5.2% 0 5.2%);
+    background: linear-gradient(115deg, transparent 38%, #fff 49%, #ffd0d6 51%, transparent 62%) var(--mx) var(--my) / 260% 260% no-repeat;
+    mix-blend-mode: soft-light; opacity: calc(0.15 + var(--g) * 0.5); pointer-events: none;
+  }
+
+  .rarity, .cost, .dark-tag { position: absolute; z-index: 3; }
+  /* コスト：黒いひし形に赤い数字 */
+  .cost {
+    left: 3%; top: 2.2%; width: 14%; aspect-ratio: 1; display: grid; place-items: center;
+  }
+  .cost::before {
+    content: ""; position: absolute; inset: 12%; transform: rotate(45deg);
+    background: linear-gradient(135deg, #1c1c20, #000);
+    box-shadow: 0 0 0 0.1em #000, 0 0 0 0.2em var(--silver), 0 0 0 0.3em #000, 0 0 1em #e0102f88;
+  }
+  .cost b {
+    position: relative; font: 800 2.1em/1 var(--f-num); color: var(--red-hi);
+    text-shadow: 0 0 0.3em #e0102fcc, 0.05em 0 0 #00e5ff66;
+  }
+  .rarity {
+    right: 7%; top: 5.6%; font-size: 0.72em; letter-spacing: 0.22em; color: var(--silver);
+    padding: 0.3em 0.6em; background: #000c; box-shadow: 0 0 0 1px #ffffff40;
+  }
+  .dark-tag {
+    right: 7%; top: 11%; font-size: 0.75em; font-weight: 800;
+    padding: 0.2em 0.6em; background: #000; color: #fff; box-shadow: 0 0 0 1px var(--red);
+  }
+
+  .plate { position: absolute; left: 5.2%; right: 5.2%; bottom: 4.4%; z-index: 2; display: grid; gap: 0.25em; }
+  .name { display: flex; align-items: baseline; gap: 0.4em; padding-left: 0.3em; }
+  .name .epi { font: 700 0.7em/1 var(--f-ui); letter-spacing: 0.15em; color: var(--silver); }
+  /* 名前：明朝の白。右にずれた赤と水色の残像 */
+  .name h3 {
+    position: relative; margin: 0; font: 800 2.15em/1.05 var(--f-name); letter-spacing: 0.02em; color: #fff;
+    text-shadow: -0.045em 0 0 #e0102fd0, 0.045em 0 0 #00e5ffa8, 0 0.06em 0.3em #000, 0 0 0.6em #000;
+  }
+  .name h3::after {
+    /* 右半分だけ、横に裂ける */
+    content: attr(data-text); position: absolute; left: 0; top: 0; color: #fff;
+    clip-path: inset(52% 0 22% 55%); transform: translateX(calc(0.08em + var(--nx) * 0.06em));
+    text-shadow: -0.06em 0 0 var(--mag), 0.06em 0 0 var(--cyan);
+  }
+
+  /* 効果：極秘の指令書（黒い紙、赤い判、上下に細い銀の線） */
+  .order {
+    display: grid; gap: 0.3em; padding: 0.5em 0.75em 0.5em;
+    background:
+      linear-gradient(#000000ea, #0a0a0cf2);
+    box-shadow: inset 0 1px 0 #ffffff55, inset 0 -1px 0 #ffffff30, 0 0.3em 1em -0.3em #000;
+  }
+  .order .head { display: flex; align-items: center; justify-content: space-between; gap: 0.4em; }
+  .stamp {
+    font: 800 0.72em/1 var(--f-name); letter-spacing: 0.3em; color: var(--red-hi);
+    padding: 0.25em 0.2em 0.25em 0.5em; border: 0.12em solid var(--red); transform: rotate(-4deg);
+    box-shadow: 0 0 0.6em -0.1em #e0102f99;
+  }
+  .chip { font-size: 0.68em; }
+  .chip.common { background: #fff; color: #000; }
+  .effect { margin: 0; font: 500 0.92em/1.5 var(--f-ui); color: #f2f2f4; text-wrap: pretty; }
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 0.4em; }
+  .client { font: 700 0.62em/1 var(--f-ui); letter-spacing: 0.18em; color: #8d8d95; }
+
+  .glare {
+    z-index: 4; pointer-events: none;
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffffff40 0%, #ffffff10 25%, transparent 55%);
+    mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.7);
+  }
+
+  /* 触れるカード（拡大・手札）だけ、右半分がときどき跳ねる */
+  .card.is-live .fx-slice { animation: fx-slice 4.2s steps(1) infinite; }
+  .card.is-live .name h3::after { animation: fx-tear 4.2s steps(1) infinite; }
+  .card.text-hidden .plate { opacity: 0; translate: 0 15%; pointer-events: none; }
+}
+
+@keyframes fx-slice {
+  0%, 84%, 100% { clip-path: inset(100% 0 0 0); translate: 0 0; }
+  86% { clip-path: inset(22% 0 66% 52%); translate: 0.6em 0; }
+  88% { clip-path: inset(48% 0 40% 50%); translate: -0.4em 0; }
+  90% { clip-path: inset(70% 0 18% 56%); translate: 0.9em 0; }
+  92% { clip-path: inset(34% 0 60% 50%); translate: -0.7em 0; }
+}
+@keyframes fx-tear {
+  0%, 84%, 100% { translate: 0 0; }
+  86% { translate: 0.15em 0; }
+  89% { translate: -0.12em 0; }
+  92% { translate: 0.25em 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .s-fixer .card.is-live .fx-slice, .s-fixer .card.is-live .name h3::after { animation: none; }
+}

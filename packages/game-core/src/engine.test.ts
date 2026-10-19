@@ -99,6 +99,13 @@ const catalog: Record<string, RuleCard> = {
   plotter: icon("plotter", 1, 4, 4, { effects: [{ on: "passive", do: "conspiracyWin" }] }),
   eater: icon("eater", 3, 1, 3, { effects: [{ on: "passive", do: "attackPerLostToken", card: "kusa" }] }),
   oldcard: icon("oldcard", 1, 1, 1, { retired: true }),
+  fixer: icon("fixer", 4, 2, 3, { effects: [{ do: "sacrifice" }] }),
+  yuzu: icon("yuzu", 4, 3, 4, {
+    effects: [
+      { on: "passive", do: "saunaField", heat: 1, heal: 2 },
+      { on: "passive", do: "healBurn", amount: 2 },
+    ],
+  }),
   hagashi: post("hagashi", 3, {
     effects: [
       { do: "damage", to: "allEnemies", amount: 1 },
@@ -475,6 +482,80 @@ describe("★5 の作り直し（ヒバナ・カグラ・専門家・陰謀論�
   });
   it("お蔵入りのカードはデッキに入れられない", () => {
     expect(validateDeck(["oldcard"], catalog).some((e) => e.includes("お蔵入り"))).toBe(true);
+  });
+});
+
+describe("差し出し（フィクサー）", () => {
+  it("自分と相手がそれぞれ自分のアイコンを1体選び、両方そろったら一度に倒される。選ぶまでほかの操作はできない", () => {
+    let s = withFoe(["wall", "fixer", "rush"], ["big", "guard"]);
+    s = play(s, 0, 0);
+    const r = run(s, { type: "play", player: "p1", handIndex: 0, slot: 1 });
+    s = r.state;
+    expect(r.events).toContainEqual({ type: "sacrificeAsk", player: "p1", waiting: ["p1", "p2"] });
+    expect(() => play(s, 0, 2)).toThrow(/差し出す/);
+    // フィクサー自身は選べない
+    expect(() => run(s, { type: "sacrifice", player: "p1", slot: 1 })).toThrow(/選べません/);
+    // 相手は自分の手番でなくても選べる
+    s = run(s, { type: "sacrifice", player: "p2", slot: 1 }).state;
+    expect(s.players.p2.field[1]).not.toBeNull();
+    expect(() => run(s, { type: "sacrifice", player: "p2", slot: 0 })).toThrow(/もう選んで/);
+    const done = run(s, { type: "sacrifice", player: "p1", slot: 0 });
+    s = done.state;
+    expect(s.pending).toBeNull();
+    expect(s.players.p1.field[0]).toBeNull();
+    expect(s.players.p2.field[1]).toBeNull();
+    expect(s.players.p1.field[1]?.cardId).toBe("fixer");
+    expect(done.events.filter((e) => e.type === "sacrificed")).toHaveLength(2);
+    // そのあとは普通に続けられる
+    s = play(s, 0, 2);
+    expect(s.players.p1.field[2]?.cardId).toBe("rush");
+  });
+  it("選べるアイコンが無い側は選ばない。どちらにも無ければ何も起きない", () => {
+    let s = withFoe(["fixer"], ["big"]);
+    s = play(s, 0, 0);
+    expect(s.pending?.waiting).toEqual(["p2"]);
+    let t = game(["fixer"]);
+    t = play(t, 0, 0);
+    expect(t.pending ?? null).toBeNull();
+  });
+  it("CPU：自分の差し出しは闇堕ちを使っていない★5を優先し、相手の選ぶ番で手を止める", () => {
+    let s = withFoe(["wall", "fixer"], ["big"]);
+    s = play(s, 0, 0);
+    const plan = planTurn(s, "p1", catalog);
+    const at = plan.findIndex((a) => a.type === "play" && s.players.p1.hand[a.handIndex] === "fixer");
+    expect(at).toBeGreaterThanOrEqual(0);
+    expect(plan[at + 1]).toEqual({ type: "sacrifice", player: "p1", slot: 0 });
+    expect(plan.at(-1)?.type).toBe("sacrifice");
+  });
+});
+
+describe("フィールド「サウナ」", () => {
+  it("持ち主のターンの始めに場の全員に熱1、そのターンの終わりに全員を2回復。回復は持ち主の回復の効果として1回", () => {
+    let s = withFoe(["yuzu"], ["wall", "rush"]);
+    s = play(s, 0, 0);
+    s = end(s);
+    // ターンの終わりの回復（回復した量が0でも1回と数える）で、ユズハの燃やすが働く
+    expect(s.players.p2.lp).toBe(18);
+    expect(s.players.p1.heals).toBe(1);
+    const r = run(s, { type: "endTurn", player: "p2" });
+    s = r.state;
+    expect(r.events).toContainEqual({ type: "sauna", player: "p1", phase: "heat", amount: 1 });
+    expect(s.players.p2.field[0]?.damage).toBe(1);
+    expect(s.players.p2.field[1]).toBeNull(); // 体力1は熱で倒れる
+    expect(s.players.p1.field[0]?.damage).toBe(1);
+    s = end(s);
+    expect(s.players.p2.field[0]?.damage).toBe(0);
+    expect(s.players.p1.field[0]?.damage).toBe(0);
+    expect(s.players.p2.lp).toBe(16);
+  });
+  it("相手のターンには熱も回復も起きない", () => {
+    let s = withFoe(["yuzu"], ["wall"]);
+    s = play(s, 0, 0);
+    s = end(s);
+    const r = run(s, { type: "endTurn", player: "p2" });
+    expect(r.events.filter((e) => e.type === "sauna")).toEqual([
+      { type: "sauna", player: "p1", phase: "heat", amount: 1 },
+    ]);
   });
 });
 

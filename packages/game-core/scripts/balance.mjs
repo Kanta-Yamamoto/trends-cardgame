@@ -5,7 +5,7 @@
 import { cpus } from "node:os";
 import { isMainThread, parentPort, Worker, workerData } from "node:worker_threads";
 import { CARDS, DECKS } from "@trends/cards";
-import { applyAction, createGame, DEFAULT_SEARCH, planTurnSearch } from "@trends/game-core";
+import { applyAction, autoSacrifice, createGame, DEFAULT_SEARCH, planTurnSearch } from "@trends/game-core";
 
 // 対戦で使う CPU と同じ探索の広さ（時間の上限だけ外す）
 const SEARCH = { ...DEFAULT_SEARCH, timeLimitMs: Number.POSITIVE_INFINITY };
@@ -23,17 +23,34 @@ function play(a, b, seed) {
   const own = { p1: 0, p2: 0 };
   const oshiTurn = { p1: 0, p2: 0 };
   const darkTurn = { p1: 0, p2: 0 };
+  const record = (r) => {
+    for (const e of r.events) {
+      if (e.type === "played" || e.type === "cast") used[e.player].add(e.cardId);
+      if (e.type === "played" && catalog[e.cardId]?.dark && !oshiTurn[e.player])
+        oshiTurn[e.player] = own[e.player];
+      if (e.type === "darkFall") darkTurn[e.player] = own[e.player];
+    }
+  };
   for (; turns < 80 && !s.winner; turns++) {
-    own[s.active]++;
+    // 差し出し待ちから続けるときは、同じターンの続きなので数えない
+    if (s.pending) turns--;
+    else own[s.active]++;
+    // 差し出し待ち（フィクサー）が残っていれば、待っている側が選ぶ（同じターンの続き）
+    while (s.pending && !s.winner) {
+      const pid = s.pending.waiting[0];
+      const r = applyAction(
+        s,
+        { type: "sacrifice", player: pid, slot: autoSacrifice(s, pid, catalog) },
+        catalog,
+      );
+      s = r.state;
+      record(r);
+    }
+    if (s.winner) break;
     for (const act of planTurnSearch(s, s.active, catalog, SEARCH)) {
       const r = applyAction(s, act, catalog);
       s = r.state;
-      for (const e of r.events) {
-        if (e.type === "played" || e.type === "cast") used[e.player].add(e.cardId);
-        if (e.type === "played" && catalog[e.cardId]?.dark && !oshiTurn[e.player])
-          oshiTurn[e.player] = own[e.player];
-        if (e.type === "darkFall") darkTurn[e.player] = own[e.player];
-      }
+      record(r);
       if (s.winner) break;
     }
   }

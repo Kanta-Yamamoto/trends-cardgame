@@ -1,4 +1,4 @@
-export { planTurn } from "./ai";
+export { autoSacrifice, planTurn } from "./ai";
 export {
   CUSTOM_DECK_PREFIX,
   deckAttributes,
@@ -17,12 +17,14 @@ export {
   createGame,
   darkReady,
   effectiveCost,
+  fieldOf,
   hasKeyword,
   inKaiwai,
   isShielded,
   legalTargets,
   opponent,
   previewAttack,
+  sacrificeCandidates,
   viewUnit,
 } from "./engine";
 export { nextRandom } from "./rng";

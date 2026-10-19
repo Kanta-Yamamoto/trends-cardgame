@@ -3,6 +3,7 @@ import {
   type Action,
   type AttackTarget,
   applyAction,
+  autoSacrifice,
   type CastTarget,
   createGame,
   type GameEvent,
@@ -16,24 +17,30 @@ import type { DeckSel } from "./decks";
 
 export const CATALOG: Record<string, CardDef> = Object.fromEntries(CARDS.map((c) => [c.id, c]));
 
-export const DECK_INFO: Record<DeckId, { name: string; text: string }> = {
+/** 構築済みデッキの名前・説明と、デッキ選択のサムネに出すエース（★5） */
+export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: string }> = {
   solo_flame: {
+    ace: "c2",
     name: "燃やし尽くす",
     text: "炎上だけ。速攻と凸で序盤から殴り切り、カグラの炎上商法で押し込み、ヒバナで盤面を返す。エースはレン・カグラ・ヒバナ",
   },
   solo_idol: {
+    ace: "m1",
     name: "推しに全振り",
     text: "メロいだけ。アイドルをそろえて育て、ラスサビで全員が跳ぶ。エースはトップアイドルとドームの歌姫 ミレイ",
   },
   solo_expert: {
+    ace: "c1",
     name: "有識者会議",
     text: "神だけ。有識者で引き続け、確実に除去して盤面を取る。エースは専門家・シロガネ・ヨミ",
   },
   solo_meme: {
+    ace: "c8",
     name: "草しか生えない",
     text: "草だけ。草で場を埋めて数で押し、倒された草を食べたクサハミで仕留める。エースはワラと大食いのクサハミ",
   },
   solo_heal: {
+    ace: "c10",
     name: "癒しの楽園",
     text: "癒しだけ。回復で粘って、回復するたびに相手を燃やす。エースはユズハ・ルリ・ナギ",
   },
@@ -94,6 +101,8 @@ interface GameStore {
   cast: (target?: CastTarget) => void;
   attack: (target: AttackTarget) => void;
   endTurn: () => void;
+  /** 差し出し（フィクサー）：自分のアイコンを1体選ぶ */
+  sacrifice: (slot: number) => void;
   /** オンライン対戦を始める（再接続のときも、届いた状態で呼び直す） */
   startOnline: (o: { deck: DeckSel; foeName: string; state: GameState; link: RemoteLink }) => void;
   /** サーバーから届いた1手を反映する（攻撃なら演出のあとで） */
@@ -282,10 +291,29 @@ export const useGame = create<GameStore>((set, get) => {
   const then = (r: boolean | Promise<boolean>, fn: (ok: boolean) => void) =>
     r instanceof Promise ? void r.then(fn) : fn(r);
 
+  /**
+   * 差し出し待ち（フィクサー）で CPU が選ぶ番なら、すぐ選ぶ。選び終えて CPU の手番に戻ったら、CPU を動かす。
+   * 自分（ME）が選ぶ番なら何もしない（画面で選んでもらう）
+   */
+  const settleCpu = () => {
+    if (get().mode !== "cpu") return;
+    const g = get().game;
+    if (!g || g.winner || !g.pending) return;
+    if (g.pending.waiting.includes(CPU))
+      dispatch({ type: "sacrifice", player: CPU, slot: autoSacrifice(g, CPU, CATALOG) });
+    const after = get().game;
+    if (after && !after.pending && !after.winner && after.active === CPU && !get().cpuBusy) runCpu();
+  };
+
   /** CPU のターンを planTurnSearch（先読みする CPU）の通りに1手ずつ進める */
   const runCpu = () => {
     const game = get().game;
     if (!game || game.winner || game.active !== CPU) return;
+    // 差し出し待ち：CPU が選ぶ番なら選ぶ。自分（ME）が選ぶ番なら、選んでもらうまで待つ
+    if (game.pending) {
+      if (game.pending.waiting.includes(CPU)) settleCpu();
+      return;
+    }
     const my = runId;
     const actions = planTurnSearch(game, CPU, CATALOG);
     set({ cpuBusy: true, selection: null });
@@ -293,9 +321,9 @@ export const useGame = create<GameStore>((set, get) => {
     const finish = () => {
       if (my !== runId) return;
       set({ cpuBusy: false });
-      // 追加のターンなら、続けてもう一度 CPU が動く
+      // 追加のターンなら、続けてもう一度 CPU が動く（差し出し待ちのときは、選び終わるまで待つ）
       const g = get().game;
-      if (g && !g.winner && g.active === CPU) runCpu();
+      if (g && !g.winner && g.active === CPU && !g.pending) runCpu();
     };
     if (delay <= 0) {
       for (const a of actions) if (!dispatch(a)) break;
@@ -308,6 +336,8 @@ export const useGame = create<GameStore>((set, get) => {
       const a = actions[i++];
       const g = get().game;
       if (!a || !g || g.winner) return finish();
+      // 相手（ME）の差し出しを待っている間は止まる（選んだら settleCpu から続きを考え直す）
+      if (g.pending && !g.pending.waiting.includes(CPU)) return finish();
       if (a.type === "attack" && presenter) await presenter.beforeAttack(g, a);
       if ((a.type === "play" || a.type === "cast") && presenter?.revealFoe) {
         const id = g.players[CPU].hand[a.handIndex];
@@ -386,7 +416,18 @@ export const useGame = create<GameStore>((set, get) => {
             ? { type: "darkFall", player: ME, cardId: sel.cardId, slot }
             : null;
       if (!a) return;
-      then(commit(a), (ok) => ok && set({ selection: null }));
+      then(commit(a), (ok) => {
+        if (!ok) return;
+        set({ selection: null });
+        settleCpu();
+      });
+    },
+    sacrifice: (slot) => {
+      const g = get().game;
+      if (!g?.pending?.waiting.includes(ME) || get().animating) return;
+      if (!dispatch({ type: "sacrifice", player: ME, slot })) return;
+      set({ selection: null });
+      settleCpu();
     },
     cast: (target) => {
       const sel = get().selection;
