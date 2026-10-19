@@ -799,9 +799,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         onLongPress={() => setZoom(p)}
       >
         {ready && (
-          <em className="mini-ready">
-            {u.attacksLeft > 1 ? "2回攻撃可" : u.rushOnly ? "凸" : "攻撃可"}
-          </em>
+          <em className="mini-ready">{u.attacksLeft > 1 ? "2回攻撃可" : u.rushOnly ? "凸" : "攻撃可"}</em>
         )}
       </MiniCard>
     );
