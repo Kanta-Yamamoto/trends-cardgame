@@ -765,8 +765,9 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         if (!u.canAttack) {
           u.canAttack = true;
           u.attacksLeft = hasKeyword(u, "連撃", catalog) ? 2 : 1;
-        }
-        u.rushOnly = false;
+          // 凸を付ける版：まだ動けなかったアイコンは、相手のアイコンにだけ攻撃できる
+          u.rushOnly = !!e.totsu;
+        } else if (!e.totsu) u.rushOnly = false;
         if (slot !== ctx.selfSlot && e.attack) {
           u.atkBuff += e.attack;
           emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: 0 });
