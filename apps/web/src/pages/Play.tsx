@@ -27,7 +27,7 @@ import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { CardZoom } from "../game/CardZoom";
 import { type DarkCut, DarkCutscene } from "../game/DarkCutscene";
-import { builtinDeck, customDeckSel, type DeckSel, loadCustomDecks } from "../game/decks";
+import { builtinDeck, customDeckSel, type DeckSel, deckErrors, loadCustomDecks } from "../game/decks";
 import {
   animateAttack,
   animateDraw,
@@ -274,7 +274,12 @@ export function DeckGrid({
   confirmLabel?: string;
 }) {
   const [pending, setPending] = useState<DeckSel | null>(null);
-  const [mine] = useState(() => loadCustomDecks());
+  // 決まりを守れていない自分のデッキ（属性が2つの、前に組んだデッキなど）は選べない。デッキ構築で直してもらう
+  const [{ mine, broken }] = useState(() => {
+    const all = loadCustomDecks();
+    const ok = all.filter((d) => deckErrors(d.cards).length === 0);
+    return { mine: ok, broken: all.length - ok.length };
+  });
   const pick = (sel: DeckSel) => (confirmLabel ? setPending(sel) : onPick(sel));
   const button = (sel: DeckSel) => (
     <button
@@ -299,7 +304,13 @@ export function DeckGrid({
       </div>
       <div className="decks">
         {mine.map((d) => customDeckSel(d)).map(button)}
-        {mine.length === 0 && (
+        {broken > 0 && (
+          <p className="muted deck-empty">
+            決まり（属性は1つ＋共通カード）を守れていないデッキが {broken}{" "}
+            個あります。「デッキを組む」で直すと選べます
+          </p>
+        )}
+        {mine.length === 0 && broken === 0 && (
           <p className="muted deck-empty">
             まだありません。「デッキを組む」から、30枚のデッキを自由に作れます
           </p>

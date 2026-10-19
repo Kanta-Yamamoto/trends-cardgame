@@ -176,6 +176,6 @@ export interface CardDef {
 export const ATTRIBUTES: readonly Attribute[] = ["炎上", "メロい", "癒し", "草", "神"];
 export const KAIWAI: readonly Kaiwai[] = ["ミーム", "アイドル", "配信者", "有識者", "動物"];
 export const DECK_SIZE = 30;
-/** 1つのデッキに入れられる属性の数（共通カードは数えない） */
-export const MAX_DECK_ATTRIBUTES = 2;
+/** 1つのデッキに入れられる属性の数（共通カードは数えない）。初期リリースは単属性だけ（2026-10-19 に 2→1） */
+export const MAX_DECK_ATTRIBUTES = 1;
 export const MAX_COPIES = 3;

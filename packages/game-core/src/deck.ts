@@ -12,7 +12,7 @@ export function deckAttributes(deck: readonly string[], catalog: Catalog): strin
 
 /**
  * デッキの決まりを確かめ、守れていないところを日本語で返す（空なら OK）。
- * 30枚・同じカードは3枚まで・トークンは入れられない・属性は2つまで（共通カードはいくつでも）
+ * 30枚・同じカードは3枚まで・トークンは入れられない・属性は MAX_DECK_ATTRIBUTES（今は1つ）まで（共通カードはいくつでも）
  */
 export function validateDeck(deck: readonly string[], catalog: Catalog): string[] {
   const errors: string[] = [];
@@ -27,12 +27,12 @@ export function validateDeck(deck: readonly string[], catalog: Catalog): string[
   }
   const attrs = deckAttributes(deck, catalog);
   if (attrs.length > MAX_DECK_ATTRIBUTES)
-    errors.push(`属性は${MAX_DECK_ATTRIBUTES}つまでです（今は ${attrs.join("・")}）`);
+    errors.push(`属性は${MAX_DECK_ATTRIBUTES}つまでです（共通カードは数えません。今は ${attrs.join("・")}）`);
   return errors;
 }
 
 /**
- * デッキの指し方。構築済みデッキは ID（"flame" など）、自分で組んだデッキは "custom:" に続けてカード ID をカンマでつなぐ
+ * デッキの指し方。構築済みデッキは ID（"solo_flame" など）、自分で組んだデッキは "custom:" に続けてカード ID をカンマでつなぐ
  * （例 "custom:f1,f1,f7,…"）。オンライン対戦でサーバーに送るのも、対戦の記録に残すのもこの文字列
  */
 export const CUSTOM_DECK_PREFIX = "custom:";

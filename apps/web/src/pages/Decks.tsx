@@ -6,6 +6,7 @@ import {
   DECK_SIZE,
   type DeckId,
   MAX_COPIES,
+  MAX_DECK_ATTRIBUTES,
 } from "@trends/cards";
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
@@ -83,8 +84,8 @@ export function Decks() {
       <header className="page-head">
         <h1>デッキ構築</h1>
         <p className="muted">
-          {DECK_SIZE} 枚ちょうど・同じカードは {MAX_COPIES} 枚まで・属性は 2
-          つまで（共通カードはいくつでも）。 保存したデッキは、この端末の「CPU
+          {DECK_SIZE} 枚ちょうど・同じカードは {MAX_COPIES} 枚まで・属性は {MAX_DECK_ATTRIBUTES}{" "}
+          つ（共通カードはいくつでも）。 保存したデッキは、この端末の「CPU
           と対戦」「オンライン対戦」で選べます。
         </p>
       </header>
@@ -193,7 +194,7 @@ function DeckEditor({
     if ((counts.get(c.id) ?? 0) >= MAX_COPIES) return false;
     if (total >= DECK_SIZE) return false;
     const a = c.attributes[0];
-    if (a && !attrs.includes(a) && attrs.length >= 2) return false;
+    if (a && !attrs.includes(a) && attrs.length >= MAX_DECK_ATTRIBUTES) return false;
     return true;
   };
   const add = (id: string) => setCounts((m) => new Map(m).set(id, (m.get(id) ?? 0) + 1));

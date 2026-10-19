@@ -30,7 +30,7 @@ const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 /**
  * デッキの指し方（構築済みの ID か "custom:…"）からカードの並びを得る。決まりを守っていなければ BadRequest。
- * 自分で組んだデッキも、サーバー側で 30枚・3枚まで・属性2つまでを確かめる
+ * 自分で組んだデッキも、サーバー側で 30枚・3枚まで・属性1つ＋共通を確かめる
  */
 export function deckCards(ref: unknown): string[] {
   const cards = resolveDeckRef(ref, DECKS);
@@ -40,7 +40,6 @@ export function deckCards(ref: unknown): string[] {
     throw new BadRequestException(`デッキの決まりを守っていません：${errors.join("、")}`);
   return cards;
 }
-export const isDeckRef = (d: unknown): d is string => resolveDeckRef(d, DECKS) !== null;
 
 export interface MatchInfo {
   code: string;
@@ -134,7 +133,8 @@ export class MatchesService {
     const people = await this.db.select().from(users).where(inArray(users.id, ids));
     const who = (id: string | null, deck: string | null) => {
       const u = people.find((p) => p.id === id);
-      return u && isDeckRef(deck) ? { id: u.id, name: u.name, deck } : null;
+      // 前に作られた部屋は、もう無い構築済みデッキの ID を持っていることがある。表示と再接続のために、文字列ならそのまま返す
+      return u && typeof deck === "string" ? { id: u.id, name: u.name, deck } : null;
     };
     return {
       code: row.code,

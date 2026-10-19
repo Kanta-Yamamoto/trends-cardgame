@@ -7,7 +7,7 @@ import { actionFor, actionFrom, eventsFor, HIDDEN_CARD, stateFor } from "./view"
 const catalog = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string, RuleCard>;
 const game = () =>
   createGame({
-    decks: { p1: DECKS.flame, p2: DECKS.idol },
+    decks: { p1: DECKS.solo_flame, p2: DECKS.solo_idol },
     seed: 5,
     first: "p1",
   });

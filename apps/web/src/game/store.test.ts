@@ -5,7 +5,7 @@ import { CATALOG, CPU, ME, useGame } from "./store";
 describe("対戦ストア", () => {
   beforeEach(() => {
     useGame.setState({ cpuDelay: 0 });
-    useGame.getState().start(builtinDeck("idol"), { seed: 7, first: ME });
+    useGame.getState().start(builtinDeck("solo_idol"), { seed: 8, first: ME });
   });
 
   it("デッキを選ぶと先攻・後攻が決まり、手札が配られる", () => {
@@ -37,7 +37,7 @@ describe("対戦ストア", () => {
   });
 
   it("CPU が先攻ならすぐ CPU が1ターン動く", () => {
-    useGame.getState().start(builtinDeck("flame"), { seed: 3, first: CPU });
+    useGame.getState().start(builtinDeck("solo_flame"), { seed: 3, first: CPU });
     expect(useGame.getState().game?.active).toBe(ME);
     expect(useGame.getState().game?.turn).toBe(2);
   });
