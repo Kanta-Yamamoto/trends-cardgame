@@ -92,9 +92,10 @@ export function CardZoom({
               ))}
             </dl>
           )}
-          {live && (live.exposed || live.asleep || live.unit.silenced) && (
+          {live && (live.exposed || live.unit.exposeAtTurnEnd || live.asleep || live.unit.silenced) && (
             <ul className="zs-states">
-              {live.exposed && <li>晒し者：ガードを無視して攻撃される</li>}
+              {live.exposed && <li>晒し者：ガードを失い、それまでの強化が消えた</li>}
+              {live.unit.exposeAtTurnEnd && <li>炎上商法：このターンの終わりに晒し者になる</li>}
               {live.asleep && <li>眠っている：このターンは攻撃できない</li>}
               {live.unit.silenced && <li>訂正済み：キーワードと効果が消えている</li>}
             </ul>

@@ -68,7 +68,6 @@ function unitValue(state: GameState, owner: PlayerId, slot: number, catalog: Cat
     if (lasting) value += WEIGHTS.lasting;
   }
   if (v.asleep) value -= v.attack * 0.5;
-  if (v.exposed) value -= 0.5;
   return value;
 }
 
@@ -127,7 +126,7 @@ function signature(state: GameState): string {
     state.players[p].field
       .map((u) =>
         u
-          ? `${u.cardId}.${u.damage}.${u.attacksLeft}.${u.atkBuff}.${u.hpBuff}.${+u.dark}.${u.exposedUntil}.${+!!u.rushOnly}`
+          ? `${u.cardId}.${u.damage}.${u.attacksLeft}.${u.atkBuff}.${u.hpBuff}.${+u.dark}.${+!!u.exposed}.${+!!u.exposeAtTurnEnd}.${+!!u.rushOnly}`
           : "_",
       )
       .join(",");

@@ -128,7 +128,7 @@
         "count": 1
       }
     ],
-    "effect": "相手のアイコン1体を晒し者にする（強化が消え、次の自分のターンが終わるまで、ガードを無視して攻撃できる）。カードを1枚引く。",
+    "effect": "相手のアイコン1体を晒し者にする（ガードと強化が消える）。カードを1枚引く。",
     "flavor": "魚拓は取った。",
     "target": "enemyIcon",
     "art": "/assets/cards/f4-art.jpg",
@@ -153,7 +153,7 @@
         "do": "expose"
       }
     ],
-    "effect": "相手のアイコン1体に3ダメージ。そのアイコンを晒し者にする（強化が消える）。",
+    "effect": "相手のアイコン1体に3ダメージ。そのアイコンを晒し者にする（ガードと強化が消える）。",
     "flavor": "トレンド1位、おめでとう。",
     "target": "enemyIcon",
     "art": "/assets/cards/f5-art.jpg",
@@ -608,16 +608,17 @@
     "epithet": "",
     "type": "post",
     "rarity": 4,
-    "cost": 4,
+    "cost": 3,
     "attributes": ["癒し"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
       {
-        "do": "cleanse"
+        "do": "cleanse",
+        "to": "allEnemies"
       }
     ],
-    "effect": "場のすべてのアイコンの強化と状態を消し、闇堕ちしたアイコンを表に戻す。",
+    "effect": "相手のアイコンすべての強化と状態を消し、闇堕ちした相手のアイコンを元の姿に戻す。",
     "flavor": "殺伐としたTLに、一筋の光。",
     "art": "/assets/cards/i6-art.jpg",
     "original": "assets/original/i6.webp"
@@ -783,7 +784,7 @@
       "attack": 6,
       "hp": 4,
       "keywords": ["凸", "連撃"],
-      "effect": "凸。連撃。闇堕ちしたとき、相手のアイコンすべてを晒し者にし（強化が消える）、相手のマスターに3ダメージ。",
+      "effect": "凸。連撃。闇堕ちしたとき、相手のアイコンすべてを晒し者にし（ガードと強化が消える）、相手のマスターに3ダメージ。",
       "art": "/assets/cards/g4-dark-art.jpg",
       "subject": "/assets/cards/g4-dark-subject.webp",
       "original": "assets/original/g4-dark.webp",
@@ -1027,7 +1028,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（強化が消える）。",
+    "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（ガードと強化が消える）。",
     "flavor": "なになに、燃えてるの？",
     "art": "/assets/cards/f6-art.jpg",
     "original": "assets/original/f6.webp"
@@ -1071,14 +1072,19 @@
     "attributes": ["炎上"],
     "kaiwai": [],
     "keywords": [],
+    "target": "allyIcon",
     "effects": [
       {
-        "do": "damage",
-        "to": "enemyMaster",
-        "amount": 2
+        "do": "buff",
+        "attack": 3,
+        "hp": 0,
+        "thisTurn": true
+      },
+      {
+        "do": "exposeAtTurnEnd"
       }
     ],
-    "effect": "相手のマスターに2ダメージ。",
+    "effect": "自分のアイコン1体に、このターン攻撃力+3。自分のターンの終わりに、そのアイコンを晒し者にする（ガードと強化が消える）。",
     "flavor": "燃えれば勝ち。",
     "art": "/assets/cards/f8-art.jpg",
     "original": "assets/original/f8.webp"
@@ -1132,7 +1138,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "速攻。場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（強化が消える）。",
+    "effect": "速攻。場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（ガードと強化が消える）。",
     "flavor": "次は、あなたの番。",
     "art": "/assets/cards/f10-art.jpg",
     "original": "assets/original/f10.webp"
@@ -1160,7 +1166,7 @@
         "amount": 2
       }
     ],
-    "effect": "場に出たとき、相手のアイコンすべてを晒し者にして（強化が消える）、2ダメージ。",
+    "effect": "場に出たとき、相手のアイコンすべてを晒し者にして（ガードと強化が消える）、2ダメージ。",
     "flavor": "「燃えるなら、派手にいこうよ」",
     "art": "/assets/cards/c4-art.jpg",
     "original": "assets/original/c4.webp"
@@ -1755,7 +1761,7 @@
         "do": "expose"
       }
     ],
-    "effect": "相手のアイコン1体に1ダメージ。そのアイコンを晒し者にする（強化が消える）。",
+    "effect": "相手のアイコン1体に1ダメージ。そのアイコンを晒し者にする（ガードと強化が消える）。",
     "flavor": "そこ、もっと燃えますよ。",
     "target": "enemyIcon",
     "art": "/assets/cards/f12-art.jpg",
@@ -1806,7 +1812,7 @@
         "amount": 2
       }
     ],
-    "effect": "相手のアイコンすべてを晒し者にし（強化が消える）、相手のマスターに2ダメージ。",
+    "effect": "相手のアイコンすべてを晒し者にし（ガードと強化が消える）、相手のマスターに2ダメージ。",
     "flavor": "ネットは、忘れない。",
     "art": "/assets/cards/f14-art.jpg",
     "original": "assets/original/f14.webp"
@@ -2571,7 +2577,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "速攻。場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（強化が消える）。",
+    "effect": "速攻。場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（ガードと強化が消える）。",
     "flavor": "炎上も、センターで。",
     "art": "/assets/cards/f16-art.jpg",
     "original": "assets/original/f16.webp"
@@ -2959,6 +2965,35 @@
     "flavor": "うちの方が、待遇いいよ。",
     "art": "/assets/cards/m18-art.jpg",
     "original": "assets/original/m18.webp"
+  },
+  {
+    "id": "m20",
+    "name": "剥がし",
+    "epithet": "",
+    "type": "post",
+    "rarity": 3,
+    "cost": 3,
+    "attributes": ["メロい"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "damage",
+        "to": "allEnemies",
+        "amount": 1
+      },
+      {
+        "do": "damage",
+        "to": "allEnemies",
+        "amount": 1,
+        "if": {
+          "kaiwai": "アイドル",
+          "atLeast": 1
+        }
+      }
+    ],
+    "effect": "相手のアイコンすべてに1ダメージ。自分の場にアイドルがいれば、さらに1ダメージ。",
+    "flavor": "はい、お時間でーす。"
   },
   {
     "id": "c11",

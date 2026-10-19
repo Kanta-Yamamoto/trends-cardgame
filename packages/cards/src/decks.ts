@@ -27,7 +27,6 @@ export const DECKS = {
   solo_idol: build({
     m3: 2,
     m11: 2,
-    m8: 1,
     m12: 3,
     m13: 3,
     m17: 2,
@@ -38,9 +37,9 @@ export const DECKS = {
     m14: 1,
     m18: 1,
     m1: 2,
-    m2: 1,
     c6: 1,
     c13: 2,
+    m20: 2,
   }),
   /** 神だけ：有識者で引き続け、除去で盤面を取る。専門家・シロガネ・ヨミ */
   solo_expert: build({
@@ -85,8 +84,8 @@ export const DECKS = {
   }),
   /** 癒しだけ：回復で粘って、回復するたびに燃やす。ユズハ（2枚）・ルリ・ナギ */
   solo_heal: build({
-    i1: 2,
-    i7: 2,
+    i1: 1,
+    i7: 1,
     i11: 3,
     i10: 2,
     i4: 2,
@@ -102,6 +101,7 @@ export const DECKS = {
     c5: 1,
     i20: 1,
     i13: 1,
+    i6: 2,
   }),
 };
 export type DeckId = keyof typeof DECKS;

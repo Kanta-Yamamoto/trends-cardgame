@@ -52,17 +52,21 @@ export type CardEffect = (
   /** passive：自分の場のほかのアイコン1体につき攻撃力+1 */
   /** 自分の場のほかのアイコン1体につき攻撃力+1。kaiwai を付けると、その界隈だけ数える */
   | { do: "attackPerAlly"; kaiwai?: Kaiwai }
-  /** 晒し者にする（強化が消え、ガードを無視して攻撃される）。to が無ければ投稿の対象を */
+  /** 晒し者にする（ガードを失い、それまでの強化がすべて消える。ずっと続く）。to が無ければ投稿の対象を */
   | { do: "expose"; to?: "strongestEnemy" | "allEnemies" }
+  /** 投稿の対象（自分のアイコン）を、自分のターンの終わりに晒し者にする（炎上商法） */
+  | { do: "exposeAtTurnEnd" }
   /** to が無ければ投稿の対象を眠らせる */
   | { do: "bind"; to?: "strongestEnemy" | "allEnemies" }
   /** to が無ければ投稿の対象を訂正する */
   | { do: "silence"; to?: "strongestEnemy" }
   /** 攻撃力を下げる。to が無ければ投稿の対象、allEnemies なら相手のアイコンすべて */
   | { do: "weaken"; attack: number; to?: "allEnemies" }
-  | { do: "buff"; attack: number; hp: number }
+  /** 投稿の対象に強化。thisTurn なら攻撃力はこのターンだけ（ターンの終わりに消える） */
+  | { do: "buff"; attack: number; hp: number; thisTurn?: boolean }
   | { do: "fill"; card: string }
-  | { do: "cleanse" }
+  /** 強化と状態を消し、闇堕ちしたアイコンを元の姿に戻す。to が allEnemies なら相手のアイコンだけ（無ければ場のすべて） */
+  | { do: "cleanse"; to?: "allEnemies" }
   /** 攻撃力 maxAttack 以下の相手のアイコンのうち、いちばん強い1体を自分の場に奪う */
   /** 攻撃力 maxAttack 以下の相手のアイコンを奪う（いちばん強いもの。投稿の対象があればそれ） */
   | { do: "steal"; maxAttack: number }

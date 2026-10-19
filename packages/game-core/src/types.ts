@@ -42,8 +42,10 @@ export interface Unit {
   /** 闇堕ちの姿になっているか／一度闇堕ちしたか */
   dark: boolean;
   darkUsed: boolean;
-  /** このターン数までは晒し者（ガードを無視して攻撃される） */
-  exposedUntil: number;
+  /** 晒し者（ガードを失い、晒された時点で強化が消えた。ずっと続く。TL浄化で消える） */
+  exposed: boolean;
+  /** 自分のターンの終わりに晒し者になる（炎上商法） */
+  exposeAtTurnEnd?: boolean;
   /** このターン数までは眠っていて攻撃できない */
   boundUntil: number;
   /** キーワードと効果が消されている（コミュニティノート） */

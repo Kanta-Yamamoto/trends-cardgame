@@ -35,7 +35,6 @@ function judgePost(
   const foes = views(state, foeId, catalog);
   const ready = mine.filter((x) => canUnitAttack(state, x.v.unit));
   const effects = card.effects.map((e) => e.do);
-  const foeGuarded = foes.some((x) => x.v.guard);
   const enemy = (slot: number): CastTarget => ({ side: "enemy", slot });
 
   const dmg = (to: string) =>
@@ -98,9 +97,12 @@ function judgePost(
       .map((x) => ({ x, b: Math.max(0, x.v.unit.atkBuff) + Math.max(0, x.v.unit.hpBuff) }))
       .sort((a, b) => b.b - a.b)[0];
     if (buffed && buffed.b >= 2) return { score: 8 + buffed.b * 3, target: enemy(buffed.x.slot) };
-    if (!foeGuarded || ready.length === 0) return foes[0] ? { score: 2, target: enemy(foes[0].slot) } : null;
-    const t = foes.filter((x) => !x.v.guard).sort((a, b) => worth(b.v) - worth(a.v))[0];
-    return t ? { score: 14, target: enemy(t.slot) } : null;
+    // 晒すとガードを失う：ガードが1体だけなら、晒せばマスターまで通る
+    const guards = foes.filter((x) => x.v.guard);
+    const only = guards.length === 1 ? guards[0] : undefined;
+    if (only && ready.length > 0) return { score: 14, target: enemy(only.slot) };
+    const t = guards.sort((a, b) => worth(b.v) - worth(a.v))[0] ?? foes.filter((x) => !x.v.exposed)[0];
+    return t ? { score: guards.length > 0 ? 6 : 2, target: enemy(t.slot) } : null;
   }
   if (effects.includes("bind")) {
     const t = foes.filter((x) => !x.v.asleep).sort((a, b) => b.v.attack - a.v.attack)[0];
@@ -115,6 +117,9 @@ function judgePost(
     return t ? { score: t.v.attack * 3, target: enemy(t.slot) } : null;
   }
   if (effects.includes("buff") && card.target === "allyIcon") {
+    // このターンだけの強化（炎上商法）は、今攻撃できるアイコンにしか意味がない
+    const temporary = card.effects.some((e) => e.do === "buff" && e.thisTurn);
+    if (temporary && ready.length === 0) return null;
     const legal = new Set(castTargets(state, player, cardId, catalog).map((t) => t.slot));
     const pool = (ready.length > 0 ? ready : mine).filter((x) => legal.has(x.slot));
     const t = (pool.length > 0 ? pool : mine.filter((x) => legal.has(x.slot))).sort(
@@ -129,8 +134,13 @@ function judgePost(
   if (effects.includes("cleanse")) {
     const foeDark = foes.filter((x) => x.v.unit.dark).length;
     const foeBuff = foes.reduce((s, x) => s + Math.max(0, x.v.unit.atkBuff) + x.v.unit.hpBuff, 0);
-    const myBuff = mine.reduce((s, x) => s + Math.max(0, x.v.unit.atkBuff) + x.v.unit.hpBuff, 0);
-    const score = foeDark * 15 + foeBuff * 2 - myBuff * 2;
+    const onlyFoes = card.effects.some((e) => e.do === "cleanse" && e.to === "allEnemies");
+    const myBuff = onlyFoes
+      ? 0
+      : mine.reduce((s, x) => s + Math.max(0, x.v.unit.atkBuff) + x.v.unit.hpBuff, 0);
+    // 相手を眠らせていたら、起こしてしまう分を引く
+    const foeAsleep = foes.filter((x) => x.v.asleep).reduce((s, x) => s + x.v.attack, 0);
+    const score = foeDark * 15 + foeBuff * 2 - myBuff * 2 - foeAsleep * 2;
     return score >= 8 ? { score } : null;
   }
   if (effects.includes("heal")) {
