@@ -10,6 +10,8 @@ import { applyAction, autoSacrifice, createGame, DEFAULT_SEARCH, planTurnSearch 
 // 対戦で使う CPU と同じ探索の広さ（時間の上限だけ外す）
 const SEARCH = { ...DEFAULT_SEARCH, timeLimitMs: Number.POSITIVE_INFINITY };
 const catalog = Object.fromEntries(CARDS.map((c) => [c.id, c]));
+// ライフや初期手札を変えて試すとき：BALANCE_CONFIG='{"startLp":16,"startHand":3}'
+const CONFIG = process.env.BALANCE_CONFIG ? JSON.parse(process.env.BALANCE_CONFIG) : undefined;
 
 function play(a, b, seed) {
   const first = seed % 2 === 0 ? "p1" : "p2";
@@ -17,6 +19,7 @@ function play(a, b, seed) {
     decks: { p1: DECKS[a], p2: DECKS[b] },
     seed,
     first,
+    config: CONFIG,
   });
   let turns = 0;
   const used = { p1: new Set(), p2: new Set() };

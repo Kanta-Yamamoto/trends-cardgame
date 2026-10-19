@@ -279,7 +279,7 @@
         "do": "breakthrough"
       }
     ],
-    "effect": "自分の場のほかのミーム1体につき攻撃力+1。場に出たとき、このターン自分のアイコンすべてがすぐ攻撃でき、ガードを無視できる。",
+    "effect": "自分の場のほかのミーム界隈1体につき攻撃力+1。場に出たとき、このターン自分のアイコンすべてがすぐ攻撃でき、ガードを無視できる。",
     "flavor": "作者不明。保存数は10万。",
     "art": "/assets/cards/k5-art.jpg",
     "subject": "/assets/cards/k5-subject.webp",
@@ -1052,7 +1052,7 @@
         }
       }
     ],
-    "effect": "速攻。場に出たとき、自分の場に炎上が3体以上いれば攻撃力+1。",
+    "effect": "速攻。場に出たとき、自分の場に炎上属性が3体以上いれば攻撃力+1。",
     "flavor": "この流れに乗るしかない。",
     "art": "/assets/cards/f7-art.jpg",
     "original": "assets/original/f7.webp"
@@ -1180,7 +1180,7 @@
         }
       }
     ],
-    "effect": "場に出たとき、自分の場にメロいが3体以上いれば攻撃力+1・体力+1。",
+    "effect": "場に出たとき、自分の場にメロい属性が3体以上いれば攻撃力+1・体力+1。",
     "flavor": "認知されたい。",
     "art": "/assets/cards/m6-art.jpg",
     "original": "assets/original/m6.webp"
@@ -1455,7 +1455,7 @@
         }
       }
     ],
-    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。場に出たとき、自分の場に草が2体以上いれば、ほかのアイコンすべてに攻撃力+1。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。場に出たとき、自分の場に草属性が2体以上いれば、ほかのアイコンすべてに攻撃力+1。",
     "flavor": "今日も一発、当ててくる。",
     "art": "/assets/cards/k7-art.jpg",
     "original": "assets/original/k7.webp"
@@ -2176,7 +2176,7 @@
         "kaiwai": "ミーム"
       }
     ],
-    "effect": "場に出たとき、自分の場のミーム1体につき、相手のマスターに1ダメージ。",
+    "effect": "場に出たとき、自分の場のミーム界隈1体につき、相手のマスターに1ダメージ。",
     "flavor": "素材は、みんなの悪ノリ。",
     "art": "/assets/cards/k13-art.jpg",
     "original": "assets/original/k13.webp"
@@ -2460,7 +2460,7 @@
         }
       }
     ],
-    "effect": "カードを1枚引く。自分の場に配信者がいれば、さらに1枚引く。",
+    "effect": "カードを1枚引く。自分の場に配信者界隈がいれば、さらに1枚引く。",
     "flavor": "切り抜きから本編へ。",
     "art": "/assets/cards/n11-art.jpg",
     "original": "assets/original/n11.webp"
@@ -2484,7 +2484,7 @@
         "kaiwai": "配信者"
       }
     ],
-    "effect": "速攻。自分の場のほかの配信者1体につき攻撃力+1。",
+    "effect": "速攻。自分の場のほかの配信者界隈1体につき攻撃力+1。",
     "flavor": "同接、合算で。",
     "art": "/assets/cards/f15-art.jpg",
     "original": "assets/original/f15.webp"
@@ -2512,7 +2512,7 @@
         "amount": 2
       }
     ],
-    "effect": "自分の配信者すべてに体力+2。自分のライフを2回復する。",
+    "effect": "自分の配信者界隈すべてに体力+2。自分のライフを2回復する。",
     "flavor": "今日もありがとう、また明日。",
     "art": "/assets/cards/i14-art.jpg",
     "original": "assets/original/i14.webp"
@@ -2536,7 +2536,7 @@
         "hp": 2
       }
     ],
-    "effect": "自分のアイドル1体に攻撃力+2・体力+2。",
+    "effect": "自分のアイドル界隈1体に攻撃力+2・体力+2。",
     "flavor": "便箋3枚、全部本気。",
     "art": "/assets/cards/m15-art.jpg",
     "original": "assets/original/m15.webp"
@@ -2611,7 +2611,7 @@
         "kaiwai": "アイドル"
       }
     ],
-    "effect": "場に出たとき、自分のほかのアイドルすべてに攻撃力+2・体力+1。",
+    "effect": "場に出たとき、自分のほかのアイドル界隈すべてに攻撃力+2・体力+1。",
     "flavor": "売れる子は、私が決める。",
     "art": "/assets/cards/m16-art.jpg",
     "original": "assets/original/m16.webp"
@@ -2641,7 +2641,7 @@
         }
       }
     ],
-    "effect": "山札から有識者を1枚探して手札に加える（なければ1枚引く）。自分の場に有識者がいれば、さらに1枚引く。",
+    "effect": "山札から有識者界隈を1枚探して手札に加える（なければ1枚引く）。自分の場に有識者界隈がいれば、さらに1枚引く。",
     "flavor": "ソースはこちら。",
     "art": "/assets/cards/g14-art.jpg",
     "original": "assets/original/g14.webp"
@@ -2667,7 +2667,7 @@
         "kaiwai": "ミーム"
       }
     ],
-    "effect": "場に出たとき、自分のほかのミームすべてに攻撃力+1・体力+1。",
+    "effect": "場に出たとき、自分のほかのミーム界隈すべてに攻撃力+1・体力+1。",
     "flavor": "このネタ、起源は10年前。",
     "art": "/assets/cards/g15-art.jpg",
     "original": "assets/original/g15.webp"
@@ -2700,7 +2700,7 @@
         }
       }
     ],
-    "effect": "場に出たとき、カードを1枚引く。自分の場にアイドルがいれば、さらに1枚引く。",
+    "effect": "場に出たとき、カードを1枚引く。自分の場にアイドル界隈がいれば、さらに1枚引く。",
     "flavor": "推しは語れる、踊れない。",
     "art": "/assets/cards/m17-art.jpg",
     "original": "assets/original/m17.webp"
@@ -2758,7 +2758,7 @@
         }
       }
     ],
-    "effect": "ガード。場に出たとき、カードを1枚引く。自分の場に有識者が3体以上いれば、さらに1枚引く。",
+    "effect": "ガード。場に出たとき、カードを1枚引く。自分の場に有識者界隈が3体以上いれば、さらに1枚引く。",
     "flavor": "異論は、論文で。",
     "art": "/assets/cards/g16-art.jpg",
     "original": "assets/original/g16.webp"
@@ -2817,7 +2817,7 @@
         "amount": 2
       }
     ],
-    "effect": "自分の動物すべてに攻撃力+1・体力+2。自分のライフを2回復する。",
+    "effect": "自分の動物界隈すべてに攻撃力+1・体力+2。自分のライフを2回復する。",
     "flavor": "なでる手が止まらない。",
     "art": "/assets/cards/i16-art.jpg",
     "original": "assets/original/i16.webp"
@@ -2975,7 +2975,7 @@
         }
       }
     ],
-    "effect": "相手のアイコンすべてに1ダメージ。自分の場にアイドルがいれば、さらに1ダメージ。",
+    "effect": "相手のアイコンすべてに1ダメージ。自分の場にアイドル界隈がいれば、さらに1ダメージ。",
     "flavor": "はい、お時間でーす。"
   },
   {
@@ -3110,7 +3110,7 @@
         "kaiwai": "アイドル"
       }
     ],
-    "effect": "注目。場に出たとき、自分のほかのアイドルすべてに体力+1。",
+    "effect": "注目。場に出たとき、自分のほかのアイドル界隈すべてに体力+1。",
     "flavor": "「はい、もう一回！」",
     "art": "/assets/cards/m19-art.jpg",
     "original": "assets/original/m19.webp"

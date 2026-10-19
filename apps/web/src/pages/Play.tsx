@@ -1103,6 +1103,10 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       {stage.portrait ? (online ? "ロビーへ" : "戻る") : online ? "ロビーに戻る" : "デッキ選択に戻る"}
     </button>
   );
+  /** 選んだカード（手札・攻撃するアイコン）をやめて、手札を元の形に戻す */
+  const cancelSelection = () => {
+    if (selection) select(null);
+  };
   const field = fieldOf(game, CATALOG);
   const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}`;
   const fieldLayer = field ? (
@@ -1133,12 +1137,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             <div className="ptop">
               {quitBtn}
               {turnPill}
-              <span className="ptop-right">
-                <button type="button" className="btn ghost small plog" onClick={() => setLogOpen(true)}>
-                  記録
-                </button>
-                {resignBtn}
-              </span>
+              <span className="ptop-right">{resignBtn}</span>
             </div>
             {foeBar}
             <div className="pfield">
@@ -1146,27 +1145,48 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               {foeRow}
               <div className="pmid">
                 {hintEl}
-                {endTurnBtn}
+                {/* 押すボタンはここにまとめる（手札のまわりは、選んだカードを戻すための余白にする） */}
+                <span className="pmid-actions">
+                  <button type="button" className="btn ghost small plog" onClick={() => setLogOpen(true)}>
+                    記録
+                  </button>
+                  {endTurnBtn}
+                </span>
               </div>
               {meRow}
             </div>
             {meBar}
             <PeekStrip card={peekCard} view={peek?.view} onOpen={() => setZoom(peek)} />
-            <button
-              type="button"
-              className="plog-ticker"
-              onClick={() => setLogOpen(true)}
-              aria-label="対戦の記録を開く"
+            {/* 直近の出来事は見せるだけ。ここから下（手札のまわりの空き）を押すと、選んだカードを手札に戻す */}
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: キーボードでは「戻す」ボタンで同じことができる */}
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: 余白を押して選択をやめるための受け皿 */}
+            <div
+              className="phand-zone"
+              onClick={(e) => {
+                const t = e.target as HTMLElement;
+                if (!t.closest(".mini, button")) cancelSelection();
+              }}
             >
-              {log.slice(-3).map(({ id, e }) => (
-                <span key={id} className={`ev-${e.type}`}>
-                  {describe(e)}
-                </span>
-              ))}
-            </button>
-            <div className="phand">
-              {handMore}
-              {handEl}
+              <div className="plog-ticker" aria-hidden="true">
+                {log.slice(-3).map(({ id, e }) => (
+                  <span key={id} className={`ev-${e.type}`}>
+                    {describe(e)}
+                  </span>
+                ))}
+              </div>
+              <div className="phand">
+                {handMore}
+                {handEl}
+                <button
+                  type="button"
+                  className={`hand-cancel ${selection && !placing ? "on" : ""}`}
+                  onClick={cancelSelection}
+                  aria-label="選んだカードを手札に戻す"
+                  tabIndex={selection ? 0 : -1}
+                >
+                  <span aria-hidden="true">戻す</span>
+                </button>
+              </div>
             </div>
           </div>
         ) : (

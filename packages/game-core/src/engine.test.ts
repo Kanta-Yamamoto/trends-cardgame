@@ -14,6 +14,7 @@ import {
   legalTargets,
   previewAttack,
   viewUnit,
+  withRushBoost,
 } from "./engine";
 import { type Action, type GameState, type RuleCard, RuleError, type Unit } from "./types";
 
@@ -340,6 +341,22 @@ describe("キーワード", () => {
     s = end(end(s), "p2");
     const r2 = hit(s, 0, 0);
     expect(r2.events.map((e) => e.type)).not.toContain("buffed");
+  });
+  it("凸の強化は先に取り出せる（画面で強化を見せてから殴る）。見込みも上がった攻撃力で出す", () => {
+    let s = withFoe(["charger"], ["wall"]);
+    s = play(s, 0, 0);
+    const t = { kind: "unit" as const, slot: 0 };
+    const b = withRushBoost(s, "p1", 0, t, catalog);
+    expect(b.state).not.toBe(s);
+    expect(b.events.map((e) => e.type)).toEqual(["buffed"]);
+    expect(viewUnit(b.state, "p1", b.state.players.p1.field[0] as never, catalog).attack).toBe(4);
+    // 元の state は変えない
+    expect(viewUnit(s, "p1", s.players.p1.field[0] as never, catalog).attack).toBe(2);
+    expect(previewAttack(s, "p1", 0, t, catalog)).toMatchObject({ toDefender: 4 });
+    // 攻撃そのものの結果と同じ
+    expect(hit(s, 0, 0).events[1]).toMatchObject({ type: "battle", toDefender: 4 });
+    // マスターへの攻撃や、凸のないアイコンでは何もしない
+    expect(withRushBoost(s, "p1", 0, { kind: "leader" }, catalog).state).toBe(s);
   });
   it("攻撃の見込み：与える・受けるダメージと、倒せるか・倒されるか", () => {
     let s = withFoe(["basher"], ["wall"]);

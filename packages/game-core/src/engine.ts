@@ -253,6 +253,56 @@ export function previewAttack(
   target: AttackTarget,
   catalog: Catalog,
 ): AttackPreview | null {
+  // 凸で攻撃したときの強化は殴る前に働くので、上がった攻撃力で見積もる
+  return previewRaw(withRushBoost(state, player, from, target, catalog).state, player, from, target, catalog);
+}
+
+/**
+ * 凸で攻撃したとき（出たターンに相手のアイコンへ）の効果を、殴る前に働かせた姿と、その出来事。
+ * 働く効果がなければ、元の state をそのまま返す（画面の演出：強化を見せてから殴る）
+ */
+export function withRushBoost(
+  state: GameState,
+  player: PlayerId,
+  from: number,
+  target: AttackTarget,
+  catalog: Catalog,
+  config: Config = DEFAULT_CONFIG,
+): { state: GameState; events: GameEvent[] } {
+  const atk = state.players[player].field[from];
+  if (!atk?.rushOnly || target.kind !== "unit") return { state, events: [] };
+  if (!effectsOf(atk, catalog).some((e) => triggerOf(e) === "rush")) return { state, events: [] };
+  const next: GameState = JSON.parse(JSON.stringify(state));
+  const events: GameEvent[] = [];
+  runRushEffects(next, player, from, target, catalog, config, (e) => events.push(e));
+  return { state: next, events };
+}
+
+function runRushEffects(
+  state: GameState,
+  player: PlayerId,
+  from: number,
+  target: AttackTarget,
+  catalog: Catalog,
+  config: Config,
+  emit: Emit,
+) {
+  const atk = state.players[player].field[from];
+  if (!atk?.rushOnly || target.kind !== "unit") return;
+  for (const e of effectsOf(atk, catalog)) {
+    if (triggerOf(e) !== "rush") continue;
+    runEffect(e, { state, player, catalog, config, emit, selfSlot: from, playedBefore: 0 });
+  }
+}
+
+/** 今の姿のまま殴ったときの見積もり（凸の強化はもう働いた前提） */
+function previewRaw(
+  state: GameState,
+  player: PlayerId,
+  from: number,
+  target: AttackTarget,
+  catalog: Catalog,
+): AttackPreview | null {
   const atk = state.players[player].field[from];
   if (!atk) return null;
   const av = viewUnit(state, player, atk, catalog);
@@ -1174,19 +1224,14 @@ export function applyAction(
       }
       atk.attacksLeft -= 1;
       // 凸で攻撃したとき（出たターンに相手のアイコンへ）の効果は、ダメージの前に働く（上がった攻撃力で殴る）
-      if (atk.rushOnly && t.kind === "unit") {
-        for (const e of effectsOf(atk, catalog)) {
-          if (triggerOf(e) !== "rush") continue;
-          runEffect(e, { state, player, catalog, config, emit, selfSlot: action.from, playedBefore: 0 });
-        }
-      }
+      runRushEffects(state, player, action.from, t, catalog, config, emit);
       const av = viewUnit(state, player, atk, catalog);
       if (t.kind === "leader") {
         damageLeader(state, foeId, av.attack, emit);
       } else {
         // お互いの攻撃力の分だけ、相手の体力を削る（ダメージは残る）
         const def = foe.field[t.slot] as Unit;
-        const { toDefender, toAttacker } = previewAttack(
+        const { toDefender, toAttacker } = previewRaw(
           state,
           player,
           action.from,
