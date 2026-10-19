@@ -115,7 +115,7 @@ describe("対戦ストア", () => {
       await until(() => !!useGame.getState().game?.pending);
       expect(useGame.getState().game?.pending?.waiting).toEqual([ME]);
       useGame.getState().sacrifice(0);
-      await until(() => useGame.getState().game?.active === ME);
+      await until(() => useGame.getState().game?.active === ME && !useGame.getState().cpuBusy);
       expect(useGame.getState().game?.pending ?? null).toBeNull();
       expect(useGame.getState().game?.active).toBe(ME);
       expect(useGame.getState().cpuBusy).toBe(false);
