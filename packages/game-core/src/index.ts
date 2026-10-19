@@ -17,6 +17,7 @@ export {
   createGame,
   darkReady,
   effectiveCost,
+  fieldOf,
   hasKeyword,
   inKaiwai,
   isShielded,

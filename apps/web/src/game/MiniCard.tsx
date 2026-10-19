@@ -165,7 +165,6 @@ export function MiniCard({
             )}
           {view?.exposed && <span className="mini-kw st">晒し</span>}
           {view?.unit.exposeAtTurnEnd && <span className="mini-kw st">晒し予告</span>}
-          {!!view?.unit.totonoi && <span className="mini-kw st totonoi">整い{view.unit.totonoi}</span>}
           {view?.asleep && <span className="mini-kw st">眠り</span>}
           {view?.unit.silenced && <span className="mini-kw st">訂正</span>}
         </span>

@@ -99,14 +99,9 @@ const catalog: Record<string, RuleCard> = {
   plotter: icon("plotter", 1, 4, 4, { effects: [{ on: "passive", do: "conspiracyWin" }] }),
   eater: icon("eater", 3, 1, 3, { effects: [{ on: "passive", do: "attackPerLostToken", card: "kusa" }] }),
   oldcard: icon("oldcard", 1, 1, 1, { retired: true }),
-  saunaPost: post("saunaPost", 2, {
-    target: "allyIcon",
-    targetFilter: { minHp: 2 },
-    effects: [{ do: "totonou", damage: 1, attack: 2, turns: 3, heal: 1 }],
-  }),
-  hotyu: icon("hotyu", 4, 3, 4, {
+  yuzu: icon("yuzu", 4, 3, 4, {
     effects: [
-      { do: "totonou", damage: 1, attack: 2, turns: 3, heal: 1 },
+      { on: "passive", do: "saunaField", heat: 1, heal: 2 },
       { on: "passive", do: "healBurn", amount: 2 },
     ],
   }),
@@ -489,39 +484,33 @@ describe("★5 の作り直し（ヒバナ・カグラ・専門家・陰謀論�
   });
 });
 
-describe("整う・整い", () => {
-  it("整う：1ダメージ・攻撃力+2（ずっと）。3ターンの間、自分のターンの始めに体力を1回復する", () => {
-    let s = game(["wall", "saunaPost"]);
+describe("フィールド「サウナ」", () => {
+  it("持ち主のターンの始めに場の全員に熱1、そのターンの終わりに全員を2回復。回復は持ち主の回復の効果として1回", () => {
+    let s = withFoe(["yuzu"], ["wall", "rush"]);
     s = play(s, 0, 0);
-    s = cast(s, 0, { side: "ally", slot: 0 });
-    const u = () => s.players.p1.field[0] as Unit;
-    let v = viewUnit(s, "p1", u(), catalog);
-    expect([v.attack, v.hp, u().totonoi]).toEqual([3, 5, 3]);
-    for (const [hp, left] of [
-      [6, 2],
-      [6, 1],
-      [6, 0],
-    ] as const) {
-      s = end(end(s), "p2");
-      v = viewUnit(s, "p1", u(), catalog);
-      expect([v.hp, u().totonoi]).toEqual([hp, left]);
-    }
-    // 整いが終わっても、攻撃力+2 は残る
-    expect(viewUnit(s, "p1", u(), catalog).attack).toBe(3);
-  });
-  it("サウナは体力2以上の自分のアイコンにしか使えない", () => {
-    let s = game(["rush", "wall", "saunaPost"]);
-    s = play(s, 0, 0);
-    s = play(s, 0, 1);
-    expect(castTargets(s, "p1", "saunaPost", catalog)).toEqual([{ side: "ally", slot: 1 }]);
-  });
-  it("整いの回復は「回復の効果を使った」と数える（回復するたびに燃やす）", () => {
-    let s = game(["hotyu"]);
-    s = play(s, 0, 0);
-    expect(s.players.p1.field[0]?.damage).toBe(1);
-    s = end(end(s), "p2");
+    s = end(s);
+    // ターンの終わりの回復（回復した量が0でも1回と数える）で、ユズハの燃やすが働く
     expect(s.players.p2.lp).toBe(18);
     expect(s.players.p1.heals).toBe(1);
+    const r = run(s, { type: "endTurn", player: "p2" });
+    s = r.state;
+    expect(r.events).toContainEqual({ type: "sauna", player: "p1", phase: "heat", amount: 1 });
+    expect(s.players.p2.field[0]?.damage).toBe(1);
+    expect(s.players.p2.field[1]).toBeNull(); // 体力1は熱で倒れる
+    expect(s.players.p1.field[0]?.damage).toBe(1);
+    s = end(s);
+    expect(s.players.p2.field[0]?.damage).toBe(0);
+    expect(s.players.p1.field[0]?.damage).toBe(0);
+    expect(s.players.p2.lp).toBe(16);
+  });
+  it("相手のターンには熱も回復も起きない", () => {
+    let s = withFoe(["yuzu"], ["wall"]);
+    s = play(s, 0, 0);
+    s = end(s);
+    const r = run(s, { type: "endTurn", player: "p2" });
+    expect(r.events.filter((e) => e.type === "sauna")).toEqual([
+      { type: "sauna", player: "p1", phase: "heat", amount: 1 },
+    ]);
   });
 });
 

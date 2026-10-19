@@ -47,9 +47,6 @@ export interface Unit {
   exposed: boolean;
   /** 自分のターンの終わりに晒し者になる（炎上商法） */
   exposeAtTurnEnd?: boolean;
-  /** 整い：残りのターン数（自分のターンの始めに体力を totonoiHeal 回復し、1 減る） */
-  totonoi?: number;
-  totonoiHeal?: number;
   /** このターン数までは眠っていて攻撃できない */
   boundUntil: number;
   /** キーワードと効果が消されている（コミュニティノート） */
@@ -147,7 +144,7 @@ export type GameEvent =
       player: PlayerId;
       slot: number;
       cardId: string;
-      status: "晒し" | "眠り" | "訂正" | "ガード消滅" | "整い";
+      status: "晒し" | "眠り" | "訂正" | "ガード消滅";
     }
   | { type: "stolen"; player: PlayerId; from: number; slot: number; cardId: string }
   /** 場のアイコンが持ち主の手札に戻った（player は持ち主） */
@@ -161,6 +158,8 @@ export type GameEvent =
   | { type: "leaderHealed"; player: PlayerId; amount: number; lp: number }
   | { type: "drew"; player: PlayerId; cardId: string }
   | { type: "deckOut"; player: PlayerId }
+  /** フィールド「サウナ」：熱（ターンの始めに全員へダメージ）と回復（ターンの終わりに全員を回復）。player はフィールドの持ち主 */
+  | { type: "sauna"; player: PlayerId; phase: "heat" | "heal"; amount: number }
   /** 特殊勝利（陰謀論者：山札が0枚で自分のターンを始めた） */
   | { type: "specialWin"; player: PlayerId; cardId: string }
   /** 手札が上限で、引いたカードがオワコンへ行った */

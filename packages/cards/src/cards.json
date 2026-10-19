@@ -2390,11 +2390,15 @@
     "keywords": [],
     "effects": [
       {
-        "do": "totonou",
-        "damage": 1,
-        "attack": 2,
-        "turns": 3,
-        "heal": 1
+        "do": "heal",
+        "to": "master",
+        "amount": 3
+      },
+      {
+        "on": "passive",
+        "do": "saunaField",
+        "heat": 1,
+        "heal": 2
       },
       {
         "on": "passive",
@@ -2402,7 +2406,7 @@
         "amount": 2
       }
     ],
-    "effect": "場に出たとき、整う。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
+    "effect": "場に出たとき、自分のライフを3回復する。場にいる間、フィールド「サウナ」。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
     "flavor": "「ととのったら、あなたの番」",
     "art": "/assets/cards/c10-art.jpg",
     "original": "assets/original/c10.webp",
@@ -3421,11 +3425,10 @@
     "keywords": ["ガード"],
     "effects": [
       {
-        "do": "totonou",
-        "damage": 1,
-        "attack": 2,
-        "turns": 3,
-        "heal": 1
+        "on": "play",
+        "do": "heal",
+        "to": "allAlliesAndMaster",
+        "amount": 3
       },
       {
         "on": "turnEnd",
@@ -3434,36 +3437,10 @@
         "amount": 1
       }
     ],
-    "effect": "ガード。場に出たとき、整う。自分のターンの終わりに、自分のライフを1回復する。",
+    "effect": "ガード。場に出たとき、自分のアイコンすべてとライフを3回復する。自分のターンの終わりに、自分のライフを1回復する。",
     "flavor": "「今日も湯けむり配信中」",
     "art": "/assets/cards/i20-art.jpg",
     "original": "assets/original/i20.webp"
-  },
-  {
-    "id": "i21",
-    "name": "サウナ",
-    "epithet": "",
-    "type": "post",
-    "rarity": 2,
-    "cost": 2,
-    "attributes": ["癒し"],
-    "kaiwai": [],
-    "keywords": [],
-    "target": "allyIcon",
-    "targetFilter": {
-      "minHp": 2
-    },
-    "effects": [
-      {
-        "do": "totonou",
-        "damage": 1,
-        "attack": 2,
-        "turns": 3,
-        "heal": 1
-      }
-    ],
-    "effect": "体力が2以上の自分のアイコン1体が、整う。",
-    "flavor": "熱いのは、整うための準備。"
   },
   {
     "id": "n12",

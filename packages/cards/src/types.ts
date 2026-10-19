@@ -60,10 +60,10 @@ export type CardEffect = (
    */
   | { do: "hype"; attack: number }
   /**
-   * 整う：アイコンに damage の自傷、攻撃力 +attack（ずっと）。turns ターンの間「整い」になり、
-   * 自分のターンの始めに体力を heal 回復する。投稿なら対象（自分のアイコン）、アイコンの「場に出たとき」なら自分
+   * passive：フィールド「サウナ」（このアイコンが場にいる間）。持ち主のターンの始めに、場のアイコンすべて（敵味方）に heat ダメージ。
+   * そのターンの終わりに、場のアイコンすべてを heal 回復する（持ち主の「回復の効果」として1回数える）
    */
-  | { do: "totonou"; damage: number; attack: number; turns: number; heal: number }
+  | { do: "saunaField"; heat: number; heal: number }
   /** 相手のアイコンの数 × per のダメージを、相手のアイコンすべてに（ヒバナ） */
   | { do: "damagePerEnemy"; per: number }
   /** passive：このアイコンが場にいる間、山札が無くて引けなくても負けない（専門家） */
@@ -176,7 +176,7 @@ export interface CardDef {
   /** 投稿の対象を、自分のその界隈のアイコンだけに限る（target が allyIcon のとき） */
   targetKaiwai?: Kaiwai;
   /** 投稿の対象を絞る：ダメージを受けているアイコンだけ／攻撃力が N 以下だけ */
-  targetFilter?: { damaged?: boolean; maxAttack?: number; minHp?: number };
+  targetFilter?: { damaged?: boolean; maxAttack?: number };
   /** カードに書く効果文 */
   effect: string;
   flavor: string;

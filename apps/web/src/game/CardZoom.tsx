@@ -92,22 +92,14 @@ export function CardZoom({
               ))}
             </dl>
           )}
-          {live &&
-            (live.exposed ||
-              live.unit.exposeAtTurnEnd ||
-              !!live.unit.totonoi ||
-              live.asleep ||
-              live.unit.silenced) && (
-              <ul className="zs-states">
-                {live.exposed && <li>晒し者：ガードを失い、それまでの強化が消えた</li>}
-                {live.unit.exposeAtTurnEnd && <li>炎上商法：このターンの終わりに晒し者になる</li>}
-                {!!live.unit.totonoi && (
-                  <li>整い：自分のターンの始めに体力を1回復する（あと{live.unit.totonoi}ターン）</li>
-                )}
-                {live.asleep && <li>眠っている：このターンは攻撃できない</li>}
-                {live.unit.silenced && <li>訂正済み：キーワードと効果が消えている</li>}
-              </ul>
-            )}
+          {live && (live.exposed || live.unit.exposeAtTurnEnd || live.asleep || live.unit.silenced) && (
+            <ul className="zs-states">
+              {live.exposed && <li>晒し者：ガードを失い、それまでの強化が消えた</li>}
+              {live.unit.exposeAtTurnEnd && <li>炎上商法：このターンの終わりに晒し者になる</li>}
+              {live.asleep && <li>眠っている：このターンは攻撃できない</li>}
+              {live.unit.silenced && <li>訂正済み：キーワードと効果が消えている</li>}
+            </ul>
+          )}
           {canPreview && card.dark && !previewing && (
             <div className="zs-darkbox">
               <p className="zs-darkbox-head">

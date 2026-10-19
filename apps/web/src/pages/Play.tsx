@@ -9,6 +9,7 @@ import {
   castTargets,
   darkReady,
   effectiveCost,
+  fieldOf,
   type GameEvent,
   type GameState,
   isShielded,
@@ -87,6 +88,10 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}の手札がいっぱいで、引いた ${nameOf(e.cardId)} はオワコンへ`;
     case "deckOut":
       return `${who(e.player)}の山札が切れた`;
+    case "sauna":
+      return e.phase === "heat"
+        ? `サウナの熱：場のアイコンすべてに ${e.amount} ダメージ`
+        : `サウナで整う：場のアイコンすべてが ${e.amount} 回復`;
     case "specialWin":
       return `${who(e.player)}の山札が切れた。陰謀論者「これは世界のせいだ」──特殊勝利`;
     case "turnStarted":
@@ -271,6 +276,29 @@ function DeckAce({ id }: { id?: string }) {
       ) : null}
       <span className="deck-ace-shade" />
     </span>
+  );
+}
+
+/**
+ * フィールド展開の背景（今はユズハのサウナだけ）。盤面の後ろに絵を敷き、湯気をゆっくり立ちのぼらせる。
+ * 熱（ターンの始め）は赤く、回復（ターンの終わり）は水色に一瞬光る
+ */
+function FieldLayer({
+  kind,
+  mine,
+  pulse,
+}: {
+  kind: "sauna";
+  mine: boolean;
+  pulse: { id: number; phase: "heat" | "heal" } | null;
+}) {
+  return (
+    <div className={`field-layer field-${kind}`} aria-hidden="true">
+      <span className="field-steam" />
+      <span className="field-steam s2" />
+      {pulse && <span key={pulse.id} className={`field-pulse ${pulse.phase}`} />}
+      <span className="field-label">{mine ? "あなたの" : "相手の"}フィールド：サウナ</span>
+    </div>
   );
 }
 
@@ -572,6 +600,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [logOpen, setLogOpen] = useState(false);
   const seen = useRef(0);
   const { stage, probe } = useStage();
+  // フィールドの熱・回復の一瞬の光（出来事が来るたびに id が変わり、アニメーションをやり直す）
+  const [fieldPulse, setFieldPulse] = useState<{ id: number; phase: "heat" | "heal" } | null>(null);
   /** ターン終了の確認を出しているか（押し間違いで終わらないように） */
   const [confirmEnd, setConfirmEnd] = useState(false);
 
@@ -721,6 +751,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       } else if (e.type === "damaged") {
         const uid = uidAt(e.player, e.slot);
         if (uid) setTimeout(() => popDamage(uid, e.amount), t);
+      } else if (e.type === "sauna") {
+        const pulse = { id, phase: e.phase };
+        setTimeout(() => setFieldPulse(pulse), t);
       } else if (e.type === "darkFall" || e.type === "restored") {
         const uid = uidAt(e.player, e.slot);
         if (uid) setTimeout(() => flipCard(uid, e.type === "darkFall" ? "dark" : "restore"), t + 80);
@@ -1042,7 +1075,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       {stage.portrait ? (online ? "ロビーへ" : "戻る") : online ? "ロビーに戻る" : "デッキ選択に戻る"}
     </button>
   );
-  const boardClass = `board turn-${game.active === ME ? "me" : "foe"}`;
+  const field = fieldOf(game, CATALOG);
+  const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}`;
+  const fieldLayer = field ? (
+    <FieldLayer kind={field.kind} mine={field.owner === ME} pulse={fieldPulse} />
+  ) : null;
 
   return (
     <div className="play-full">
@@ -1064,6 +1101,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         {stage.portrait ? (
           /* 縦の舞台：上から 相手 → 相手の場 → 案内＋ターン終了 → 自分の場 → 自分 → 押したカードの説明 → 手札 */
           <div className={`pstage ${boardClass}`} data-drop="board">
+            {fieldLayer}
             <div className="ptop">
               {quitBtn}
               {turnPill}
@@ -1112,6 +1150,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             </div>
 
             <div className={`col-center ${boardClass}`} data-drop="board">
+              {fieldLayer}
               {darkGuide}
               {foeRow}
               {hintEl}
@@ -1374,9 +1413,6 @@ function PeekCard({ card, view, onOpen }: { card: CardDef; view?: UnitView; onOp
           {view.keywords.length > 0 && <span>{view.keywords.join("・")}</span>}
           {view.exposed && <span>晒し者（ガードを失い、強化が消えた）</span>}
           {view.unit.exposeAtTurnEnd && <span>ターンの終わりに晒し者になる（炎上商法）</span>}
-          {!!view.unit.totonoi && (
-            <span>整い（自分のターンの始めに体力1回復・あと{view.unit.totonoi}ターン）</span>
-          )}
           {view.asleep && <span>眠っている（このターンは攻撃できない）</span>}
           {view.unit.silenced && <span>訂正済み（キーワードと効果が消えている）</span>}
         </div>
@@ -1412,7 +1448,6 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
     ? [
         view.exposed && "晒し者",
         view.unit.exposeAtTurnEnd && "ターンの終わりに晒される",
-        !!view.unit.totonoi && `整い（あと${view.unit.totonoi}ターン）`,
         view.asleep && "眠っている",
         view.unit.silenced && "訂正済み",
         view.hp < view.maxHp && "ダメージあり",

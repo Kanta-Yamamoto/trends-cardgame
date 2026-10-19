@@ -378,7 +378,6 @@ const STATUS_COLOR: Record<string, string> = {
   眠り: "#8fb7ff",
   訂正: "#f4f4f4",
   ガード消滅: "#f4f4f4",
-  整い: "#7fe0ff",
 };
 
 /** 効果の出来事を、1つずつ「飛んで・当たる」演出にする。見せる出来事が無ければ false */

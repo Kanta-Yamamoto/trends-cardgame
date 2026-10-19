@@ -292,7 +292,6 @@ export function castTargets(
     if (k !== undefined && !inKaiwai(u, k, catalog)) return [];
     if (f?.damaged && u.damage <= 0) return [];
     if (f?.maxAttack !== undefined && viewUnit(state, owner, u, catalog).attack > f.maxAttack) return [];
-    if (f?.minHp !== undefined && viewUnit(state, owner, u, catalog).hp < f.minHp) return [];
     return [{ side, slot } as CastTarget];
   });
 }
@@ -354,6 +353,27 @@ function exposeUnit(owner: PlayerId, slot: number, u: Unit, emit: Emit) {
   u.tempAtk = 0;
   u.hpBuff = Math.min(0, u.hpBuff);
   emit({ type: "status", player: owner, slot, cardId: u.cardId, status: "晒し" });
+}
+
+/** 今のフィールド（どちらかの場にフィールドを出すアイコンがいれば、その種類と持ち主）。画面の背景に使う */
+export function fieldOf(state: GameState, catalog: Catalog): { kind: "sauna"; owner: PlayerId } | null {
+  for (const owner of [state.active, opponent(state.active)] as const)
+    if (saunaOf(state, owner, catalog)) return { kind: "sauna", owner };
+  return null;
+}
+
+/** その人の場にフィールド「サウナ」を出すアイコンがいれば、その熱と回復の量（何体いても1つ） */
+function saunaOf(
+  state: GameState,
+  player: PlayerId,
+  catalog: Catalog,
+): { heat: number; heal: number } | null {
+  for (const u of state.players[player].field) {
+    if (!u) continue;
+    for (const e of effectsOf(u, catalog))
+      if (triggerOf(e) === "passive" && e.do === "saunaField") return { heat: e.heat, heal: e.heal };
+  }
+  return null;
 }
 
 function newUnit(state: GameState, cardId: string, catalog: Catalog, token: boolean): Unit {
@@ -628,20 +648,6 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       }
       break;
     }
-    case "totonou": {
-      // 整う：投稿なら対象の自分のアイコン、アイコンの効果なら自分
-      const slot = ctx.target ? ctx.target.slot : ctx.selfSlot;
-      const u = ctx.target ? tgt : self;
-      if (u && slot !== undefined) {
-        damageUnit(state, player, slot, e.damage, emit);
-        u.atkBuff += e.attack;
-        u.totonoi = e.turns;
-        u.totonoiHeal = e.heal;
-        emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: 0 });
-        emit({ type: "status", player, slot, cardId: u.cardId, status: "整い" });
-      }
-      break;
-    }
     case "damagePerEnemy": {
       // 相手の場が賑わっているほど大きく燃える。数えるのは効果が働いた瞬間
       const foeField = state.players[foeId].field;
@@ -860,7 +866,6 @@ function runEffect(e: CardEffect, ctx: Ctx) {
             hpBuff: 0,
             exposed: false,
             exposeAtTurnEnd: false,
-            totonoi: 0,
             boundUntil: 0,
             silenced: false,
             noGuard: false,
@@ -875,6 +880,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       break;
     case "attackPerAlly":
     case "attackPerLostToken":
+    case "saunaField":
     case "noDeckOut":
     case "conspiracyWin":
     case "extraAttackOnKill":
@@ -911,15 +917,16 @@ function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Co
       emit({ type: "buffed", player: pid, slot, cardId: u.cardId, attack: n, hp: 0 });
     }
   });
-  // 整い：自分のターンの始めに体力を回復する（1 体ごとに「回復の効果を使った」と数える）
-  p.field.forEach((u, slot) => {
-    if (!u?.totonoi) return;
-    const amount = Math.min(u.damage, u.totonoiHeal ?? 1);
-    u.damage -= amount;
-    emit({ type: "healed", player: pid, slot, cardId: u.cardId, amount });
-    afterHeal({ state, player: pid, catalog, config, emit, playedBefore: 0 });
-    u.totonoi -= 1;
-  });
+  // フィールド「サウナ」：持ち主のターンの始めに、場のアイコンすべてに熱
+  const sauna = saunaOf(state, pid, catalog);
+  if (sauna) {
+    emit({ type: "sauna", player: pid, phase: "heat", amount: sauna.heat });
+    for (const owner of [pid, other] as const)
+      state.players[owner].field.forEach((u, slot) => {
+        if (u) damageUnit(state, owner, slot, sauna.heat, emit);
+      });
+    resolveDeaths(state, catalog, emit);
+  }
   // 子守唄：相手の場にいれば、攻撃力がいちばん高いアイコンがこのターン眠る
   if (state.players[other].field.some((u) => u && hasPassive(u, "lullaby", catalog))) {
     const slot = strongestEnemy(state, other, catalog);
@@ -1140,6 +1147,19 @@ export function applyAction(
           runEffect(e, { state, player, catalog, config, emit, selfSlot: slot, playedBefore: 0 });
         }
       });
+      // フィールド「サウナ」：ターンの終わりに、場のアイコンすべてを回復（持ち主の回復の効果として1回）
+      const sauna = saunaOf(state, player, catalog);
+      if (sauna) {
+        emit({ type: "sauna", player, phase: "heal", amount: sauna.heal });
+        for (const owner of ["p1", "p2"] as const)
+          state.players[owner].field.forEach((u, slot) => {
+            if (!u || u.damage <= 0) return;
+            const amount = Math.min(u.damage, sauna.heal);
+            u.damage -= amount;
+            emit({ type: "healed", player: owner, slot, cardId: u.cardId, amount });
+          });
+        afterHeal({ state, player, catalog, config, emit, playedBefore: 0 });
+      }
       resolveDeaths(state, catalog, emit);
       // 追加のターンがあれば、相手に渡さずにもう一度自分のターン
       const next = (me.extraTurns ?? 0) > 0 ? player : foeId;
