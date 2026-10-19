@@ -13,6 +13,8 @@ interface Props {
   /** 演出で要素を探すための目印 */
   uid?: number;
   inHand?: boolean;
+  /** 場のアイコン：絵と数値だけの簡素な見た目（名前・属性・★・闇堕ちの印は出さない。ガードと状態だけ） */
+  onField?: boolean;
   className?: string;
   /** 追加のスタイル（手札の扇の並びなど） */
   style?: CSSProperties;
@@ -38,6 +40,7 @@ export function MiniCard({
   cost,
   uid,
   inHand,
+  onField = false,
   className = "",
   style,
   disabled,
@@ -66,7 +69,7 @@ export function MiniCard({
   return (
     <button
       type="button"
-      className={`mini ${art ? "has-art" : ""} ${dark ? "is-dark" : ""} ${isPost ? "is-post" : ""} ${className}`}
+      className={`mini ${art ? "has-art" : ""} ${dark ? "is-dark" : ""} ${isPost ? "is-post" : ""} ${onField ? "on-field" : ""} ${className}`}
       style={{ ...bg, ...style }}
       data-uid={uid}
       data-hand-card={inHand ? "" : undefined}
@@ -120,32 +123,39 @@ export function MiniCard({
           {cost}
         </span>
       )}
-      <span className="mini-top">
-        <span className="mini-attrs" aria-hidden="true">
-          {card.attributes.length === 0 && <i style={{ background: "#d5dae3", color: "#2b3240" }}>共</i>}
-          {card.attributes.map((a) => (
-            <i key={a} style={{ background: ATTR_META[a].color, color: ATTR_META[a].deep }}>
-              {ATTR_META[a].mark}
-            </i>
-          ))}
-          {card.kaiwai.map((k) => (
-            <b key={k} className="mini-kaiwai" title={`${k}界隈`}>
-              {KAIWAI_META[k].mark}
-            </b>
-          ))}
+      {!onField && (
+        <span className="mini-top">
+          <span className="mini-attrs" aria-hidden="true">
+            {card.attributes.length === 0 && <i style={{ background: "#d5dae3", color: "#2b3240" }}>共</i>}
+            {card.attributes.map((a) => (
+              <i key={a} style={{ background: ATTR_META[a].color, color: ATTR_META[a].deep }}>
+                {ATTR_META[a].mark}
+              </i>
+            ))}
+            {card.kaiwai.map((k) => (
+              <b key={k} className="mini-kaiwai" title={`${k}界隈`}>
+                {KAIWAI_META[k].mark}
+              </b>
+            ))}
+          </span>
         </span>
-      </span>
-      <span className="mini-stars">{stars(card.rarity)}</span>
-      {card.dark && !dark && <span className="mini-darkmark">闇堕ち</span>}
-      <span className="mini-name">
-        {card.epithet && !dark && <small>{card.epithet}</small>}
-        {name}
-      </span>
+      )}
+      {!onField && <span className="mini-stars">{stars(card.rarity)}</span>}
+      {!onField && card.dark && !dark && <span className="mini-darkmark">闇堕ち</span>}
+      {!onField && (
+        <span className="mini-name">
+          {card.epithet && !dark && <small>{card.epithet}</small>}
+          {name}
+        </span>
+      )}
       {(keywords.length > 0 || view) && (
         <span className="mini-kws">
-          {keywords.map((k) => (
-            <HelpTerm key={k} term={k} className="mini-kw" />
-          ))}
+          {/* 場では本当に要る札だけ：ガードと状態。ほかのキーワードは押して見る */}
+          {keywords
+            .filter((k) => !onField || k === "ガード")
+            .map((k) => (
+              <HelpTerm key={k} term={k} className="mini-kw" />
+            ))}
           {view?.exposed && (
             <HelpTerm term="晒し者" className="mini-kw st">
               晒し
