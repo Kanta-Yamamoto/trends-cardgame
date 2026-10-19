@@ -47,6 +47,9 @@ export interface Unit {
   exposed: boolean;
   /** 自分のターンの終わりに晒し者になる（炎上商法） */
   exposeAtTurnEnd?: boolean;
+  /** 整い：残りのターン数（自分のターンの始めに体力を totonoiHeal 回復し、1 減る） */
+  totonoi?: number;
+  totonoiHeal?: number;
   /** このターン数までは眠っていて攻撃できない */
   boundUntil: number;
   /** キーワードと効果が消されている（コミュニティノート） */
@@ -144,7 +147,7 @@ export type GameEvent =
       player: PlayerId;
       slot: number;
       cardId: string;
-      status: "晒し" | "眠り" | "訂正" | "ガード消滅";
+      status: "晒し" | "眠り" | "訂正" | "ガード消滅" | "整い";
     }
   | { type: "stolen"; player: PlayerId; from: number; slot: number; cardId: string }
   /** 場のアイコンが持ち主の手札に戻った（player は持ち主） */

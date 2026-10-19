@@ -59,6 +59,11 @@ export type CardEffect = (
    * 投稿なら対象（自分のアイコン）に、アイコンの「場に出たとき」なら自分に
    */
   | { do: "hype"; attack: number }
+  /**
+   * 整う：アイコンに damage の自傷、攻撃力 +attack（ずっと）。turns ターンの間「整い」になり、
+   * 自分のターンの始めに体力を heal 回復する。投稿なら対象（自分のアイコン）、アイコンの「場に出たとき」なら自分
+   */
+  | { do: "totonou"; damage: number; attack: number; turns: number; heal: number }
   /** 相手のアイコンの数 × per のダメージを、相手のアイコンすべてに（ヒバナ） */
   | { do: "damagePerEnemy"; per: number }
   /** passive：このアイコンが場にいる間、山札が無くて引けなくても負けない（専門家） */
@@ -171,7 +176,7 @@ export interface CardDef {
   /** 投稿の対象を、自分のその界隈のアイコンだけに限る（target が allyIcon のとき） */
   targetKaiwai?: Kaiwai;
   /** 投稿の対象を絞る：ダメージを受けているアイコンだけ／攻撃力が N 以下だけ */
-  targetFilter?: { damaged?: boolean; maxAttack?: number };
+  targetFilter?: { damaged?: boolean; maxAttack?: number; minHp?: number };
   /** カードに書く効果文 */
   effect: string;
   flavor: string;

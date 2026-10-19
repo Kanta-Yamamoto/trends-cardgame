@@ -165,7 +165,7 @@
     "epithet": "",
     "type": "icon",
     "rarity": 3,
-    "cost": 3,
+    "cost": 2,
     "attack": 1,
     "hp": 1,
     "attributes": ["草"],
@@ -1402,8 +1402,8 @@
     "epithet": "",
     "type": "icon",
     "rarity": 1,
-    "cost": 2,
-    "attack": 1,
+    "cost": 1,
+    "attack": 0,
     "hp": 1,
     "attributes": ["草"],
     "kaiwai": ["ミーム"],
@@ -1686,7 +1686,7 @@
     "epithet": "",
     "type": "icon",
     "rarity": 3,
-    "cost": 4,
+    "cost": 3,
     "attack": 2,
     "hp": 3,
     "attributes": ["草"],
@@ -2212,8 +2212,8 @@
     "type": "icon",
     "rarity": 5,
     "cost": 4,
-    "attack": 1,
-    "hp": 2,
+    "attack": 2,
+    "hp": 3,
     "attributes": ["草"],
     "kaiwai": ["ミーム"],
     "keywords": ["凸"],
@@ -2390,9 +2390,11 @@
     "keywords": [],
     "effects": [
       {
-        "do": "heal",
-        "to": "master",
-        "amount": 3
+        "do": "totonou",
+        "damage": 2,
+        "attack": 2,
+        "turns": 3,
+        "heal": 1
       },
       {
         "on": "passive",
@@ -2400,7 +2402,7 @@
         "amount": 2
       }
     ],
-    "effect": "場に出たとき、自分のライフを3回復する。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
+    "effect": "場に出たとき、整う。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
     "flavor": "「ととのったら、あなたの番」",
     "art": "/assets/cards/c10-art.jpg",
     "original": "assets/original/c10.webp",
@@ -2567,9 +2569,9 @@
     "epithet": "",
     "type": "icon",
     "rarity": 2,
-    "cost": 3,
+    "cost": 2,
     "attack": 1,
-    "hp": 3,
+    "hp": 2,
     "attributes": ["草"],
     "kaiwai": ["アイドル"],
     "keywords": [],
@@ -2767,7 +2769,7 @@
     "rarity": 2,
     "cost": 3,
     "attack": 2,
-    "hp": 2,
+    "hp": 3,
     "attributes": ["草"],
     "kaiwai": ["動物"],
     "keywords": ["凸"],
@@ -3419,10 +3421,11 @@
     "keywords": ["ガード"],
     "effects": [
       {
-        "on": "play",
-        "do": "heal",
-        "to": "allAlliesAndMaster",
-        "amount": 3
+        "do": "totonou",
+        "damage": 2,
+        "attack": 2,
+        "turns": 3,
+        "heal": 1
       },
       {
         "on": "turnEnd",
@@ -3431,10 +3434,36 @@
         "amount": 1
       }
     ],
-    "effect": "ガード。場に出たとき、自分のアイコンすべてとライフを3回復する。自分のターンの終わりに、自分のライフを1回復する。",
+    "effect": "ガード。場に出たとき、整う。自分のターンの終わりに、自分のライフを1回復する。",
     "flavor": "「今日も湯けむり配信中」",
     "art": "/assets/cards/i20-art.jpg",
     "original": "assets/original/i20.webp"
+  },
+  {
+    "id": "i21",
+    "name": "サウナ",
+    "epithet": "",
+    "type": "post",
+    "rarity": 2,
+    "cost": 2,
+    "attributes": ["癒し"],
+    "kaiwai": [],
+    "keywords": [],
+    "target": "allyIcon",
+    "targetFilter": {
+      "minHp": 3
+    },
+    "effects": [
+      {
+        "do": "totonou",
+        "damage": 2,
+        "attack": 2,
+        "turns": 3,
+        "heal": 1
+      }
+    ],
+    "effect": "体力が3以上の自分のアイコン1体が、整う。",
+    "flavor": "熱いのは、整うための準備。"
   },
   {
     "id": "n12",

@@ -256,6 +256,24 @@ function DeckSelect() {
   );
 }
 
+/**
+ * デッキ選択のサムネのエース：背景の絵をうっすら敷き、切り抜き（あれば）を右に大きく出す。
+ * 文字は左に置くので、左から右へ暗さを抜くグラデーションを重ねて読みやすくする
+ */
+function DeckAce({ id }: { id?: string }) {
+  const card = id ? CATALOG[id] : undefined;
+  if (!card?.art) return null;
+  return (
+    <span className="deck-ace" aria-hidden="true">
+      <span className="deck-ace-bg" style={{ backgroundImage: `url(${card.art})` }} />
+      {card.subject ? (
+        <img className="deck-ace-subject" src={card.subject} alt="" loading="lazy" draggable={false} />
+      ) : null}
+      <span className="deck-ace-shade" />
+    </span>
+  );
+}
+
 /** デッキの色（単属性なら左右とも同じ色） */
 function deckGradient(attrs: readonly string[]) {
   const [a, b = a] = attrs.map((x) => ATTR_META[x as keyof typeof ATTR_META]);
@@ -291,6 +309,7 @@ export function DeckGrid({
       style={{ background: deckGradient(sel.attrs) }}
       onClick={() => pick(sel)}
     >
+      <DeckAce id={sel.ace} />
       <span className="deck-attrs">{sel.attrs.length > 0 ? sel.attrs.join(" × ") : "共通"}</span>
       <strong>{sel.name}</strong>
       <span>{sel.text}</span>
@@ -1355,6 +1374,9 @@ function PeekCard({ card, view, onOpen }: { card: CardDef; view?: UnitView; onOp
           {view.keywords.length > 0 && <span>{view.keywords.join("・")}</span>}
           {view.exposed && <span>晒し者（ガードを失い、強化が消えた）</span>}
           {view.unit.exposeAtTurnEnd && <span>ターンの終わりに晒し者になる（炎上商法）</span>}
+          {!!view.unit.totonoi && (
+            <span>整い（自分のターンの始めに体力1回復・あと{view.unit.totonoi}ターン）</span>
+          )}
           {view.asleep && <span>眠っている（このターンは攻撃できない）</span>}
           {view.unit.silenced && <span>訂正済み（キーワードと効果が消えている）</span>}
         </div>
@@ -1390,6 +1412,7 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
     ? [
         view.exposed && "晒し者",
         view.unit.exposeAtTurnEnd && "ターンの終わりに晒される",
+        !!view.unit.totonoi && `整い（あと${view.unit.totonoi}ターン）`,
         view.asleep && "眠っている",
         view.unit.silenced && "訂正済み",
         view.hp < view.maxHp && "ダメージあり",

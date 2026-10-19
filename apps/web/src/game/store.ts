@@ -16,24 +16,30 @@ import type { DeckSel } from "./decks";
 
 export const CATALOG: Record<string, CardDef> = Object.fromEntries(CARDS.map((c) => [c.id, c]));
 
-export const DECK_INFO: Record<DeckId, { name: string; text: string }> = {
+/** 構築済みデッキの名前・説明と、デッキ選択のサムネに出すエース（★5） */
+export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: string }> = {
   solo_flame: {
+    ace: "c2",
     name: "燃やし尽くす",
     text: "炎上だけ。速攻と凸で序盤から殴り切り、カグラの炎上商法で押し込み、ヒバナで盤面を返す。エースはレン・カグラ・ヒバナ",
   },
   solo_idol: {
+    ace: "m1",
     name: "推しに全振り",
     text: "メロいだけ。アイドルをそろえて育て、ラスサビで全員が跳ぶ。エースはトップアイドルとドームの歌姫 ミレイ",
   },
   solo_expert: {
+    ace: "c1",
     name: "有識者会議",
     text: "神だけ。有識者で引き続け、確実に除去して盤面を取る。エースは専門家・シロガネ・ヨミ",
   },
   solo_meme: {
+    ace: "c8",
     name: "草しか生えない",
     text: "草だけ。草で場を埋めて数で押し、倒された草を食べたクサハミで仕留める。エースはワラと大食いのクサハミ",
   },
   solo_heal: {
+    ace: "c10",
     name: "癒しの楽園",
     text: "癒しだけ。回復で粘って、回復するたびに相手を燃やす。エースはユズハ・ルリ・ナギ",
   },

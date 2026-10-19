@@ -54,12 +54,32 @@ button { font: inherit; color: inherit; }
 .deck-pick strong { text-shadow: 0 2px 6px #0009; }
 .deck-pick .deck-attrs { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; }
 .deck-pick:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -12px #000c; }
+/* サムネのエース（★5）：背景の絵をうっすら、切り抜きを右に大きく。文字は左で、影で読みやすく */
+.deck-pick { position: relative; overflow: hidden; isolation: isolate; }
+.deck-pick > :not(.deck-ace) { position: relative; z-index: 2; max-width: 62%; }
+.deck-ace { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.deck-ace-bg {
+  position: absolute; inset: 0; background-size: cover; background-position: 70% 22%;
+  opacity: 0.55; mix-blend-mode: luminosity;
+  mask-image: linear-gradient(90deg, transparent 10%, #000 60%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 10%, #000 60%);
+}
+.deck-ace-subject {
+  position: absolute; right: -12%; top: -4%; height: 185%; width: auto; max-width: none;
+  filter: drop-shadow(0 6px 14px #000a) drop-shadow(0 0 1px #fff8);
+  transform: rotate(-2deg); transform-origin: top right; transition: transform 0.25s ease;
+}
+.deck-pick:hover .deck-ace-subject, .deck-pick:focus-visible .deck-ace-subject { transform: rotate(0deg) scale(1.05); }
+.deck-ace-shade { position: absolute; inset: 0; background: linear-gradient(90deg, #000a 0%, #0006 38%, transparent 70%); }
 /* デッキが10個あるので、スマホの縦持ちでは2列にして縦に長くなりすぎないようにする */
 @media (max-width: 560px) {
   .decks { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
   .deck-pick { padding: 12px; min-height: 112px; gap: 4px; border-radius: 12px; }
   .deck-pick strong { font-size: 16px; }
   .deck-pick .deck-attrs { font-size: 10.5px; }
+  .deck-pick > :not(.deck-ace) { max-width: 72%; }
+  .deck-pick { min-height: 150px; }
+  .deck-ace-subject { right: -16%; top: -4%; height: 165%; }
   .deck-pick span:last-child { font-size: 11px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 }
 .rules { margin-top: 20px; font-size: 13px; line-height: 1.8; color: var(--muted); }
@@ -107,6 +127,8 @@ button { font: inherit; color: inherit; }
 .mini-kws { grid-row: 4; display: flex; flex-wrap: wrap; gap: 3px; padding: 3px 5px 0; }
 .mini-kw.post { background: #fff; color: #333; }
 .mini-kw.st { background: #b06bff; color: #fff; }
+/* 整い：自分にとって良い状態なので、悪い状態（紫）と色を分ける */
+.mini-kw.st.totonoi { background: #2fb7d9; }
 .mini-kw { font-size: 9.5px; font-weight: 800; padding: 1px 5px; border-radius: 99px; background: #ffffffd0; color: #111; }
 .mini-stats { grid-row: 5; display: flex; justify-content: space-between; padding: 3px 5px 5px; }
 .mini-atk, .mini-hp {

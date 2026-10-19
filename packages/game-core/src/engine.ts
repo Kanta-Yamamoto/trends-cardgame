@@ -292,6 +292,7 @@ export function castTargets(
     if (k !== undefined && !inKaiwai(u, k, catalog)) return [];
     if (f?.damaged && u.damage <= 0) return [];
     if (f?.maxAttack !== undefined && viewUnit(state, owner, u, catalog).attack > f.maxAttack) return [];
+    if (f?.minHp !== undefined && viewUnit(state, owner, u, catalog).hp < f.minHp) return [];
     return [{ side, slot } as CastTarget];
   });
 }
@@ -627,6 +628,20 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       }
       break;
     }
+    case "totonou": {
+      // 整う：投稿なら対象の自分のアイコン、アイコンの効果なら自分
+      const slot = ctx.target ? ctx.target.slot : ctx.selfSlot;
+      const u = ctx.target ? tgt : self;
+      if (u && slot !== undefined) {
+        damageUnit(state, player, slot, e.damage, emit);
+        u.atkBuff += e.attack;
+        u.totonoi = e.turns;
+        u.totonoiHeal = e.heal;
+        emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: 0 });
+        emit({ type: "status", player, slot, cardId: u.cardId, status: "整い" });
+      }
+      break;
+    }
     case "damagePerEnemy": {
       // 相手の場が賑わっているほど大きく燃える。数えるのは効果が働いた瞬間
       const foeField = state.players[foeId].field;
@@ -845,6 +860,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
             hpBuff: 0,
             exposed: false,
             exposeAtTurnEnd: false,
+            totonoi: 0,
             boundUntil: 0,
             silenced: false,
             noGuard: false,
@@ -894,6 +910,15 @@ function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Co
       u.atkBuff += n;
       emit({ type: "buffed", player: pid, slot, cardId: u.cardId, attack: n, hp: 0 });
     }
+  });
+  // 整い：自分のターンの始めに体力を回復する（1 体ごとに「回復の効果を使った」と数える）
+  p.field.forEach((u, slot) => {
+    if (!u?.totonoi) return;
+    const amount = Math.min(u.damage, u.totonoiHeal ?? 1);
+    u.damage -= amount;
+    emit({ type: "healed", player: pid, slot, cardId: u.cardId, amount });
+    afterHeal({ state, player: pid, catalog, config, emit, playedBefore: 0 });
+    u.totonoi -= 1;
   });
   // 子守唄：相手の場にいれば、攻撃力がいちばん高いアイコンがこのターン眠る
   if (state.players[other].field.some((u) => u && hasPassive(u, "lullaby", catalog))) {
