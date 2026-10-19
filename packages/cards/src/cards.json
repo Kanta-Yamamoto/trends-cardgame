@@ -1353,10 +1353,10 @@
     "rarity": 5,
     "cost": 6,
     "attack": 2,
-    "hp": 7,
+    "hp": 6,
     "attributes": ["癒し"],
     "kaiwai": ["配信者"],
-    "keywords": [],
+    "keywords": ["ガード"],
     "effects": [
       {
         "on": "play",
@@ -2057,10 +2057,10 @@
     "rarity": 5,
     "cost": 6,
     "attack": 3,
-    "hp": 7,
+    "hp": 6,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": ["凸"],
+    "keywords": ["ガード", "凸"],
     "effects": [
       {
         "on": "play",
@@ -2364,10 +2364,10 @@
     "rarity": 5,
     "cost": 4,
     "attack": 3,
-    "hp": 6,
+    "hp": 5,
     "attributes": ["癒し"],
     "kaiwai": ["配信者"],
-    "keywords": [],
+    "keywords": ["ガード"],
     "effects": [
       {
         "do": "heal",
