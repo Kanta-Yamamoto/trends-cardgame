@@ -71,6 +71,15 @@ describe("cards.json", () => {
     }
   });
 
+  it("キーワードは効果文にも書く（カードを見ただけで分かるように。闇堕ちの姿も）", () => {
+    for (const c of CARDS) {
+      for (const k of c.keywords)
+        expect({ id: c.id, k, ok: c.effect.includes(k) }).toEqual({ id: c.id, k, ok: true });
+      for (const k of c.dark?.keywords ?? [])
+        expect({ id: c.id, k, ok: c.dark?.effect.includes(k) }).toEqual({ id: c.id, k, ok: true });
+    }
+  });
+
   it("getCard は存在しない ID でエラー", () => {
     expect(() => getCard("nope")).toThrow();
   });

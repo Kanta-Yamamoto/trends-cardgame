@@ -130,8 +130,8 @@
   /* 一覧用：名前と数値だけ */
   .card.is-compact .kr-type,
   .card.is-compact .kr-epi,
-  .card.is-compact .kr-effect,
   .card.is-compact .kr-darktext { display: none; }
+  .card.is-compact .kr-effect { font-size: 0.86em; line-height: 1.45; }
   /* 押して文字を隠す */
   .card.text-hidden .kr-plate { opacity: 0; transform: translateY(15%); pointer-events: none; }
   /* 動かないカードはラメを控えめに固定 */
