@@ -1,6 +1,6 @@
 import type { CardDef } from "@trends/cards";
 import { AttrChips } from "../AttrChips";
-import { EffectText } from "../EffectText";
+import { DarkTag, EffectText } from "../EffectText";
 import { attrBackground, stars, typeLabel } from "../meta";
 import { Stats } from "../Stats";
 
@@ -23,18 +23,13 @@ export function GenericFace({ card }: { card: CardDef }) {
           {card.name.slice(0, 1)}
         </div>
       )}
-      {card.dark && <div className="kg-dark">闇堕ち</div>}
+      <DarkTag card={card} className="kg-dark" />
       <div className="kg-plate">
         <span className="kg-type">{typeLabel(card)}</span>
         {card.epithet && <span className="kg-epi">{card.epithet}</span>}
         <h3 className="kg-name">{card.name}</h3>
         <AttrChips card={card} />
         <p className="kg-effect">{card.effect ? <EffectText text={card.effect} /> : <i>効果なし</i>}</p>
-        {card.dark && (
-          <p className="kg-darktext">
-            闇堕ち：オワコンに行ったら、好きなときにコストなしで闇堕ちの姿で出せる（1回だけ。姿は闇堕ちするまで秘密）
-          </p>
-        )}
         {card.type === "icon" && (
           <span className="kg-power">
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />

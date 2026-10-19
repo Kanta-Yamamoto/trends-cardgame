@@ -23,7 +23,7 @@
         "do": "extraAttackOnKill"
       }
     ],
-    "effect": "連撃（1ターンに2回攻撃できる）。場に出たとき、攻撃力がいちばん高い相手のアイコンに1ダメージ。相手のアイコンを倒すたび、もう1回攻撃できる。",
+    "effect": "連撃。場に出たとき、攻撃力がいちばん高い相手のアイコンに1ダメージ。相手のアイコンを倒すたび、もう1回攻撃できる。",
     "flavor": "「遅えよ。全部、俺がもらってく」",
     "dark": {
       "name": "闇堕ちレン",
@@ -61,7 +61,7 @@
     "kaiwai": ["配信者"],
     "keywords": ["速攻"],
     "effects": [],
-    "effect": "速攻（場に出たターンに攻撃できる）",
+    "effect": "速攻",
     "flavor": "15秒あれば十分だ。",
     "art": "/assets/cards/f1-art.jpg",
     "original": "assets/original/f1.webp"
@@ -79,7 +79,7 @@
     "kaiwai": ["配信者"],
     "keywords": ["凸"],
     "effects": [],
-    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。",
+    "effect": "凸。",
     "flavor": "アポなし、許可なし、反省なし。",
     "art": "/assets/cards/f2-art.jpg",
     "original": "assets/original/f2.webp"
@@ -104,7 +104,7 @@
         "hp": 1
       }
     ],
-    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。連撃（1ターンに2回攻撃できる）。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。連撃。",
     "flavor": "見てないって言いながら、全部見てる。",
     "art": "/assets/cards/f3-art.jpg",
     "original": "assets/original/f3.webp"
@@ -352,7 +352,7 @@
         "do": "focusAura"
       }
     ],
-    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。場に出たとき、自分のほかのアイドルすべてに攻撃力+2・体力+1し、自分のアイコンすべてとライフを2回復する。センターにいる間、自分のほかのアイコンも、ターンの始めに攻撃力+1。",
+    "effect": "注目。場に出たとき、自分のほかのアイドルすべてに攻撃力+2・体力+1し、自分のアイコンすべてとライフを2回復する。センターにいる間、自分のほかのアイコンも、ターンの始めに攻撃力+1。",
     "flavor": "センターは、譲らない。",
     "dark": {
       "name": "闇深アイドル",
@@ -388,7 +388,7 @@
     "kaiwai": ["アイドル"],
     "keywords": ["注目"],
     "effects": [],
-    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）",
+    "effect": "注目",
     "flavor": "いつか、あのステージへ。",
     "art": "/assets/cards/m2-art.jpg",
     "original": "assets/original/m2.webp"
@@ -512,7 +512,7 @@
     "kaiwai": ["動物"],
     "keywords": ["ガード"],
     "effects": [],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）",
+    "effect": "ガード",
     "flavor": "動じない。",
     "art": "/assets/cards/i1-art.jpg",
     "original": "assets/original/i1.webp"
@@ -555,7 +555,7 @@
     "kaiwai": ["動物"],
     "keywords": ["ガード"],
     "effects": [],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）",
+    "effect": "ガード",
     "flavor": "おすわり、まて、ガード。",
     "art": "/assets/cards/i3-art.jpg",
     "original": "assets/original/i3.webp"
@@ -660,7 +660,7 @@
         "count": 1
       }
     ],
-    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。場に出たとき、相手のアイコンすべてのガードを消し、攻撃力がいちばん高い相手のアイコンに3ダメージ。自分のターンの終わりに、カードを1枚引く。",
+    "effect": "凸。場に出たとき、相手のアイコンすべてのガードを消し、攻撃力がいちばん高い相手のアイコンに3ダメージ。自分のターンの終わりに、カードを1枚引く。",
     "flavor": "「さあ、こちら側へ。光はもう、君を選んでいる」",
     "number": "001/040",
     "art": "/assets/cards/c1-art.jpg",
@@ -733,7 +733,7 @@
         "count": 1
       }
     ],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、カードを1枚引く。",
+    "effect": "ガード。場に出たとき、カードを1枚引く。",
     "flavor": "有識者ニキ、解説頼む。",
     "art": "/assets/cards/g2-art.jpg",
     "original": "assets/original/g2.webp"
@@ -865,7 +865,7 @@
     "kaiwai": [],
     "keywords": ["ガード"],
     "effects": [],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）",
+    "effect": "ガード",
     "flavor": "フォロー許可制。",
     "art": "/assets/cards/n3-art.jpg",
     "original": "assets/original/n3.webp"
@@ -1070,7 +1070,7 @@
         }
       }
     ],
-    "effect": "速攻（場に出たターンに攻撃できる）。場に出たとき、自分の場に炎上が3体以上いれば攻撃力+1。",
+    "effect": "速攻。場に出たとき、自分の場に炎上が3体以上いれば攻撃力+1。",
     "flavor": "この流れに乗るしかない。",
     "art": "/assets/cards/f7-art.jpg",
     "original": "assets/original/f7.webp"
@@ -1228,7 +1228,7 @@
         "hp": 1
       }
     ],
-    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。注目。",
     "flavor": "歌ってみた、100万回再生。",
     "art": "/assets/cards/m7-art.jpg",
     "original": "assets/original/m7.webp"
@@ -1274,7 +1274,7 @@
         "maxAttack": 1
       }
     ],
-    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。場に出たとき、攻撃力1以下の相手のアイコン1体（いちばん強いもの）を自分の場に奪う。",
+    "effect": "注目。場に出たとき、攻撃力1以下の相手のアイコン1体（いちばん強いもの）を自分の場に奪う。",
     "flavor": "姫、今日も来てくれたんだ。",
     "art": "/assets/cards/m9-art.jpg",
     "original": "assets/original/m9.webp"
@@ -1654,7 +1654,7 @@
         "count": 1
       }
     ],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、体力が1以下の相手のアイコンをすべて倒し、カードを1枚引く。",
+    "effect": "ガード。場に出たとき、体力が1以下の相手のアイコンをすべて倒し、カードを1枚引く。",
     "flavor": "では、出席をとります。",
     "art": "/assets/cards/g8-art.jpg",
     "original": "assets/original/g8.webp"
@@ -1701,7 +1701,7 @@
         "amount": 2
       }
     ],
-    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。場に出たとき、攻撃力がいちばん高い相手のアイコン1体に2ダメージ。",
+    "effect": "凸。場に出たとき、攻撃力がいちばん高い相手のアイコン1体に2ダメージ。",
     "flavor": "はい、論破。",
     "art": "/assets/cards/x1-art.jpg",
     "original": "assets/original/x1.webp"
@@ -1726,7 +1726,7 @@
         "count": 1
       }
     ],
-    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。場に出たとき、草を1体出す。",
+    "effect": "注目。場に出たとき、草を1体出す。",
     "flavor": "振り付け、覚えた？",
     "art": "/assets/cards/x2-art.jpg",
     "original": "assets/original/x2.webp"
@@ -1744,7 +1744,7 @@
     "kaiwai": [],
     "keywords": ["凸"],
     "effects": [],
-    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。",
+    "effect": "凸。",
     "flavor": "今日も燃えてるねえ。",
     "art": "/assets/cards/f11-art.jpg",
     "original": "assets/original/f11.webp"
@@ -1793,7 +1793,7 @@
         "amount": 1
       }
     ],
-    "effect": "速攻（場に出たターンに攻撃できる）。場に出たとき、相手のマスターに1ダメージ。",
+    "effect": "速攻。場に出たとき、相手のマスターに1ダメージ。",
     "flavor": "誰でも来い。全部配信する。",
     "art": "/assets/cards/f13-art.jpg",
     "original": "assets/original/f13.webp"
@@ -1935,7 +1935,7 @@
     "kaiwai": ["配信者", "アイドル"],
     "keywords": ["注目", "連撃"],
     "effects": [],
-    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。連撃（1ターンに2回攻撃できる）",
+    "effect": "注目。連撃",
     "flavor": "画面の向こうで、毎日会える。",
     "art": "/assets/cards/m13-art.jpg",
     "original": "assets/original/m13.webp"
@@ -2089,7 +2089,7 @@
         "count": 1
       }
     ],
-    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。場に出たとき、相手のアイコンすべてに1ダメージ。カードを1枚引く。",
+    "effect": "凸。場に出たとき、相手のアイコンすべてに1ダメージ。カードを1枚引く。",
     "flavor": "まず前提を整理しましょう。",
     "art": "/assets/cards/g13-art.jpg",
     "original": "assets/original/g13.webp"
@@ -2119,7 +2119,7 @@
         "amount": 1
       }
     ],
-    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。場に出たとき、体力が2以下の相手のアイコンをすべて倒す。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコンに1ダメージ。",
+    "effect": "凸。場に出たとき、体力が2以下の相手のアイコンをすべて倒す。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコンに1ダメージ。",
     "flavor": "「知らないことは、まだ調べていないことだけ」",
     "art": "/assets/cards/c7-art.jpg",
     "original": "assets/original/c7.webp",
@@ -2158,7 +2158,7 @@
     "kaiwai": ["ミーム"],
     "keywords": ["速攻"],
     "effects": [],
-    "effect": "速攻（場に出たターンに攻撃できる）",
+    "effect": "速攻",
     "flavor": "wwwwwwwwww",
     "art": "/assets/cards/k11-art.jpg",
     "original": "assets/original/k11.webp"
@@ -2343,7 +2343,7 @@
         "amount": 1
       }
     ],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）。自分のターンの終わりに、自分のライフを1回復する。",
+    "effect": "ガード。自分のターンの終わりに、自分のライフを1回復する。",
     "flavor": "いらっしゃいませ、にゃ。",
     "art": "/assets/cards/i11-art.jpg",
     "original": "assets/original/i11.webp"
@@ -2511,7 +2511,7 @@
         "kaiwai": "配信者"
       }
     ],
-    "effect": "速攻（場に出たターンに攻撃できる）。自分の場のほかの配信者1体につき攻撃力+1。",
+    "effect": "速攻。自分の場のほかの配信者1体につき攻撃力+1。",
     "flavor": "同接、合算で。",
     "art": "/assets/cards/f15-art.jpg",
     "original": "assets/original/f15.webp"
@@ -2591,7 +2591,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "速攻（場に出たターンに攻撃できる）。場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（強化が消える）。",
+    "effect": "速攻。場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（強化が消える）。",
     "flavor": "炎上も、センターで。",
     "art": "/assets/cards/f16-art.jpg",
     "original": "assets/original/f16.webp"
@@ -2756,7 +2756,7 @@
         "amount": 1
       }
     ],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、自分のアイコンすべてとライフを1回復する。",
+    "effect": "ガード。場に出たとき、自分のアイコンすべてとライフを1回復する。",
     "flavor": "大丈夫、まず深呼吸。",
     "art": "/assets/cards/i15-art.jpg",
     "original": "assets/original/i15.webp"
@@ -2789,7 +2789,7 @@
         }
       }
     ],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、カードを1枚引く。自分の場に有識者が3体以上いれば、さらに1枚引く。",
+    "effect": "ガード。場に出たとき、カードを1枚引く。自分の場に有識者が3体以上いれば、さらに1枚引く。",
     "flavor": "異論は、論文で。",
     "art": "/assets/cards/g16-art.jpg",
     "original": "assets/original/g16.webp"
@@ -2866,7 +2866,7 @@
     "kaiwai": ["ミーム"],
     "keywords": ["凸"],
     "effects": [],
-    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。",
+    "effect": "凸。",
     "flavor": "一言多いのが芸風。",
     "art": "/assets/cards/f18-art.jpg",
     "original": "assets/original/f18.webp"
@@ -2884,7 +2884,7 @@
     "kaiwai": ["ミーム"],
     "keywords": ["速攻"],
     "effects": [],
-    "effect": "速攻（場に出たターンに攻撃できる）",
+    "effect": "速攻",
     "flavor": "既読、無視、スタンプ。",
     "art": "/assets/cards/f19-art.jpg",
     "original": "assets/original/f19.webp"
@@ -3035,7 +3035,7 @@
     "kaiwai": ["ミーム"],
     "keywords": ["速攻"],
     "effects": [],
-    "effect": "速攻（場に出たターンに攻撃できる）",
+    "effect": "速攻",
     "flavor": "「構ってほしいだけなんだよ」",
     "art": "/assets/cards/f21-art.jpg",
     "original": "assets/original/f21.webp"
@@ -3060,7 +3060,7 @@
         "amount": 2
       }
     ],
-    "effect": "凸（場に出たターン、相手のアイコンにだけ攻撃できる）。場に出たとき、相手のマスターに2ダメージ。",
+    "effect": "凸。場に出たとき、相手のマスターに2ダメージ。",
     "flavor": "「燃えるのも仕事のうち」",
     "art": "/assets/cards/f22-art.jpg",
     "original": "assets/original/f22.webp"
@@ -3112,7 +3112,7 @@
         "kaiwai": "アイドル"
       }
     ],
-    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。場に出たとき、自分のほかのアイドルすべてに体力+1。",
+    "effect": "注目。場に出たとき、自分のほかのアイドルすべてに体力+1。",
     "flavor": "「はい、もう一回！」",
     "art": "/assets/cards/m19-art.jpg",
     "original": "assets/original/m19.webp"
@@ -3221,7 +3221,7 @@
         "count": 2
       }
     ],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、相手のアイコンすべてに2ダメージ。カードを2枚引く。",
+    "effect": "ガード。場に出たとき、相手のアイコンすべてに2ダメージ。カードを2枚引く。",
     "flavor": "「静粛に」",
     "art": "/assets/cards/g19-art.jpg",
     "original": "assets/original/g19.webp"
@@ -3369,7 +3369,7 @@
         "amount": 2
       }
     ],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、自分のアイコンすべてとライフを2回復する。",
+    "effect": "ガード。場に出たとき、自分のアイコンすべてとライフを2回復する。",
     "flavor": "「はい、ちょっと休んでいきなさい」",
     "art": "/assets/cards/i19-art.jpg",
     "original": "assets/original/i19.webp"
@@ -3400,7 +3400,7 @@
         "amount": 1
       }
     ],
-    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、自分のアイコンすべてとライフを3回復する。自分のターンの終わりに、自分のライフを1回復する。",
+    "effect": "ガード。場に出たとき、自分のアイコンすべてとライフを3回復する。自分のターンの終わりに、自分のライフを1回復する。",
     "flavor": "「今日も湯けむり配信中」",
     "art": "/assets/cards/i20-art.jpg",
     "original": "assets/original/i20.webp"

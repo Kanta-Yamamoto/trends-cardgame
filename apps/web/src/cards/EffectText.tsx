@@ -1,11 +1,16 @@
 import type { CardDef } from "@trends/cards";
 import { Fragment } from "react";
+import { HELP, HELP_TERMS, useHelp } from "../help/help";
 
-const KEYWORDS = ["速攻", "ガード", "連撃", "凸", "注目", "闇堕ち", "ノリ"];
+const SPLIT = new RegExp(`(〈[^〉]+〉|${HELP_TERMS.join("|")})`);
 
-/** 効果文の〈種族〉とキーワードを強調する */
+/**
+ * 効果文の〈種族〉とキーワード・状態の語を強調する。
+ * キーワードなどは押すと解説の小窓が開く（カード自体がボタンのことがあるので、押しても親には伝えない）
+ */
 export function EffectText({ text }: { text: string }) {
-  const parts = text.split(new RegExp(`(〈[^〉]+〉|${KEYWORDS.join("|")})`)).filter((p) => p !== "");
+  const open = useHelp((s) => s.open);
+  const parts = text.split(SPLIT).filter((p) => p !== "");
   // 文字位置をキーにする（同じ文が並んでも重ならない）
   let offset = 0;
   const pieces = parts.map((p) => {
@@ -16,7 +21,28 @@ export function EffectText({ text }: { text: string }) {
   return (
     <>
       {pieces.map(({ p, at }) =>
-        p.startsWith("〈") || KEYWORDS.includes(p) ? (
+        HELP[p] ? (
+          // biome-ignore lint/a11y/useSemanticElements: カードの枠自体がボタンなので、ボタンを入れ子にできない
+          <span
+            className="kw kw-help"
+            key={at}
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.stopPropagation();
+              open(p);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                open(p);
+              }
+            }}
+          >
+            {p}
+          </span>
+        ) : p.startsWith("〈") ? (
           <span className="kw" key={at}>
             {p}
           </span>
@@ -25,6 +51,34 @@ export function EffectText({ text }: { text: string }) {
         ),
       )}
     </>
+  );
+}
+
+/** ★5 の「闇堕ち」の札。押すと闇堕ちの仕組みと、このカードの闇堕ちの姿を見せる */
+export function DarkTag({ card, className = "dark-tag" }: { card: CardDef; className?: string }) {
+  const open = useHelp((s) => s.open);
+  if (!card.dark) return null;
+  return (
+    // biome-ignore lint/a11y/useSemanticElements: カードの枠自体がボタンなので、ボタンを入れ子にできない
+    <span
+      className={`${className} kw-help`}
+      role="button"
+      tabIndex={0}
+      aria-label="闇堕ちの説明を見る"
+      onClick={(e) => {
+        e.stopPropagation();
+        open("闇堕ち", card);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.stopPropagation();
+          open("闇堕ち", card);
+        }
+      }}
+    >
+      闇堕ち
+    </span>
   );
 }
 

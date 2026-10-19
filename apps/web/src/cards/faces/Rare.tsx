@@ -1,7 +1,7 @@
 import type { CardDef } from "@trends/cards";
 import type { CSSProperties } from "react";
 import { AttrChips } from "../AttrChips";
-import { EffectText } from "../EffectText";
+import { DarkTag, EffectText } from "../EffectText";
 import { ATTR_META, stars, typeLabel } from "../meta";
 import { Stats } from "../Stats";
 
@@ -45,7 +45,7 @@ export function RareFace({ card }: { card: CardDef }) {
       <div className="kr-rarity" title={`★${card.rarity}`}>
         {stars(card.rarity)}
       </div>
-      {card.dark && <div className="kr-dark">闇堕ち</div>}
+      <DarkTag card={card} className="kr-dark" />
 
       <div className="kr-plate">
         <div className="kr-name">
@@ -58,11 +58,6 @@ export function RareFace({ card }: { card: CardDef }) {
           <p className="kr-effect">
             <EffectText text={card.effect} />
           </p>
-          {card.dark && (
-            <p className="kr-darktext">
-              闇堕ち：オワコンに行ったら、好きなときにコストなしで闇堕ちの姿で出せる（1回だけ。姿は闇堕ちするまで秘密）
-            </p>
-          )}
           {card.type === "icon" && (
             <span className="kr-power">
               <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />

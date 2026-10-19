@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from "react-router";
+import { HelpSheet } from "./help/HelpSheet";
 import { InstallButton } from "./InstallButton";
 import { Decks } from "./pages/Decks";
 import { Gallery } from "./pages/Gallery";
@@ -28,6 +29,7 @@ export function App() {
           <Route path="/online/:code" element={<OnlineRoom />} />
         </Routes>
       </main>
+      <HelpSheet />
     </div>
   );
 }

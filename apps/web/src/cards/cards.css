@@ -477,3 +477,7 @@
 .holo .card.text-hidden .plate { opacity: 0; translate: 0 15%; pointer-events: none; }
 /* カードの文字を選択させない（押したときに文字が選ばれて、カーソルが文字選択になるのを防ぐ） */
 .holo .card { user-select: none; -webkit-user-select: none; }
+
+/* 効果文の中の押せる語（キーワード・状態・闇堕ち）：下線を引き、押すと解説 */
+.kw-help { text-decoration: underline dotted; text-decoration-thickness: 0.08em; text-underline-offset: 0.18em; cursor: pointer; }
+.kw-help:focus-visible { outline: 2px solid #8fd8ff; outline-offset: 2px; border-radius: 3px; }
