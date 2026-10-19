@@ -862,6 +862,27 @@ describe("界隈を読む効果（自分の側だけ）", () => {
     expect(atk()).toBe(4);
   });
 
+  it("このターンだけの強化：ターンの終わりに消える", () => {
+    const local = {
+      ...catalog,
+      rallyer: icon("rallyer", 2, 1, 1, {
+        effects: [{ do: "buffAllies", attack: 1, hp: 0, thisTurn: true }],
+      }),
+    };
+    let s = createGame({
+      decks: { p1: ["f", "rallyer", ...F(10)], p2: F(12) },
+      seed: 42,
+      shuffle: false,
+      config: { startHand: 4 },
+    });
+    s.players.p1.mana = 10;
+    s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 0 }, local).state;
+    s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 1 }, local).state;
+    expect(viewUnit(s, "p1", s.players.p1.field[0] as Unit, local).attack).toBe(2);
+    s = applyAction(s, { type: "endTurn", player: "p1" }, local).state;
+    expect(viewUnit(s, "p1", s.players.p1.field[0] as Unit, local).attack).toBe(1);
+  });
+
   it("自分のほかのアイドルすべてに強化（アイドル以外には付かない）", () => {
     let s = play(play(play(game(["idl", "s2", "f", "producer"]), 0, 0), 0, 1), 0, 2);
     s = play(s, 0, 3);

@@ -137,7 +137,7 @@ function countAllies(
 export function viewUnit(state: GameState, owner: PlayerId, unit: Unit, catalog: Catalog): UnitView {
   const card = must(catalog, unit.cardId);
   const base = unit.dark && card.dark ? card.dark : { attack: card.attack ?? 0, hp: card.hp ?? 1 };
-  let attack = base.attack + unit.atkBuff;
+  let attack = base.attack + unit.atkBuff + (unit.tempAtk ?? 0);
   for (const e of effectsOf(unit, catalog)) {
     if (triggerOf(e) === "passive" && e.do === "attackPerAlly") {
       attack += countAllies(state, owner, catalog, e.kaiwai, unit.uid);
@@ -507,7 +507,8 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       me.field.forEach((u, slot) => {
         if (!u || slot === ctx.selfSlot) return;
         if (e.kaiwai && !inKaiwai(u, e.kaiwai, catalog)) return;
-        u.atkBuff += e.attack;
+        if (e.thisTurn) u.tempAtk = (u.tempAtk ?? 0) + e.attack;
+        else u.atkBuff += e.attack;
         u.hpBuff += e.hp;
         emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: e.hp });
       });
@@ -591,6 +592,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       const expose = (owner: PlayerId, slot: number, u: Unit) => {
         u.exposedUntil = state.turn + 2;
         u.atkBuff = Math.min(0, u.atkBuff);
+        u.tempAtk = 0;
         u.hpBuff = Math.min(0, u.hpBuff);
         status(owner, slot, u, "晒し");
       };
@@ -796,6 +798,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
           const wasDark = u.dark;
           Object.assign(u, {
             atkBuff: 0,
+            tempAtk: 0,
             hpBuff: 0,
             exposedUntil: 0,
             boundUntil: 0,
@@ -1037,6 +1040,9 @@ export function applyAction(
       break;
     }
     case "endTurn": {
+      // このターンだけの強化を消す（両者の場）
+      for (const owner of ["p1", "p2"] as const)
+        for (const u of state.players[owner].field) if (u) u.tempAtk = 0;
       // ターンの終わりに働く効果
       me.field.forEach((u, slot) => {
         if (!u) return;
