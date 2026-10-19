@@ -1,6 +1,6 @@
 import type { CardDef } from "@trends/cards";
 import { AttrChips } from "../AttrChips";
-import { EffectText } from "../EffectText";
+import { DarkTag, EffectText } from "../EffectText";
 import { stars } from "../meta";
 import { Stats } from "../Stats";
 import "../rare5b.css";
@@ -25,7 +25,7 @@ export function KaguraFace({ card }: { card: CardDef }) {
         <b>{card.cost}</b>
       </div>
       <div className="rarity">{stars(card.rarity)}</div>
-      {card.dark && <div className="dark-tag">闇堕ち</div>}
+      <DarkTag card={card} />
 
       <div className="plate">
         <div className="name">
@@ -40,9 +40,6 @@ export function KaguraFace({ card }: { card: CardDef }) {
           <p className="effect">
             <EffectText text={card.effect} />
           </p>
-          {card.dark && (
-            <p className="dark-note">闇堕ち：オワコンから1回だけ、コストなしで闇堕ちして戻ってくる</p>
-          )}
           <div className="foot">
             <span className="hanko" aria-hidden="true">
               請

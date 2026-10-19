@@ -1,6 +1,6 @@
 import type { CardDef } from "@trends/cards";
 import { AttrChips } from "../AttrChips";
-import { EffectText } from "../EffectText";
+import { DarkTag, EffectText } from "../EffectText";
 import { stars } from "../meta";
 import { Stats } from "../Stats";
 import "../rare5b.css";
@@ -26,7 +26,7 @@ export function YomiFace({ card }: { card: CardDef }) {
       <div className="bookmark">
         <span>{stars(card.rarity)}</span>
       </div>
-      {card.dark && <div className="dark-tag">闇堕ち</div>}
+      <DarkTag card={card} />
 
       <div className="plate">
         <div className="name">
@@ -41,9 +41,6 @@ export function YomiFace({ card }: { card: CardDef }) {
           <p className="effect">
             <EffectText text={card.effect} />
           </p>
-          {card.dark && (
-            <p className="dark-note">闇堕ち：オワコンから1回だけ、コストなしで闇堕ちして戻ってくる</p>
-          )}
           <div className="foot">
             <span className="folio">p. 777</span>
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />

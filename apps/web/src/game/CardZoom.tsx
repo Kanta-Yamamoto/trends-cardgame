@@ -1,19 +1,11 @@
-import type { CardDef, Keyword } from "@trends/cards";
+import type { CardDef } from "@trends/cards";
 import type { UnitView } from "@trends/game-core";
 import { useEffect, useState } from "react";
 import { AttrChips } from "../cards/AttrChips";
 import { EffectText } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
 import { stars } from "../cards/meta";
-
-/** キーワードの説明（効果文が短いカードでも意味が分かるように） */
-const KEYWORD_HELP: Record<Keyword, string> = {
-  速攻: "場に出たターンに攻撃できる",
-  ガード: "相手は、このアイコン（とほかのガード）しか攻撃できない",
-  連撃: "1ターンに2回攻撃できる",
-  凸: "場に出たターンに、相手のアイコンにだけ攻撃できる（マスターは攻撃できない）。「凸で攻撃したとき」の効果は、そのとき上がった攻撃力で殴る",
-  注目: "自分のターンの始めに攻撃力+1。センターにいると+2",
-};
+import { HELP } from "../help/help";
 
 /**
  * カードを画面いっぱいに大きく見せる（スマホで効果を読むため）。
@@ -95,7 +87,7 @@ export function CardZoom({
               {keywords.map((k) => (
                 <div key={k}>
                   <dt>{k}</dt>
-                  <dd>{KEYWORD_HELP[k]}</dd>
+                  <dd>{HELP[k]?.text}</dd>
                 </div>
               ))}
             </dl>

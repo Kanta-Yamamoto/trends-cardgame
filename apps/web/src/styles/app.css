@@ -754,3 +754,22 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
   .db-bar { width: 12%; }
   .db-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 }
+
+/* ---------- 効果の語の解説（押すと小窓） ---------- */
+.help-sheet { z-index: 80; }
+.help-body { position: relative; width: min(420px, 100%); display: grid; gap: 10px; padding: 20px 22px; border-radius: 18px; background: #121a28f7; border: 1px solid var(--line); box-shadow: 0 20px 50px #000c; animation: pop 0.3s cubic-bezier(.2, 1.4, .4, 1); }
+.help-body.keyword { border-color: #f2cf7a66; }
+.help-body.state { border-color: #ff8a9466; }
+.help-body.dark { border-color: #b06bff88; box-shadow: 0 0 30px #b06bff44, 0 20px 50px #000c; }
+.help-kind { font-size: 11px; font-weight: 800; letter-spacing: 0.15em; color: var(--muted); }
+.help-body h2 { margin: 0; font-size: 22px; }
+.help-body.dark h2 { color: #d9a8ff; }
+.help-body > p { margin: 0; font-size: 15px; line-height: 1.75; }
+.help-body .btn { justify-self: end; }
+.help-dark { display: grid; gap: 6px; padding: 12px 14px; border-radius: 12px; background: #2a0d3a88; box-shadow: inset 0 0 0 1px #b06bff66; }
+.help-dark-head { font-size: 13px; color: #e8d0ff; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+.help-dark-head b { font-size: 16px; color: #fff; }
+.help-dark-stats { font: 800 14px/1 var(--f-mark); }
+.help-dark-stats i { font-style: normal; }
+.help-dark-kw { font-size: 12px; font-weight: 800; color: var(--gold); }
+.help-dark-effect { margin: 0; font-size: 14px; line-height: 1.6; color: #fff; }
