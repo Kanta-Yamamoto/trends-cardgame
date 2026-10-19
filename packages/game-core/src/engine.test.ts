@@ -217,17 +217,25 @@ function withFoe(p1: string[], p2: string[]): GameState {
 }
 
 describe("準備とターン", () => {
-  it("場は5枠。先攻は4枚・話題力1、後攻は5枚で最初のターンだけ話題力+1", () => {
+  it("場は5枠。どちらも手札4枚で始め、先攻は話題力1、後攻は最初のターンだけ話題力+2", () => {
     const s = createGame({ decks: { p1: F(25), p2: F(25) }, seed: 1 });
     expect(s.players.p1.field).toHaveLength(5);
     expect(s.players.p1.hand).toHaveLength(4);
-    expect(s.players.p2.hand).toHaveLength(5);
+    expect(s.players.p2.hand).toHaveLength(4);
     const t2 = end(s);
-    expect(t2.players.p2.mana).toBe(2);
+    expect(t2.players.p2.mana).toBe(3);
     expect(end(end(t2, "p2")).players.p2.mana).toBe(2);
   });
+  it("手札は9枚まで。いっぱいのときに引いたカードはオワコンへ", () => {
+    const s = createGame({ decks: { p1: F(25), p2: F(25) }, seed: 1 });
+    s.players.p2.hand = Array(9).fill("f");
+    const r = run(s, { type: "endTurn", player: "p1" });
+    expect(r.state.players.p2.hand).toHaveLength(9);
+    expect(r.state.players.p2.trash).toHaveLength(1);
+    expect(r.events.map((e) => e.type)).toContain("burned");
+  });
   it("山札が引けなければ、そのプレイヤーの負け", () => {
-    const s = createGame({ decks: { p1: F(5), p2: F(5) }, shuffle: false });
+    const s = createGame({ decks: { p1: F(4), p2: F(4) }, shuffle: false });
     const r = run(s, { type: "endTurn", player: "p1" });
     expect(r.state.winner).toBe("p1");
   });

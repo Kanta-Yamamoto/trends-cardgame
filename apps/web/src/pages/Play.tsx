@@ -83,6 +83,8 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}のライフが ${e.amount} 回復（ライフ ${e.lp}）`;
     case "drew":
       return `${who(e.player)}が1枚引いた`;
+    case "burned":
+      return `${who(e.player)}の手札がいっぱいで、引いた ${nameOf(e.cardId)} はオワコンへ`;
     case "deckOut":
       return `${who(e.player)}の山札が切れた`;
     case "turnStarted":
@@ -231,8 +233,8 @@ function DeckSelect() {
         <ul>
           <li>相手のマスターのライフ（20）を 0 にすれば勝ち。山札が引けなくなっても負け</li>
           <li>
-            話題力は毎ターン 1 ずつ増え（最大 10）、ターンの始めに全回復。後攻は手札 +1
-            枚、最初のターンだけ話題力 +1
+            話題力は毎ターン 1 ずつ増え（最大 10）、ターンの始めに全回復。手札は 4 枚で始め、9
+            枚まで（いっぱいのときに引いたカードはオワコンへ）。後攻は最初のターンだけ話題力 +2
           </li>
           <li>
             アイコンは場に 5 体まで出せる。出したターンは攻撃できない（速攻を除く）。投稿は使い切りの効果

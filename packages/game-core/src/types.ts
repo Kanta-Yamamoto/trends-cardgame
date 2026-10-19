@@ -151,6 +151,8 @@ export type GameEvent =
   | { type: "leaderHealed"; player: PlayerId; amount: number; lp: number }
   | { type: "drew"; player: PlayerId; cardId: string }
   | { type: "deckOut"; player: PlayerId }
+  /** 手札が上限で、引いたカードがオワコンへ行った */
+  | { type: "burned"; player: PlayerId; cardId: string }
   | { type: "resigned"; player: PlayerId }
   | { type: "turnStarted"; player: PlayerId; turn: number; mana: number }
   | { type: "won"; player: PlayerId };
@@ -164,12 +166,14 @@ export interface Config {
   /** 後攻の最初のターンだけ追加される話題力 */
   secondBonusMana: number;
 }
+/** 手札の上限。上限のときに引いたカードはオワコンへ */
+export const MAX_HAND = 9;
 export const DEFAULT_CONFIG: Config = {
   maxMana: 10,
   startLp: 20,
   startHand: 4,
-  secondExtra: 1,
-  secondBonusMana: 1,
+  secondExtra: 0,
+  secondBonusMana: 2,
 };
 
 /** 画面や CPU が使う、アイコンの今の姿 */

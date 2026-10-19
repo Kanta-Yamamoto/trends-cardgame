@@ -653,14 +653,9 @@
         "do": "damage",
         "to": "strongestEnemy",
         "amount": 3
-      },
-      {
-        "on": "turnEnd",
-        "do": "draw",
-        "count": 1
       }
     ],
-    "effect": "凸。場に出たとき、相手のアイコンすべてのガードを消し、攻撃力がいちばん高い相手のアイコンに3ダメージ。自分のターンの終わりに、カードを1枚引く。",
+    "effect": "凸。場に出たとき、相手のアイコンすべてのガードを消し、攻撃力がいちばん高い相手のアイコンに3ダメージ。",
     "flavor": "「さあ、こちら側へ。光はもう、君を選んでいる」",
     "number": "001/040",
     "art": "/assets/cards/c1-art.jpg",
@@ -1884,15 +1879,11 @@
     "effects": [
       {
         "do": "buff",
-        "attack": 0,
+        "attack": 1,
         "hp": 2
-      },
-      {
-        "do": "draw",
-        "count": 1
       }
     ],
-    "effect": "自分のアイコン1体に体力+2。カードを1枚引く。",
+    "effect": "自分のアイコン1体に攻撃力+1・体力+2。",
     "flavor": "今日の推し、尊かった。",
     "target": "allyIcon",
     "art": "/assets/cards/m11-art.jpg",
@@ -2560,14 +2551,10 @@
       {
         "do": "buff",
         "attack": 2,
-        "hp": 1
-      },
-      {
-        "do": "draw",
-        "count": 1
+        "hp": 2
       }
     ],
-    "effect": "自分のアイドル1体に攻撃力+2・体力+1。カードを1枚引く。",
+    "effect": "自分のアイドル1体に攻撃力+2・体力+2。",
     "flavor": "便箋3枚、全部本気。",
     "art": "/assets/cards/m15-art.jpg",
     "original": "assets/original/m15.webp"

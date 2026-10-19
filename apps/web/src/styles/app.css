@@ -300,7 +300,8 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .stage .mini-name small { font-size: 8px; }
 .stage .mini-kw { font-size: 8.5px; padding: 1px 4px; }
 /* 手札は扇のように持つ。--f は真ん中からのずれ（左がマイナス）。端ほど傾いて少し下がる */
-.stage .hand { --step: min(4.5deg, calc(24deg / var(--n))); display: flex; justify-content: center; align-items: end; padding: 14px 14px 0; }
+/* gap は 0（重なり具合は margin で決める。元の .hand の gap が残ると、枚数が多いときに端がはみ出す） */
+.stage .hand { --step: min(4.5deg, calc(24deg / var(--n))); display: flex; gap: 0; justify-content: center; align-items: end; padding: 14px 14px 0; }
 .stage .hand .mini {
   flex: none; width: calc(var(--slot, 100px) * 0.92); transform-origin: 50% 120%;
   transform: rotate(calc(var(--f, 0) * var(--step))) translateY(calc(var(--f, 0) * var(--f, 0) * 1.6px));
@@ -386,12 +387,13 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .plog-ticker .ev-turnStarted { font-weight: 700; }
 .plog-ticker .ev-won { color: var(--gold); font-weight: 800; }
 .phand { position: relative; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; }
-.pstage .hand { --step: min(3.5deg, calc(20deg / var(--n))); padding: 18px 10px 24px; justify-content: center; }
+/* 枚数が多いほど傾きを小さくして、端のカードが画面の外に出ないように（左右に 14px の余白） */
+.pstage .hand { --step: min(3.5deg, calc(12deg / var(--n))); padding: 18px 14px 24px; justify-content: center; }
 /* 1枚あたり 50px は見えるように重ねて、残りの幅で大きく持つ（上限は舞台の高さで決めた --hand）。多いときは重ねて「広げる」で見る */
 .pstage .hand .mini { --w: clamp(88px, calc(100% - 20px - 50px * (var(--n) - 1)), var(--hand, 100px)); width: var(--w); transform-origin: 50% 112%; }
 .pstage .hand .mini + .mini { margin-left: min(-10px, calc((100% - var(--w) * (var(--n) + 0.4)) / (var(--n) - 1))); }
 .pstage .hand .mini.in-hand.selected { z-index: 4; transform: translateY(-34px) scale(1.12); }
-.pstage .hand-more { position: static; align-self: flex-end; margin: 0 10px -6px 0; }
+.pstage .hand-more { position: static; align-self: flex-end; margin: 0 10px 10px 0; }
 .pstage .mini-name { font-size: 10px; }
 /* 対戦の記録（縦の舞台では下から出る一覧） */
 .sheet .log-sheet { align-self: center; width: min(92vw, 560px); background: var(--night-2); border-radius: 16px; border: 1px solid var(--line); }

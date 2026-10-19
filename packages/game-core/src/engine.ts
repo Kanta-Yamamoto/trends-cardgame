@@ -9,6 +9,7 @@ import {
   DEFAULT_CONFIG,
   type GameEvent,
   type GameState,
+  MAX_HAND,
   type PlayerId,
   type PlayerState,
   type RuleCard,
@@ -64,7 +65,7 @@ export function createGame(input: NewGameInput): GameState {
   const mk = (deck: readonly string[], isFirst: boolean): PlayerState => {
     let d = [...deck];
     if (input.shuffle !== false) [d, seed] = shuffled(deck, seed);
-    // 後攻は1枚多く持って始める（先攻有利を和らげる）
+    // 後攻の追加の手札（今は 0。先攻有利は最初のターンの話題力で和らげる）
     const hand = config.startHand + (isFirst ? 0 : config.secondExtra);
     return {
       lp: config.startLp,
@@ -305,6 +306,12 @@ function draw(state: GameState, player: PlayerId, emit: Emit): boolean {
   const me = state.players[player];
   const cardId = me.deck.shift();
   if (!cardId) return false;
+  // 手札が上限なら、引いたカードはそのままオワコンへ
+  if (me.hand.length >= MAX_HAND) {
+    me.trash.push(cardId);
+    emit({ type: "burned", player, cardId });
+    return true;
+  }
   me.hand.push(cardId);
   emit({ type: "drew", player, cardId });
   return true;
@@ -820,7 +827,7 @@ function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Co
   state.active = pid;
   state.turn += 1;
   p.maxMana = Math.min(config.maxMana, p.maxMana + 1);
-  // 後攻の最初のターンだけ話題力 +1（先攻有利を和らげる）
+  // 後攻の最初のターンだけ話題力を足す（先攻有利を和らげる）
   p.mana = p.maxMana + (state.turn === 2 ? config.secondBonusMana : 0);
   p.playedThisTurn = 0;
   emit({ type: "turnStarted", player: pid, turn: state.turn, mana: p.mana });

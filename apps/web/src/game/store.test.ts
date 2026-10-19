@@ -12,7 +12,7 @@ describe("対戦ストア", () => {
     const g = useGame.getState().game;
     expect(g?.active).toBe(ME);
     expect(g?.players[ME].hand).toHaveLength(4);
-    expect(g?.players[CPU].hand).toHaveLength(5);
+    expect(g?.players[CPU].hand).toHaveLength(4);
   });
 
   it("反則の操作はエラー文を出して状態を変えない", () => {
