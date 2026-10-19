@@ -31,8 +31,11 @@ export type CardEffect = (
   | {
       do: "summon";
       card: string;
-      count: number /** センター（真ん中の枠）に出したときの数 */;
+      count: number;
+      /** センター（真ん中の枠）に出したときの数 */
       centerCount?: number;
+      /** このアイコンの両隣（左、右の順）から埋める。埋まっていれば左から空いた枠へ */
+      flank?: boolean;
     }
   | { do: "copySelf" }
   | { do: "buffSelf"; attack: number; hp: number }
@@ -66,7 +69,7 @@ export type CardEffect = (
   /** このターンのあとに、もう一度自分のターンを行う */
   | { do: "extraTurn" }
   /** 自分のアイコンすべてがすぐ攻撃できるようになり、ほかのアイコンの攻撃力 +attack */
-  | { do: "rally"; attack: number }
+  | { do: "rally"; attack: number /** すぐ攻撃できるのは相手のアイコンだけ（凸を付ける） */; totsu?: boolean }
   /** このターン、自分のアイコンはガードを無視して攻撃できる */
   | { do: "breakthrough" }
   /** 自分の場のアイコン1体につき、相手のマスターに amount ダメージ */

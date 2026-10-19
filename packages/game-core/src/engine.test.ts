@@ -866,7 +866,7 @@ describe("界隈を読む効果（自分の側だけ）", () => {
     const local = {
       ...catalog,
       top: icon("top", 1, 3, 5, {
-        effects: [{ on: "play", do: "summon", card: "f", count: 1, centerCount: 2 }],
+        effects: [{ on: "play", do: "summon", card: "f", count: 1, centerCount: 2, flank: true }],
       }),
     };
     const mk = () => {
@@ -882,7 +882,51 @@ describe("界隈を読む効果（自分の側だけ）", () => {
     const side = applyAction(mk(), { type: "play", player: "p1", handIndex: 0, slot: 0 }, local).state;
     expect(side.players.p1.field.filter((u) => u).length).toBe(2);
     const center = applyAction(mk(), { type: "play", player: "p1", handIndex: 0, slot: 2 }, local).state;
-    expect(center.players.p1.field.filter((u) => u).length).toBe(3);
+    expect(center.players.p1.field.map((u) => u?.cardId ?? null)).toEqual([null, "f", "top", "f", null]);
+    // 右端に出したら左隣に。両隣が埋まっていれば、左から空いた枠へ
+    const right = applyAction(mk(), { type: "play", player: "p1", handIndex: 0, slot: 4 }, local).state;
+    expect(right.players.p1.field.map((u) => u?.cardId ?? null)).toEqual([null, null, null, "f", "top"]);
+    const busy = mk();
+    const filler = side.players.p1.field.find((u) => u?.cardId === "f") as Unit;
+    busy.players.p1.field[1] = { ...filler, uid: 777 };
+    busy.players.p1.field[3] = { ...filler, uid: 778 };
+    const blocked = applyAction(busy, { type: "play", player: "p1", handIndex: 0, slot: 2 }, local).state;
+    expect(blocked.players.p1.field.map((u) => u?.cardId ?? null)).toEqual(["f", "f", "top", "f", "f"]);
+  });
+
+  it("凸を付ける（ミーム女王）：出たばかりのアイコンは相手のアイコンにだけ攻撃できる", () => {
+    const local = {
+      ...catalog,
+      queen: icon("queen", 1, 2, 4, { effects: [{ on: "play", do: "rally", attack: 0, totsu: true }] }),
+    };
+    let s = createGame({
+      decks: { p1: ["f", "queen", ...F(10)], p2: F(12) },
+      seed: 42,
+      shuffle: false,
+      config: { startHand: 4 },
+    });
+    s.players.p1.mana = 10;
+    s.players.p2.field[0] = {
+      ...(createGame({ decks: { p1: F(5), p2: F(5) } }).players.p1.field[0] ?? null),
+      uid: 900,
+      cardId: "wall",
+      damage: 0,
+      canAttack: false,
+      attacksLeft: 0,
+      atkBuff: 0,
+      hpBuff: 0,
+      dark: false,
+      darkUsed: false,
+      exposedUntil: 0,
+      boundUntil: 0,
+      silenced: false,
+      noGuard: false,
+      token: false,
+    } as Unit;
+    s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 0 }, local).state;
+    s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 1 }, local).state;
+    for (const from of [0, 1])
+      expect(attackTargets(s, "p1", from, local)).toEqual([{ kind: "unit", slot: 0 }]);
   });
 
   it("このターンだけの強化：ターンの終わりに消える", () => {

@@ -339,14 +339,15 @@
         "do": "summon",
         "card": "m4",
         "count": 1,
-        "centerCount": 2
+        "centerCount": 2,
+        "flank": true
       }
     ],
-    "effect": "注目。場に出たとき、親衛隊を1体出す（センターに出したときは2体）。",
+    "effect": "注目。場に出たとき、隣に親衛隊を1体出す（センターに出したときは左右に2体）。",
     "flavor": "センターは、譲らない。",
     "dark": {
       "name": "闇深アイドル",
-      "attack": 7,
+      "attack": 6,
       "hp": 4,
       "keywords": ["凸", "連撃"],
       "effect": "凸。連撃。闇堕ちしたとき、攻撃力4以下の相手のアイコン1体（いちばん強いもの）を自分の場に奪う。",
@@ -1538,10 +1539,11 @@
       {
         "on": "play",
         "do": "rally",
-        "attack": 0
+        "attack": 0,
+        "totsu": true
       }
     ],
-    "effect": "場に出たとき、空いている枠すべてに草を出し、自分のアイコンすべてがすぐ攻撃できるようになる。",
+    "effect": "場に出たとき、空いている枠すべてに草を出し、自分のアイコンすべてに凸を付ける。",
     "flavor": "流行らせたのは、だいたい私。",
     "art": "/assets/cards/k10-art.jpg",
     "original": "assets/original/k10.webp"
@@ -2229,7 +2231,7 @@
     "hp": 5,
     "attributes": ["草"],
     "kaiwai": ["ミーム"],
-    "keywords": [],
+    "keywords": ["凸"],
     "effects": [
       {
         "on": "passive",
@@ -2247,7 +2249,7 @@
         "thisTurn": true
       }
     ],
-    "effect": "自分の場のほかのアイコン1体につき攻撃力+1。場に出たとき、草を2体出し、このターン自分のほかのアイコンすべてに攻撃力+1。",
+    "effect": "凸。自分の場のほかのアイコン1体につき攻撃力+1。場に出たとき、草を2体出し、このターン自分のほかのアイコンすべてに攻撃力+1。",
     "flavor": "「笑ったら、もう仲間だよ」",
     "art": "/assets/cards/c8-art.jpg",
     "original": "assets/original/c8.webp",
