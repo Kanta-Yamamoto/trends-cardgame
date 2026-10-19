@@ -54,6 +54,8 @@ export interface Unit {
   token: boolean;
   /** このターンは相手のアイコンにだけ攻撃できる（凸・闇堕ちした直後） */
   rushOnly?: boolean;
+  /** このターンだけの攻撃力の強化（ターンの終わりに消える） */
+  tempAtk?: number;
 }
 
 /** マスター（操作するプレイヤー）の状態 */

@@ -35,7 +35,7 @@ export type CardEffect = (
   | { do: "buffRandomAlly"; attack: number; hp: number }
   /** 自分の場のほかのアイコンすべて */
   /** 自分のほかのアイコンすべてに。kaiwai を付けると、その界隈だけ */
-  | { do: "buffAllies"; attack: number; hp: number; kaiwai?: Kaiwai }
+  | { do: "buffAllies"; attack: number; hp: number; kaiwai?: Kaiwai; thisTurn?: boolean }
   | { do: "heal"; to: "master" | "allAlliesAndMaster" | "allAlliesFull"; amount?: number }
   | { do: "draw"; count: number; ifHandAtMost?: number }
   | { do: "removeEnemyGuards" }

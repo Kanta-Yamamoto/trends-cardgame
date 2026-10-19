@@ -2253,10 +2253,11 @@
       {
         "do": "buffAllies",
         "attack": 1,
-        "hp": 0
+        "hp": 0,
+        "thisTurn": true
       }
     ],
-    "effect": "自分の場のほかのアイコン1体につき攻撃力+1。場に出たとき、草を2体出し、自分のほかのアイコンすべてに攻撃力+1。",
+    "effect": "自分の場のほかのアイコン1体につき攻撃力+1。場に出たとき、草を2体出し、このターン自分のほかのアイコンすべてに攻撃力+1。",
     "flavor": "「笑ったら、もう仲間だよ」",
     "art": "/assets/cards/c8-art.jpg",
     "original": "assets/original/c8.webp",
