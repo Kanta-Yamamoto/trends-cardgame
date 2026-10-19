@@ -128,9 +128,9 @@ function judgePost(
     return t ? { score: 10, target: { side: "ally", slot: t.slot } } : null;
   }
   if (effects.includes("totonou") && card.target === "allyIcon") {
-    // 整う：熱（2ダメージ）に耐えられる、体力の多いアイコンに
+    // 整う：熱（1ダメージ）に耐えられる、体力の多いアイコンに
     const legal = new Set(castTargets(state, player, cardId, catalog).map((t) => t.slot));
-    const t = mine.filter((x) => legal.has(x.slot) && x.v.hp >= 4).sort((a, b) => b.v.hp - a.v.hp)[0];
+    const t = mine.filter((x) => legal.has(x.slot) && x.v.hp >= 3).sort((a, b) => b.v.hp - a.v.hp)[0];
     return t ? { score: 8, target: { side: "ally", slot: t.slot } } : null;
   }
   if (effects.includes("fill")) {

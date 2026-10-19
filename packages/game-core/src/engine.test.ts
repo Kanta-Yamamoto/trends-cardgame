@@ -101,12 +101,12 @@ const catalog: Record<string, RuleCard> = {
   oldcard: icon("oldcard", 1, 1, 1, { retired: true }),
   saunaPost: post("saunaPost", 2, {
     target: "allyIcon",
-    targetFilter: { minHp: 3 },
-    effects: [{ do: "totonou", damage: 2, attack: 2, turns: 3, heal: 1 }],
+    targetFilter: { minHp: 2 },
+    effects: [{ do: "totonou", damage: 1, attack: 2, turns: 3, heal: 1 }],
   }),
   hotyu: icon("hotyu", 4, 3, 4, {
     effects: [
-      { do: "totonou", damage: 2, attack: 2, turns: 3, heal: 1 },
+      { do: "totonou", damage: 1, attack: 2, turns: 3, heal: 1 },
       { on: "passive", do: "healBurn", amount: 2 },
     ],
   }),
@@ -490,15 +490,15 @@ describe("★5 の作り直し（ヒバナ・カグラ・専門家・陰謀論�
 });
 
 describe("整う・整い", () => {
-  it("整う：2ダメージ・攻撃力+2（ずっと）。3ターンの間、自分のターンの始めに体力を1回復する", () => {
+  it("整う：1ダメージ・攻撃力+2（ずっと）。3ターンの間、自分のターンの始めに体力を1回復する", () => {
     let s = game(["wall", "saunaPost"]);
     s = play(s, 0, 0);
     s = cast(s, 0, { side: "ally", slot: 0 });
     const u = () => s.players.p1.field[0] as Unit;
     let v = viewUnit(s, "p1", u(), catalog);
-    expect([v.attack, v.hp, u().totonoi]).toEqual([3, 4, 3]);
+    expect([v.attack, v.hp, u().totonoi]).toEqual([3, 5, 3]);
     for (const [hp, left] of [
-      [5, 2],
+      [6, 2],
       [6, 1],
       [6, 0],
     ] as const) {
@@ -509,7 +509,7 @@ describe("整う・整い", () => {
     // 整いが終わっても、攻撃力+2 は残る
     expect(viewUnit(s, "p1", u(), catalog).attack).toBe(3);
   });
-  it("サウナは体力3以上の自分のアイコンにしか使えない", () => {
+  it("サウナは体力2以上の自分のアイコンにしか使えない", () => {
     let s = game(["rush", "wall", "saunaPost"]);
     s = play(s, 0, 0);
     s = play(s, 0, 1);
@@ -518,7 +518,7 @@ describe("整う・整い", () => {
   it("整いの回復は「回復の効果を使った」と数える（回復するたびに燃やす）", () => {
     let s = game(["hotyu"]);
     s = play(s, 0, 0);
-    expect(s.players.p1.field[0]?.damage).toBe(2);
+    expect(s.players.p1.field[0]?.damage).toBe(1);
     s = end(end(s), "p2");
     expect(s.players.p2.lp).toBe(18);
     expect(s.players.p1.heals).toBe(1);

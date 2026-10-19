@@ -2391,7 +2391,7 @@
     "effects": [
       {
         "do": "totonou",
-        "damage": 2,
+        "damage": 1,
         "attack": 2,
         "turns": 3,
         "heal": 1
@@ -3422,7 +3422,7 @@
     "effects": [
       {
         "do": "totonou",
-        "damage": 2,
+        "damage": 1,
         "attack": 2,
         "turns": 3,
         "heal": 1
@@ -3451,18 +3451,18 @@
     "keywords": [],
     "target": "allyIcon",
     "targetFilter": {
-      "minHp": 3
+      "minHp": 2
     },
     "effects": [
       {
         "do": "totonou",
-        "damage": 2,
+        "damage": 1,
         "attack": 2,
         "turns": 3,
         "heal": 1
       }
     ],
-    "effect": "体力が3以上の自分のアイコン1体が、整う。",
+    "effect": "体力が2以上の自分のアイコン1体が、整う。",
     "flavor": "熱いのは、整うための準備。"
   },
   {
