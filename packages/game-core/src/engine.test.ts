@@ -735,9 +735,12 @@ describe("デッキの決まり", () => {
     ]);
     expect(validateDeck(commons, real)).toEqual([]);
   });
-  it("構築済みデッキは単属性の5つだけで、5属性に1つずつある", () => {
-    const attrs = Object.values(DECKS).map((d) => deckAttributes(d, real).join("×"));
+  it("構築済みデッキは単属性で、5属性に1つずつある（ほかに『フィクサー』が主役の草のデッキ）", () => {
+    const solo = Object.entries(DECKS).filter(([id]) => id.startsWith("solo_"));
+    const attrs = solo.map(([, d]) => deckAttributes(d, real).join("×"));
     expect([...attrs].sort()).toEqual([...ATTRIBUTES].sort());
+    expect(deckAttributes(DECKS.fixer_meme, real)).toEqual(["草"]);
+    expect(DECKS.fixer_meme.filter((c) => c === "c15")).toHaveLength(3);
   });
   it("デモ用デッキには、闇堕ちを持つ★5が2枚以上入っている（1枚だと出せる試合が少なすぎる）", () => {
     for (const [id, deck] of Object.entries(DECKS)) {

@@ -44,6 +44,11 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: strin
     name: "癒しの楽園",
     text: "癒しだけ。回復で粘って、回復するたびに相手を燃やす。エースはユズハ・ルリ・ナギ",
   },
+  fixer_meme: {
+    ace: "c15",
+    name: "裏で糸を引く",
+    text: "草＋『フィクサー』。安い草を差し出して、相手には本命を差し出させる。差し出したクサハミはすぐ闇堕ちして速攻。エースは『フィクサー』・クサハミ・ワラ",
+  },
 };
 
 export const ME: PlayerId = "p1";
