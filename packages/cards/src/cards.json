@@ -625,7 +625,7 @@
     "rarity": 5,
     "cost": 6,
     "attack": 4,
-    "hp": 6,
+    "hp": 7,
     "attributes": ["神"],
     "kaiwai": ["配信者"],
     "keywords": [],
@@ -1353,7 +1353,7 @@
     "rarity": 5,
     "cost": 6,
     "attack": 2,
-    "hp": 6,
+    "hp": 7,
     "attributes": ["癒し"],
     "kaiwai": ["配信者"],
     "keywords": [],
@@ -1931,7 +1931,7 @@
     "rarity": 5,
     "cost": 5,
     "attack": 3,
-    "hp": 5,
+    "hp": 6,
     "attributes": ["メロい"],
     "kaiwai": ["アイドル"],
     "keywords": ["注目"],
@@ -2057,7 +2057,7 @@
     "rarity": 5,
     "cost": 6,
     "attack": 3,
-    "hp": 6,
+    "hp": 7,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
     "keywords": [],
@@ -2339,7 +2339,7 @@
     "hp": 8,
     "attributes": ["癒し"],
     "kaiwai": ["動物", "ミーム"],
-    "keywords": [],
+    "keywords": ["ガード"],
     "effects": [
       {
         "on": "hand",
@@ -2351,7 +2351,7 @@
         "amount": 2
       }
     ],
-    "effect": "このゲームで自分が回復の効果を使った回数だけ、コスト-1。場に出たとき、自分のアイコンすべてとライフを2回復する。",
+    "effect": "このゲームで自分が回復の効果を使った回数だけ、コスト-1。ガード。場に出たとき、自分のアイコンすべてとライフを2回復する。",
     "flavor": "中の人などいない。",
     "art": "/assets/cards/i13-art.jpg",
     "original": "assets/original/i13.webp"
@@ -2364,7 +2364,7 @@
     "rarity": 5,
     "cost": 4,
     "attack": 3,
-    "hp": 5,
+    "hp": 6,
     "attributes": ["癒し"],
     "kaiwai": ["配信者"],
     "keywords": [],
@@ -2721,7 +2721,7 @@
     "hp": 5,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": [],
+    "keywords": ["ガード"],
     "effects": [
       {
         "on": "play",
@@ -2738,7 +2738,7 @@
         }
       }
     ],
-    "effect": "場に出たとき、カードを1枚引く。自分の場に有識者が3体以上いれば、さらに1枚引く。",
+    "effect": "ガード（相手はこのアイコンしか攻撃できない）。場に出たとき、カードを1枚引く。自分の場に有識者が3体以上いれば、さらに1枚引く。",
     "flavor": "異論は、論文で。",
     "art": "/assets/cards/g16-art.jpg",
     "original": "assets/original/g16.webp"
@@ -2931,7 +2931,7 @@
     "rarity": 5,
     "cost": 5,
     "attack": 3,
-    "hp": 5,
+    "hp": 6,
     "attributes": ["癒し"],
     "kaiwai": ["配信者", "有識者"],
     "keywords": [],
