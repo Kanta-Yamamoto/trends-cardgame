@@ -82,4 +82,43 @@ describe("対戦ストア", () => {
     expect(after?.players[CPU].field[0]).toBeNull();
     expect(after?.players[ME].field[1]?.cardId).toBe("c15");
   });
+
+  for (const delay of [0, 5]) {
+    it(`『フィクサー』：CPU が出したら自分が選び、そのあと CPU がターンを続けて終える（待ち時間 ${delay}）`, async () => {
+      useGame.setState({ cpuDelay: delay });
+      const g = structuredClone(useGame.getState().game);
+      if (!g) throw new Error("no game");
+      g.players[ME].field[0] = {
+        uid: 901,
+        cardId: "n5",
+        damage: 0,
+        canAttack: false,
+        attacksLeft: 0,
+        atkBuff: 0,
+        hpBuff: 0,
+        dark: false,
+        darkUsed: false,
+        exposed: false,
+        boundUntil: 0,
+        silenced: false,
+        noGuard: false,
+        token: false,
+      };
+      g.players[CPU].hand = ["c15"];
+      g.players[CPU].maxMana = 3;
+      g.players[CPU].field = g.players[CPU].field.map(() => null);
+      useGame.setState({ game: g });
+      useGame.getState().endTurn();
+      const until = async (ok: () => boolean) => {
+        for (let i = 0; i < 400 && !ok(); i++) await new Promise((r) => setTimeout(r, 5));
+      };
+      await until(() => !!useGame.getState().game?.pending);
+      expect(useGame.getState().game?.pending?.waiting).toEqual([ME]);
+      useGame.getState().sacrifice(0);
+      await until(() => useGame.getState().game?.active === ME && !useGame.getState().cpuBusy);
+      expect(useGame.getState().game?.pending ?? null).toBeNull();
+      expect(useGame.getState().game?.active).toBe(ME);
+      expect(useGame.getState().cpuBusy).toBe(false);
+    });
+  }
 });
