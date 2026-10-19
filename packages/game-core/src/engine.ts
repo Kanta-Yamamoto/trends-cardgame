@@ -1,4 +1,4 @@
-import { BUZZ_COST, type CardEffect, type Kaiwai, type Keyword } from "@trends/cards";
+import type { CardEffect, Kaiwai, Keyword } from "@trends/cards";
 import { nextRandom } from "./rng";
 import {
   type Action,
@@ -219,7 +219,7 @@ export function legalTargets(state: GameState, player: PlayerId, catalog: Catalo
   return [{ kind: "leader" as const }, ...units.map((x) => ({ kind: "unit" as const, slot: x.slot }))];
 }
 
-/** そのアイコンが攻撃できる相手。凸（出たターン・闇堕ちした直後・バズ）のアイコンは、相手のアイコンにだけ攻撃できる */
+/** そのアイコンが攻撃できる相手。凸（出たターン・闇堕ちした直後）のアイコンは、相手のアイコンにだけ攻撃できる */
 export function attackTargets(
   state: GameState,
   player: PlayerId,
@@ -229,18 +229,6 @@ export function attackTargets(
   const targets = legalTargets(state, player, catalog);
   const u = state.players[player].field[from];
   return u?.rushOnly ? targets.filter((t) => t.kind !== "leader") : targets;
-}
-
-/** バズを今使えるか（自分のターンに出したバズ持ちで、まだ使っておらず、話題力が足りる） */
-export function canBuzz(state: GameState, player: PlayerId, slot: number, catalog: Catalog): boolean {
-  const u = state.players[player].field[slot];
-  if (!u || state.active !== player || state.winner) return false;
-  return (
-    hasKeyword(u, "バズ", catalog) &&
-    u.playedTurn === state.turn &&
-    !u.buzzed &&
-    state.players[player].mana >= BUZZ_COST
-  );
 }
 
 /** 攻撃したときの見込み（画面の予告用。実際の攻撃も同じ計算を使う） */
@@ -357,7 +345,6 @@ function newUnit(state: GameState, cardId: string, catalog: Catalog, token: bool
     canAttack: rush || totsu,
     attacksLeft: rush || totsu ? (card.keywords.includes("連撃") ? 2 : 1) : 0,
     rushOnly: totsu,
-    playedTurn: state.turn,
     atkBuff: 0,
     hpBuff: 0,
     dark: false,
@@ -661,8 +648,8 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       const u = from >= 0 ? foeField[from] : null;
       if (!u) break;
       foeField[from] = null;
-      // 奪ったターンは攻撃できない（バズも使えない）
-      Object.assign(u, { canAttack: false, attacksLeft: 0, rushOnly: false, playedTurn: -1 });
+      // 奪ったターンは攻撃できない
+      Object.assign(u, { canAttack: false, attacksLeft: 0, rushOnly: false });
       me.field[to] = u;
       emit({ type: "stolen", player, from, slot: to, cardId: u.cardId });
       break;
@@ -949,30 +936,6 @@ export function applyAction(
       resolveDeaths(state, catalog, emit);
       break;
     }
-    case "buzz": {
-      const u = me.field[action.slot];
-      if (!u) throw new RuleError("no_unit", "バズらせるアイコンがいません");
-      if (!hasKeyword(u, "バズ", catalog))
-        throw new RuleError("no_buzz", "このアイコンはバズを持っていません");
-      if (u.playedTurn !== state.turn)
-        throw new RuleError("buzz_late", "バズは、出したターンにしか使えません");
-      if (u.buzzed) throw new RuleError("buzz_used", "バズは1体につき1回です");
-      if (me.mana < BUZZ_COST)
-        throw new RuleError("no_mana", `話題力が足りません（必要 ${BUZZ_COST}・残り ${me.mana}）`);
-      me.mana -= BUZZ_COST;
-      u.buzzed = true;
-      u.atkBuff += 1;
-      u.hpBuff += 1;
-      // 凸：まだ攻撃できなければ、このターン相手のアイコンにだけ攻撃できる（速攻で動けるならそのまま）
-      if (!u.canAttack) {
-        u.canAttack = true;
-        u.attacksLeft = hasKeyword(u, "連撃", catalog) ? 2 : 1;
-        u.rushOnly = true;
-      }
-      emit({ type: "buzzed", player, slot: action.slot, cardId: u.cardId });
-      emit({ type: "buffed", player, slot: action.slot, cardId: u.cardId, attack: 1, hp: 1 });
-      break;
-    }
     case "cast": {
       const cardId = me.hand[action.handIndex];
       if (cardId === undefined) throw new RuleError("no_card", "そのカードは手札にありません");
@@ -1020,6 +983,13 @@ export function applyAction(
         );
       }
       atk.attacksLeft -= 1;
+      // 凸で攻撃したとき（出たターンに相手のアイコンへ）の効果は、ダメージの前に働く（上がった攻撃力で殴る）
+      if (atk.rushOnly && t.kind === "unit") {
+        for (const e of effectsOf(atk, catalog)) {
+          if (triggerOf(e) !== "rush") continue;
+          runEffect(e, { state, player, catalog, config, emit, selfSlot: action.from, playedBefore: 0 });
+        }
+      }
       const av = viewUnit(state, player, atk, catalog);
       if (t.kind === "leader") {
         damageLeader(state, foeId, av.attack, emit);

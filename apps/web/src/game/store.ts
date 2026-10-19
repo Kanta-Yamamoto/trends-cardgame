@@ -133,8 +133,6 @@ interface GameStore {
   /** 選んでいる手札の投稿を使う（対象が要るものは target を渡す） */
   cast: (target?: CastTarget) => void;
   attack: (target: AttackTarget) => void;
-  /** バズ：出したターンのアイコンに話題力 1 を払って +1/+1 と凸 */
-  buzz: (slot: number) => void;
   endTurn: () => void;
   /** オンライン対戦を始める（再接続のときも、届いた状態で呼び直す） */
   startOnline: (o: { deck: DeckSel; foeName: string; state: GameState; link: RemoteLink }) => void;
@@ -202,8 +200,7 @@ function placedOnly(prev: GameState, a: PlaceAction, next: GameState): GameState
 }
 
 const isPlace = (a: Action): a is PlaceAction => a.type === "play" || a.type === "darkFall";
-const hasEffects = (a: Action) =>
-  isPlace(a) || a.type === "cast" || a.type === "endTurn" || a.type === "buzz";
+const hasEffects = (a: Action) => isPlace(a) || a.type === "cast" || a.type === "endTurn";
 
 export const useGame = create<GameStore>((set, get) => {
   const appendLog = (events: GameEvent[], fx = false) => {
@@ -457,10 +454,6 @@ export const useGame = create<GameStore>((set, get) => {
         dispatch(a);
         set({ animating: false });
       });
-    },
-    buzz: (slot) => {
-      if (get().cpuBusy || get().animating) return;
-      then(commit({ type: "buzz", player: ME, slot }), (ok) => ok && set({ selection: null }));
     },
     endTurn: () => {
       if (get().cpuBusy || get().animating) return;

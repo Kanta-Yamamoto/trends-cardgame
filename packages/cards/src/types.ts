@@ -6,14 +6,11 @@ export type Kaiwai = "ミーム" | "アイドル" | "配信者" | "有識者" | 
  * キーワード能力。
  * - ガード：相手はガード（と晒し者）しか攻撃できない
  * - 速攻：場に出たターンに攻撃できる（マスターも）
- * - 凸：場に出たターンに、相手のアイコンにだけ攻撃できる（ステータスは上がらない）
- * - バズ：出したターンに話題力 1 を払うと、攻撃力+1・体力+1 して凸（1体1回）
+ * - 凸：場に出たターンに、相手のアイコンにだけ攻撃できる（キーワード自体でステータスは上がらない。「凸で攻撃したとき」の効果はカードごと）
  * - 連撃：1ターンに2回攻撃できる
  * - 注目：自分のターンの始めに攻撃力+1（センターなら+2）
  */
-export type Keyword = "ガード" | "速攻" | "凸" | "バズ" | "連撃" | "注目";
-/** バズに払う話題力 */
-export const BUZZ_COST = 1;
+export type Keyword = "ガード" | "速攻" | "凸" | "連撃" | "注目";
 /** アイコン：場に出て戦う／投稿：使い切りの効果 */
 export type CardType = "icon" | "post";
 /** ★1〜★5（★5 が最高） */
@@ -26,7 +23,8 @@ export type PostTarget = "enemyIcon" | "allyIcon";
  * play＝場に出たとき（投稿は使ったとき。省略時）／passive＝場にいる間ずっと／
  * turnEnd＝自分のターンの終わり／hand＝手札にある間（コストの補正）
  */
-export type EffectTrigger = "play" | "passive" | "turnEnd" | "hand";
+/** play＝場に出たとき／passive＝場にいる間／turnEnd＝自分のターンの終わり／hand＝手札にある間／rush＝凸で攻撃したとき（出たターンに相手のアイコンへ） */
+export type EffectTrigger = "play" | "passive" | "turnEnd" | "hand" | "rush";
 
 /** カードの効果（データで表す）。on ごとに、上から順に実行する */
 export type CardEffect = (

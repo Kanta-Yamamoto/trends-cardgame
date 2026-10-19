@@ -4,7 +4,6 @@ import {
   type AttackTarget,
   attackTargets,
   type CastTarget,
-  canBuzz,
   canDarkFall,
   canUnitAttack,
   castTargets,
@@ -70,8 +69,6 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}の ${nameOf(e.cardId)} がオワコンになった`;
     case "darkFall":
       return `${who(e.player)}の ${nameOf(e.cardId)} が、闇堕ちしてオワコンから戻ってきた！`;
-    case "buzzed":
-      return `${who(e.player)}の ${nameOf(e.cardId)} がバズった（攻撃力+1・体力+1。このターン相手のアイコンに攻撃できる）`;
     case "restored":
       return `${who(e.player)}の ${nameOf(e.cardId)} が表に戻った`;
     case "status":
@@ -508,7 +505,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     play,
     cast,
     attack,
-    buzz,
     endTurn,
     start,
     quit: quitGame,
@@ -722,12 +718,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     attacking && canHit(t) ? previewAttack(game, ME, selection.slot, t, CATALOG) : null;
   const foeGuarded = foe.field.some((u) => u && viewUnit(game, CPU, u, CATALOG).guard);
   const peekCard = (peek ? CATALOG[peek.id] : null) ?? null;
-  /** 今バズできる自分のアイコンの枠 */
-  const buzzSlots = myTurn
-    ? me.field.flatMap((u, slot) => (u && canBuzz(game, ME, slot, CATALOG) ? [slot] : []))
-    : [];
-  /** 押して見ているアイコンがバズできるなら、その枠 */
-  const peekBuzz = peek?.where === "mine" && buzzSlots.includes(peek.index) ? peek.index : null;
   const hint = game.winner
     ? ""
     : game.active === CPU
@@ -748,15 +738,13 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                 ? foeGuarded
                   ? "攻撃先を選んでください（ガードがいるので、ガードと晒し者しか攻撃できません）"
                   : "攻撃先を選んでください（光っているところ）"
-                : buzzSlots.length > 0
-                  ? "バズできるアイコンがいます（押して「バズらせる」。話題力 1 で攻撃力+1・体力+1）"
-                  : canDarkFall(game, ME, CATALOG)
-                    ? stage.portrait
-                      ? "闇堕ちできるカードがオワコンにあります（自分のオワコンを押す）"
-                      : "闇堕ちできるカードがオワコンにあります（左のオワコンを押す）"
-                    : stage.portrait
-                      ? "手札を場へ引っぱって出す・投稿／アイコンを相手へ引っぱって攻撃（長押しで拡大）"
-                      : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";
+                : canDarkFall(game, ME, CATALOG)
+                  ? stage.portrait
+                    ? "闇堕ちできるカードがオワコンにあります（自分のオワコンを押す）"
+                    : "闇堕ちできるカードがオワコンにあります（左のオワコンを押す）"
+                  : stage.portrait
+                    ? "手札を場へ引っぱって出す・投稿／アイコンを相手へ引っぱって攻撃（長押しで拡大）"
+                    : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";
 
   const unitCard = (owner: PlayerId, slot: number, u: Unit) => {
     const card = CATALOG[u.cardId] as CardDef;
@@ -813,7 +801,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             {u.attacksLeft > 1 ? "2回攻撃" : u.rushOnly ? "凸攻撃" : "攻撃できる"}
           </em>
         )}
-        {!ready && buzzSlots.includes(slot) && <em className="mini-ready mini-buzz">バズ 1</em>}
       </MiniCard>
     );
   };
@@ -1064,16 +1051,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               {meRow}
             </div>
             {meBar}
-            <PeekStrip
-              card={peekCard}
-              view={peek?.view}
-              onOpen={() => setZoom(peek)}
-              action={
-                peekBuzz !== null
-                  ? { label: "バズらせる（話題力 1）", onClick: () => buzz(peekBuzz) }
-                  : undefined
-              }
-            />
+            <PeekStrip card={peekCard} view={peek?.view} onOpen={() => setZoom(peek)} />
             <button
               type="button"
               className="plog-ticker"
@@ -1116,11 +1094,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                     card={peekCard}
                     view={peek?.view}
                     onOpen={() => setZoom(peek)}
-                    action={
-                      peekBuzz !== null
-                        ? { label: "バズらせる（話題力 1）", onClick: () => buzz(peekBuzz) }
-                        : undefined
-                    }
                   />
                 ) : (
                   <p className="muted">カードを押すと、ここに表示します。長押しで画面いっぱいに拡大</p>
@@ -1347,20 +1320,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
 }
 
 /** 大きく表示するカード。場のアイコンなら今の状態（闇堕ち・ダメージ・強化）も添える */
-/** 押して見ているカードに対して今できる操作（バズなど） */
-type PeekAction = { label: string; onClick: () => void };
-
-function PeekCard({
-  card,
-  view,
-  onOpen,
-  action,
-}: {
-  card: CardDef;
-  view?: UnitView;
-  onOpen: () => void;
-  action?: PeekAction;
-}) {
+function PeekCard({ card, view, onOpen }: { card: CardDef; view?: UnitView; onOpen: () => void }) {
   const dark = view?.unit.dark && card.dark;
   return (
     <>
@@ -1368,11 +1328,6 @@ function PeekCard({
       <div className={dark ? "peek-dark" : undefined}>
         <HoloCard card={card} darkForm={!!dark} interactive idle={false} onClick={onOpen} />
       </div>
-      {action && (
-        <button type="button" className="btn buzz-btn" onClick={action.onClick}>
-          {action.label}
-        </button>
-      )}
       <button type="button" className="btn ghost peek-zoom" onClick={onOpen}>
         大きく見る
       </button>
@@ -1402,17 +1357,7 @@ function PeekCard({
  * 縦の舞台で、押したカードの説明を1本の帯で見せる（大きなカードを置く場所がないため）。
  * 絵・名前・コスト・攻撃力/体力・効果文（2行まで）。押すと画面いっぱいに拡大して全文を読める
  */
-function PeekStrip({
-  card,
-  view,
-  onOpen,
-  action,
-}: {
-  card: CardDef | null;
-  view?: UnitView;
-  onOpen: () => void;
-  action?: PeekAction;
-}) {
+function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitView; onOpen: () => void }) {
   if (!card) {
     return (
       <div className="peek-strip empty">
@@ -1472,15 +1417,9 @@ function PeekStrip({
           </span>
         </span>
       </button>
-      {action ? (
-        <button type="button" className="btn buzz-btn small" onClick={action.onClick}>
-          {action.label}
-        </button>
-      ) : (
-        <button type="button" className="ps-zoom" onClick={onOpen} aria-label="大きく見る">
-          拡大
-        </button>
-      )}
+      <button type="button" className="ps-zoom" onClick={onOpen} aria-label="大きく見る">
+        拡大
+      </button>
     </div>
   );
 }

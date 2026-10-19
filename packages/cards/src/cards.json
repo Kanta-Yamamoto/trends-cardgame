@@ -95,9 +95,16 @@
     "hp": 3,
     "attributes": ["炎上"],
     "kaiwai": [],
-    "keywords": ["連撃", "バズ"],
-    "effects": [],
-    "effect": "連撃（1ターンに2回攻撃できる）。バズ（出したターンに話題力1を払うと、攻撃力+1・体力+1 して相手のアイコンに攻撃できる）。",
+    "keywords": ["凸", "連撃"],
+    "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      }
+    ],
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。連撃（1ターンに2回攻撃できる）。",
     "flavor": "見てないって言いながら、全部見てる。",
     "art": "/assets/cards/f3-art.jpg",
     "original": "assets/original/f3.webp"
@@ -422,9 +429,16 @@
     "hp": 4,
     "attributes": ["メロい"],
     "kaiwai": ["アイドル"],
-    "keywords": ["バズ"],
-    "effects": [],
-    "effect": "バズ（出したターンに話題力1を払うと、攻撃力+1・体力+1 して相手のアイコンに攻撃できる）。",
+    "keywords": ["凸"],
+    "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      }
+    ],
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。",
     "flavor": "推しには指一本触れさせない。",
     "art": "/assets/cards/m4-art.jpg",
     "original": "assets/original/m4.webp"
@@ -1094,8 +1108,14 @@
     "hp": 3,
     "attributes": ["炎上"],
     "kaiwai": ["有識者"],
-    "keywords": ["バズ"],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 2,
+        "hp": 2
+      },
       {
         "on": "play",
         "do": "damage",
@@ -1103,7 +1123,7 @@
         "amount": 1
       }
     ],
-    "effect": "バズ（出したターンに話題力1を払うと、攻撃力+1・体力+1 して相手のアイコンに攻撃できる）。場に出たとき、相手のアイコンすべてに1ダメージ。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+2・体力+2。場に出たとき、相手のアイコンすべてに1ダメージ。",
     "flavor": "【悲報】が、今日もよく伸びる。",
     "art": "/assets/cards/f9-art.jpg",
     "original": "assets/original/f9.webp"
@@ -1199,9 +1219,16 @@
     "hp": 3,
     "attributes": ["メロい"],
     "kaiwai": ["配信者"],
-    "keywords": ["注目", "バズ"],
-    "effects": [],
-    "effect": "注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。バズ（出したターンに話題力1を払うと、攻撃力+1・体力+1 して相手のアイコンに攻撃できる）。",
+    "keywords": ["凸", "注目"],
+    "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      }
+    ],
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。注目（自分のターンの始めに攻撃力+1。真ん中の枠にいると+2）。",
     "flavor": "歌ってみた、100万回再生。",
     "art": "/assets/cards/m7-art.jpg",
     "original": "assets/original/m7.webp"
@@ -1310,15 +1337,21 @@
     "hp": 4,
     "attributes": ["癒し"],
     "kaiwai": ["配信者"],
-    "keywords": ["バズ"],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      },
       {
         "on": "play",
         "do": "bind",
         "to": "strongestEnemy"
       }
     ],
-    "effect": "バズ（出したターンに話題力1を払うと、攻撃力+1・体力+1 して相手のアイコンに攻撃できる）。場に出たとき、攻撃力がいちばん高い相手のアイコン1体を眠らせる（次の相手のターン、攻撃できない）。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。場に出たとき、攻撃力がいちばん高い相手のアイコン1体を眠らせる（次の相手のターン、攻撃できない）。",
     "flavor": "……耳、かしてね。",
     "art": "/assets/cards/i8-art.jpg",
     "original": "assets/original/i8.webp"
@@ -1426,8 +1459,14 @@
     "hp": 3,
     "attributes": ["草"],
     "kaiwai": ["ミーム"],
-    "keywords": ["バズ"],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      },
       {
         "on": "play",
         "do": "buffAllies",
@@ -1439,7 +1478,7 @@
         }
       }
     ],
-    "effect": "バズ（出したターンに話題力1を払うと、攻撃力+1・体力+1 して相手のアイコンに攻撃できる）。場に出たとき、自分の場に草が2体以上いれば、ほかのアイコンすべてに攻撃力+1。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。場に出たとき、自分の場に草が2体以上いれば、ほかのアイコンすべてに攻撃力+1。",
     "flavor": "今日も一発、当ててくる。",
     "art": "/assets/cards/k7-art.jpg",
     "original": "assets/original/k7.webp"
@@ -2008,15 +2047,21 @@
     "hp": 3,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": ["バズ"],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      },
       {
         "do": "draw",
         "count": 2,
         "ifHandAtMost": 3
       }
     ],
-    "effect": "バズ（出したターンに話題力1を払うと、攻撃力+1・体力+1 して相手のアイコンに攻撃できる）。場に出たとき、手札が3枚以下ならカードを2枚引く。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。場に出たとき、手札が3枚以下ならカードを2枚引く。",
     "flavor": "要出典。",
     "art": "/assets/cards/g12-art.jpg",
     "original": "assets/original/g12.webp"
@@ -2314,8 +2359,14 @@
     "hp": 3,
     "attributes": ["癒し"],
     "kaiwai": ["配信者"],
-    "keywords": ["バズ"],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      },
       {
         "on": "passive",
         "do": "healGrow",
@@ -2323,7 +2374,7 @@
         "hp": 1
       }
     ],
-    "effect": "バズ（出したターンに話題力1を払うと、攻撃力+1・体力+1 して相手のアイコンに攻撃できる）。自分が回復の効果を使うたび、このアイコンに攻撃力+1・体力+1。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。自分が回復の効果を使うたび、このアイコンに攻撃力+1・体力+1。",
     "flavor": "眠れない夜の、いちばん近い声。",
     "art": "/assets/cards/i12-art.jpg",
     "original": "assets/original/i12.webp"
@@ -2754,8 +2805,14 @@
     "hp": 2,
     "attributes": ["草"],
     "kaiwai": ["動物"],
-    "keywords": ["バズ"],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 1,
+        "hp": 1
+      },
       {
         "on": "play",
         "do": "summon",
@@ -2763,7 +2820,7 @@
         "count": 1
       }
     ],
-    "effect": "バズ（出したターンに話題力1を払うと、攻撃力+1・体力+1 して相手のアイコンに攻撃できる）。場に出たとき、草を1体出す。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。場に出たとき、草を1体出す。",
     "flavor": "再生数は飼い主の給料より上。",
     "art": "/assets/cards/k16-art.jpg",
     "original": "assets/original/k16.webp"
@@ -3120,15 +3177,21 @@
     "hp": 4,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": ["バズ"],
+    "keywords": ["凸"],
     "effects": [
+      {
+        "on": "rush",
+        "do": "buffSelf",
+        "attack": 2,
+        "hp": 2
+      },
       {
         "on": "play",
         "do": "draw",
         "count": 1
       }
     ],
-    "effect": "バズ（出したターンに話題力1を払うと、攻撃力+1・体力+1 して相手のアイコンに攻撃できる）。場に出たとき、カードを1枚引く。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+2・体力+2。場に出たとき、カードを1枚引く。",
     "flavor": "「私の若いころはですね」",
     "art": "/assets/cards/g18-art.jpg",
     "original": "assets/original/g18.webp"

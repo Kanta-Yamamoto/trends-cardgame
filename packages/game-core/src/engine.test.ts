@@ -5,7 +5,6 @@ import { deckAttributes, encodeCustomDeck, resolveDeckRef, validateDeck } from "
 import {
   applyAction,
   attackTargets,
-  canBuzz,
   canDarkFall,
   castTargets,
   createGame,
@@ -52,8 +51,10 @@ const catalog: Record<string, RuleCard> = {
   twin: icon("twin", 2, 2, 3, { keywords: ["速攻", "連撃"] }),
   basher: icon("basher", 2, 2, 5, { keywords: ["速攻"] }),
   totsu: icon("totsu", 2, 2, 2, { keywords: ["凸"] }),
-  buzz: icon("buzz", 2, 2, 2, { keywords: ["バズ"] }),
-  buzzrush: icon("buzzrush", 2, 2, 2, { keywords: ["速攻", "バズ"] }),
+  charger: icon("charger", 3, 2, 3, {
+    keywords: ["凸"],
+    effects: [{ on: "rush", do: "buffSelf", attack: 2, hp: 2 }],
+  }),
   idol: icon("idol", 2, 1, 3, { keywords: ["注目"] }),
   guard: icon("guard", 2, 1, 5, { keywords: ["ガード"] }),
   cat: icon("cat", 3, 1, 2, { effects: [{ on: "play", do: "summon", card: "kusa", count: 2 }] }),
@@ -273,38 +274,18 @@ describe("キーワード", () => {
     s = end(end(s), "p2");
     expect(attackTargets(s, "p1", 0, catalog)).toContainEqual({ kind: "leader" });
   });
-  it("バズ：出したターンに話題力1で +1/+1 と凸。1体1回・出したターンだけ・奪ったアイコンは不可", () => {
-    let s = withFoe(["buzz", "buzz"], ["wall"]);
+  it("凸で攻撃したとき：上がった攻撃力で殴り、強化は残る。次のターン以降や、マスターへの攻撃では働かない", () => {
+    let s = withFoe(["charger"], ["wall"]);
     s = play(s, 0, 0);
-    expect(canBuzz(s, "p1", 0, catalog)).toBe(true);
-    expect(() => face(s, 0)).toThrow(); // バズ前は攻撃できない
-    const mana = s.players.p1.mana;
-    const r = run(s, { type: "buzz", player: "p1", slot: 0 });
+    const r = hit(s, 0, 0);
+    expect(r.events.map((e) => e.type)).toEqual(["buffed", "battle"]);
+    expect(r.events[1]).toMatchObject({ type: "battle", toDefender: 4, toAttacker: 1 });
     s = r.state;
-    expect(r.events.map((e) => e.type)).toEqual(["buzzed", "buffed"]);
-    expect(s.players.p1.mana).toBe(mana - 1);
-    expect(viewUnit(s, "p1", s.players.p1.field[0] as never, catalog)).toMatchObject({ attack: 3, hp: 3 });
-    expect(attackTargets(s, "p1", 0, catalog)).toEqual([{ kind: "unit", slot: 0 }]);
-    expect(canBuzz(s, "p1", 0, catalog)).toBe(false);
-    expect(() => run(s, { type: "buzz", player: "p1", slot: 0 })).toThrow(/1回/);
-    s = hit(s, 0, 0).state;
-    expect(s.players.p2.field[0]?.damage).toBe(3);
-    // 次のターンに出していないアイコンはバズできない
+    expect(viewUnit(s, "p1", s.players.p1.field[0] as never, catalog)).toMatchObject({ attack: 4, hp: 4 });
+    // 次のターンは普通の攻撃（凸の効果は出たターンだけ）
     s = end(end(s), "p2");
-    expect(canBuzz(s, "p1", 0, catalog)).toBe(false);
-    expect(() => run(s, { type: "buzz", player: "p1", slot: 0 })).toThrow(/出したターン/);
-    // 話題力が足りなければ使えない
-    s = play(s, 0, 1);
-    s.players.p1.mana = 0;
-    expect(canBuzz(s, "p1", 1, catalog)).toBe(false);
-    expect(() => run(s, { type: "buzz", player: "p1", slot: 1 })).toThrow(/話題力/);
-  });
-  it("バズ：速攻持ちにバズすると +1/+1 だけ乗り、マスターも攻撃できる", () => {
-    let s = withFoe(["buzzrush"], ["wall"]);
-    s = play(s, 0, 0);
-    s = run(s, { type: "buzz", player: "p1", slot: 0 }).state;
-    expect(attackTargets(s, "p1", 0, catalog)).toContainEqual({ kind: "leader" });
-    expect(face(s, 0).state.players.p2.lp).toBe(17);
+    const r2 = hit(s, 0, 0);
+    expect(r2.events.map((e) => e.type)).not.toContain("buffed");
   });
   it("攻撃の見込み：与える・受けるダメージと、倒せるか・倒されるか", () => {
     let s = withFoe(["basher"], ["wall"]);

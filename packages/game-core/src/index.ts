@@ -11,7 +11,6 @@ export type { AttackPreview, NewGameInput } from "./engine";
 export {
   applyAction,
   attackTargets,
-  canBuzz,
   canDarkFall,
   canUnitAttack,
   castTargets,

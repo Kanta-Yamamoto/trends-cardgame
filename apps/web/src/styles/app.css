@@ -754,9 +754,3 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
   .db-bar { width: 12%; }
   .db-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 }
-
-/* ---------- バズ（出したターンに話題力 1 で +1/+1 と凸） ---------- */
-.mini-ready.mini-buzz { background: linear-gradient(100deg, #ffd36e, #ff8a3d); color: var(--night); animation: buzz-blink 1.1s ease-in-out infinite; }
-@keyframes buzz-blink { 50% { box-shadow: 0 0 0 3px #ffb02e66; } }
-.buzz-btn { background: linear-gradient(100deg, #ffd36e, #ff8a3d); white-space: nowrap; }
-.buzz-btn.small { padding: 7px 10px; font-size: 11px; }

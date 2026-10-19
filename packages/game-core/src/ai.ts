@@ -1,7 +1,6 @@
 import {
   applyAction,
   attackTargets,
-  canBuzz,
   canUnitAttack,
   castTargets,
   darkReady,
@@ -220,14 +219,6 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
     }
     if (!best) break;
     step((best as { action: Action }).action);
-  }
-
-  // 1.5 バズ：出したターンのバズ持ちは、相手の場にアイコンがいて話題力が余っていれば +1/+1 して凸で殴りに行く
-  for (let slot = 0; slot < state.players[player].field.length; slot++) {
-    if (state.winner) return actions;
-    if (!canBuzz(state, player, slot, catalog)) continue;
-    if (!state.players[foeId].field.some((u) => u)) break;
-    step({ type: "buzz", player, slot });
   }
 
   // 2. 攻撃
