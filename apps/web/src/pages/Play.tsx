@@ -800,7 +800,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       >
         {ready && (
           <em className="mini-ready">
-            {u.attacksLeft > 1 ? "2回攻撃" : u.rushOnly ? "凸攻撃" : "攻撃できる"}
+            {u.attacksLeft > 1 ? "2回攻撃可" : u.rushOnly ? "凸" : "攻撃可"}
           </em>
         )}
       </MiniCard>
