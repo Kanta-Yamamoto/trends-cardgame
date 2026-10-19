@@ -32,7 +32,7 @@ describe("イラストのないカード", () => {
     expect(container.querySelector(".kg")).not.toBeNull();
     expect(screen.getByText("柴犬")).toBeInTheDocument();
     expect(container.querySelector(".stat-atk")).toHaveTextContent("2");
-    expect(container.querySelector(".stat-hp")).toHaveTextContent("5");
+    expect(container.querySelector(".stat-hp")).toHaveTextContent("4");
   });
 
   it("効果文が先頭のキーワードで始まっても重複キーにならない", () => {

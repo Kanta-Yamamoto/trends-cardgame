@@ -13,6 +13,7 @@ export type RuleCard = Pick<
   | "target"
   | "dark"
   | "token"
+  | "retired"
   | "kaiwai"
   | "targetKaiwai"
   | "targetFilter"
@@ -79,6 +80,8 @@ export interface PlayerState {
   postsUsed: number;
   /** このゲームで回復の効果を使った回数（癒しの「回復するたびに」で使う） */
   heals: number;
+  /** このゲームで、自分のトークンがオワコンに行った数（カード ID ごと。クサハミで使う） */
+  tokensLost?: Record<string, number>;
   /** このターンのあとに続けて行うターンの数 */
   extraTurns: number;
   /** このターン数の間、自分のアイコンはガードを無視して攻撃できる */
@@ -155,6 +158,8 @@ export type GameEvent =
   | { type: "leaderHealed"; player: PlayerId; amount: number; lp: number }
   | { type: "drew"; player: PlayerId; cardId: string }
   | { type: "deckOut"; player: PlayerId }
+  /** 特殊勝利（陰謀論者：山札が0枚で自分のターンを始めた） */
+  | { type: "specialWin"; player: PlayerId; cardId: string }
   /** 手札が上限で、引いたカードがオワコンへ行った */
   | { type: "burned"; player: PlayerId; cardId: string }
   | { type: "resigned"; player: PlayerId }

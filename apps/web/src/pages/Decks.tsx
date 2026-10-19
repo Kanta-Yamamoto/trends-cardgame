@@ -30,7 +30,7 @@ type Filter = Attribute | "共通" | "全部";
 const FILTERS: Filter[] = ["全部", ...ATTRIBUTES, "共通"];
 const COST_LABELS = ["1", "2", "3", "4", "5", "6", "7+"];
 /** デッキに入れられるカード（トークンは除く）。属性→コスト→★の順 */
-const POOL: CardDef[] = CARDS.filter((c) => !c.token).sort(
+const POOL: CardDef[] = CARDS.filter((c) => !c.token && !c.retired).sort(
   (a, b) =>
     attrIndex(a) - attrIndex(b) ||
     a.cost - b.cost ||

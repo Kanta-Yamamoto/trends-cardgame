@@ -107,7 +107,7 @@ function effectsOf(u: Unit, catalog: Catalog): CardEffect[] {
 const triggerOf = (e: CardEffect) => e.on ?? "play";
 
 /** 場にいる間ずっと効く効果を持っているか */
-function hasPassive(u: Unit, kind: CardEffect["do"], catalog: Catalog): boolean {
+export function hasPassive(u: Unit, kind: CardEffect["do"], catalog: Catalog): boolean {
   return effectsOf(u, catalog).some((e) => triggerOf(e) === "passive" && e.do === kind);
 }
 
@@ -142,6 +142,8 @@ export function viewUnit(state: GameState, owner: PlayerId, unit: Unit, catalog:
     if (triggerOf(e) === "passive" && e.do === "attackPerAlly") {
       attack += countAllies(state, owner, catalog, e.kaiwai, unit.uid);
     }
+    if (triggerOf(e) === "passive" && e.do === "attackPerLostToken")
+      attack += state.players[owner].tokensLost?.[e.card] ?? 0;
   }
   const maxHp = base.hp + unit.hpBuff;
   const keywords = keywordsOf(unit, catalog);
@@ -416,6 +418,7 @@ function resolveDeaths(state: GameState, catalog: Catalog, emit: Emit): string[]
       if (viewUnit(state, owner, u, catalog).hp > 0) return;
       p.field[slot] = null;
       if (!u.token) p.trash.push(u.cardId);
+      if (u.token) p.tokensLost = { ...p.tokensLost, [u.cardId]: (p.tokensLost?.[u.cardId] ?? 0) + 1 };
       destroyed.push(u.cardId);
       emit({ type: "destroyed", player: owner, cardId: u.cardId });
       if (u.darkUsed && !u.token) p.darkSpent = [...(p.darkSpent ?? []), u.cardId];
@@ -551,8 +554,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
     }
     case "buff":
       if (tgt && ctx.target) {
-        if (e.thisTurn) tgt.tempAtk = (tgt.tempAtk ?? 0) + e.attack;
-        else tgt.atkBuff += e.attack;
+        tgt.atkBuff += e.attack;
         tgt.hpBuff += e.hp;
         emit({
           type: "buffed",
@@ -614,9 +616,26 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       } else if (e.to === "enemyMaster") damageLeader(state, foeId, e.amount, emit);
       else if (tgt && tgtOwner && ctx.target) damageUnit(state, tgtOwner, ctx.target.slot, e.amount, emit);
       break;
-    case "exposeAtTurnEnd":
-      if (tgt) tgt.exposeAtTurnEnd = true;
+    case "hype": {
+      // 炎上商法：投稿なら対象の自分のアイコン、アイコンの効果なら自分
+      const slot = ctx.target ? ctx.target.slot : ctx.selfSlot;
+      const u = ctx.target ? tgt : self;
+      if (u && slot !== undefined) {
+        u.tempAtk = (u.tempAtk ?? 0) + e.attack;
+        u.exposeAtTurnEnd = true;
+        emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: 0 });
+      }
       break;
+    }
+    case "damagePerEnemy": {
+      // 相手の場が賑わっているほど大きく燃える。数えるのは効果が働いた瞬間
+      const foeField = state.players[foeId].field;
+      const amount = foeField.filter((u) => u).length * e.per;
+      foeField.forEach((u, slot) => {
+        if (u) damageUnit(state, foeId, slot, amount, emit);
+      });
+      break;
+    }
     case "expose": {
       const expose = (owner: PlayerId, slot: number, u: Unit) => exposeUnit(owner, slot, u, emit);
       if (e.to === "strongestEnemy") {
@@ -839,6 +858,9 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       }
       break;
     case "attackPerAlly":
+    case "attackPerLostToken":
+    case "noDeckOut":
+    case "conspiracyWin":
     case "extraAttackOnKill":
     case "focusAura":
     case "lullaby":
@@ -882,7 +904,20 @@ function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Co
       emit({ type: "status", player: pid, slot, cardId: u.cardId, status: "眠り" });
     }
   }
+  // 陰謀論者：山札が0枚で自分のターンを始めたら勝ち（ドローより先に見る）
+  const plotter = p.field.find((u) => u && hasPassive(u, "conspiracyWin", catalog));
+  if (plotter && p.deck.length === 0) {
+    emit({ type: "specialWin", player: pid, cardId: plotter.cardId });
+    state.winner = pid;
+    emit({ type: "won", player: pid });
+    return;
+  }
   if (!draw(state, pid, emit)) {
+    // 専門家・陰謀論者が場にいれば、引けなくても負けない
+    const safe = p.field.some(
+      (u) => u && (hasPassive(u, "noDeckOut", catalog) || hasPassive(u, "conspiracyWin", catalog)),
+    );
+    if (safe) return;
     emit({ type: "deckOut", player: pid });
     state.winner = other;
     emit({ type: "won", player: other });

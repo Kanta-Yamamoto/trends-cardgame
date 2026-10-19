@@ -19,7 +19,7 @@ export const CATALOG: Record<string, CardDef> = Object.fromEntries(CARDS.map((c)
 export const DECK_INFO: Record<DeckId, { name: string; text: string }> = {
   solo_flame: {
     name: "燃やし尽くす",
-    text: "炎上だけ。速攻と凸で序盤から殴り切り、晒しで強化を消す。エースはレンとカグラ",
+    text: "炎上だけ。速攻と凸で序盤から殴り切り、カグラの炎上商法で押し込み、ヒバナで盤面を返す。エースはレン・カグラ・ヒバナ",
   },
   solo_idol: {
     name: "推しに全振り",
@@ -31,7 +31,7 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string }> = {
   },
   solo_meme: {
     name: "草しか生えない",
-    text: "草だけ。草で場を埋めて数で押し、伸びるリプ欄で引き続ける。エースはワラとバズの申し子 ララ",
+    text: "草だけ。草で場を埋めて数で押し、倒された草を食べたクサハミで仕留める。エースはワラと大食いのクサハミ",
   },
   solo_heal: {
     name: "癒しの楽園",

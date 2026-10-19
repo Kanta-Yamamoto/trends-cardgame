@@ -91,8 +91,14 @@ const catalog: Record<string, RuleCard> = {
   cleanseFoes: post("cleanseFoes", 3, { effects: [{ do: "cleanse", to: "allEnemies" }] }),
   hype: post("hype", 2, {
     target: "allyIcon",
-    effects: [{ do: "buff", attack: 3, hp: 0, thisTurn: true }, { do: "exposeAtTurnEnd" }],
+    effects: [{ do: "hype", attack: 3 }],
   }),
+  hibana: icon("hibana", 7, 2, 3, { effects: [{ do: "damagePerEnemy", per: 2 }] }),
+  hyper: icon("hyper", 6, 4, 3, { keywords: ["速攻"], effects: [{ do: "hype", attack: 3 }] }),
+  safeDeck: icon("safeDeck", 5, 3, 4, { effects: [{ on: "passive", do: "noDeckOut" }] }),
+  plotter: icon("plotter", 1, 4, 4, { effects: [{ on: "passive", do: "conspiracyWin" }] }),
+  eater: icon("eater", 3, 1, 3, { effects: [{ on: "passive", do: "attackPerLostToken", card: "kusa" }] }),
+  oldcard: icon("oldcard", 1, 1, 1, { retired: true }),
   hagashi: post("hagashi", 3, {
     effects: [
       { do: "damage", to: "allEnemies", amount: 1 },
@@ -415,6 +421,60 @@ describe("炎上商法・TL浄化・剥がし", () => {
     t = play(t, 0, 0);
     t = cast(t, 0);
     expect(t.players.p2.field.map((u) => u?.damage)).toEqual([2, 2, undefined, undefined, undefined]);
+  });
+});
+
+describe("★5 の作り直し（ヒバナ・カグラ・専門家・陰謀論者・クサハミ）", () => {
+  it("ヒバナ：相手のアイコンの数×2 のダメージを、相手のアイコンすべてに", () => {
+    let s = withFoe(["hibana"], ["wall"]);
+    s = play(s, 0, 0);
+    expect(s.players.p2.field[0]?.damage).toBe(2);
+    let t = withFoe(["hibana"], ["wall", "big", "guard"]);
+    t = play(t, 0, 0);
+    expect(t.players.p2.field.filter((u) => u)).toHaveLength(0);
+  });
+  it("場に出たときの炎上商法（カグラ）：自分がこのターン攻撃力+3、ターンの終わりに晒し者", () => {
+    let s = game(["hyper"]);
+    s = play(s, 0, 0);
+    expect(viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog).attack).toBe(7);
+    s = end(s);
+    const v = viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog);
+    expect([v.attack, v.exposed]).toEqual([4, true]);
+  });
+  it("専門家が場にいれば、山札が無くて引けなくても負けない", () => {
+    let s = game(["safeDeck"]);
+    s = play(s, 0, 0);
+    s.players.p1.deck = [];
+    s = end(end(s), "p2");
+    expect(s.winner).toBeNull();
+    expect(s.active).toBe("p1");
+  });
+  it("陰謀論者：場にいる間、山札が0枚で自分のターンを始めたら勝ち", () => {
+    let s = game(["plotter"]);
+    s = play(s, 0, 0);
+    s = end(s);
+    expect(s.winner).toBeNull();
+    s.players.p1.deck = [];
+    const r = run(s, { type: "endTurn", player: "p2" });
+    expect(r.state.winner).toBe("p1");
+    expect(r.events).toContainEqual(expect.objectContaining({ type: "specialWin", player: "p1" }));
+    // 山札が残っていれば勝ちにならない
+    let t = game(["plotter"]);
+    t = play(t, 0, 0);
+    t = end(end(t), "p2");
+    expect(t.winner).toBeNull();
+  });
+  it("クサハミ：自分の草がオワコンに行った数だけ攻撃力+1", () => {
+    let s = game(["eater", "cat"]);
+    s = play(s, 0, 0);
+    s = play(s, 0, 1);
+    for (const u of s.players.p1.field) if (u?.cardId === "kusa") u.damage = 1;
+    s = end(s);
+    expect(s.players.p1.tokensLost).toEqual({ kusa: 2 });
+    expect(viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog).attack).toBe(3);
+  });
+  it("お蔵入りのカードはデッキに入れられない", () => {
+    expect(validateDeck(["oldcard"], catalog).some((e) => e.includes("お蔵入り"))).toBe(true);
   });
 });
 

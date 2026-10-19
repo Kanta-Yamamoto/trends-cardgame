@@ -54,16 +54,26 @@ export type CardEffect = (
   | { do: "attackPerAlly"; kaiwai?: Kaiwai }
   /** 晒し者にする（ガードを失い、それまでの強化がすべて消える。ずっと続く）。to が無ければ投稿の対象を */
   | { do: "expose"; to?: "strongestEnemy" | "allEnemies" }
-  /** 投稿の対象（自分のアイコン）を、自分のターンの終わりに晒し者にする（炎上商法） */
-  | { do: "exposeAtTurnEnd" }
+  /**
+   * 炎上商法：このターン攻撃力 +attack。自分のターンの終わりに晒し者になる。
+   * 投稿なら対象（自分のアイコン）に、アイコンの「場に出たとき」なら自分に
+   */
+  | { do: "hype"; attack: number }
+  /** 相手のアイコンの数 × per のダメージを、相手のアイコンすべてに（ヒバナ） */
+  | { do: "damagePerEnemy"; per: number }
+  /** passive：このアイコンが場にいる間、山札が無くて引けなくても負けない（専門家） */
+  | { do: "noDeckOut" }
+  /** passive：このアイコンが場にいる間、自分の山札が0枚で自分のターンを始めたら勝ち。引けなくても負けない（陰謀論者） */
+  | { do: "conspiracyWin" }
+  /** passive：自分のトークン card（草など）がこのゲームでオワコンに行った数だけ攻撃力+1（クサハミ） */
+  | { do: "attackPerLostToken"; card: string }
   /** to が無ければ投稿の対象を眠らせる */
   | { do: "bind"; to?: "strongestEnemy" | "allEnemies" }
   /** to が無ければ投稿の対象を訂正する */
   | { do: "silence"; to?: "strongestEnemy" }
   /** 攻撃力を下げる。to が無ければ投稿の対象、allEnemies なら相手のアイコンすべて */
   | { do: "weaken"; attack: number; to?: "allEnemies" }
-  /** 投稿の対象に強化。thisTurn なら攻撃力はこのターンだけ（ターンの終わりに消える） */
-  | { do: "buff"; attack: number; hp: number; thisTurn?: boolean }
+  | { do: "buff"; attack: number; hp: number }
   | { do: "fill"; card: string }
   /** 強化と状態を消し、闇堕ちしたアイコンを元の姿に戻す。to が allEnemies なら相手のアイコンだけ（無ければ場のすべて） */
   | { do: "cleanse"; to?: "allEnemies" }
@@ -168,6 +178,8 @@ export interface CardDef {
   dark?: DarkSide;
   /** 効果で生まれるだけのカード（デッキには入れられない） */
   token?: boolean;
+  /** お蔵入り：カード一覧・デッキ構築に出さず、デッキにも入れられない（データと絵は残す） */
+  retired?: boolean;
   number?: string | null;
   serial?: string;
   /** web の public からのパス。イラストがまだないカードは持たない */
