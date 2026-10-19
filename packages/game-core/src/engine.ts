@@ -474,9 +474,11 @@ function runEffect(e: CardEffect, ctx: Ctx) {
   }
 
   switch (e.do) {
-    case "summon":
-      for (let i = 0; i < e.count; i++) if (!summon(state, player, e.card, catalog, emit)) break;
+    case "summon": {
+      const n = e.centerCount !== undefined && ctx.selfSlot === CENTER_SLOT ? e.centerCount : e.count;
+      for (let i = 0; i < n; i++) if (!summon(state, player, e.card, catalog, emit)) break;
       break;
+    }
     case "copySelf":
       if (self) summon(state, player, self.cardId, catalog, emit);
       break;

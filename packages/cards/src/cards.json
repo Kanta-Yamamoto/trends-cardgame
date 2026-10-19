@@ -336,23 +336,13 @@
     "effects": [
       {
         "on": "play",
-        "do": "buffAllies",
-        "attack": 2,
-        "hp": 1,
-        "kaiwai": "アイドル"
-      },
-      {
-        "on": "play",
-        "do": "heal",
-        "to": "allAlliesAndMaster",
-        "amount": 2
-      },
-      {
-        "on": "passive",
-        "do": "focusAura"
+        "do": "summon",
+        "card": "m4",
+        "count": 1,
+        "centerCount": 2
       }
     ],
-    "effect": "注目。場に出たとき、自分のほかのアイドルすべてに攻撃力+2・体力+1し、自分のアイコンすべてとライフを2回復する。センターにいる間、自分のほかのアイコンも、ターンの始めに攻撃力+1。",
+    "effect": "注目。場に出たとき、親衛隊を1体出す（センターに出したときは2体）。",
     "flavor": "センターは、譲らない。",
     "dark": {
       "name": "闇深アイドル",
@@ -1924,9 +1914,9 @@
     "hp": 2,
     "attributes": ["メロい"],
     "kaiwai": ["配信者", "アイドル"],
-    "keywords": ["注目", "連撃"],
+    "keywords": ["注目"],
     "effects": [],
-    "effect": "注目。連撃",
+    "effect": "注目",
     "flavor": "画面の向こうで、毎日会える。",
     "art": "/assets/cards/m13-art.jpg",
     "original": "assets/original/m13.webp"

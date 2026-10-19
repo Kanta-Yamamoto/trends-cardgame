@@ -862,6 +862,29 @@ describe("界隈を読む効果（自分の側だけ）", () => {
     expect(atk()).toBe(4);
   });
 
+  it("センターに出したときは呼ぶ数が増える（トップアイドル：親衛隊 1 体、センターなら 2 体）", () => {
+    const local = {
+      ...catalog,
+      top: icon("top", 1, 3, 5, {
+        effects: [{ on: "play", do: "summon", card: "f", count: 1, centerCount: 2 }],
+      }),
+    };
+    const mk = () => {
+      const s = createGame({
+        decks: { p1: ["top", ...F(10)], p2: F(12) },
+        seed: 42,
+        shuffle: false,
+        config: { startHand: 4 },
+      });
+      s.players.p1.mana = 10;
+      return s;
+    };
+    const side = applyAction(mk(), { type: "play", player: "p1", handIndex: 0, slot: 0 }, local).state;
+    expect(side.players.p1.field.filter((u) => u).length).toBe(2);
+    const center = applyAction(mk(), { type: "play", player: "p1", handIndex: 0, slot: 2 }, local).state;
+    expect(center.players.p1.field.filter((u) => u).length).toBe(3);
+  });
+
   it("このターンだけの強化：ターンの終わりに消える", () => {
     const local = {
       ...catalog,
