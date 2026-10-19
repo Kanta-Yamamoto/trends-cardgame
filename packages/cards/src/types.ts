@@ -28,7 +28,12 @@ export type EffectTrigger = "play" | "passive" | "turnEnd" | "hand" | "rush";
 
 /** カードの効果（データで表す）。on ごとに、上から順に実行する */
 export type CardEffect = (
-  | { do: "summon"; card: string; count: number }
+  | {
+      do: "summon";
+      card: string;
+      count: number /** センター（真ん中の枠）に出したときの数 */;
+      centerCount?: number;
+    }
   | { do: "copySelf" }
   | { do: "buffSelf"; attack: number; hp: number }
   | { do: "buffSelfPerPlayed"; attack: number }
