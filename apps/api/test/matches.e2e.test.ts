@@ -69,16 +69,29 @@ describe("ログインとオンライン対戦", () => {
     const ok = await request(app.getHttpServer())
       .post("/matches")
       .set("Authorization", `Bearer ${t}`)
-      .send({ deck: `custom:${DECKS.idol.join(",")}` })
+      .send({ deck: `custom:${DECKS.solo_idol.join(",")}` })
       .expect(201);
     expect(ok.body.players.p1.deck.startsWith("custom:")).toBe(true);
     // 29 枚
     await request(app.getHttpServer())
       .post("/matches")
       .set("Authorization", `Bearer ${t}`)
-      .send({ deck: `custom:${DECKS.idol.slice(1).join(",")}` })
+      .send({ deck: `custom:${DECKS.solo_idol.slice(1).join(",")}` })
       .expect(400);
-    // 存在しないデッキ
+    // 属性が2つ（炎上と メロい）
+    const two = [...DECKS.solo_flame.slice(0, 27), "m6", "m6", "m6"];
+    const bad = await request(app.getHttpServer())
+      .post("/matches")
+      .set("Authorization", `Bearer ${t}`)
+      .send({ deck: `custom:${two.join(",")}` })
+      .expect(400);
+    expect(bad.body.message).toContain("属性は1つまで");
+    // 存在しないデッキ（前の 2 属性の構築済みデッキも含む）
+    await request(app.getHttpServer())
+      .post("/matches")
+      .set("Authorization", `Bearer ${t}`)
+      .send({ deck: "flame" })
+      .expect(400);
     await request(app.getHttpServer())
       .post("/matches")
       .set("Authorization", `Bearer ${t}`)
@@ -91,7 +104,7 @@ describe("ログインとオンライン対戦", () => {
     const created = await request(app.getHttpServer())
       .post("/matches")
       .set("Authorization", `Bearer ${ta}`)
-      .send({ deck: "flame" })
+      .send({ deck: "solo_flame" })
       .expect(201);
     const code = created.body.code as string;
     expect(code).toMatch(/^[A-Z2-9]{6}$/);
@@ -103,7 +116,7 @@ describe("ログインとオンライン対戦", () => {
 
     const b = await connect(tb);
     const [ma, mb] = [next<MatchMsg>(a, "match"), next<MatchMsg>(b, "match")];
-    expect(await emit(b, "join", { code, deck: "idol" })).toEqual({ ok: true });
+    expect(await emit(b, "join", { code, deck: "solo_idol" })).toEqual({ ok: true });
     const [sa, sb] = [await ma, await mb];
     expect(sa.status).toBe("playing");
     expect(sa.opponent?.name).toBe("ぶんた");
@@ -129,7 +142,7 @@ describe("ログインとオンライン対戦", () => {
 
     // 3人目は入れない。再接続（同じ人がもう一度 join）はできる
     const c = await connect(await login("さぶろう"));
-    expect((await emit(c, "join", { code, deck: "dance" })).ok).toBe(false);
+    expect((await emit(c, "join", { code, deck: "solo_meme" })).ok).toBe(false);
     const again = await connect(ta);
     const back = next<MatchMsg>(again, "match");
     await emit(again, "join", { code });

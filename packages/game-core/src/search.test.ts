@@ -21,7 +21,7 @@ const runTurn = (s: GameState, smart: boolean) => {
 describe("先読みする CPU（planTurnSearch）", () => {
   it("合法な操作だけで、ターン終了で終わる", () => {
     const s = createGame({
-      decks: { p1: DECKS.flame, p2: DECKS.idol },
+      decks: { p1: DECKS.solo_flame, p2: DECKS.solo_idol },
       seed: 5,
     });
     const plan = planTurnSearch(s, "p1", real);
@@ -40,12 +40,12 @@ describe("先読みする CPU（planTurnSearch）", () => {
         for (let t = 0; t < 120 && !s.winner; t++) s = runTurn(s, true);
         expect(s.winner).not.toBeNull();
       }
-    // 15 デッキ × 15 = 225 試合。手元で約 20 秒、CI では 2〜3 倍かかる
+    // 5 デッキ × 5 = 25 試合
   }, 180_000);
 
   it("とどめを刺せるときは刺す", () => {
     let s = createGame({
-      decks: { p1: DECKS.flame, p2: DECKS.idol },
+      decks: { p1: DECKS.solo_flame, p2: DECKS.solo_idol },
       seed: 2,
     });
     // お互い数ターン進めてから、相手のライフを1にする

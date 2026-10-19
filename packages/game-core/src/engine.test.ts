@@ -1,4 +1,4 @@
-import { CARDS, DECKS } from "@trends/cards";
+import { ATTRIBUTES, CARDS, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
 import { planTurn } from "./ai";
 import { deckAttributes, encodeCustomDeck, resolveDeckRef, validateDeck } from "./deck";
@@ -446,7 +446,7 @@ describe("CPU", () => {
   const real = Object.fromEntries(CARDS.map((c) => [c.id, c]));
   it("合法な操作だけでターンを終える", () => {
     const s = createGame({
-      decks: { p1: DECKS.flame, p2: DECKS.idol },
+      decks: { p1: DECKS.solo_flame, p2: DECKS.solo_idol },
       seed: 3,
     });
     const plan = planTurn(s, "p1", real);
@@ -468,31 +468,31 @@ describe("CPU", () => {
           }
           expect(s.winner).not.toBeNull();
         }
-    // 15 デッキ × 15 × 2 = 450 試合。CI の遅いマシンでは 5 秒を超える
+    // 5 デッキ × 5 × 2 = 50 試合
   }, 60_000);
 });
 
 describe("デッキの決まり", () => {
   const real = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string, RuleCard>;
-  it("デモ用デッキはすべて決まりを守っている（属性2つまで＋共通）", () => {
+  it("構築済みデッキはすべて決まりを守っている（属性1つ＋共通）", () => {
     for (const [id, deck] of Object.entries(DECKS)) {
       expect({ id, errors: validateDeck(deck, real) }).toEqual({ id, errors: [] });
-      expect(deckAttributes(deck, real).length).toBeLessThanOrEqual(2);
+      expect(deckAttributes(deck, real)).toHaveLength(1);
     }
   });
-  it("属性が3つ以上・枚数違い・4枚目・トークンは反則", () => {
-    const three = [...Array(9).fill("f6").slice(0, 3), ...Array(3).fill("m6"), ...Array(3).fill("i7")];
-    const errors = validateDeck([...three, "t-kusa", "f6"], real);
+  it("属性が2つ以上・枚数違い・4枚目・トークンは反則", () => {
+    const two = [...Array(3).fill("f6"), ...Array(3).fill("m6")];
+    const errors = validateDeck([...two, "t-kusa", "f6"], real);
     expect(errors.some((e) => e.includes("30枚"))).toBe(true);
-    expect(errors.some((e) => e.includes("属性は2つまで"))).toBe(true);
+    expect(errors.some((e) => e.includes("属性は1つまで"))).toBe(true);
     expect(errors.some((e) => e.includes("トークン"))).toBe(true);
     expect(errors.some((e) => e.includes("3枚まで"))).toBe(true);
   });
   it("デッキの指し方：構築済みの ID か custom:（カード ID をカンマでつなぐ）", () => {
-    expect(resolveDeckRef("flame", DECKS)).toEqual(DECKS.flame);
-    const ref = encodeCustomDeck(DECKS.idol);
+    expect(resolveDeckRef("solo_flame", DECKS)).toEqual(DECKS.solo_flame);
+    const ref = encodeCustomDeck(DECKS.solo_idol);
     expect(ref.startsWith("custom:")).toBe(true);
-    expect(resolveDeckRef(ref, DECKS)).toEqual(DECKS.idol);
+    expect(resolveDeckRef(ref, DECKS)).toEqual(DECKS.solo_idol);
     expect(resolveDeckRef("nope", DECKS)).toBeNull();
     expect(resolveDeckRef("custom:", DECKS)).toBeNull();
     expect(resolveDeckRef("custom:f1,../x", DECKS)).toBeNull();
@@ -501,10 +501,19 @@ describe("デッキの決まり", () => {
   it("共通カードは属性に数えない", () => {
     expect(deckAttributes(["n1", "n2", "f6"], real)).toEqual(["炎上"]);
   });
-  it("10通りの属性の組み合わせと、5つの単属性に、デッキが1つずつある", () => {
-    const pairs = Object.values(DECKS).map((d) => [...deckAttributes(d, real)].sort().join("×"));
-    expect(new Set(pairs).size).toBe(15);
-    expect(pairs.filter((p) => !p.includes("×"))).toHaveLength(5);
+  it("1つの属性＋共通カードの30枚は組める（共通カードだけでもよい）", () => {
+    const flame = [...DECKS.solo_flame.slice(0, 24), ...Array(3).fill("n1"), ...Array(3).fill("n4")];
+    expect(validateDeck(flame, real)).toEqual([]);
+    const commons = ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8", "n9", "n10"].flatMap((id) => [
+      id,
+      id,
+      id,
+    ]);
+    expect(validateDeck(commons, real)).toEqual([]);
+  });
+  it("構築済みデッキは単属性の5つだけで、5属性に1つずつある", () => {
+    const attrs = Object.values(DECKS).map((d) => deckAttributes(d, real).join("×"));
+    expect([...attrs].sort()).toEqual([...ATTRIBUTES].sort());
   });
   it("デモ用デッキには、闇堕ちを持つ★5が2枚以上入っている（1枚だと出せる試合が少なすぎる）", () => {
     for (const [id, deck] of Object.entries(DECKS)) {
