@@ -303,8 +303,9 @@ export const useGame = create<GameStore>((set, get) => {
   const settleCpu = () => {
     if (get().mode !== "cpu") return;
     const g = get().game;
-    if (!g || g.winner || !g.pending) return;
-    if (g.pending.waiting.includes(CPU))
+    if (!g || g.winner) return;
+    // 自分の選択で差し出し待ちが終わった直後もここに来る。そのときは待ちが無くても CPU の手番を再開する
+    if (g.pending?.waiting.includes(CPU))
       dispatch({ type: "sacrifice", player: CPU, slot: autoSacrifice(g, CPU, CATALOG) });
     const after = get().game;
     if (after && !after.pending && !after.winner && after.active === CPU && !get().cpuBusy) runCpu();
