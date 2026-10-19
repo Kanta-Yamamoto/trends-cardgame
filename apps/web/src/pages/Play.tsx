@@ -109,20 +109,35 @@ function describe(e: GameEvent): string {
  * - 切り欠き・ホームバー（セーフエリア）を除いた範囲に収める（iPhone の横画面で左右が欠けて重なるのを防ぐ）
  * - 横長の画面ほど舞台を低くして、カードを大きく・横いっぱいに使う（16:9 で 960×540、20:9 で 960×432 まで）
  * - 舞台の高さに合わせて、場の枠の大きさ（--slot）を決める
+ * - 縦持ち（幅＜高さ）は、スマホの縦画面を基準にした縦の舞台（幅 390。高さは画面の縦横比に合わせて 720〜860）。
+ *   場の枠は横幅から（5 枠が横いっぱい）、手札の大きさは舞台の高さから決める
  */
 const STAGE_W = 960;
 const STAGE_H = 540;
 const STAGE_H_MIN = 432;
 /** 場の枠の幅から決まる、舞台の縦の長さ（余白＋案内＋場2段＋手札）。stage の CSS と合わせる */
 const fitSlot = (height: number) => Math.min(100, Math.floor((height - 84) / 4.08));
+const PORTRAIT_W = 390;
+const PORTRAIT_H_MIN = 740;
+const PORTRAIT_H_MAX = 860;
+/** 縦の舞台の左右の余白と、枠どうしの間（pstage の CSS と合わせる） */
+const PORTRAIT_PAD = 6;
+const PORTRAIT_GAP = 5;
+const fitPortraitSlot = (width: number) => Math.floor((width - PORTRAIT_PAD * 2 - PORTRAIT_GAP * 4) / 5);
+/** 縦の舞台の手札の幅：舞台が高いほど大きく持つ（場2段・マスター2つ・説明の帯を引いた残りから） */
+const fitHand = (height: number) => Math.max(84, Math.min(124, Math.floor((height - 600) * 0.6)));
 
-interface Stage {
+export interface Stage {
   width: number;
   height: number;
   scale: number;
   slot: number;
   cx: number;
   cy: number;
+  /** 縦の舞台（スマホの縦持ち） */
+  portrait: boolean;
+  /** 手札のカードの幅 */
+  hand: number;
 }
 
 function safeArea(probe: HTMLElement | null) {
@@ -136,15 +151,33 @@ export function measureStage(vw: number, vh: number, safe = { t: 0, r: 0, b: 0, 
   const w = Math.max(1, vw - safe.l - safe.r);
   const h = Math.max(1, vh - safe.t - safe.b);
   const aspect = w / h;
+  const cx = safe.l + w / 2;
+  const cy = safe.t + h / 2;
+  if (w < h) {
+    const height = Math.min(PORTRAIT_H_MAX, Math.max(PORTRAIT_H_MIN, PORTRAIT_W / aspect));
+    return {
+      width: PORTRAIT_W,
+      height,
+      scale: Math.min(w / PORTRAIT_W, h / height),
+      slot: fitPortraitSlot(PORTRAIT_W),
+      cx,
+      cy,
+      portrait: true,
+      hand: fitHand(height),
+    };
+  }
   const height = Math.min(STAGE_H, Math.max(STAGE_H_MIN, STAGE_W / aspect));
   const width = Math.max(STAGE_W, height * aspect);
+  const slot = fitSlot(height);
   return {
     width,
     height,
     scale: Math.min(w / width, h / height),
-    slot: fitSlot(height),
-    cx: safe.l + w / 2,
-    cy: safe.t + h / 2,
+    slot,
+    cx,
+    cy,
+    portrait: false,
+    hand: Math.round(slot * 0.92),
   };
 }
 
@@ -502,6 +535,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [zoom, setZoom] = useState<Peek | null>(null);
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
+  /** 対戦の記録（縦の舞台では下から出る一覧） */
+  const [logOpen, setLogOpen] = useState(false);
   const seen = useRef(0);
   const { stage, probe } = useStage();
   /** ターン終了の確認を出しているか（押し間違いで終わらないように） */
@@ -683,7 +718,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const preview = (t: AttackTarget) =>
     attacking && canHit(t) ? previewAttack(game, ME, selection.slot, t, CATALOG) : null;
   const foeGuarded = foe.field.some((u) => u && viewUnit(game, CPU, u, CATALOG).guard);
-  const peekCard = peek ? CATALOG[peek.id] : null;
+  const peekCard = (peek ? CATALOG[peek.id] : null) ?? null;
   const hint = game.winner
     ? ""
     : game.active === CPU
@@ -705,8 +740,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                   ? "攻撃先を選んでください（ガードがいるので、ガードと晒し者しか攻撃できません）"
                   : "攻撃先を選んでください（光っているところ）"
                 : canDarkFall(game, ME, CATALOG)
-                  ? "闇堕ちできるカードがオワコンにあります（左のオワコンを押す）"
-                  : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";
+                  ? stage.portrait
+                    ? "闇堕ちできるカードがオワコンにあります（自分のオワコンを押す）"
+                    : "闇堕ちできるカードがオワコンにあります（左のオワコンを押す）"
+                  : stage.portrait
+                    ? "手札を場へ引っぱって出す・投稿／アイコンを相手へ引っぱって攻撃（長押しで拡大）"
+                    : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";
 
   const unitCard = (owner: PlayerId, slot: number, u: Unit) => {
     const card = CATALOG[u.cardId] as CardDef;
@@ -798,11 +837,181 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     );
   };
 
+  // 舞台の部品。横の舞台（3列）と縦の舞台（1列）で同じものを並べ替える
+  const foeBar = (
+    <PlayerBar
+      side="foe"
+      name={foeName}
+      lp={foe.lp}
+      mana={foe.mana}
+      maxMana={foe.maxMana}
+      hand={foe.hand.length}
+      active={game.active === CPU}
+      guarded={foeGuarded}
+      shielded={isShielded(game, CPU)}
+      targetable={attacking && canHit({ kind: "leader" })}
+      dropOver={drag?.over === "leader" && attacking && canHit({ kind: "leader" })}
+      preview={preview({ kind: "leader" })}
+      onClick={() => !justDragged() && attack({ kind: "leader" })}
+      piles={
+        <Piles
+          owner={CPU}
+          deck={foe.deck.length}
+          trash={foe.trash}
+          onTrash={() => setTrashView(CPU)}
+          dark={foeDark.length > 0 ? "foe" : undefined}
+        />
+      }
+    />
+  );
+  const meBar = (
+    <PlayerBar
+      side="me"
+      name="あなた"
+      lp={me.lp}
+      mana={me.mana}
+      maxMana={me.maxMana}
+      hand={me.hand.length}
+      active={game.active === ME}
+      shielded={isShielded(game, ME)}
+      piles={
+        <Piles
+          owner={ME}
+          deck={me.deck.length}
+          trash={me.trash}
+          onTrash={() => setTrashView(ME)}
+          dark={myDark.length > 0 ? "mine" : undefined}
+        />
+      }
+    />
+  );
+  const turnPill = !game.winner && (
+    <span className={`turn-pill ${game.active === ME ? "mine" : "foe"}`}>
+      {stage.portrait && <small>TURN {game.turn}</small>}
+      {game.active === ME ? "あなたのターン" : "相手のターン"}
+    </span>
+  );
+  const darkGuide = placing && selection?.kind === "dark" && (
+    <div className="dark-guide" role="status">
+      <div className="dg-card">
+        <span className="dg-kicker">闇堕ち</span>
+        <b>{nameOf(selection.cardId)}を、どこに呼び戻す？</b>
+        <span className="dg-sub">紫に光る空き枠をタップ</span>
+      </div>
+      <button type="button" className="dg-cancel" onClick={() => select(null)}>
+        やめる
+      </button>
+    </div>
+  );
+  const foeRow = (
+    <div className="row">
+      {SLOT_KEYS.map((key, slot) => {
+        const u = foe.field[slot];
+        return u ? (
+          unitCard(CPU, slot, u)
+        ) : (
+          <div key={key} className={`slot ${slot === 2 ? "center" : ""}`} />
+        );
+      })}
+    </div>
+  );
+  const hintEl = (
+    <p className={`hint ${error ? "is-error" : ""}`} aria-live="polite" role={error ? "alert" : undefined}>
+      {error ?? hint}
+    </p>
+  );
+  const meRow = (
+    <div className="row">
+      {SLOT_KEYS.map((key, slot) => {
+        const u = me.field[slot];
+        if (u) return unitCard(ME, slot, u);
+        const drop = myTurn && ((selection?.kind === "hand" && !postSelected) || placing);
+        if (placing && drop)
+          return (
+            <button
+              key={key}
+              type="button"
+              data-drop={`slot:${slot}`}
+              className={`slot ${slot === 2 ? "center" : ""} droppable dark-drop`}
+              aria-label={`空き枠 ${slot + 1} に闇堕ちさせる`}
+              onClick={() => play(slot)}
+            >
+              <span className="dd-ring" aria-hidden="true" />
+              <span className="dd-tap" aria-hidden="true">
+                ここに
+                <br />
+                呼び戻す
+              </span>
+            </button>
+          );
+        return (
+          <button
+            key={key}
+            type="button"
+            data-drop={`slot:${slot}`}
+            className={`slot ${slot === 2 ? "center" : ""} ${drop ? "droppable" : ""} ${drop && drag?.over === `slot:${slot}` ? "drop-over" : ""}`}
+            disabled={!drop}
+            aria-label={`空き枠 ${slot + 1}${slot === 2 ? "（センター）" : ""}`}
+            onClick={() => play(slot)}
+          />
+        );
+      })}
+    </div>
+  );
+  const handEl = (
+    <div className="hand" data-hand={ME} data-drop="hand" style={{ "--n": me.hand.length } as CSSProperties}>
+      {me.hand.map((id, i) => handCard(id, i))}
+    </div>
+  );
+  const handMore = me.hand.length >= 7 && (
+    <button type="button" className="hand-more" onClick={() => setHandOpen(true)}>
+      手札 {me.hand.length}枚を広げる
+    </button>
+  );
+  const endTurnBtn = (
+    <button
+      type="button"
+      className={`btn end-turn ${myTurn ? "now" : ""}`}
+      onClick={() => setConfirmEnd(true)}
+      disabled={!myTurn}
+    >
+      ターン終了
+    </button>
+  );
+  const logList = (
+    <ol className="log" aria-label="対戦の記録">
+      {log
+        .slice()
+        .reverse()
+        .map(({ id, e }) => (
+          <li key={id} className={`ev-${e.type}`}>
+            {describe(e)}
+          </li>
+        ))}
+    </ol>
+  );
+  const resignBtn = online && !game.winner && (
+    <button
+      type="button"
+      className={`btn ghost resign ${resignAsk ? "ask" : ""}`}
+      onClick={() => (resignAsk ? resign() : setResignAsk(true))}
+      onBlur={() => setResignAsk(false)}
+    >
+      {resignAsk ? "本当に降参する" : "降参"}
+    </button>
+  );
+  const quitBtn = (
+    <button type="button" className="btn ghost quit" onClick={quit}>
+      {stage.portrait ? (online ? "ロビーへ" : "戻る") : online ? "ロビーに戻る" : "デッキ選択に戻る"}
+    </button>
+  );
+  const boardClass = `board turn-${game.active === ME ? "me" : "foe"}`;
+
   return (
     <div className="play-full">
       <div className="safe-probe" ref={probe} aria-hidden="true" />
       <div
-        className="stage"
+        className={`stage ${stage.portrait ? "portrait" : ""}`}
         style={
           {
             left: stage.cx,
@@ -811,188 +1020,106 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             height: stage.height,
             transform: `translate(-50%, -50%) scale(${stage.scale})`,
             "--slot": `${stage.slot}px`,
+            "--hand": `${stage.hand}px`,
           } as CSSProperties
         }
       >
-        <div className="stage-grid">
-          <div className="col-left">
-            <PlayerBar
-              side="foe"
-              name={foeName}
-              lp={foe.lp}
-              mana={foe.mana}
-              maxMana={foe.maxMana}
-              hand={foe.hand.length}
-              active={game.active === CPU}
-              guarded={foeGuarded}
-              shielded={isShielded(game, CPU)}
-              targetable={attacking && canHit({ kind: "leader" })}
-              dropOver={drag?.over === "leader" && attacking && canHit({ kind: "leader" })}
-              preview={preview({ kind: "leader" })}
-              onClick={() => !justDragged() && attack({ kind: "leader" })}
-              piles={
-                <Piles
-                  owner={CPU}
-                  deck={foe.deck.length}
-                  trash={foe.trash}
-                  onTrash={() => setTrashView(CPU)}
-                  dark={foeDark.length > 0 ? "foe" : undefined}
-                />
-              }
-            />
-            {!game.winner && (
-              <span className={`turn-pill ${game.active === ME ? "mine" : "foe"}`}>
-                {game.active === ME ? "あなたのターン" : "相手のターン"}
-              </span>
-            )}
-            <PlayerBar
-              side="me"
-              name="あなた"
-              lp={me.lp}
-              mana={me.mana}
-              maxMana={me.maxMana}
-              hand={me.hand.length}
-              active={game.active === ME}
-              shielded={isShielded(game, ME)}
-              piles={
-                <Piles
-                  owner={ME}
-                  deck={me.deck.length}
-                  trash={me.trash}
-                  onTrash={() => setTrashView(ME)}
-                  dark={myDark.length > 0 ? "mine" : undefined}
-                />
-              }
-            />
-          </div>
-
-          <div className={`col-center board turn-${game.active === ME ? "me" : "foe"}`} data-drop="board">
-            {placing && selection?.kind === "dark" && (
-              <div className="dark-guide" role="status">
-                <div className="dg-card">
-                  <span className="dg-kicker">闇堕ち</span>
-                  <b>{nameOf(selection.cardId)}を、どこに呼び戻す？</b>
-                  <span className="dg-sub">紫に光る空き枠をタップ</span>
-                </div>
-                <button type="button" className="dg-cancel" onClick={() => select(null)}>
-                  やめる
+        {stage.portrait ? (
+          /* 縦の舞台：上から 相手 → 相手の場 → 案内＋ターン終了 → 自分の場 → 自分 → 押したカードの説明 → 手札 */
+          <div className={`pstage ${boardClass}`} data-drop="board">
+            <div className="ptop">
+              {quitBtn}
+              {turnPill}
+              <span className="ptop-right">
+                <button type="button" className="btn ghost small plog" onClick={() => setLogOpen(true)}>
+                  記録
                 </button>
+                {resignBtn}
+              </span>
+            </div>
+            {foeBar}
+            <div className="pfield">
+              {darkGuide}
+              {foeRow}
+              <div className="pmid">
+                {hintEl}
+                {endTurnBtn}
               </div>
-            )}
-            <div className="row">
-              {SLOT_KEYS.map((key, slot) => {
-                const u = foe.field[slot];
-                return u ? (
-                  unitCard(CPU, slot, u)
-                ) : (
-                  <div key={key} className={`slot ${slot === 2 ? "center" : ""}`} />
-                );
-              })}
+              {meRow}
             </div>
-            <p
-              className={`hint ${error ? "is-error" : ""}`}
-              aria-live="polite"
-              role={error ? "alert" : undefined}
-            >
-              {error ?? hint}
-            </p>
-            <div className="row">
-              {SLOT_KEYS.map((key, slot) => {
-                const u = me.field[slot];
-                if (u) return unitCard(ME, slot, u);
-                const drop = myTurn && ((selection?.kind === "hand" && !postSelected) || placing);
-                if (placing && drop)
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      data-drop={`slot:${slot}`}
-                      className={`slot ${slot === 2 ? "center" : ""} droppable dark-drop`}
-                      aria-label={`空き枠 ${slot + 1} に闇堕ちさせる`}
-                      onClick={() => play(slot)}
-                    >
-                      <span className="dd-ring" aria-hidden="true" />
-                      <span className="dd-tap" aria-hidden="true">
-                        ここに
-                        <br />
-                        呼び戻す
-                      </span>
-                    </button>
-                  );
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    data-drop={`slot:${slot}`}
-                    className={`slot ${slot === 2 ? "center" : ""} ${drop ? "droppable" : ""} ${drop && drag?.over === `slot:${slot}` ? "drop-over" : ""}`}
-                    disabled={!drop}
-                    aria-label={`空き枠 ${slot + 1}${slot === 2 ? "（センター）" : ""}`}
-                    onClick={() => play(slot)}
-                  />
-                );
-              })}
-            </div>
-            <div
-              className="hand"
-              data-hand={ME}
-              data-drop="hand"
-              style={{ "--n": me.hand.length } as CSSProperties}
-            >
-              {me.hand.map((id, i) => handCard(id, i))}
-            </div>
-            {me.hand.length >= 7 && (
-              <button type="button" className="hand-more" onClick={() => setHandOpen(true)}>
-                手札 {me.hand.length}枚を広げる
-              </button>
-            )}
-          </div>
-
-          <div className="col-right">
-            <div className="peek">
-              {peekCard ? (
-                <PeekCard key={peekCard.id} card={peekCard} view={peek?.view} onOpen={() => setZoom(peek)} />
-              ) : (
-                <p className="muted">カードを押すと、ここに表示します。長押しで画面いっぱいに拡大</p>
-              )}
-            </div>
+            {meBar}
+            <PeekStrip card={peekCard} view={peek?.view} onOpen={() => setZoom(peek)} />
             <button
               type="button"
-              className={`btn end-turn ${myTurn ? "now" : ""}`}
-              onClick={() => setConfirmEnd(true)}
-              disabled={!myTurn}
+              className="plog-ticker"
+              onClick={() => setLogOpen(true)}
+              aria-label="対戦の記録を開く"
             >
-              ターン終了
+              {log.slice(-3).map(({ id, e }) => (
+                <span key={id} className={`ev-${e.type}`}>
+                  {describe(e)}
+                </span>
+              ))}
             </button>
-            <details className="log-box">
-              <summary>対戦の記録</summary>
-              <ol className="log" aria-label="対戦の記録">
-                {log
-                  .slice()
-                  .reverse()
-                  .map(({ id, e }) => (
-                    <li key={id} className={`ev-${e.type}`}>
-                      {describe(e)}
-                    </li>
-                  ))}
-              </ol>
-            </details>
-            {online && !game.winner && (
-              <button
-                type="button"
-                className={`btn ghost resign ${resignAsk ? "ask" : ""}`}
-                onClick={() => (resignAsk ? resign() : setResignAsk(true))}
-                onBlur={() => setResignAsk(false)}
-              >
-                {resignAsk ? "本当に降参する" : "降参"}
-              </button>
-            )}
-            <button type="button" className="btn ghost quit" onClick={quit}>
-              {online ? "ロビーに戻る" : "デッキ選択に戻る"}
+            <div className="phand">
+              {handMore}
+              {handEl}
+            </div>
+          </div>
+        ) : (
+          <div className="stage-grid">
+            <div className="col-left">
+              {foeBar}
+              {turnPill}
+              {meBar}
+            </div>
+
+            <div className={`col-center ${boardClass}`} data-drop="board">
+              {darkGuide}
+              {foeRow}
+              {hintEl}
+              {meRow}
+              {handEl}
+              {handMore}
+            </div>
+
+            <div className="col-right">
+              <div className="peek">
+                {peekCard ? (
+                  <PeekCard
+                    key={peekCard.id}
+                    card={peekCard}
+                    view={peek?.view}
+                    onOpen={() => setZoom(peek)}
+                  />
+                ) : (
+                  <p className="muted">カードを押すと、ここに表示します。長押しで画面いっぱいに拡大</p>
+                )}
+              </div>
+              {endTurnBtn}
+              <details className="log-box">
+                <summary>対戦の記録</summary>
+                {logList}
+              </details>
+              {resignBtn}
+              {quitBtn}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {logOpen && (
+        <div className="sheet" role="dialog" aria-modal="true" aria-label="対戦の記録">
+          <button type="button" className="sheet-bg" aria-label="閉じる" onClick={() => setLogOpen(false)} />
+          <div className="sheet-body log-sheet">
+            <h2>対戦の記録</h2>
+            {logList}
+            <button type="button" className="btn ghost" onClick={() => setLogOpen(false)}>
+              閉じる
             </button>
           </div>
         </div>
-      </div>
-      <p className="rotate-hint">スマホは横向きにすると大きく遊べます</p>
+      )}
 
       {drag &&
         (() => {
@@ -1220,6 +1347,80 @@ function PeekCard({ card, view, onOpen }: { card: CardDef; view?: UnitView; onOp
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * 縦の舞台で、押したカードの説明を1本の帯で見せる（大きなカードを置く場所がないため）。
+ * 絵・名前・コスト・攻撃力/体力・効果文（2行まで）。押すと画面いっぱいに拡大して全文を読める
+ */
+function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitView; onOpen: () => void }) {
+  if (!card) {
+    return (
+      <div className="peek-strip empty">
+        <span>カードを押すと、ここに説明が出ます。長押しで画面いっぱいに拡大</span>
+      </div>
+    );
+  }
+  const dark = !!view?.unit.dark && card.dark;
+  const art = dark ? (card.dark?.art ?? card.art) : card.art;
+  const name = dark ? card.dark?.name : card.name;
+  const effect = (dark ? card.dark?.effect : card.effect) || "効果なし";
+  const keywords = view?.keywords ?? card.keywords;
+  const states = view
+    ? [
+        view.exposed && "晒し者",
+        view.asleep && "眠っている",
+        view.unit.silenced && "訂正済み",
+        view.hp < view.maxHp && "ダメージあり",
+      ].filter((x): x is string => !!x)
+    : [];
+  return (
+    <button
+      type="button"
+      className={`peek-strip ${dark ? "is-dark" : ""} ${card.type === "post" ? "is-post" : ""}`}
+      onClick={onOpen}
+      aria-label={`${name} の説明を大きく見る`}
+    >
+      <span
+        className="ps-art"
+        style={
+          art
+            ? { backgroundImage: `url(${art})` }
+            : { background: ATTR_META[card.attributes[0] ?? "草"].deep }
+        }
+      />
+      <span className="ps-body">
+        <span className="ps-head">
+          <b className="ps-name">
+            {name}
+            {card.epithet && <small>{card.epithet}</small>}
+          </b>
+          <span className="ps-meta">
+            <i className="ps-cost">{card.cost}</i>
+            {card.type === "icon" ? (
+              <>
+                <i className="t-atk">{view?.attack ?? card.attack}</i>／
+                <i className="t-hp">
+                  {view?.hp ?? card.hp}
+                  {view && view.hp < view.maxHp && <small>/{view.maxHp}</small>}
+                </i>
+              </>
+            ) : (
+              <i className="ps-post">投稿</i>
+            )}
+          </span>
+        </span>
+        <span className="ps-effect">
+          {keywords.length > 0 && <em>{keywords.join("・")}</em>}
+          {states.length > 0 && <em className="ps-state">{states.join("・")}</em>}
+          <EffectText text={effect} />
+        </span>
+      </span>
+      <span className="ps-zoom" aria-hidden="true">
+        拡大
+      </span>
+    </button>
   );
 }
 

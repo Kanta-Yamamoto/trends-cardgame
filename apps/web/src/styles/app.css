@@ -270,7 +270,7 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .fx-ghost { position: fixed; margin: 0; pointer-events: none; }
 .fx-cardback { position: fixed; box-shadow: 0 10px 24px #000a; }
 
-/* 対戦画面：スマホの横画面（16:9）を基準にした 960×540 の舞台を、ウィンドウに合わせて拡大・縮小する */
+/* 対戦画面：横持ちは 960×540（16:9）の横の舞台、縦持ちは 390 幅の縦の舞台（下の「縦の舞台」）を、ウィンドウに合わせて拡大・縮小する */
 .play-full { position: fixed; inset: 0; z-index: 10; overflow: hidden; background: radial-gradient(110% 80% at 50% 0%, var(--night-2), var(--night) 70%); }
 .stage { position: absolute; left: 50%; top: 50%; width: 960px; height: 540px; transform-origin: center; }
 .stage-grid {
@@ -326,10 +326,75 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .log-box .log { max-height: 150px; margin-top: 6px; padding: 8px 10px 8px 22px; font-size: 10.5px; }
 .log-box[open] ~ .quit { display: none; }
 
-.rotate-hint { display: none; }
-@media (orientation: portrait) and (max-width: 700px) {
-  .rotate-hint { display: block; position: absolute; left: 0; right: 0; bottom: max(12px, env(safe-area-inset-bottom, 0px)); margin: 0; text-align: center; font-size: 13px; font-weight: 700; color: var(--gold); }
-}
+/* ---------- 縦の舞台（スマホの縦持ち：幅 390 を基準に、上から相手→場→自分→説明→手札） ---------- */
+/* 余った高さは、場の間（案内とターン終了の行）と手札の上に 3:2 で配る */
+.stage .pstage { height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 3fr) auto auto auto minmax(0, 2fr); align-content: start; gap: 6px; padding: 6px; border-radius: 0; }
+.ptop { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; min-height: 30px; }
+.ptop .quit { justify-self: start; padding: 5px 10px; font-size: 11px; }
+.ptop .turn-pill { display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; padding: 4px 12px; white-space: nowrap; }
+.ptop .turn-pill small { font: 800 9px/1 var(--f-mark); letter-spacing: 0.15em; opacity: 0.85; }
+.ptop-right { display: flex; gap: 6px; justify-content: end; }
+.ptop .plog, .ptop .resign { padding: 5px 10px; font-size: 11px; }
+.ptop .resign.ask { color: #fff; background: #b8323a; border-color: #ff8a8a; }
+/* マスター：左に名前・ライフ、右に手札・話題力。その右に山札とオワコン */
+.pstage .pbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.pstage .pb-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name count" "lp mana"; gap: 3px 10px; padding: 7px 10px; font-size: 11px; border-radius: 12px; }
+.pstage .pb-name { grid-area: name; font-size: 12.5px; flex-wrap: wrap; gap: 4px 6px; }
+.pstage .pb-count { grid-area: count; justify-self: end; font-size: 11px; }
+.pstage .pb-lp { grid-area: lp; gap: 6px; }
+.pstage .pb-lp b { font-size: 17px; }
+.pstage .lp-bar { flex: 1; width: auto; max-width: 110px; }
+.pstage .pb-mana { grid-area: mana; justify-self: end; gap: 4px; }
+.pstage .pips { gap: 2px; }
+.pstage .pips i { width: 7px; height: 7px; }
+.pstage .pb-guard, .pstage .pb-shield { font-size: 9.5px; padding: 1px 6px; margin: 0; }
+.pstage .piles { gap: 8px; }
+.pstage .pb-main .atk-pv { right: 6px; top: -12px; }
+/* 場：5 枠が横いっぱい。間の行は案内文と「ターン終了」 */
+.pfield { position: relative; display: grid; grid-template-rows: auto minmax(36px, 1fr) auto; gap: 6px; }
+.pstage .row { grid-template-columns: repeat(5, var(--slot)); gap: 5px; justify-content: center; }
+.pmid { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 36px; }
+.pmid .hint { text-align: left; font-size: 11px; line-height: 1.45; min-height: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pmid .end-turn { padding: 9px 14px; font-size: 13px; white-space: nowrap; }
+/* 押したカードの説明の帯（押すと画面いっぱいに拡大） */
+.peek-strip { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 8px; height: 60px; padding: 5px 8px 5px 6px; border-radius: 12px; border: 1px solid var(--line); background: #ffffff0a; color: var(--text); text-align: left; font: inherit; cursor: pointer; }
+.peek-strip.empty { grid-template-columns: minmax(0, 1fr); place-items: center; text-align: center; font-size: 11px; color: var(--muted); line-height: 1.5; padding: 6px 14px; }
+.peek-strip.is-dark { border-color: #b06bff88; background: #2a0d3a66; }
+.ps-art { width: 40px; height: 50px; border-radius: 6px; background-size: cover; background-position: center 25%; box-shadow: 0 0 0 1px #ffffff33; }
+.peek-strip.is-post .ps-art { border-radius: 10px 10px 10px 3px; }
+.ps-body { display: grid; gap: 2px; min-width: 0; }
+.ps-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.ps-name { font-size: 12.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ps-name small { margin-left: 5px; font-size: 9.5px; font-weight: 700; color: var(--muted); }
+.peek-strip.is-dark .ps-name { color: #e7c6ff; }
+.ps-meta { display: inline-flex; align-items: center; gap: 3px; flex: none; font: 800 13px/1 var(--f-mark); }
+.ps-meta i { font-style: normal; }
+.ps-meta i small { font-size: 9px; color: var(--muted); }
+.ps-cost { width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 11px; background: #0b1018; box-shadow: 0 0 0 1.5px var(--gold); margin-right: 4px; }
+.ps-post { font: 800 9.5px/1 var(--f-ui); padding: 2px 6px; border-radius: 99px; background: #f6f2ea; color: #1b2230; }
+.ps-effect { font-size: 10.5px; line-height: 1.4; color: #d7deea; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ps-effect em { font-style: normal; font-weight: 800; color: var(--gold); margin-right: 5px; }
+.ps-effect .ps-state { color: #ffb4b4; }
+.ps-zoom { flex: none; font-size: 10px; font-weight: 800; color: var(--muted); padding: 4px 7px; border-radius: 99px; border: 1px solid #ffffff30; }
+/* 手札：扇で持ち、横より大きく。選んだカードは上に持ち上げる */
+/* 直近の出来事（押すと記録の一覧） */
+.plog-ticker { display: grid; gap: 1px; padding: 2px 10px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 10px; line-height: 1.35; text-align: left; cursor: pointer; min-height: 40px; align-content: end; }
+.plog-ticker span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plog-ticker span:last-child { color: var(--text); }
+.plog-ticker .ev-turnStarted { font-weight: 700; }
+.plog-ticker .ev-won { color: var(--gold); font-weight: 800; }
+.phand { position: relative; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; }
+.pstage .hand { --step: min(3.5deg, calc(20deg / var(--n))); padding: 18px 10px 24px; justify-content: center; }
+/* 1枚あたり 50px は見えるように重ねて、残りの幅で大きく持つ（上限は舞台の高さで決めた --hand）。多いときは重ねて「広げる」で見る */
+.pstage .hand .mini { --w: clamp(88px, calc(100% - 20px - 50px * (var(--n) - 1)), var(--hand, 100px)); width: var(--w); transform-origin: 50% 112%; }
+.pstage .hand .mini + .mini { margin-left: min(-10px, calc((100% - var(--w) * (var(--n) + 0.4)) / (var(--n) - 1))); }
+.pstage .hand .mini.in-hand.selected { z-index: 4; transform: translateY(-34px) scale(1.12); }
+.pstage .hand-more { position: static; align-self: flex-end; margin: 0 10px -6px 0; }
+.pstage .mini-name { font-size: 10px; }
+/* 対戦の記録（縦の舞台では下から出る一覧） */
+.sheet .log-sheet { align-self: center; width: min(92vw, 560px); background: var(--night-2); border-radius: 16px; border: 1px solid var(--line); }
+.log-sheet h2 { margin: 0; font-size: 16px; }
+.log-sheet .log { width: 100%; max-height: 60dvh; }
 
 /* ---------- オンライン対戦 ---------- */
 .online-card { margin-top: 20px; padding: 18px 20px; border-radius: 16px; background: #ffffff0a; border: 1px solid #ffffff1f; }
