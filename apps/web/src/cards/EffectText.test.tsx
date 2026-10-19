@@ -31,8 +31,8 @@ describe("イラストのないカード", () => {
     const { container } = render(<HoloCard card={guard} idle={false} />);
     expect(container.querySelector(".kg")).not.toBeNull();
     expect(screen.getByText("柴犬")).toBeInTheDocument();
-    expect(container.querySelector(".stat-atk")).toHaveTextContent("2");
-    expect(container.querySelector(".stat-hp")).toHaveTextContent("4");
+    expect(container.querySelector(".stat-atk")).toHaveTextContent(String(guard.attack));
+    expect(container.querySelector(".stat-hp")).toHaveTextContent(String(guard.hp));
   });
 
   it("効果文が先頭のキーワードで始まっても重複キーにならない", () => {

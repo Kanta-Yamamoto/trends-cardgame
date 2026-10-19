@@ -1,3 +1,4 @@
+import { DARK_FALLS_PER_GAME } from "@trends/cards";
 import {
   applyAction,
   attackTargets,
@@ -197,15 +198,25 @@ const WAIT_FOE = Symbol("wait-foe");
  */
 export function autoSacrifice(state: GameState, player: PlayerId, catalog: Catalog): number {
   const slots = sacrificeCandidates(state, player);
+  const canFall = (state.players[player].darkFalls ?? 0) < DARK_FALLS_PER_GAME;
   const dark = slots.find((slot) => {
     const u = state.players[player].field[slot];
+    if (!canFall) return false;
     return !!u && !u.token && !u.dark && !u.darkUsed && !!catalog[u.cardId]?.dark;
   });
   if (dark !== undefined) return dark;
   const value = (slot: number) => {
     const u = state.players[player].field[slot];
     if (!u) return 0;
-    return (u.token ? 0 : 1) * 100 + worth(viewUnit(state, player, u, catalog));
+    // 「倒されたとき」の効果を持つものは、差し出すと得をするので先に選ぶ
+    const onDeath = (u.dark ? catalog[u.cardId]?.dark?.effects : catalog[u.cardId]?.effects)?.some(
+      (e) => e.on === "death",
+    );
+    return (
+      (u.token ? 0 : 1) * 100 -
+      (onDeath && !u.silenced ? 110 : 0) +
+      worth(viewUnit(state, player, u, catalog))
+    );
   };
   return [...slots].sort((a, b) => value(a) - value(b))[0] ?? -1;
 }

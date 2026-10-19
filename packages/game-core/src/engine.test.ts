@@ -97,6 +97,23 @@ const catalog: Record<string, RuleCard> = {
   hyper: icon("hyper", 6, 4, 3, { keywords: ["速攻"], effects: [{ do: "hype", attack: 3 }] }),
   safeDeck: icon("safeDeck", 5, 3, 4, { effects: [{ on: "passive", do: "noDeckOut" }] }),
   plotter: icon("plotter", 1, 4, 4, { effects: [{ on: "passive", do: "conspiracyWin" }] }),
+  scholar5: icon("scholar5", 5, 3, 4, {
+    rarity: 5,
+    effects: [
+      { on: "passive", do: "noDeckOut" },
+      { on: "turnEnd", do: "conspire" },
+    ],
+    dark: {
+      name: "陰謀論者",
+      attack: 4,
+      hp: 4,
+      keywords: ["凸"],
+      effects: [{ on: "passive", do: "conspiracyWin" }],
+      effect: "",
+    },
+  }),
+  burner: icon("burner", 1, 1, 1, { effects: [{ on: "death", do: "draw", count: 1 }] }),
+  popper: icon("popper", 2, 1, 1, { effects: [{ on: "death", do: "damage", to: "allEnemies", amount: 1 }] }),
   eater: icon("eater", 3, 1, 3, { effects: [{ on: "passive", do: "attackPerLostToken", card: "kusa" }] }),
   oldcard: icon("oldcard", 1, 1, 1, { retired: true }),
   fixer: icon("fixer", 4, 2, 3, { effects: [{ do: "sacrifice" }] }),
@@ -471,6 +488,34 @@ describe("★5 の作り直し（ヒバナ・カグラ・専門家・陰謀論�
     t = end(end(t), "p2");
     expect(t.winner).toBeNull();
   });
+  it("専門家：山札を引き切ったら、自分のターンの終わりにその場で陰謀論者に闇堕ちし、次の自分のターンに勝つ", () => {
+    let s = game(["scholar5"]);
+    s = play(s, 0, 0);
+    s.players.p1.deck = [];
+    const r = run(s, { type: "endTurn", player: "p1" });
+    expect(r.events).toContainEqual(expect.objectContaining({ type: "darkFall", player: "p1", slot: 0 }));
+    expect(r.state.players.p1.field[0]?.dark).toBe(true);
+    expect(r.state.players.p1.darkFalls).toBe(1);
+    const w = run(r.state, { type: "endTurn", player: "p2" });
+    expect(w.state.winner).toBe("p1");
+    // 山札が残っていれば闇堕ちしない
+    let t = game(["scholar5"]);
+    t = play(t, 0, 0);
+    t = end(t);
+    expect(t.players.p1.field[0]?.dark).toBe(false);
+  });
+  it("倒されたとき：倒れたアイコンの持ち主の効果として働く（連鎖も落ち着くまで）", () => {
+    let s = withFoe(["burner"], ["popper", "popper"]);
+    s = play(s, 0, 0);
+    const hand = s.players.p1.hand.length;
+    // 相手の popper 2体を倒すと、それぞれ p1 のアイコンすべてに1ダメージ → burner が倒れて p1 が1枚引く
+    for (const u of s.players.p2.field) if (u) u.damage = 1;
+    s = end(s);
+    expect(s.players.p2.field.every((u) => u === null)).toBe(true);
+    expect(s.players.p1.field[0]).toBeNull();
+    expect(s.players.p1.trash).toContain("burner");
+    expect(s.players.p1.hand.length).toBeGreaterThan(hand);
+  });
   it("クサハミ：自分の草がオワコンに行った数だけ攻撃力+1", () => {
     let s = game(["eater", "cat"]);
     s = play(s, 0, 0);
@@ -728,6 +773,13 @@ describe("デッキの決まり", () => {
   it("1つの属性＋共通カードの30枚は組める（共通カードだけでもよい）", () => {
     const flame = [...DECKS.solo_flame.slice(0, 24), ...Array(3).fill("n1"), ...Array(3).fill("n4")];
     expect(validateDeck(flame, real)).toEqual([]);
+    // ★5は1種類まで（1つの軸に沿ったパーティにする）
+    const twoAces = [...flame.slice(0, 27).filter((id) => real[id]?.rarity !== 5), "c2", "c9"];
+    while (twoAces.length < 30) twoAces.push("n5");
+    expect(validateDeck(twoAces, real).some((e) => e.includes("★5は1種類まで"))).toBe(true);
+    // 共通の★5（『フィクサー』）は数えない
+    const withFixer = [...flame.slice(0, 27), "c15", "c15", "c15"];
+    expect(validateDeck(withFixer, real)).toEqual([]);
     const commons = ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8", "n9", "n10"].flatMap((id) => [
       id,
       id,
@@ -1013,13 +1065,14 @@ describe("闇堕ち（オワコンから）", () => {
     expect(() => darkFall(s, 0)).toThrow(/1回/);
   });
 
-  it("同じカードが2枚オワコンにあれば、それぞれ1回ずつ闇堕ちできる", () => {
+  it("闇堕ちは1試合に1回だけ（同じカードが2枚オワコンにあっても）", () => {
     let s = game([]);
     s.players.p1.trash = ["ren", "ren"];
-    s = darkFall(s, 0).state;
     expect(darkReady(s, "p1", catalog)).toEqual(["ren"]);
-    s = darkFall(s, 1).state;
+    s = darkFall(s, 0).state;
+    expect(s.players.p1.darkFalls).toBe(1);
     expect(darkReady(s, "p1", catalog)).toEqual([]);
+    expect(() => darkFall(s, 1)).toThrow(RuleError);
   });
 
   it("場が埋まっていたら闇堕ちできない", () => {

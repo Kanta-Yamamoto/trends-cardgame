@@ -59,6 +59,9 @@ describe("先読みする CPU（planTurnSearch）", () => {
     });
     // お互い数ターン進めてから、相手のライフを1にする
     for (let t = 0; t < 6 && !s.winner; t++) s = runTurn(s, false);
+    // 『フィクサー』の差し出し待ちの途中なら、先に片づける
+    s = settle(s);
+    if (s.winner) return;
     const me = s.active;
     const foe = me === "p1" ? "p2" : "p1";
     s.players[foe].lp = 1;
