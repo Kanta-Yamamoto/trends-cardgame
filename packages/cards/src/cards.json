@@ -23,7 +23,7 @@
         "do": "extraAttackOnKill"
       }
     ],
-    "effect": "連撃。場に出たとき、攻撃力がいちばん高い相手のアイコンに1ダメージ。相手のアイコンを倒すたび、もう1回攻撃できる。",
+    "effect": "連撃。場に出たとき、攻撃力がいちばん高い相手のアイコン1体に1ダメージ。相手のアイコンをオワコンにするたび、もう1回攻撃できる。",
     "flavor": "「遅えよ。全部、俺がもらってく」",
     "dark": {
       "name": "闇堕ちレン",
@@ -179,7 +179,7 @@
         "count": 2
       }
     ],
-    "effect": "場に出たとき、草を2体生やす。",
+    "effect": "場に出たとき、草を2体出す。",
     "flavor": "なぜか、頭から離れない。",
     "art": "/assets/cards/k1-art.jpg",
     "original": "assets/original/k1.webp"
@@ -202,7 +202,7 @@
         "do": "copySelf"
       }
     ],
-    "effect": "場に出たとき、空いている枠にこのアイコンのコピーを1体出す（コピーはオワコンに行くと消える）。",
+    "effect": "場に出たとき、空いている枠にこのアイコンのコピーを1体出す（コピーはオワコンになると消える）。",
     "flavor": "↑これ考えたやつ天才",
     "art": "/assets/cards/k2-art.jpg",
     "original": "assets/original/k2.webp"
@@ -247,7 +247,7 @@
         "card": "t-kusa"
       }
     ],
-    "effect": "自分の空いている枠すべてに草を生やす。",
+    "effect": "自分の空いている枠すべてに草を出す。",
     "flavor": "wwwwwwwwwwwwwww",
     "art": "/assets/cards/k4-art.jpg",
     "original": "assets/original/k4.webp"
@@ -483,7 +483,7 @@
         "amount": 1
       }
     ],
-    "effect": "注目。場に出たとき、自分のアイコンすべてとライフを2回復する。自分のターンの終わりに、自分のアイコンすべてとライフを1回復する。",
+    "effect": "注目。場に出たとき、自分のアイコンすべてと自分のライフを2回復する。自分のターンの終わりに、自分のアイコンすべてと自分のライフを1回復する。",
     "flavor": "「みんなー！ 今日も空から、こんにちはっ！」",
     "number": "023/040",
     "art": "/assets/cards/c3-art.jpg",
@@ -647,7 +647,7 @@
         "amount": 3
       }
     ],
-    "effect": "凸。場に出たとき、相手のアイコンすべてのガードを消し、攻撃力がいちばん高い相手のアイコンに3ダメージ。",
+    "effect": "凸。場に出たとき、相手のアイコンすべてのガードを消し、攻撃力がいちばん高い相手のアイコン1体に3ダメージ。",
     "flavor": "「さあ、こちら側へ。光はもう、君を選んでいる」",
     "number": "001/040",
     "art": "/assets/cards/c1-art.jpg",
@@ -671,7 +671,7 @@
           "amount": 1
         }
       ],
-      "effect": "凸。闇堕ちしたとき、コストがいちばん高い相手のアイコンを手札に戻し、相手のアイコンすべてに1ダメージ。",
+      "effect": "凸。闇堕ちしたとき、コストがいちばん高い相手のアイコン1体を持ち主の手札に戻し（トークンは消える）、相手のアイコンすべてに1ダメージ。",
       "art": "/assets/cards/c1-dark-art.jpg",
       "subject": "/assets/cards/c1-dark-subject.webp"
     }
@@ -1024,7 +1024,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（ガードと強化が消える）。",
+    "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコン1体を晒し者にする（ガードと強化が消える）。",
     "flavor": "なになに、燃えてるの？",
     "art": "/assets/cards/f6-art.jpg",
     "original": "assets/original/f6.webp"
@@ -1129,7 +1129,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "速攻。場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（ガードと強化が消える）。",
+    "effect": "速攻。場に出たとき、攻撃力がいちばん高い相手のアイコン1体を晒し者にする（ガードと強化が消える）。",
     "flavor": "次は、あなたの番。",
     "art": "/assets/cards/f10-art.jpg",
     "original": "assets/original/f10.webp"
@@ -1456,7 +1456,7 @@
         }
       }
     ],
-    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。場に出たとき、自分の場に草属性が2体以上いれば、ほかのアイコンすべてに攻撃力+1。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+1・体力+1。場に出たとき、自分の場に草属性が2体以上いれば、自分のほかのアイコンすべてに攻撃力+1。",
     "flavor": "今日も一発、当ててくる。",
     "art": "/assets/cards/k7-art.jpg",
     "original": "assets/original/k7.webp"
@@ -1505,7 +1505,7 @@
         "do": "copySelf"
       }
     ],
-    "effect": "場に出たとき、空いている枠にこのアイコンのコピーを2体出す（コピーはオワコンに行くと消える）。",
+    "effect": "場に出たとき、空いている枠にこのアイコンのコピーを2体出す（コピーはオワコンになると消える）。",
     "flavor": "どれが本物？",
     "art": "/assets/cards/k9-art.jpg",
     "original": "assets/original/k9.webp"
@@ -1535,7 +1535,7 @@
         "totsu": true
       }
     ],
-    "effect": "場に出たとき、空いている枠すべてに草を出し、自分のアイコンすべてに凸を付ける。",
+    "effect": "場に出たとき、自分の空いている枠すべてに草を出し、自分のアイコンすべてに凸を付ける。",
     "flavor": "流行らせたのは、だいたい私。",
     "art": "/assets/cards/k10-art.jpg",
     "original": "assets/original/k10.webp"
@@ -1583,7 +1583,7 @@
         "maxHp": 1
       }
     ],
-    "effect": "場に出たとき、体力が1以下の相手のアイコンをすべて倒す。",
+    "effect": "場に出たとき、体力が1以下の相手のアイコンすべてをオワコンにする。",
     "flavor": "それってあなたの感想ですよね、とは言わない。",
     "art": "/assets/cards/g6-art.jpg",
     "original": "assets/original/g6.webp"
@@ -1628,7 +1628,7 @@
         "maxHp": 1
       }
     ],
-    "effect": "ガード。場に出たとき、体力が1以下の相手のアイコンをすべて倒す。",
+    "effect": "ガード。場に出たとき、体力が1以下の相手のアイコンすべてをオワコンにする。",
     "flavor": "では、出席をとります。",
     "art": "/assets/cards/g8-art.jpg",
     "original": "assets/original/g8.webp"
@@ -2083,7 +2083,7 @@
         "amount": 1
       }
     ],
-    "effect": "ガード。凸。場に出たとき、体力が2以下の相手のアイコンをすべて倒す。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコンに1ダメージ。",
+    "effect": "ガード。凸。場に出たとき、体力が2以下の相手のアイコンすべてをオワコンにする。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコン1体に1ダメージ。",
     "flavor": "「知らないことは、まだ調べていないことだけ」",
     "art": "/assets/cards/c7-art.jpg",
     "original": "assets/original/c7.webp"
@@ -2175,7 +2175,7 @@
         "hp": 0
       }
     ],
-    "effect": "場に出たとき、空いている枠すべてに草を出し、自分のほかのアイコンすべてに攻撃力+1。",
+    "effect": "場に出たとき、自分の空いている枠すべてに草を出し、自分のほかのアイコンすべてに攻撃力+1。",
     "flavor": "来週の流行りは、もう決まってる。",
     "art": "/assets/cards/k14-art.jpg",
     "original": "assets/original/k14.webp"
@@ -2313,7 +2313,7 @@
         "amount": 2
       }
     ],
-    "effect": "このゲームで自分が回復の効果を使った回数だけ、コスト-1。ガード。場に出たとき、自分のアイコンすべてとライフを2回復する。",
+    "effect": "このゲームで自分が回復の効果を使った回数だけ、コスト-1。ガード。場に出たとき、自分のアイコンすべてと自分のライフを2回復する。",
     "flavor": "中の人などいない。",
     "art": "/assets/cards/i13-art.jpg",
     "original": "assets/original/i13.webp"
@@ -2368,7 +2368,7 @@
         "ifHandAtMost": 3
       }
     ],
-    "effect": "カードを1枚引く。手札が3枚以下なら、さらに1枚引く。",
+    "effect": "カードを1枚引く。手札が3枚以下なら、さらにカードを1枚引く。",
     "flavor": "切り抜きから本編へ。",
     "art": "/assets/cards/n11-art.jpg",
     "original": "assets/original/n11.webp"
@@ -2468,7 +2468,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "速攻。場に出たとき、攻撃力がいちばん高い相手のアイコンを晒し者にする（ガードと強化が消える）。",
+    "effect": "速攻。場に出たとき、攻撃力がいちばん高い相手のアイコン1体を晒し者にする（ガードと強化が消える）。",
     "flavor": "炎上も、センターで。",
     "art": "/assets/cards/f16-art.jpg",
     "original": "assets/original/f16.webp"
@@ -2549,7 +2549,7 @@
         }
       }
     ],
-    "effect": "山札から有識者界隈を1枚探して手札に加える（なければ1枚引く）。自分の場に有識者界隈がいれば、さらに1枚引く。",
+    "effect": "山札から有識者界隈を1枚探して手札に加える（なければカードを1枚引く）。自分の場に有識者界隈がいれば、さらにカードを1枚引く。",
     "flavor": "ソースはこちら。",
     "art": "/assets/cards/g14-art.jpg",
     "original": "assets/original/g14.webp"
@@ -2608,7 +2608,7 @@
         }
       }
     ],
-    "effect": "場に出たとき、カードを1枚引く。自分の場にアイドル界隈がいれば、さらに1枚引く。",
+    "effect": "場に出たとき、カードを1枚引く。自分の場にアイドル界隈がいれば、さらにカードを1枚引く。",
     "flavor": "推しは語れる、踊れない。",
     "art": "/assets/cards/m17-art.jpg",
     "original": "assets/original/m17.webp"
@@ -2633,7 +2633,7 @@
         "amount": 1
       }
     ],
-    "effect": "ガード。場に出たとき、自分のアイコンすべてとライフを1回復する。",
+    "effect": "ガード。場に出たとき、自分のアイコンすべてと自分のライフを1回復する。",
     "flavor": "大丈夫、まず深呼吸。",
     "art": "/assets/cards/i15-art.jpg",
     "original": "assets/original/i15.webp"
@@ -2666,7 +2666,7 @@
         }
       }
     ],
-    "effect": "ガード。場に出たとき、カードを1枚引く。自分の場に有識者界隈が3体以上いれば、さらに1枚引く。",
+    "effect": "ガード。場に出たとき、カードを1枚引く。自分の場に有識者界隈が3体以上いれば、さらにカードを1枚引く。",
     "flavor": "異論は、論文で。",
     "art": "/assets/cards/g16-art.jpg",
     "original": "assets/original/g16.webp"
@@ -2782,7 +2782,7 @@
         "do": "destroy"
       }
     ],
-    "effect": "相手のアイコン1体を倒す。",
+    "effect": "相手のアイコン1体をオワコンにする。",
     "flavor": "はい、論破。",
     "art": "/assets/cards/g17-art.jpg",
     "original": "assets/original/g17.webp"
@@ -2806,7 +2806,7 @@
         "do": "destroy"
       }
     ],
-    "effect": "ダメージを受けている相手のアイコン1体を倒す。",
+    "effect": "ダメージを受けている相手のアイコン1体をオワコンにする。",
     "flavor": "火に油、燃料に薪。",
     "art": "/assets/cards/f20-art.jpg",
     "original": "assets/original/f20.webp"
@@ -3213,7 +3213,7 @@
           "card": "t-kusa"
         }
       ],
-      "effect": "凸。闇堕ちしたとき、攻撃力がいちばん高い相手のアイコンを草（1/1）にし、自分の空いている枠すべてに草を出す。",
+      "effect": "凸。闇堕ちしたとき、攻撃力がいちばん高い相手のアイコン1体を草（1/1）にし、自分の空いている枠すべてに草を出す。",
       "art": "/assets/cards/c12-dark-art.jpg",
       "original": "assets/original/c12-dark.webp",
       "subject": "/assets/cards/c12-dark-subject.webp"
@@ -3242,8 +3242,8 @@
         "card": "t-kusa"
       }
     ],
-    "effect": "自分の草が、このゲームでオワコンに行った数だけ攻撃力+1。",
-    "flavor": "倒れた草も、残さずいただきます。",
+    "effect": "自分の草が、このゲームでオワコンになった数だけ攻撃力+1。",
+    "flavor": "オワコンになった草も、残さずいただきます。",
     "art": "/assets/cards/c14-art.jpg",
     "original": "assets/original/c14.webp",
     "subject": "/assets/cards/c14-subject.webp",
@@ -3268,7 +3268,7 @@
           "count": 2
         }
       ],
-      "effect": "速攻。自分の草が、このゲームでオワコンに行った数だけ攻撃力+1。闇堕ちしたとき、草を2体出す。"
+      "effect": "速攻。自分の草が、このゲームでオワコンになった数だけ攻撃力+1。闇堕ちしたとき、草を2体出す。"
     }
   },
   {
@@ -3288,7 +3288,7 @@
         "do": "sacrifice"
       }
     ],
-    "effect": "場に出たとき、自分と相手は、それぞれ自分のアイコンを1体選ぶ。選ばれたアイコンは倒される。",
+    "effect": "場に出たとき、自分と相手は、それぞれ自分のアイコンを1体選ぶ。選ばれたアイコンはオワコンになる。",
     "flavor": "その闇堕ち、仕込みです。",
     "art": "/assets/cards/c15-art.jpg",
     "subject": "/assets/cards/c15-subject.webp",
@@ -3339,7 +3339,7 @@
         "amount": 2
       }
     ],
-    "effect": "ガード。場に出たとき、自分のアイコンすべてとライフを2回復する。",
+    "effect": "ガード。場に出たとき、自分のアイコンすべてと自分のライフを2回復する。",
     "flavor": "「はい、ちょっと休んでいきなさい」",
     "art": "/assets/cards/i19-art.jpg",
     "original": "assets/original/i19.webp"
@@ -3370,7 +3370,7 @@
         "amount": 1
       }
     ],
-    "effect": "ガード。場に出たとき、自分のアイコンすべてとライフを3回復する。自分のターンの終わりに、自分のライフを1回復する。",
+    "effect": "ガード。場に出たとき、自分のアイコンすべてと自分のライフを3回復する。自分のターンの終わりに、自分のライフを1回復する。",
     "flavor": "「今日も湯けむり配信中」",
     "art": "/assets/cards/i20-art.jpg",
     "original": "assets/original/i20.webp"
@@ -3456,7 +3456,7 @@
         "count": 1
       }
     ],
-    "effect": "倒されたとき、カードを1枚引く。",
+    "effect": "オワコンになったとき、カードを1枚引く。",
     "flavor": "使い捨てです。",
     "art": "/assets/cards/n15-art.jpg",
     "original": "assets/original/n15.webp"
@@ -3481,7 +3481,7 @@
         "amount": 2
       }
     ],
-    "effect": "倒されたとき、攻撃力がいちばん高い相手のアイコンに2ダメージ。",
+    "effect": "オワコンになったとき、攻撃力がいちばん高い相手のアイコン1体に2ダメージ。",
     "flavor": "依頼は、もう済んでいる。",
     "art": "/assets/cards/n16-art.jpg",
     "original": "assets/original/n16.webp"
@@ -3510,7 +3510,7 @@
         "card": "t-kusa"
       }
     ],
-    "effect": "場に出たとき、草を2体出す。自分の草が、このゲームでオワコンに行った数だけ攻撃力+1。",
+    "effect": "場に出たとき、草を2体出す。自分の草が、このゲームでオワコンになった数だけ攻撃力+1。",
     "flavor": "枯れた草ほど、よく燃える。",
     "art": "/assets/cards/k19-art.jpg",
     "original": "assets/original/kusa-queen.webp"
