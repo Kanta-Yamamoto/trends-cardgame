@@ -26,12 +26,14 @@ function play(a, b, seed) {
   const own = { p1: 0, p2: 0 };
   const oshiTurn = { p1: 0, p2: 0 };
   const darkTurn = { p1: 0, p2: 0 };
+  const buzzes = { p1: 0, p2: 0 };
   const record = (r) => {
     for (const e of r.events) {
       if (e.type === "played" || e.type === "cast") used[e.player].add(e.cardId);
       if (e.type === "played" && catalog[e.cardId]?.dark && !oshiTurn[e.player])
         oshiTurn[e.player] = own[e.player];
       if (e.type === "darkFall") darkTurn[e.player] = own[e.player];
+      if (e.type === "buzz") buzzes[e.player]++;
     }
   };
   for (; turns < 80 && !s.winner; turns++) {
@@ -57,7 +59,15 @@ function play(a, b, seed) {
       if (s.winner) break;
     }
   }
-  return { winner: s.winner, first, turns, oshiTurn, darkTurn, used: { p1: [...used.p1], p2: [...used.p2] } };
+  return {
+    winner: s.winner,
+    first,
+    turns,
+    oshiTurn,
+    darkTurn,
+    buzzes,
+    used: { p1: [...used.p1], p2: [...used.p2] },
+  };
 }
 
 if (!isMainThread) {
@@ -126,6 +136,10 @@ if (!isMainThread) {
     `試合数 ${results.length}（決着 ${decided}、決着なし ${draws}）、${((Date.now() - t0) / 1000).toFixed(0)} 秒`,
   );
   console.log(`先攻の勝率 ${pct(firstWins / decided)}、平均 ${(turnSum / results.length).toFixed(1)} ターン`);
+  {
+    const b = results.reduce((n, r) => n + (r.buzzes?.p1 ?? 0) + (r.buzzes?.p2 ?? 0), 0);
+    console.log(`バズ：1人1試合あたり平均 ${(b / (results.length * 2)).toFixed(2)} 回`);
+  }
   {
     // 闇堕ちを持つ★5：出した割合・出した自分のターン（平均）と、闇堕ちした割合、デッキ別
     const st = Object.fromEntries(ids.map((d) => [d, { n: 0, o: 0, ot: 0, k: 0, kt: 0, kw: 0 }]));

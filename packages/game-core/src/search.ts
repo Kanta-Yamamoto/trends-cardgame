@@ -2,9 +2,10 @@ import { autoSacrifice, planTurn } from "./ai";
 import {
   applyAction,
   attackTargets,
+  buzzBlock,
   canUnitAttack,
   castTargets,
-  darkReady,
+  darkOmens,
   effectiveCost,
   hasPassive,
   opponent,
@@ -46,6 +47,8 @@ export const WEIGHTS = {
   lasting: 2.5,
   now: 0.15,
   focus: 1,
+  /** 残っているバズ1回の価値（これより得をする場面でだけ使う） */
+  buzz: 4,
 };
 
 const WIN = 1_000_000;
@@ -83,9 +86,10 @@ export function evaluate(state: GameState, player: PlayerId, catalog: Catalog): 
   for (let s = 0; s < me.field.length; s++) score += unitValue(state, player, s, catalog);
   for (let s = 0; s < foe.field.length; s++) score -= unitValue(state, foeId, s, catalog);
   score += (me.hand.length - foe.hand.length) * WEIGHTS.hand;
-  // オワコンで待っている闇堕ちは、コストなしで出せる手札のようなもの
-  score +=
-    (darkReady(state, player, catalog).length - darkReady(state, foeId, catalog).length) * 3 * WEIGHTS.hand;
+  // 闇の気配（次のターンの始めに闇堕ちして戻ってくる）は、コストなしで出せる手札のようなもの
+  score += (darkOmens(state, player).length - darkOmens(state, foeId).length) * 3 * WEIGHTS.hand;
+  // バズは残しておくほど後で使える
+  score += ((me.buzzLeft ?? 0) - (foe.buzzLeft ?? 0)) * WEIGHTS.buzz;
   // 山札切れが近いと危ない（専門家・陰謀論者が場にいれば負けない）
   const safe = (pid: PlayerId) =>
     state.players[pid].field.some(
@@ -144,8 +148,10 @@ function candidates(state: GameState, player: PlayerId, catalog: Catalog): Actio
         out.push({ type: "cast", player, handIndex, target });
     } else out.push({ type: "cast", player, handIndex });
   });
-  for (const cardId of darkReady(state, player, catalog))
-    for (const slot of slots) out.push({ type: "darkFall", player, cardId, slot });
+  if (!buzzBlock(state, player))
+    me.field.forEach((u, slot) => {
+      if (u) out.push({ type: "buzz", player, slot });
+    });
   me.field.forEach((u, from) => {
     if (!u || !canUnitAttack(state, u)) return;
     for (const target of attackTargets(state, player, from, catalog))

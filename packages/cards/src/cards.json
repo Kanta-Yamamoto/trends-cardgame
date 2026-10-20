@@ -5,9 +5,9 @@
     "epithet": "炎上系配信者",
     "type": "icon",
     "rarity": 5,
-    "cost": 4,
-    "attack": 3,
-    "hp": 2,
+    "cost": 6,
+    "attack": 5,
+    "hp": 4,
     "attributes": ["炎上"],
     "kaiwai": ["配信者"],
     "keywords": ["連撃"],
@@ -258,9 +258,9 @@
     "epithet": "",
     "type": "icon",
     "rarity": 5,
-    "cost": 5,
-    "attack": 2,
-    "hp": 5,
+    "cost": 6,
+    "attack": 3,
+    "hp": 6,
     "attributes": ["草"],
     "kaiwai": ["ミーム"],
     "keywords": [],
@@ -327,8 +327,8 @@
     "epithet": "",
     "type": "icon",
     "rarity": 5,
-    "cost": 5,
-    "attack": 3,
+    "cost": 6,
+    "attack": 4,
     "hp": 5,
     "attributes": ["メロい"],
     "kaiwai": ["アイドル"],
@@ -756,9 +756,9 @@
     "epithet": "",
     "type": "icon",
     "rarity": 5,
-    "cost": 5,
-    "attack": 3,
-    "hp": 4,
+    "cost": 6,
+    "attack": 4,
+    "hp": 5,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
     "keywords": [],
@@ -773,10 +773,11 @@
       },
       {
         "on": "turnEnd",
-        "do": "conspire"
+        "do": "conspire",
+        "deckAtMost": 5
       }
     ],
-    "effect": "場に出たとき、カードを2枚引く。このアイコンが場にいる間、山札が無くて引けなくても負けない。自分のターンの終わりに、自分の山札が0枚なら、その場で陰謀論者に闇堕ちする。",
+    "effect": "場に出たとき、カードを2枚引く。このアイコンが場にいる間、山札が無くて引けなくても負けない。自分のターンの終わりに、自分の山札が5枚以下なら、その場で陰謀論者に闇堕ちする。",
     "flavor": "それ、論文ありますか？",
     "art": "/assets/cards/g4-art.jpg",
     "subject": "/assets/cards/g4-subject.webp",
@@ -894,9 +895,9 @@
     "epithet": "",
     "type": "icon",
     "rarity": 3,
-    "cost": 4,
-    "attack": 3,
-    "hp": 4,
+    "cost": 3,
+    "attack": 2,
+    "hp": 3,
     "attributes": [],
     "kaiwai": ["配信者"],
     "keywords": [],
@@ -1625,14 +1626,9 @@
         "on": "play",
         "do": "sweep",
         "maxHp": 1
-      },
-      {
-        "on": "play",
-        "do": "draw",
-        "count": 1
       }
     ],
-    "effect": "ガード。場に出たとき、体力が1以下の相手のアイコンをすべて倒し、カードを1枚引く。",
+    "effect": "ガード。場に出たとき、体力が1以下の相手のアイコンをすべて倒す。",
     "flavor": "では、出席をとります。",
     "art": "/assets/cards/g8-art.jpg",
     "original": "assets/original/g8.webp"
@@ -2046,7 +2042,7 @@
     "rarity": 4,
     "cost": 5,
     "attack": 4,
-    "hp": 4,
+    "hp": 5,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
     "keywords": ["凸"],
@@ -2055,13 +2051,9 @@
         "do": "damage",
         "to": "allEnemies",
         "amount": 1
-      },
-      {
-        "do": "draw",
-        "count": 1
       }
     ],
-    "effect": "凸。場に出たとき、相手のアイコンすべてに1ダメージ。カードを1枚引く。",
+    "effect": "凸。場に出たとき、相手のアイコンすべてに1ダメージ。",
     "flavor": "まず前提を整理しましょう。",
     "art": "/assets/cards/g13-art.jpg",
     "original": "assets/original/g13.webp"
@@ -2094,28 +2086,7 @@
     "effect": "ガード。凸。場に出たとき、体力が2以下の相手のアイコンをすべて倒す。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコンに1ダメージ。",
     "flavor": "「知らないことは、まだ調べていないことだけ」",
     "art": "/assets/cards/c7-art.jpg",
-    "original": "assets/original/c7.webp",
-    "dark": {
-      "name": "禁書のヨミ",
-      "attack": 6,
-      "hp": 5,
-      "keywords": ["凸"],
-      "effects": [
-        {
-          "on": "play",
-          "do": "destroy",
-          "to": "strongestEnemy"
-        },
-        {
-          "on": "play",
-          "do": "draw",
-          "count": 2
-        }
-      ],
-      "effect": "凸。闇堕ちしたとき、攻撃力がいちばん高い相手のアイコンを倒す。カードを2枚引く。",
-      "art": "/assets/cards/c7-dark-art.jpg",
-      "subject": "/assets/cards/c7-dark-subject.webp"
-    }
+    "original": "assets/original/c7.webp"
   },
   {
     "id": "k11",
@@ -2235,34 +2206,7 @@
     "effect": "自分の場のほかのアイコン1体につき攻撃力+1。場に出たとき、草を2体出す。",
     "flavor": "「笑ったら、もう仲間だよ」",
     "art": "/assets/cards/c8-art.jpg",
-    "original": "assets/original/c8.webp",
-    "dark": {
-      "name": "嘲笑のワラ",
-      "attack": 2,
-      "hp": 4,
-      "keywords": ["凸"],
-      "effects": [
-        {
-          "on": "passive",
-          "do": "attackPerAlly"
-        },
-        {
-          "on": "play",
-          "do": "summon",
-          "card": "t-kusa",
-          "count": 2
-        },
-        {
-          "on": "play",
-          "do": "buffAllies",
-          "attack": 1,
-          "hp": 1
-        }
-      ],
-      "effect": "凸。自分の場のほかのアイコン1体につき攻撃力+1。闇堕ちしたとき、草を2体出し、自分のほかのアイコンすべてに攻撃力+1・体力+1。",
-      "art": "/assets/cards/c8-dark-art.jpg",
-      "subject": "/assets/cards/c8-dark-subject.webp"
-    }
+    "original": "assets/original/c8.webp"
   },
   {
     "id": "i10",
@@ -2394,47 +2338,14 @@
       },
       {
         "on": "passive",
-        "do": "saunaField",
-        "heat": 1,
-        "heal": 2
-      },
-      {
-        "on": "passive",
         "do": "healBurn",
         "amount": 2
       }
     ],
-    "effect": "場に出たとき、自分のライフを3回復する。場にいる間、フィールド「サウナ」。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
+    "effect": "場に出たとき、自分のライフを3回復する。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
     "flavor": "「ととのったら、あなたの番」",
     "art": "/assets/cards/c10-art.jpg",
-    "original": "assets/original/c10.webp",
-    "dark": {
-      "name": "灼熱のユズハ",
-      "attack": 5,
-      "hp": 5,
-      "keywords": ["凸"],
-      "effects": [
-        {
-          "on": "play",
-          "do": "shieldMaster"
-        },
-        {
-          "on": "play",
-          "do": "damage",
-          "to": "allEnemies",
-          "amount": 1
-        },
-        {
-          "on": "play",
-          "do": "heal",
-          "to": "master",
-          "amount": 3
-        }
-      ],
-      "effect": "凸。闇堕ちしたとき、次の相手のターンが終わるまで、自分のマスターはダメージを受けない。相手のアイコンすべてに1ダメージ。自分のライフを3回復する。",
-      "art": "/assets/cards/c10-dark-art.jpg",
-      "subject": "/assets/cards/c10-dark-subject.webp"
-    }
+    "original": "assets/original/c10.webp"
   },
   {
     "id": "n11",
@@ -2454,13 +2365,10 @@
       {
         "do": "draw",
         "count": 1,
-        "if": {
-          "kaiwai": "配信者",
-          "atLeast": 1
-        }
+        "ifHandAtMost": 3
       }
     ],
-    "effect": "カードを1枚引く。自分の場に配信者界隈がいれば、さらに1枚引く。",
+    "effect": "カードを1枚引く。手札が3枚以下なら、さらに1枚引く。",
     "flavor": "切り抜きから本編へ。",
     "art": "/assets/cards/n11-art.jpg",
     "original": "assets/original/n11.webp"
@@ -2984,8 +2892,8 @@
     "epithet": "おやすみナース",
     "type": "icon",
     "rarity": 5,
-    "cost": 5,
-    "attack": 3,
+    "cost": 6,
+    "attack": 4,
     "hp": 6,
     "attributes": ["癒し"],
     "kaiwai": ["配信者", "有識者"],
@@ -3172,7 +3080,7 @@
     "rarity": 3,
     "cost": 4,
     "attack": 3,
-    "hp": 3,
+    "hp": 4,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
     "keywords": ["凸"],
@@ -3182,14 +3090,9 @@
         "do": "buffSelf",
         "attack": 2,
         "hp": 2
-      },
-      {
-        "on": "play",
-        "do": "draw",
-        "count": 1
       }
     ],
-    "effect": "凸。凸で攻撃したとき、攻撃力+2・体力+2。場に出たとき、カードを1枚引く。",
+    "effect": "凸。凸で攻撃したとき、攻撃力+2・体力+2。",
     "flavor": "「私の若いころはですね」",
     "art": "/assets/cards/g18-art.jpg",
     "original": "assets/original/g18.webp"
@@ -3212,14 +3115,9 @@
         "do": "damage",
         "to": "allEnemies",
         "amount": 2
-      },
-      {
-        "on": "play",
-        "do": "draw",
-        "count": 2
       }
     ],
-    "effect": "ガード。場に出たとき、相手のアイコンすべてに2ダメージ。カードを2枚引く。",
+    "effect": "ガード。場に出たとき、相手のアイコンすべてに2ダメージ。",
     "flavor": "「静粛に」",
     "art": "/assets/cards/g19-art.jpg",
     "original": "assets/original/g19.webp"
@@ -3329,8 +3227,8 @@
     "epithet": "大食いの",
     "type": "icon",
     "rarity": 5,
-    "cost": 3,
-    "attack": 1,
+    "cost": 4,
+    "attack": 2,
     "hp": 3,
     "attributes": ["草"],
     "kaiwai": ["動物"],
@@ -3494,30 +3392,24 @@
     "type": "icon",
     "rarity": 3,
     "cost": 6,
-    "attack": 5,
+    "attack": 6,
     "hp": 6,
     "attributes": [],
     "kaiwai": [],
     "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "draw",
-        "count": 1
-      }
-    ],
-    "effect": "場に出たとき、カードを1枚引く。",
+    "effects": [],
+    "effect": "",
     "flavor": "殿堂入り。説明不要",
     "art": "/assets/cards/n13-art.jpg",
     "original": "assets/original/n13.webp"
   },
   {
     "id": "n14",
-    "name": "バズ投稿",
+    "name": "万バズ",
     "epithet": "",
     "type": "post",
     "rarity": 2,
-    "cost": 5,
+    "cost": 4,
     "attributes": [],
     "kaiwai": [],
     "keywords": [],

@@ -626,26 +626,11 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .atk-arrow.ally polygon, .atk-arrow.ally circle { fill: #7dffb0; filter: drop-shadow(0 0 8px #7dffb0); }
 
 /* ---------- オワコンに闇堕ちできるカードがある ---------- */
-.pile.dark-ready .trash-top { filter: none; border-color: #b06bff; }
-.pile.dark-ready.mine .trash-top { box-shadow: 0 0 0 2px #d9b0ff, 0 0 18px #b06bff; animation: ob-pulse-dark 1.2s ease-in-out infinite; }
-.pile.dark-ready.mine small { color: #e8d0ff; font-weight: 800; }
-.pile.dark-ready.foe .trash-top { box-shadow: 0 0 10px #b06bff99; }
-.dark-pick { display: grid; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #2a0d3a88; box-shadow: inset 0 0 0 1px #b06bff66; }
-.dark-pick p { margin: 0; font-size: 13px; color: #e8d0ff; }
-.dark-pick-item { display: grid; gap: 6px; padding: 8px 10px; border-radius: 10px; background: #00000033; }
-.dark-pick-info { display: grid; gap: 3px; }
-.dark-pick-name { color: #fff; font-size: 14px; display: flex; align-items: baseline; gap: 8px; }
-.dark-pick-stats { font: 800 13px/1 var(--f-mark); color: #e8d0ff; }
-.dark-pick-stats i { font-style: normal; }
-.dark-pick-effect { font-size: 12.5px; line-height: 1.5; color: #e8d0ff; }
-.dark-pick-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .zs-darkbox { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: #2a0d3a88; box-shadow: inset 0 0 0 1px #b06bff66; }
 .zs-darkbox-head { margin: 0; font-size: 13px; color: #d9a8ff; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
 .zs-darkbox-head > b { color: #fff; font-size: 15px; }
 .zs-darkbox-stats b { font: 800 15px/1 var(--f-mark); }
 .zs-darkbox-effect { margin: 0; font-size: 14px; line-height: 1.6; color: #fff; }
-.dark-pick-btn { color: #fff; background: linear-gradient(135deg, #8a2bd0, #3a0a4f); border: 1px solid #d9b0ff; box-shadow: 0 0 14px #b06bff88; }
-@keyframes ob-pulse-dark { 50% { box-shadow: 0 0 0 2px #fff, 0 0 26px #b06bff; } }
 
 /* ---------- 闇堕ちの演出（画面全体） ---------- */
 .dark-cut {
@@ -710,22 +695,6 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
   54% { transform: translate(-5px, -3px); } 56% { transform: translate(4px, 4px); } 58%, 100% { transform: none; }
 }
 
-/* 闇堕ち：呼び戻す枠を選ぶ案内 */
-.dark-guide { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 16px; border-radius: 14px; background: linear-gradient(135deg, #2a0838ee, #12041cee); box-shadow: 0 0 0 1px #b06bff, 0 0 32px #b06bff88, 0 12px 30px #000a; animation: dg-in 0.35s cubic-bezier(.2,.9,.3,1.2) both; pointer-events: auto; max-width: calc(100% - 16px); }
-.dg-card { display: grid; gap: 2px; text-align: left; }
-.dg-kicker { font-size: 10px; letter-spacing: 0.3em; color: #d9b0ff; font-weight: 800; }
-.dark-guide b { font-size: 15px; color: #fff; text-shadow: 0 0 12px #b06bff; white-space: nowrap; }
-.dg-sub { font-size: 12px; color: #e8d0ff; animation: dg-blink 1.2s ease-in-out infinite; }
-.dg-cancel { flex: none; border: 1px solid #b06bff99; background: #00000055; color: #e8d0ff; border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
-.slot.dark-drop { position: relative; border: 2px solid #c58bff; background: radial-gradient(circle at 50% 50%, #8a2bd055, #2a083800 70%); box-shadow: 0 0 0 1px #fff3 inset, 0 0 22px #b06bffaa; animation: dd-breathe 1.1s ease-in-out infinite; display: grid; place-items: center; overflow: visible; }
-.slot.dark-drop .dd-ring { position: absolute; left: 50%; top: 50%; width: 46%; aspect-ratio: 1; border-radius: 50%; border: 2px solid #e8d0ff; transform: translate(-50%, -50%) scale(0.6); opacity: 0; animation: dd-ripple 1.4s ease-out infinite; pointer-events: none; }
-.slot.dark-drop .dd-tap { position: relative; font-size: 11px; line-height: 1.3; font-weight: 800; color: #fff; text-shadow: 0 0 8px #b06bff, 0 1px 2px #000; pointer-events: none; }
-.slot.dark-drop:hover, .slot.dark-drop:focus-visible { background: radial-gradient(circle at 50% 50%, #b06bff88, #2a083800 75%); }
-@keyframes dd-breathe { 50% { box-shadow: 0 0 0 1px #fff6 inset, 0 0 34px #d9b0ff; } }
-@keyframes dd-ripple { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.9; } 100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; } }
-@keyframes dg-in { from { opacity: 0; transform: translate(-50%, -10px) scale(0.96); } }
-@keyframes dg-blink { 50% { opacity: 0.55; } }
-@media (prefers-reduced-motion: reduce) { .slot.dark-drop, .slot.dark-drop .dd-ring, .dg-sub, .dark-guide { animation: none; } }
 .pb-shield { margin-left: 6px; font-size: 10.5px; padding: 1px 6px; border-radius: 999px; color: #08202e; background: #9fd8ff; font-weight: 800; }
 
 /* ---------- デッキ構築 ---------- */
@@ -814,40 +783,103 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .mini.on-field .mini-kw { font-size: 9px; padding: 1px 5px; }
 .mini.on-field.is-dark::before { background: linear-gradient(180deg, #2a0d3a22 40%, #07020bcc 100%); }
 
-/* フィールド展開（ユズハのサウナ）：盤面の後ろに絵と湯気。熱は赤く、回復は水色に一瞬光る */
-.board.field-sauna { isolation: isolate; }
+/* 闇のフィールド：闇堕ちを持つカードが倒されると「予兆」（持ち主の側から紫に染まる）、闇堕ちの姿が場にいる間は「闇」 */
+.board.field-dark, .board.field-omen { isolation: isolate; }
 .field-layer { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; }
-.field-sauna.field-layer {
+.field-omen.field-layer { animation: field-omen-in 1.2s ease-out both; }
+.field-omen.mine { background: linear-gradient(0deg, #6a1fa866, #3a0a4f22 45%, transparent 70%); }
+.field-omen.foe { background: linear-gradient(180deg, #6a1fa866, #3a0a4f22 45%, transparent 70%); }
+.field-dark.field-layer {
   background:
-    linear-gradient(180deg, #1a0d06b8, #1a0f0866 45%, #1a0d06b8),
-    var(--field-sauna-img, none) center / cover no-repeat,
-    repeating-linear-gradient(90deg, #6b3f22 0 22px, #5a331b 22px 24px, #74462a 24px 46px, #5a331b 46px 48px);
-  --field-sauna-img: url(/assets/fields/sauna.jpg);
+    radial-gradient(70% 55% at 50% 50%, #2a0d3a00, #0a0210cc 85%),
+    linear-gradient(180deg, #14041fe6, #22093399 50%, #14041fe6);
+  animation: field-dark-in 1.4s ease-out both;
 }
-.field-steam {
-  position: absolute; left: -20%; right: -20%; bottom: -40%; height: 90%;
+.field-mist {
+  position: absolute; left: -20%; right: -20%; height: 70%; filter: blur(8px);
   background:
-    radial-gradient(40% 30% at 20% 60%, #ffffff22, transparent 70%),
-    radial-gradient(35% 28% at 55% 70%, #ffffff1c, transparent 70%),
-    radial-gradient(30% 25% at 85% 55%, #ffffff20, transparent 70%);
-  filter: blur(6px);
-  animation: field-steam 9s ease-in-out infinite;
+    radial-gradient(35% 30% at 25% 50%, #b06bff33, transparent 70%),
+    radial-gradient(30% 26% at 70% 60%, #8a2bd02e, transparent 70%);
+  animation: field-mist 11s ease-in-out infinite;
 }
-.field-steam.s2 { animation-duration: 13s; animation-delay: -5s; opacity: 0.8; }
-@keyframes field-steam {
-  0% { transform: translateY(20%); opacity: 0; }
-  30% { opacity: 1; }
-  100% { transform: translateY(-80%); opacity: 0; }
-}
-.field-pulse { position: absolute; inset: 0; animation: field-pulse 1.1s ease-out forwards; }
-.field-pulse.heat { background: radial-gradient(80% 60% at 50% 50%, #ff7a2a55, transparent 75%); box-shadow: inset 0 0 40px #ff6a1aaa; }
-.field-pulse.heal { background: radial-gradient(80% 60% at 50% 50%, #7fe0ff44, transparent 75%); box-shadow: inset 0 0 40px #7fe0ffaa; }
-@keyframes field-pulse { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
+.field-omen.mine .field-mist { bottom: -25%; }
+.field-omen.foe .field-mist { top: -25%; }
+.field-dark .field-mist { top: 15%; opacity: 0.9; }
+.field-mist.m2 { animation-duration: 15s; animation-delay: -6s; opacity: 0.7; }
+@keyframes field-mist { 0%, 100% { transform: translateX(-6%); } 50% { transform: translateX(6%); } }
+@keyframes field-omen-in { from { opacity: 0; } }
+@keyframes field-dark-in { from { opacity: 0; filter: brightness(2.2); } }
 .field-label {
   position: absolute; right: 8px; bottom: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
-  color: #ffe7cf; background: #00000066; border: 1px solid #ffb07a55; padding: 2px 8px; border-radius: 99px;
+  color: #e8d0ff; background: #00000066; border: 1px solid #b06bff66; padding: 2px 8px; border-radius: 99px;
 }
-@media (prefers-reduced-motion: reduce) { .field-steam { animation: none; opacity: 0.6; } }
+.field-omen.foe .field-label { bottom: auto; top: 6px; }
+/* 闇の気配：倒れたエースの枠に灯る紫の炎 */
+.slot.omen-slot { position: relative; border-color: #b06bffaa; background: radial-gradient(60% 60% at 50% 65%, #8a2bd044, transparent 75%); overflow: visible; }
+.omen-flame { position: absolute; left: 50%; bottom: 16%; width: 46%; height: 62%; transform: translateX(-50%); pointer-events: none; }
+.omen-flame i {
+  position: absolute; left: 50%; bottom: 0; width: 60%; height: 100%; transform: translateX(-50%);
+  border-radius: 50% 50% 45% 45% / 65% 65% 35% 35%;
+  background: radial-gradient(60% 70% at 50% 75%, #f3e0ff, #c58bff 40%, #6a1fa8 75%, transparent 78%);
+  filter: blur(1px); opacity: 0.85; transform-origin: 50% 100%;
+  animation: omen-flicker 1.3s ease-in-out infinite;
+}
+.omen-flame i:nth-child(2) { width: 40%; left: 32%; height: 70%; animation-delay: -0.4s; opacity: 0.7; }
+.omen-flame i:nth-child(3) { width: 40%; left: 68%; height: 60%; animation-delay: -0.8s; opacity: 0.6; }
+@keyframes omen-flicker { 0%, 100% { transform: translateX(-50%) scale(1, 1); } 50% { transform: translateX(-50%) scale(0.9, 1.12); } }
+@media (prefers-reduced-motion: reduce) { .field-mist, .omen-flame i, .field-dark.field-layer, .field-omen.field-layer { animation: none; } }
+
+/* バズ：ボタン（残りの玉）、マスターの帯の残り、カットイン、盤面での対象の強調 */
+.buzz-btn { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 13px; font-weight: 900; white-space: nowrap; color: #1b1400; background: linear-gradient(135deg, #fff27a, #ffb21a); border: 1px solid #fff6b0; }
+.buzz-btn:disabled { color: #ffffff88; background: #ffffff14; border-color: #ffffff22; }
+.buzz-btn.ready { box-shadow: 0 0 14px #ffd24d88; }
+.buzz-btn.on { outline: 2px solid #fff; outline-offset: 2px; animation: buzz-ready 0.9s ease-in-out infinite alternate; }
+@keyframes buzz-ready { to { box-shadow: 0 0 22px #ffe14d; } }
+.buzz-pips, .pb-buzz { display: inline-flex; align-items: center; gap: 3px; }
+.buzz-pips i, .pb-buzz i { width: 7px; height: 7px; border-radius: 50%; background: #00000044; box-shadow: inset 0 0 0 1px #0004; }
+.buzz-pips i.on { background: #1b1400; }
+.buzz-btn:disabled .buzz-pips i.on { background: #ffe14d; }
+.pb-buzz { margin-left: 8px; font-size: 10px; font-weight: 800; color: #ffe14d; }
+.pb-buzz i { background: #ffffff22; }
+.pb-buzz i.on { background: #ffe14d; box-shadow: 0 0 6px #ffe14d; }
+.pmid .buzz-btn { padding: 8px 10px; font-size: 12px; }
+.col-right .buzz-btn { justify-content: center; padding: 10px; font-size: 14px; }
+.buzz-cut { position: fixed; inset: 0; z-index: 45; display: grid; align-items: center; pointer-events: none; animation: bc-life 1.5s linear forwards; }
+.buzz-cut::before { content: ""; position: absolute; inset: 0; background: #0006; animation: bc-dim 1.5s ease forwards; }
+.bc-band {
+  position: relative; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "master word" "target left";
+  align-items: center; gap: 6px 14px; padding: 16px 22px; margin: 0 -10px;
+  background: linear-gradient(100deg, #1b1400ee, #3a2a00ee 50%, #1b1400ee); border-block: 3px solid #ffe14d;
+  box-shadow: 0 0 40px #ffd24d88; transform: skewY(-4deg);
+}
+.buzz-cut.mine .bc-band { animation: bc-in-left 1.5s cubic-bezier(.2,.9,.2,1) forwards; }
+.buzz-cut.foe .bc-band { animation: bc-in-right 1.5s cubic-bezier(.2,.9,.2,1) forwards; text-align: right; grid-template-columns: 1fr auto; grid-template-areas: "word master" "left target"; }
+.bc-master { grid-area: master; display: grid; gap: 2px; color: #fff; }
+.bc-master i { font: 900 11px/1 var(--f-mark); letter-spacing: 0.3em; color: #ffe14d; font-style: normal; }
+.bc-master b { font-size: 15px; }
+.bc-word { grid-area: word; font: 900 clamp(46px, 14vw, 96px)/1 var(--f-mark); letter-spacing: 0.06em; color: #ffe14d; text-shadow: 0 0 18px #ffb21a, 3px 3px 0 #ff5a1a; }
+.buzz-cut.foe .bc-word { justify-self: start; }
+.bc-target { grid-area: target; display: flex; align-items: center; gap: 8px; color: #fff; }
+.buzz-cut.foe .bc-target { justify-content: flex-end; }
+.bc-target b { display: block; font-size: 13px; }
+.bc-target small { font-size: 11px; color: #ffe9a0; }
+.bc-art { width: 34px; height: 44px; border-radius: 6px; background-size: cover; background-position: center 25%; box-shadow: 0 0 0 2px #ffe14d; }
+.bc-left { grid-area: left; display: inline-flex; gap: 5px; }
+.buzz-cut.foe .bc-left { justify-content: flex-start; }
+.bc-left i { width: 10px; height: 10px; border-radius: 50%; background: #ffffff22; }
+.bc-left i.on { background: #ffe14d; box-shadow: 0 0 8px #ffe14d; }
+@keyframes bc-in-left { 0% { transform: skewY(-4deg) translateX(-110%); } 18% { transform: skewY(-4deg) translateX(0); } 82% { transform: skewY(-4deg) translateX(2%); opacity: 1; } 100% { transform: skewY(-4deg) translateX(110%); opacity: 0; } }
+@keyframes bc-in-right { 0% { transform: skewY(-4deg) translateX(110%); } 18% { transform: skewY(-4deg) translateX(0); } 82% { transform: skewY(-4deg) translateX(-2%); opacity: 1; } 100% { transform: skewY(-4deg) translateX(-110%); opacity: 0; } }
+@keyframes bc-dim { 0%, 100% { opacity: 0; } 15%, 85% { opacity: 1; } }
+@keyframes bc-life { to { visibility: visible; } }
+.mini.fx-buzzed { z-index: 5; outline: 3px solid #ffe14d; outline-offset: 2px; border-radius: 10px; animation: fx-buzzed 0.45s ease-in-out 4 alternate; }
+.mini.fx-buzzed::after { content: "バズ"; position: absolute; left: 50%; top: -12px; transform: translateX(-50%); padding: 1px 7px; border-radius: 99px; font: 900 10px/1.4 var(--f-ui); color: #1b1400; background: #ffe14d; box-shadow: 0 0 10px #ffd24d; white-space: nowrap; }
+@keyframes fx-buzzed { to { box-shadow: 0 0 24px #ffe14d; transform: translateY(-3px) scale(1.06); } }
+.unit.buzz-pick { outline: 2px dashed #ffe14d; outline-offset: 2px; border-radius: 10px; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) {
+  .buzz-cut, .buzz-cut::before, .buzz-cut .bc-band, .mini.fx-buzzed, .buzz-btn.on { animation-duration: 0.01s; }
+  .buzz-cut { animation: bc-life 1.2s linear forwards; }
+}
 
 /* 差し出し（『フィクサー』）：選べる自分のアイコンを赤く光らせる */
 .unit.targetable.sac { box-shadow: 0 0 0 2px #ff2a4a, 0 0 18px #ff2a4acc; animation: sac-pulse 1.1s ease-in-out infinite; }

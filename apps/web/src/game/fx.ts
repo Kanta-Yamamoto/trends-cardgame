@@ -227,6 +227,20 @@ export async function animateAttack(
   await wait(60);
 }
 
+/** バズの対象：光の枠と「バズ」の札を付け、+2/+2 を出す（盤面でどのアイコンがバズったか分かるように） */
+export function markBuzzed(uid: number, attack: number, hp: number) {
+  const el = q(`[data-uid="${uid}"]`);
+  if (!el) return;
+  el.classList.remove("fx-buzzed");
+  void el.offsetWidth; // アニメーションをやり直す
+  el.classList.add("fx-buzzed");
+  if (canAnimate() && !reduced()) {
+    glow(el, "#ffe14d");
+    popLabel(el, `バズ +${attack}/+${hp}`, "#ffe14d");
+  }
+  setTimeout(() => el.classList.remove("fx-buzzed"), 2200);
+}
+
 /** 凸の強化：攻撃するアイコンを光らせて「+1/+1」を出し、攻撃力の数字を先に上げる。見せ終わってから突進する */
 async function showRushBoost(
   atk: HTMLElement | null,

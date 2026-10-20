@@ -119,7 +119,7 @@ export function newDeckId() {
   return `d${Date.now().toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`;
 }
 
-/** デッキの決まりを確かめる（30枚・3枚まで・属性1つ＋共通・トークン不可） */
+/** デッキの決まりを確かめる（20枚・2枚まで・属性1つ＋共通・闇堕ちを持つカードは1種類・トークン不可） */
 export const deckErrors = (cards: readonly string[]) => validateDeck(cards, CATALOG);
 
 /** コストごとの枚数（1〜6 と 7 以上） */

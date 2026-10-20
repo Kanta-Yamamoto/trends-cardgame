@@ -1,4 +1,4 @@
-import { type CardEffect, DARK_FALLS_PER_GAME, type Kaiwai, type Keyword } from "@trends/cards";
+import type { CardEffect, Kaiwai, Keyword } from "@trends/cards";
 import { nextRandom } from "./rng";
 import {
   type Action,
@@ -81,6 +81,10 @@ export function createGame(input: NewGameInput): GameState {
       extraTurns: 0,
       breakthroughTurn: 0,
       darkSpent: [],
+      darkOmens: [],
+      buzzLeft: config.buzzCount,
+      buzzFrom: Math.max(1, config.buzzFrom - (isFirst ? 0 : 1)),
+      turnsTaken: isFirst ? 1 : 0,
     };
   };
   const p1 = mk(input.decks.p1, first === "p1");
@@ -174,35 +178,30 @@ export function effectiveCost(state: GameState, player: PlayerId, cardId: string
   return Math.max(0, cost);
 }
 
-/**
- * 闇堕ちの姿で出せるカード（オワコンにある、闇堕ちを持つカード。闇堕ちを使い終えたものは除く）。
- * 自分のターンなら、倒されたそのターンも含めていつでも出せる
- */
-export function darkReady(state: GameState, player: PlayerId, catalog: Catalog): string[] {
-  const me = state.players[player];
-  if ((me.darkFalls ?? 0) >= DARK_FALLS_PER_GAME) return [];
-  const spent = new Map<string, number>();
-  for (const id of me.darkSpent ?? []) spent.set(id, (spent.get(id) ?? 0) + 1);
-  const ready: string[] = [];
-  const counted = new Map<string, number>();
-  for (const id of me.trash) {
-    if (!catalog[id]?.dark) continue;
-    const n = (counted.get(id) ?? 0) + 1;
-    counted.set(id, n);
-    if (n > (spent.get(id) ?? 0) && !ready.includes(id)) ready.push(id);
-  }
-  return ready;
+/** 闇の気配（倒されて、次の自分のターンの始めに闇堕ちして戻ってくるカード） */
+export function darkOmens(state: GameState, player: PlayerId): { cardId: string; slot: number }[] {
+  return state.players[player].darkOmens ?? [];
 }
 
-/** 闇堕ちを今使えるか（自分のターンで、出せるカードと空いた枠がある） */
-export function canDarkFall(state: GameState, player: PlayerId, catalog: Catalog): boolean {
+/** バズの残り回数 */
+export function buzzLeft(state: GameState, player: PlayerId): number {
+  return state.players[player].buzzLeft ?? 0;
+}
+
+/**
+ * バズを今使えるか。使えないときは理由（画面の案内に出す）。
+ * 1試合に2回・1ターンに1回・自分の4ターン目から（後攻は3ターン目から）
+ */
+export function buzzBlock(state: GameState, player: PlayerId): string | null {
   const me = state.players[player];
-  return (
-    state.active === player &&
-    !state.winner &&
-    me.field.some((u) => !u) &&
-    darkReady(state, player, catalog).length > 0
-  );
+  if (state.winner) return "対戦は終了しています";
+  if (state.active !== player) return "相手のターンです";
+  if ((me.buzzLeft ?? 0) <= 0) return "バズはもう使い切りました";
+  if (me.buzzTurn === state.turn) return "バズは1ターンに1回までです";
+  const from = me.buzzFrom ?? 1;
+  if ((me.turnsTaken ?? 0) < from) return `バズは自分の${from}ターン目から使えます`;
+  if (!me.field.some((u) => u)) return "バズさせる自分のアイコンがいません";
+  return null;
 }
 
 /**
@@ -413,24 +412,19 @@ export function sacrificeCandidates(state: GameState, player: PlayerId): number[
   return state.players[player].field.flatMap((u, slot) => (u && u.uid !== p.sourceUid ? [slot] : []));
 }
 
-/** 今のフィールド（どちらかの場にフィールドを出すアイコンがいれば、その種類と持ち主）。画面の背景に使う */
-export function fieldOf(state: GameState, catalog: Catalog): { kind: "sauna"; owner: PlayerId } | null {
-  for (const owner of [state.active, opponent(state.active)] as const)
-    if (saunaOf(state, owner, catalog)) return { kind: "sauna", owner };
-  return null;
-}
-
-/** その人の場にフィールド「サウナ」を出すアイコンがいれば、その熱と回復の量（何体いても1つ） */
-function saunaOf(
+/**
+ * 今のフィールド（画面の背景）。闇堕ちの姿が場にいれば「闇」（持ち主は、いれば手番の人を先に）。
+ * いなくても闇の気配があれば「予兆」
+ */
+export function fieldOf(
   state: GameState,
-  player: PlayerId,
-  catalog: Catalog,
-): { heat: number; heal: number } | null {
-  for (const u of state.players[player].field) {
-    if (!u) continue;
-    for (const e of effectsOf(u, catalog))
-      if (triggerOf(e) === "passive" && e.do === "saunaField") return { heat: e.heat, heal: e.heal };
-  }
+  _catalog?: Catalog,
+): { kind: "dark" | "omen"; owner: PlayerId } | null {
+  const order = [state.active, opponent(state.active)] as const;
+  for (const owner of order)
+    if (state.players[owner].field.some((u) => u?.dark)) return { kind: "dark", owner };
+  for (const owner of order)
+    if ((state.players[owner].darkOmens ?? []).length > 0) return { kind: "omen", owner };
   return null;
 }
 
@@ -505,11 +499,27 @@ function resolveDeaths(
         if (viewUnit(state, owner, u, catalog).hp > 0) return;
         const onDeath = effectsOf(u, catalog).filter((e) => triggerOf(e) === "death");
         p.field[slot] = null;
-        if (!u.token) p.trash.push(u.cardId);
+        // 闇堕ちの姿が倒されたら、そのカードは消える（オワコンにも行かない）
+        const vanished = u.dark && !u.token;
+        if (!u.token && !vanished) p.trash.push(u.cardId);
         if (u.token) p.tokensLost = { ...p.tokensLost, [u.cardId]: (p.tokensLost?.[u.cardId] ?? 0) + 1 };
         destroyed.push(u.cardId);
-        emit({ type: "destroyed", player: owner, cardId: u.cardId });
-        if (u.darkUsed && !u.token) p.darkSpent = [...(p.darkSpent ?? []), u.cardId];
+        emit(
+          vanished
+            ? { type: "destroyed", player: owner, cardId: u.cardId, vanished: true }
+            : { type: "destroyed", player: owner, cardId: u.cardId },
+        );
+        // 闇堕ちを持つカードが元の姿で倒されたら、闇の気配（次の自分のターンの始めに闇堕ちして戻る）
+        if (!u.token && !u.dark && catalog[u.cardId]?.dark) {
+          const spent = (p.darkSpent ?? []).indexOf(u.cardId);
+          if (u.darkUsed || spent >= 0) {
+            // TL浄化で戻った姿や、闇堕ちの姿のまま手札に戻されたカードは、もう闇堕ちしない
+            if (!u.darkUsed && spent >= 0) p.darkSpent = p.darkSpent.filter((_, i) => i !== spent);
+          } else {
+            p.darkOmens = [...(p.darkOmens ?? []), { cardId: u.cardId, slot }];
+            emit({ type: "darkOmen", player: owner, slot, cardId: u.cardId });
+          }
+        }
         if (onDeath.length) deaths.push({ owner, effects: onDeath });
       });
     }
@@ -887,7 +897,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       if (!u) break;
       foe.field[slot] = null;
       if (!u.token) foe.hand.push(u.cardId);
-      // 闇堕ちの姿が手札に戻ったら、そのカードの闇堕ちは使い終わり
+      // 闇堕ちの姿（やTL浄化で戻った姿）が手札に戻ったら、そのカードの闇堕ちは使い終わり
       if (u.darkUsed && !u.token) foe.darkSpent = [...(foe.darkSpent ?? []), u.cardId];
       emit({ type: "bounced", player: foeId, slot, cardId: u.cardId });
       break;
@@ -938,8 +948,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       else if (ctx.target?.side === "enemy") slot = ctx.target.slot;
       const u = slot >= 0 ? foe.field[slot] : null;
       if (!u) break;
-      // 元のカードは消える（闇堕ちの姿なら、そのカードの闇堕ちは使い終わり）
-      if (u.darkUsed && !u.token) foe.darkSpent = [...(foe.darkSpent ?? []), u.cardId];
+      // 元のカードは消える（オワコンに行かないので、闇の気配も出ない）
       const into = newUnit(state, e.card, catalog, true);
       Object.assign(into, { canAttack: false, attacksLeft: 0, rushOnly: false });
       foe.field[slot] = into;
@@ -962,32 +971,29 @@ function runEffect(e: CardEffect, ctx: Ctx) {
             noGuard: false,
           });
           if (wasDark) {
-            // 元の姿に戻る（闇堕ちは1試合に1回なので、もう一度は闇堕ちしない）
+            // 元の姿に戻る（もう一度は闇堕ちしない。倒されたらオワコンへ）
             Object.assign(u, { dark: false, damage: 0 });
             emit({ type: "restored", player: owner, slot, cardId: u.cardId });
           }
         });
       }
       break;
-    case "attackPerAlly":
-    case "attackPerLostToken":
-    case "saunaField":
     case "conspire": {
-      // 山札を引き切ったら、その場で闇堕ち（専門家→陰謀論者）。闇堕ちの1回を使う
+      // 山札が残り少なくなったら、その場で闇堕ち（専門家→陰謀論者）
       const slot = ctx.selfSlot;
       const u = slot === undefined ? null : me.field[slot];
-      if (!u || slot === undefined || u.dark || me.deck.length > 0) break;
-      if ((me.darkFalls ?? 0) >= DARK_FALLS_PER_GAME) break;
+      if (!u || slot === undefined || u.dark || u.darkUsed || me.deck.length > (e.deckAtMost ?? 0)) break;
       const card = must(catalog, u.cardId);
       if (!card.dark) break;
       const d = Object.assign(newUnit(state, u.cardId, catalog, false), { dark: true, darkUsed: true });
       me.field[slot] = d;
-      me.darkFalls = (me.darkFalls ?? 0) + 1;
       emit({ type: "darkFall", player: ctx.player, slot, cardId: u.cardId });
       for (const e of card.dark.effects ?? [])
         if (triggerOf(e) === "play") runEffect(e, { ...ctx, selfSlot: slot });
       break;
     }
+    case "attackPerAlly":
+    case "attackPerLostToken":
     case "noDeckOut":
     case "conspiracyWin":
     case "extraAttackOnKill":
@@ -999,12 +1005,39 @@ function runEffect(e: CardEffect, ctx: Ctx) {
   }
 }
 
+/** 闇堕ちの姿で場に出す。出たターンから相手のアイコンに攻撃できる（凸。速攻を持つ姿ならマスターも） */
+function darkRise(
+  state: GameState,
+  player: PlayerId,
+  cardId: string,
+  slot: number,
+  catalog: Catalog,
+  config: Config,
+  emit: Emit,
+) {
+  const me = state.players[player];
+  const card = must(catalog, cardId);
+  const u = Object.assign(newUnit(state, cardId, catalog, false), { dark: true, darkUsed: true });
+  const darkRush = hasKeyword(u, "速攻", catalog);
+  Object.assign(u, {
+    canAttack: true,
+    attacksLeft: hasKeyword(u, "連撃", catalog) ? 2 : 1,
+    rushOnly: !darkRush,
+  });
+  me.field[slot] = u;
+  emit({ type: "darkFall", player, slot, cardId });
+  const ctx: Ctx = { state, player, catalog, config, emit, selfSlot: slot, playedBefore: 0 };
+  for (const e of card.dark?.effects ?? []) if (triggerOf(e) === "play") runEffect(e, ctx);
+  resolveDeaths(state, catalog, emit, config);
+}
+
 /** ターンの始め：話題力の回復、攻撃の準備、注目、子守唄、ドロー */
 function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Config, emit: Emit) {
   const p = state.players[pid];
   const other = opponent(pid);
   state.active = pid;
   state.turn += 1;
+  p.turnsTaken = (p.turnsTaken ?? 0) + 1;
   p.maxMana = Math.min(config.maxMana, p.maxMana + 1);
   // 後攻の最初のターンだけ話題力を足す（先攻有利を和らげる）
   p.mana = p.maxMana + (state.turn === 2 ? config.secondBonusMana : 0);
@@ -1024,16 +1057,20 @@ function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Co
       emit({ type: "buffed", player: pid, slot, cardId: u.cardId, attack: n, hp: 0 });
     }
   });
-  // フィールド「サウナ」：持ち主のターンの始めに、場のアイコンすべてに熱
-  const sauna = saunaOf(state, pid, catalog);
-  if (sauna) {
-    emit({ type: "sauna", player: pid, phase: "heat", amount: sauna.heat });
-    for (const owner of [pid, other] as const)
-      state.players[owner].field.forEach((u, slot) => {
-        if (u) damageUnit(state, owner, slot, sauna.heat, emit);
-      });
-    resolveDeaths(state, catalog, emit, config);
+  // 闇の気配：倒された闇堕ちを持つカードが、闇堕ちの姿で戻ってくる（倒された枠。埋まっていればほかの空き枠。なければ待つ）
+  const waiting: { cardId: string; slot: number }[] = [];
+  for (const omen of p.darkOmens ?? []) {
+    const slot = p.field[omen.slot] ? p.field.findIndex((u) => !u) : omen.slot;
+    const at = p.trash.lastIndexOf(omen.cardId);
+    if (at < 0) continue; // オワコンから無くなっていたら（蘇生などで）、闇の気配も消える
+    if (slot < 0) {
+      waiting.push(omen);
+      continue;
+    }
+    p.trash.splice(at, 1);
+    darkRise(state, pid, omen.cardId, slot, catalog, config, emit);
   }
+  p.darkOmens = waiting;
   // 子守唄：相手の場にいれば、攻撃力がいちばん高いアイコンがこのターン眠る
   if (state.players[other].field.some((u) => u && hasPassive(u, "lullaby", catalog))) {
     const slot = strongestEnemy(state, other, catalog);
@@ -1150,30 +1187,30 @@ export function applyAction(
       resolveDeaths(state, catalog, emit, config);
       break;
     }
-    case "darkFall": {
-      const cardId = action.cardId;
-      if ((me.darkFalls ?? 0) >= DARK_FALLS_PER_GAME)
-        throw new RuleError("dark_used", "闇堕ちは1試合に1回までです（もう使いました）");
-      if (!darkReady(state, player, catalog).includes(cardId))
-        throw new RuleError("no_dark", "闇堕ちできるのは、オワコンにある闇堕ちを持つカードだけです");
-      if (action.slot < 0 || action.slot >= SLOTS) throw new RuleError("bad_slot", "その場所には出せません");
-      if (me.field[action.slot]) throw new RuleError("slot_taken", "その場所にはすでにアイコンがいます");
-      const card = must(catalog, cardId);
-      me.trash.splice(me.trash.lastIndexOf(cardId), 1);
-      // 闇堕ちの姿は、戻ってきたターンから相手のアイコンに攻撃できる（凸。速攻を持つ姿ならマスターも）
-      const u = Object.assign(newUnit(state, cardId, catalog, false), { dark: true, darkUsed: true });
-      me.darkFalls = (me.darkFalls ?? 0) + 1;
-      const darkRush = hasKeyword(u, "速攻", catalog);
-      Object.assign(u, {
-        canAttack: true,
-        attacksLeft: hasKeyword(u, "連撃", catalog) ? 2 : 1,
-        rushOnly: !darkRush,
+    case "buzz": {
+      const why = buzzBlock(state, player);
+      if (why) throw new RuleError("no_buzz", why);
+      const u = me.field[action.slot];
+      if (!u) throw new RuleError("bad_slot", "バズさせる自分のアイコンを選んでください");
+      me.buzzLeft = (me.buzzLeft ?? 0) - 1;
+      me.buzzTurn = state.turn;
+      u.atkBuff += config.buzzAttack;
+      u.hpBuff += config.buzzHp;
+      // 凸：まだ攻撃できないアイコン（出したばかり）も、このターン相手のアイコンに攻撃できる
+      if (!u.canAttack) {
+        u.canAttack = true;
+        u.attacksLeft = hasKeyword(u, "連撃", catalog) ? 2 : 1;
+        u.rushOnly = true;
+      }
+      emit({
+        type: "buzz",
+        player,
+        slot: action.slot,
+        cardId: u.cardId,
+        attack: config.buzzAttack,
+        hp: config.buzzHp,
+        left: me.buzzLeft,
       });
-      me.field[action.slot] = u;
-      emit({ type: "darkFall", player, slot: action.slot, cardId });
-      const ctx: Ctx = { state, player, catalog, config, emit, selfSlot: action.slot, playedBefore: 0 };
-      for (const e of card.dark?.effects ?? []) if (triggerOf(e) === "play") runEffect(e, ctx);
-      resolveDeaths(state, catalog, emit, config);
       break;
     }
     case "cast": {
@@ -1280,19 +1317,6 @@ export function applyAction(
           runEffect(e, { state, player, catalog, config, emit, selfSlot: slot, playedBefore: 0 });
         }
       });
-      // フィールド「サウナ」：ターンの終わりに、場のアイコンすべてを回復（持ち主の回復の効果として1回）
-      const sauna = saunaOf(state, player, catalog);
-      if (sauna) {
-        emit({ type: "sauna", player, phase: "heal", amount: sauna.heal });
-        for (const owner of ["p1", "p2"] as const)
-          state.players[owner].field.forEach((u, slot) => {
-            if (!u || u.damage <= 0) return;
-            const amount = Math.min(u.damage, sauna.heal);
-            u.damage -= amount;
-            emit({ type: "healed", player: owner, slot, cardId: u.cardId, amount });
-          });
-        afterHeal({ state, player, catalog, config, emit, playedBefore: 0 });
-      }
       resolveDeaths(state, catalog, emit, config);
       // 追加のターンがあれば、相手に渡さずにもう一度自分のターン
       const next = (me.extraTurns ?? 0) > 0 ? player : foeId;

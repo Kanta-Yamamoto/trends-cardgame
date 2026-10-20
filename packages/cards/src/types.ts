@@ -63,11 +63,6 @@ export type CardEffect = (
    */
   | { do: "hype"; attack: number }
   /**
-   * passive：フィールド「サウナ」（このアイコンが場にいる間）。持ち主のターンの始めに、場のアイコンすべて（敵味方）に heat ダメージ。
-   * そのターンの終わりに、場のアイコンすべてを heal 回復する（持ち主の「回復の効果」として1回数える）
-   */
-  | { do: "saunaField"; heat: number; heal: number }
-  /**
    * 差し出し（フィクサー）：自分と相手は、それぞれ自分のアイコンを1体選ぶ。選ばれたアイコンは倒される。
    * 自分はこのアイコン以外から選ぶ。選べるアイコンが無い側は選ばない
    */
@@ -78,8 +73,8 @@ export type CardEffect = (
   | { do: "noDeckOut" }
   /** passive：このアイコンが場にいる間、自分の山札が0枚で自分のターンを始めたら勝ち。引けなくても負けない（陰謀論者） */
   | { do: "conspiracyWin" }
-  /** turnEnd：自分の山札が0枚なら、このアイコンはその場で闇堕ちの姿になる（闇堕ちの1回を使う。専門家→陰謀論者） */
-  | { do: "conspire" }
+  /** turnEnd：自分の山札が deckAtMost 枚以下なら、このアイコンはその場で闇堕ちの姿になる（専門家→陰謀論者） */
+  | { do: "conspire"; deckAtMost?: number }
   /** passive：自分のトークン card（草など）がこのゲームでオワコンに行った数だけ攻撃力+1（クサハミ） */
   | { do: "attackPerLostToken"; card: string }
   /** to が無ければ投稿の対象を眠らせる */
@@ -206,11 +201,10 @@ export interface CardDef {
 
 export const ATTRIBUTES: readonly Attribute[] = ["炎上", "メロい", "癒し", "草", "神"];
 export const KAIWAI: readonly Kaiwai[] = ["ミーム", "アイドル", "配信者", "有識者", "動物"];
-export const DECK_SIZE = 30;
+/** デッキの枚数（2026-10-20 に 30→20。エース2枚＝闇堕ちは最大2回、を枚数で感じられるように） */
+export const DECK_SIZE = 20;
 /** 1つのデッキに入れられる属性の数（共通カードは数えない）。初期リリースは単属性だけ（2026-10-19 に 2→1） */
 export const MAX_DECK_ATTRIBUTES = 1;
-export const MAX_COPIES = 3;
-/** 1つのデッキに入れられる★5の種類（1つの軸に沿ったパーティにする。2026-10-20） */
-export const MAX_ACE_KINDS = 1;
-/** 闇堕ちは1試合に、プレイヤーごとにこの回数まで（2026-10-20。それまでは★5 1枚につき1回） */
-export const DARK_FALLS_PER_GAME = 1;
+export const MAX_COPIES = 2;
+/** 1つのデッキに入れられる、闇堕ちを持つカードの種類（2026-10-20。★5 の種類は制限しない） */
+export const MAX_DARK_KINDS = 1;

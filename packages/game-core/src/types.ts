@@ -86,10 +86,21 @@ export interface PlayerState {
   extraTurns: number;
   /** このターン数の間、自分のアイコンはガードを無視して攻撃できる */
   breakthroughTurn: number;
-  /** 闇堕ちを使い終えたカード（闇堕ちの姿で倒されて、オワコンに戻ったもの）。同じカードの闇堕ちは1枚につき1回 */
+  /** 闇堕ちを使い終えたカード（闇堕ちの姿のまま手札に戻されたもの）。次にそのカードが倒されても闇堕ちしない */
   darkSpent: string[];
-  /** このゲームで闇堕ちした回数（DARK_FALLS_PER_GAME まで） */
-  darkFalls?: number;
+  /**
+   * 闇の気配：倒された闇堕ちを持つカード。次の自分のターンの始めに、闇堕ちの姿で場に出る
+   * （slot は倒された枠。埋まっていればほかの空き枠へ。空きがなければ待つ）
+   */
+  darkOmens?: { cardId: string; slot: number }[];
+  /** バズの残り回数 */
+  buzzLeft?: number;
+  /** バズを最後に使った通算ターン（1ターンに1回まで） */
+  buzzTurn?: number;
+  /** 自分のターンを始めた回数（バズを使える時期に使う） */
+  turnsTaken?: number;
+  /** バズを使えるのは、自分のこのターン目から（後攻は先攻より1ターン早い） */
+  buzzFrom?: number;
   /** この通算ターンまで、マスターはダメージを受けない（0 なら守られていない） */
   shieldUntil?: number;
 }
@@ -125,8 +136,8 @@ export type Action =
   | { type: "play"; player: PlayerId; handIndex: number; slot: number }
   | { type: "cast"; player: PlayerId; handIndex: number; target?: CastTarget }
   | { type: "attack"; player: PlayerId; from: number; target: AttackTarget }
-  /** オワコンにある闇堕ちを持つカードを、闇堕ちの姿で出す（コストなし・1試合に1回） */
-  | { type: "darkFall"; player: PlayerId; cardId: string; slot: number }
+  /** バズ：自分のアイコン1体に攻撃力+2・体力+2と凸（1試合に2回・1ターンに1回） */
+  | { type: "buzz"; player: PlayerId; slot: number }
   | { type: "endTurn"; player: PlayerId }
   /** 差し出し（フィクサー）：自分のアイコンを1体選ぶ。相手の手番の途中でも、選ぶ番の人が行う */
   | { type: "sacrifice"; player: PlayerId; slot: number }
@@ -153,8 +164,13 @@ export type GameEvent =
       destroyed: string[];
     }
   | { type: "damaged"; player: PlayerId; slot: number; cardId: string; amount: number }
-  | { type: "destroyed"; player: PlayerId; cardId: string }
+  /** 倒された。vanished は闇堕ちの姿が倒されて消えた（オワコンに行かない） */
+  | { type: "destroyed"; player: PlayerId; cardId: string; vanished?: boolean }
+  /** 闇の気配：闇堕ちを持つカードが倒され、次の自分のターンの始めに闇堕ちして戻ってくる */
+  | { type: "darkOmen"; player: PlayerId; slot: number; cardId: string }
   | { type: "darkFall"; player: PlayerId; slot: number; cardId: string }
+  /** バズ：そのアイコンに攻撃力+2・体力+2と凸 */
+  | { type: "buzz"; player: PlayerId; slot: number; cardId: string; attack: number; hp: number; left: number }
   | { type: "restored"; player: PlayerId; slot: number; cardId: string }
   | {
       type: "status";
@@ -175,8 +191,6 @@ export type GameEvent =
   | { type: "leaderHealed"; player: PlayerId; amount: number; lp: number }
   | { type: "drew"; player: PlayerId; cardId: string }
   | { type: "deckOut"; player: PlayerId }
-  /** フィールド「サウナ」：熱（ターンの始めに全員へダメージ）と回復（ターンの終わりに全員を回復）。player はフィールドの持ち主 */
-  | { type: "sauna"; player: PlayerId; phase: "heat" | "heal"; amount: number }
   /** 差し出し待ちが始まった（waiting の人が自分のアイコンを1体選ぶ） */
   | { type: "sacrificeAsk"; player: PlayerId; waiting: PlayerId[] }
   /** 差し出し：選ばれたアイコンが倒された（player はそのアイコンの持ち主） */
@@ -197,6 +211,13 @@ export interface Config {
   secondExtra: number;
   /** 後攻の最初のターンだけ追加される話題力 */
   secondBonusMana: number;
+  /** バズの回数（1試合に） */
+  buzzCount: number;
+  /** バズを使えるのは、自分のこのターン目から（後攻は1ターン早い） */
+  buzzFrom: number;
+  /** バズで上がる攻撃力・体力 */
+  buzzAttack: number;
+  buzzHp: number;
 }
 /** 手札の上限。上限のときに引いたカードはオワコンへ */
 export const MAX_HAND = 9;
@@ -206,6 +227,10 @@ export const DEFAULT_CONFIG: Config = {
   startHand: 3,
   secondExtra: 1,
   secondBonusMana: 1,
+  buzzCount: 2,
+  buzzFrom: 4,
+  buzzAttack: 2,
+  buzzHp: 2,
 };
 
 /** 画面や CPU が使う、アイコンの今の姿 */
