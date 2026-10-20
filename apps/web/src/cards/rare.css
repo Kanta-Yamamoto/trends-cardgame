@@ -1,7 +1,7 @@
 /* ★4〜5 の共通キラデザイン（.kr）。色は --c（属性の色）/ --c-deep、絵は --art / --subject */
 .kr {
-  --f-name: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
-  --f-num: "Cinzel", "Times New Roman", serif;
+  --f-name: "Dela Gothic One", "M PLUS 1", sans-serif;
+  --f-num: "Lilita One", "M PLUS 1", sans-serif;
   --win: inset(4.4% 5.2% 4.4% 5.2% round 2.4%);
   --rainbow: repeating-linear-gradient(118deg, #ff7ad9 0%, #ffd36e 4%, #7dffb0 8%, #6ec9ff 12%, #b48cff 16%, #ff7ad9 20%);
 

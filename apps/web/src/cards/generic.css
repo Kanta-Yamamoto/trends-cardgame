@@ -1,7 +1,7 @@
 /* イラストのないカードの共通デザイン（.kg）。色はテーマごと */
 .kg {
-  --f-name: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
-  --f-num: "Cinzel", "Times New Roman", serif;
+  --f-name: "Dela Gothic One", "M PLUS 1", sans-serif;
+  --f-num: "Lilita One", "M PLUS 1", sans-serif;
   .card {
     --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; --nx: 0; --ny: 0; --g: 0;
     position: relative; width: 100%; aspect-ratio: 63 / 88; border-radius: 4.2% / 3%;
