@@ -8,12 +8,13 @@ import {
   MAX_COPIES,
   MAX_DECK_ATTRIBUTES,
 } from "@trends/cards";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { AttrChips } from "../cards/AttrChips";
 import { EffectText } from "../cards/EffectText";
 import { ATTR_META } from "../cards/meta";
 import { CardZoom } from "../game/CardZoom";
+import { pushDecks, useDecksChanged } from "../game/deckSync";
 import {
   attrsOf,
   builtinDeck,
@@ -25,6 +26,7 @@ import {
   saveCustomDecks,
 } from "../game/decks";
 import { CATALOG as CARD_BY_ID, DECK_INFO } from "../game/store";
+import { useSession } from "../online/session";
 
 type Filter = Attribute | "共通" | "全部";
 const FILTERS: Filter[] = ["全部", ...ATTRIBUTES, "共通"];
@@ -48,16 +50,26 @@ const countsOf = (cards: readonly string[]) => {
   return m;
 };
 
-/** デッキ構築：自分で 20 枚を組んで、この端末に保存する */
+/** デッキ構築：自分で 20 枚を組んで保存する（ログインしていればアカウントにも保存し、ほかの端末でも使える） */
 export function Decks() {
   const [list, setList] = useState<CustomDeck[]>(() => loadCustomDecks());
   const [editing, setEditing] = useState<CustomDeck | null>(null);
   const [copyFrom, setCopyFrom] = useState<DeckId | "">("");
   const [notice, setNotice] = useState<string | null>(null);
+  const user = useSession((s) => s.user);
+  // アカウントとそろえ終わったら、一覧を読み直す
+  useDecksChanged(useCallback(() => setList(loadCustomDecks()), []));
 
   const persist = (next: CustomDeck[]) => {
     setList(next);
     if (!saveCustomDecks(next)) setNotice("この端末には保存できませんでした（プライベートブラウズなど）");
+    if (user)
+      pushDecks(next).then((ok) => {
+        if (!ok)
+          setNotice(
+            "アカウントに保存できませんでした。この端末には保存してあります（次に開いたときにもう一度送ります）",
+          );
+      });
   };
   const create = (cards: string[], name: string) =>
     setEditing({ id: newDeckId(), name, cards, updated: Date.now() });
@@ -85,8 +97,20 @@ export function Decks() {
         <h1>デッキ構築</h1>
         <p className="muted">
           {DECK_SIZE} 枚ちょうど・同じカードは {MAX_COPIES} 枚まで・属性は {MAX_DECK_ATTRIBUTES}{" "}
-          つ（共通カードはいくつでも）・闇堕ちを持つカードは1種類まで。 保存したデッキは、この端末の「CPU
+          つ（共通カードはいくつでも）・闇堕ちを持つカードは1種類まで。 保存したデッキは「CPU
           と対戦」「オンライン対戦」で選べます。
+        </p>
+        <p className="db-sync muted">
+          {user ? (
+            <>
+              <b>{user.name}</b> のアカウントに保存しています。ほかの端末でも同じアカウントで入れば使えます。
+            </>
+          ) : (
+            <>
+              この端末にだけ保存しています。<Link to="/online">オンライン対戦</Link>
+              の画面でログインすると、ほかの端末でも同じデッキを使えます。
+            </>
+          )}
         </p>
       </header>
       {notice && <p className="db-notice">{notice}</p>}

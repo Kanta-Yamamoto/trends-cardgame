@@ -4,7 +4,7 @@ import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { NextFunction, Request, Response } from "express";
 
 /** API の道（これ以外の画面の道は、Web の index.html を返す） */
-const API_PREFIXES = ["/cards", "/health", "/auth", "/matches", "/socket.io"];
+const API_PREFIXES = ["/cards", "/health", "/auth", "/matches", "/me", "/socket.io"];
 
 /**
  * WEB_DIST（Web のビルド結果）があれば、API と同じサーバーで画面も配る。

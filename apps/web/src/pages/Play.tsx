@@ -21,7 +21,7 @@ import {
   type UnitView,
   viewUnit,
 } from "@trends/game-core";
-import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { AttrChips } from "../cards/AttrChips";
 import { EffectText, HelpTerm } from "../cards/EffectText";
@@ -29,6 +29,7 @@ import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { CardZoom } from "../game/CardZoom";
 import { type DarkCut, DarkCutscene } from "../game/DarkCutscene";
+import { useDecksChanged } from "../game/deckSync";
 import { builtinDeck, customDeckSel, type DeckSel, deckErrors, loadCustomDecks } from "../game/decks";
 import {
   animateAttack,
@@ -385,11 +386,14 @@ export function DeckGrid({
 }) {
   const [pending, setPending] = useState<DeckSel | null>(null);
   // 決まりを守れていない自分のデッキ（属性が2つの、前に組んだデッキなど）は選べない。デッキ構築で直してもらう
-  const [{ mine, broken }] = useState(() => {
+  const readMine = useCallback(() => {
     const all = loadCustomDecks();
     const ok = all.filter((d) => deckErrors(d.cards).length === 0);
     return { mine: ok, broken: all.length - ok.length };
-  });
+  }, []);
+  const [{ mine, broken }, setMine] = useState(readMine);
+  // アカウントとそろえ終わったら、自分のデッキを読み直す
+  useDecksChanged(useCallback(() => setMine(readMine()), [readMine]));
   const pick = (sel: DeckSel) => (confirmLabel ? setPending(sel) : onPick(sel));
   const button = (sel: DeckSel) => (
     <button

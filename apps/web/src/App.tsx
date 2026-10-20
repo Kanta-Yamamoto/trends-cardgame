@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from "react-router";
+import { useDeckSync } from "./game/deckSync";
 import { HelpSheet } from "./help/HelpSheet";
 import { InstallButton } from "./InstallButton";
 import { Decks } from "./pages/Decks";
@@ -7,6 +8,8 @@ import { OnlineLobby, OnlineRoom } from "./pages/Online";
 import { Play } from "./pages/Play";
 
 export function App() {
+  // ログインしているあいだは、自分で組んだデッキをアカウントとそろえる
+  useDeckSync();
   return (
     <div className="shell">
       <nav className="nav">
