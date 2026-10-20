@@ -32,7 +32,7 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: strin
   solo_expert: {
     ace: "g4",
     name: "専門家、陰謀論に堕ちる",
-    text: "神・コントロール。有識者で引いて盤面を保ち、山札が5枚以下になると専門家が陰謀論者に闇堕ち。引き切って守れば勝ち",
+    text: "神・コントロール。有識者で引いて場を保ち、山札が5枚以下になると専門家が陰謀論者に闇堕ち。引き切って守れば勝ち",
   },
   solo_meme: {
     ace: "k5",
