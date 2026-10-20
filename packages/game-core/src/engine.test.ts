@@ -5,10 +5,11 @@ import { deckAttributes, encodeCustomDeck, resolveDeckRef, validateDeck } from "
 import {
   applyAction,
   attackTargets,
-  canDarkFall,
+  buzzBlock,
+  buzzLeft,
   castTargets,
   createGame,
-  darkReady,
+  darkOmens,
   effectiveCost,
   isShielded,
   legalTargets,
@@ -118,12 +119,6 @@ const catalog: Record<string, RuleCard> = {
   eater: icon("eater", 3, 1, 3, { effects: [{ on: "passive", do: "attackPerLostToken", card: "kusa" }] }),
   oldcard: icon("oldcard", 1, 1, 1, { retired: true }),
   fixer: icon("fixer", 4, 2, 3, { effects: [{ do: "sacrifice" }] }),
-  yuzu: icon("yuzu", 4, 3, 4, {
-    effects: [
-      { on: "passive", do: "saunaField", heat: 1, heal: 2 },
-      { on: "passive", do: "healBurn", amount: 2 },
-    ],
-  }),
   hagashi: post("hagashi", 3, {
     effects: [
       { do: "damage", to: "allEnemies", amount: 1 },
@@ -512,7 +507,6 @@ describe("★5 の作り直し（ヒバナ・カグラ・専門家・陰謀論�
     const r = run(s, { type: "endTurn", player: "p1" });
     expect(r.events).toContainEqual(expect.objectContaining({ type: "darkFall", player: "p1", slot: 0 }));
     expect(r.state.players.p1.field[0]?.dark).toBe(true);
-    expect(r.state.players.p1.darkFalls).toBe(1);
     const w = run(r.state, { type: "endTurn", player: "p2" });
     expect(w.state.winner).toBe("p1");
     // 山札が残っていれば闇堕ちしない
@@ -588,36 +582,6 @@ describe("差し出し（フィクサー）", () => {
     expect(at).toBeGreaterThanOrEqual(0);
     expect(plan[at + 1]).toEqual({ type: "sacrifice", player: "p1", slot: 0 });
     expect(plan.at(-1)?.type).toBe("sacrifice");
-  });
-});
-
-describe("フィールド「サウナ」", () => {
-  it("持ち主のターンの始めに場の全員に熱1、そのターンの終わりに全員を2回復。回復は持ち主の回復の効果として1回", () => {
-    let s = withFoe(["yuzu"], ["wall", "rush"]);
-    s = play(s, 0, 0);
-    s = end(s);
-    // ターンの終わりの回復（回復した量が0でも1回と数える）で、ユズハの燃やすが働く
-    expect(s.players.p2.lp).toBe(18);
-    expect(s.players.p1.heals).toBe(1);
-    const r = run(s, { type: "endTurn", player: "p2" });
-    s = r.state;
-    expect(r.events).toContainEqual({ type: "sauna", player: "p1", phase: "heat", amount: 1 });
-    expect(s.players.p2.field[0]?.damage).toBe(1);
-    expect(s.players.p2.field[1]).toBeNull(); // 体力1は熱で倒れる
-    expect(s.players.p1.field[0]?.damage).toBe(1);
-    s = end(s);
-    expect(s.players.p2.field[0]?.damage).toBe(0);
-    expect(s.players.p1.field[0]?.damage).toBe(0);
-    expect(s.players.p2.lp).toBe(16);
-  });
-  it("相手のターンには熱も回復も起きない", () => {
-    let s = withFoe(["yuzu"], ["wall"]);
-    s = play(s, 0, 0);
-    s = end(s);
-    const r = run(s, { type: "endTurn", player: "p2" });
-    expect(r.events.filter((e) => e.type === "sauna")).toEqual([
-      { type: "sauna", player: "p1", phase: "heat", amount: 1 },
-    ]);
   });
 });
 
@@ -701,14 +665,16 @@ describe("バトルと闇堕ち", () => {
     s = end(end(r.state), "p2");
     expect(s.players.p2.field[0]?.damage).toBe(2);
   });
-  it("闇堕ちを持つカードも、倒されたらいったんオワコンへ行く（勝手には戻らない）", () => {
+  it("闇堕ちを持つカードは、倒されたらいったんオワコンへ行き、闇の気配が残る（すぐには戻らない）", () => {
     let s = withFoe(["big"], ["ren"]);
     s = play(s, 0, 0);
     s = end(end(s), "p2");
     const r = hit(s, 0, 0);
     expect(r.events.map((e) => e.type)).not.toContain("darkFall");
+    expect(r.events).toContainEqual({ type: "darkOmen", player: "p2", slot: 0, cardId: "ren" });
     expect(r.state.players.p2.field[0]).toBeNull();
     expect(r.state.players.p2.trash).toContain("ren");
+    expect(darkOmens(r.state, "p2")).toEqual([{ cardId: "ren", slot: 0 }]);
   });
   it("ライフが0になったら勝ち、以降は操作できない", () => {
     let s = play(game(["twin"]), 0, 0);
@@ -766,13 +732,13 @@ describe("デッキの決まり", () => {
       expect(deckAttributes(deck, real)).toHaveLength(1);
     }
   });
-  it("属性が2つ以上・枚数違い・4枚目・トークンは反則", () => {
-    const two = [...Array(3).fill("f6"), ...Array(3).fill("m6")];
+  it("属性が2つ以上・枚数違い・3枚目・トークンは反則", () => {
+    const two = [...Array(2).fill("f6"), ...Array(2).fill("m6")];
     const errors = validateDeck([...two, "t-kusa", "f6"], real);
-    expect(errors.some((e) => e.includes("30枚"))).toBe(true);
+    expect(errors.some((e) => e.includes("20枚"))).toBe(true);
     expect(errors.some((e) => e.includes("属性は1つまで"))).toBe(true);
     expect(errors.some((e) => e.includes("トークン"))).toBe(true);
-    expect(errors.some((e) => e.includes("3枚まで"))).toBe(true);
+    expect(errors.some((e) => e.includes("2枚まで"))).toBe(true);
   });
   it("デッキの指し方：構築済みの ID か custom:（カード ID をカンマでつなぐ）", () => {
     expect(resolveDeckRef("solo_flame", DECKS)).toEqual(DECKS.solo_flame);
@@ -787,21 +753,16 @@ describe("デッキの決まり", () => {
   it("共通カードは属性に数えない", () => {
     expect(deckAttributes(["n1", "n2", "f6"], real)).toEqual(["炎上"]);
   });
-  it("1つの属性＋共通カードの30枚は組める（共通カードだけでもよい）", () => {
-    const flame = [...DECKS.solo_flame.slice(0, 24), ...Array(3).fill("n1"), ...Array(3).fill("n4")];
+  it("1つの属性＋共通カードの20枚は組める（共通カードだけでもよい）。闇堕ちを持つカードは1種類まで、★5は何種類でも", () => {
+    const flame = DECKS.solo_flame;
     expect(validateDeck(flame, real)).toEqual([]);
-    // ★5は1種類まで（1つの軸に沿ったパーティにする）
-    const twoAces = [...flame.slice(0, 27).filter((id) => real[id]?.rarity !== 5), "c2", "c9"];
-    while (twoAces.length < 30) twoAces.push("n5");
-    expect(validateDeck(twoAces, real).some((e) => e.includes("★5は1種類まで"))).toBe(true);
-    // 共通の★5（『フィクサー』）は数えない
-    const withFixer = [...flame.slice(0, 27), "c15", "c15", "c15"];
-    expect(validateDeck(withFixer, real)).toEqual([]);
-    const commons = ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8", "n9", "n10"].flatMap((id) => [
-      id,
-      id,
-      id,
-    ]);
+    // 闇堕ちを持つカード（レン・カグラ）を2種類は反則
+    const twoDark = [...flame.filter((id) => id !== "c4"), "c9"];
+    expect(validateDeck(twoDark, real).some((e) => e.includes("闇堕ちを持つカードは1種類まで"))).toBe(true);
+    // 闇堕ちのない★5（ヒバナ）や共通の★5（『フィクサー』）は数えない
+    const moreAces = [...flame.filter((id) => id !== "n6"), "c4", "c15"];
+    expect(validateDeck(moreAces, real)).toEqual([]);
+    const commons = ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8", "n9", "n10"].flatMap((id) => [id, id]);
     expect(validateDeck(commons, real)).toEqual([]);
   });
   it("構築済みデッキは単属性で、5属性に1つずつある（ほかに『フィクサー』が主役の草のデッキ）", () => {
@@ -809,12 +770,18 @@ describe("デッキの決まり", () => {
     const attrs = solo.map(([, d]) => deckAttributes(d, real).join("×"));
     expect([...attrs].sort()).toEqual([...ATTRIBUTES].sort());
     expect(deckAttributes(DECKS.fixer_meme, real)).toEqual(["草"]);
-    expect(DECKS.fixer_meme.filter((c) => c === "c15")).toHaveLength(3);
+    expect(DECKS.fixer_meme.filter((c) => c === "c15")).toHaveLength(2);
   });
-  it("デモ用デッキには、闇堕ちを持つ★5が2枚以上入っている（1枚だと出せる試合が少なすぎる）", () => {
+  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、共通カードを4枚入れる", () => {
     for (const [id, deck] of Object.entries(DECKS)) {
-      const aces = deck.filter((c) => real[c]?.rarity === 5 && real[c]?.dark);
-      expect({ id, ok: aces.length >= 2 }).toEqual({ id, ok: true });
+      const aces = deck.filter((c) => real[c]?.dark);
+      const commons = deck.filter((c) => real[c]?.attributes.length === 0);
+      expect({ id, aces: aces.length, kinds: new Set(aces).size, commons: commons.length }).toEqual({
+        id,
+        aces: 2,
+        kinds: 1,
+        commons: 4,
+      });
     }
   });
 });
@@ -995,11 +962,9 @@ describe("切り札の効果（★4〜5）", () => {
   });
 });
 
-describe("闇堕ち（オワコンから）", () => {
-  const darkFall = (s: GameState, slot: number, player: "p1" | "p2" = "p1") =>
-    run(s, { type: "darkFall", player, cardId: "ren", slot });
-  /** p1 の ren を場に出し、p2 の big に倒させて p1 の番に戻す */
-  function killRen(s: GameState, slot = 0): GameState {
+describe("闇堕ち（倒された次の自分のターンの始めに、自動で）", () => {
+  /** p1 の場の slot のアイコンを、p2 の big で倒す（p2 の番）。倒したあと p2 の番のまま返す */
+  function killOnFoeTurn(s: GameState, slot = 0): GameState {
     s = end(s);
     s.players.p2.mana = 30;
     s.players.p2.hand = ["big", "big", ...s.players.p2.hand];
@@ -1011,95 +976,196 @@ describe("闇堕ち（オワコンから）", () => {
     for (const from of [0, 1])
       if (s.players.p1.field[slot])
         s = run(s, { type: "attack", player: "p2", from, target: { kind: "unit", slot } }).state;
-    s = end(s, "p2");
-    s.players.p1.mana = 10;
     return s;
   }
 
-  it("★5も手札から普通に出す。場にいる間は闇堕ちできない", () => {
+  it("★5も手札から普通に出す。場にいる間は闇の気配はない", () => {
     const s = play(game(["ren"]), 0, 2);
     expect(s.players.p1.field[2]?.cardId).toBe("ren");
-    expect(s.players.p1.mana).toBe(4);
-    expect(darkReady(s, "p1", catalog)).toEqual([]);
-    expect(canDarkFall(s, "p1", catalog)).toBe(false);
-    expect(() => darkFall(s, 0)).toThrow(/オワコンにある/);
+    expect(darkOmens(s, "p1")).toEqual([]);
   });
 
-  it("オワコンに行ったら、コストなしで闇堕ちの姿で出せて、闇堕ちしたときの効果が働く", () => {
-    let s = play(game(["ren"]), 0, 0);
-    s = killRen(s);
-    expect(s.players.p1.trash).toContain("ren");
-    expect(darkReady(s, "p1", catalog)).toEqual(["ren"]);
-    expect(canDarkFall(s, "p1", catalog)).toBe(true);
-    const r = darkFall(s, 3);
+  it("倒されたら闇の気配。次の自分のターンの始めに、コストなしで闇堕ちの姿で出て、闇堕ちしたときの効果が働く", () => {
+    let s = play(game(["ren"]), 0, 3);
+    s = killOnFoeTurn(s, 3);
+    expect(s.players.p1.field[3]).toBeNull();
+    expect(darkOmens(s, "p1")).toEqual([{ cardId: "ren", slot: 3 }]);
+    const r = run(s, { type: "endTurn", player: "p2" });
     s = r.state;
-    expect(r.events.map((e) => e.type)).toContain("darkFall");
-    expect(s.players.p1.mana).toBe(10);
+    const types = r.events.map((e) => e.type);
+    expect(types).toContain("darkFall");
+    // ターンの始めに出る（引くより前）
+    expect(types.indexOf("darkFall")).toBeLessThan(types.indexOf("drew"));
     expect(s.players.p1.trash).not.toContain("ren");
+    expect(darkOmens(s, "p1")).toEqual([]);
     const u = s.players.p1.field[3];
     expect(viewUnit(s, "p1", u as never, catalog)).toMatchObject({ attack: 7, hp: 3, name: "闇堕ちレン" });
     // 闇堕ちしたとき：相手のアイコンすべてに1ダメージ
     expect(s.players.p2.field.filter((x) => x).every((x) => (x?.damage ?? 0) >= 1)).toBe(true);
   });
 
-  it("闇堕ちの姿は、戻ってきたターンから相手のアイコンに攻撃できる（凸。マスターは次のターンから）", () => {
+  it("闇堕ちの姿は、出たターンから相手のアイコンに攻撃できる（凸。マスターは次のターンから）", () => {
     let s = withFoe(["ren"], ["wall"]);
     s = play(s, 0, 0);
-    s = darkFall(killRen(s), 0).state;
+    s = end(killOnFoeTurn(s), "p2");
     const u = s.players.p1.field[0];
+    expect(u?.dark).toBe(true);
     expect(u?.canAttack).toBe(true);
     expect(u?.attacksLeft).toBe(2); // 連撃
     const targets = attackTargets(s, "p1", 0, catalog);
     expect(targets.length).toBeGreaterThan(0);
     expect(targets.every((t) => t.kind === "unit")).toBe(true);
     expect(() => face(s, 0)).toThrow();
-    const slot = (targets[0] as { slot: number }).slot;
-    expect(hit(s, 0, slot).events[0]).toMatchObject({ type: "battle", toDefender: 7 });
     s = end(end(s), "p2");
     expect(attackTargets(s, "p1", 0, catalog)).toContainEqual({ kind: "leader" });
   });
 
-  it("倒されたそのターンのうちにも、すぐ闇堕ちできる", () => {
+  it("自分のターンに倒されても、そのターンには戻らず、次の自分のターンの始めに戻る", () => {
     let s = withFoe(["ren"], ["big"]);
     s = play(s, 0, 0);
     const mine = s.players.p1.field[0] as Unit;
     s.players.p1.field[0] = { ...mine, canAttack: true, attacksLeft: 1 };
     s = hit(s, 0, 0).state;
     expect(s.players.p1.field[0]).toBeNull();
-    expect(canDarkFall(s, "p1", catalog)).toBe(true);
-    s = darkFall(s, 0).state;
+    expect(darkOmens(s, "p1")).toHaveLength(1);
+    s = end(s);
+    expect(s.players.p1.field[0]).toBeNull();
+    s = end(s, "p2");
     expect(s.players.p1.field[0]?.dark).toBe(true);
   });
 
-  it("闇堕ちは1枚につき1回。闇堕ちの姿が倒されたら、もう出せない（TL浄化で戻っても同じ）", () => {
+  it("闇堕ちの姿が倒されたら消える（オワコンにも行かず、もう戻らない）", () => {
+    let s = play(game(["ren"]), 0, 0);
+    s = end(killOnFoeTurn(s), "p2");
+    expect(s.players.p1.field[0]?.dark).toBe(true);
+    const r = run(killOnFoeTurn(s), { type: "endTurn", player: "p2" });
+    expect(r.state.players.p1.field[0]).toBeNull();
+    expect(r.state.players.p1.trash).not.toContain("ren");
+    expect(darkOmens(r.state, "p1")).toEqual([]);
+  });
+
+  it("闇堕ちの姿が倒されたときの出来事は「消えた」", () => {
+    let s = play(game(["ren"]), 0, 0);
+    s = end(killOnFoeTurn(s), "p2");
+    s = end(s);
+    s.players.p2.mana = 30;
+    s.players.p2.hand = ["kill", ...s.players.p2.hand];
+    const r = run(s, { type: "cast", player: "p2", handIndex: 0 });
+    expect(r.events).toContainEqual({ type: "destroyed", player: "p1", cardId: "ren", vanished: true });
+  });
+
+  it("TL浄化で元の姿に戻ったカードは、倒されたらオワコンへ行くが、もう闇堕ちしない", () => {
     let s = play(game(["ren", "cleanse"]), 0, 0);
-    s = darkFall(killRen(s), 0).state;
+    s = end(killOnFoeTurn(s), "p2");
+    s.players.p1.mana = 10;
     s = cast(s, 0);
     expect(s.players.p1.field[0]?.dark).toBe(false);
-    s = killRen(s);
+    s = killOnFoeTurn(s);
     expect(s.players.p1.trash).toContain("ren");
-    expect(darkReady(s, "p1", catalog)).toEqual([]);
-    expect(() => darkFall(s, 0)).toThrow(/1回/);
+    expect(darkOmens(s, "p1")).toEqual([]);
   });
 
-  it("闇堕ちは1試合に1回だけ（同じカードが2枚オワコンにあっても）", () => {
+  it("同じカードが2枚あれば、それぞれ闇堕ちする（回数の決まりはない）", () => {
     let s = game([]);
     s.players.p1.trash = ["ren", "ren"];
-    expect(darkReady(s, "p1", catalog)).toEqual(["ren"]);
-    s = darkFall(s, 0).state;
-    expect(s.players.p1.darkFalls).toBe(1);
-    expect(darkReady(s, "p1", catalog)).toEqual([]);
-    expect(() => darkFall(s, 1)).toThrow(RuleError);
+    s.players.p1.darkOmens = [
+      { cardId: "ren", slot: 0 },
+      { cardId: "ren", slot: 1 },
+    ];
+    s = end(end(s), "p2");
+    expect(s.players.p1.field.filter((u) => u?.dark)).toHaveLength(2);
+    expect(s.players.p1.trash).toEqual([]);
   });
 
-  it("場が埋まっていたら闇堕ちできない", () => {
+  it("倒された枠が埋まっていれば、ほかの空き枠へ。空きが無ければ空くまで待つ", () => {
+    const filler = play(game(["f"]), 0, 0).players.p1.field[0] as Unit;
     const s = game([]);
     s.players.p1.trash = ["ren"];
-    s.players.p1.field = s.players.p1.field.map((_, i) => ({
-      ...(play(game(["f"]), 0, 0).players.p1.field[0] as Unit),
-      uid: 500 + i,
-    }));
-    expect(canDarkFall(s, "p1", catalog)).toBe(false);
+    s.players.p1.darkOmens = [{ cardId: "ren", slot: 0 }];
+    s.players.p1.field = s.players.p1.field.map((_, i) => (i === 4 ? null : { ...filler, uid: 500 + i }));
+    let t = end(end(s), "p2");
+    expect(t.players.p1.field[4]?.dark).toBe(true);
+    s.players.p1.field[4] = { ...filler, uid: 600 };
+    t = end(end(s), "p2");
+    expect(t.players.p1.field.some((u) => u?.dark)).toBe(false);
+    expect(darkOmens(t, "p1")).toEqual([{ cardId: "ren", slot: 0 }]);
+  });
+});
+
+describe("バズ（1試合2回・自分のアイコン1体に+2/+2と凸）", () => {
+  /** 自分の n ターン目まで進めた盤面（p1 が先攻） */
+  function atTurn(n: number, hand: string[], foe: string[] = []): GameState {
+    let s = withFoe(hand, foe);
+    for (let i = 2; i < n; i++) s = end(end(s), "p2");
+    s.players.p1.mana = 10;
+    return s;
+  }
+  const buzz = (s: GameState, slot: number, player: "p1" | "p2" = "p1") =>
+    run(s, { type: "buzz", player, slot });
+
+  it("先攻は自分の4ターン目から、後攻は3ターン目から使える", () => {
+    let s = atTurn(3, ["f"]);
+    s = play(s, 0, 0);
+    expect(buzzBlock(s, "p1")).toMatch(/4ターン目/);
+    expect(() => buzz(s, 0)).toThrow(/4ターン目/);
+    s = end(end(s), "p2");
+    expect(buzzBlock(s, "p1")).toBeNull();
+    // 後攻：自分の3ターン目から
+    let t = withFoe([], ["f"]);
+    t = end(t);
+    expect(buzzBlock(t, "p2")).toMatch(/3ターン目/);
+    t = end(end(t, "p2"));
+    expect(buzzBlock(t, "p2")).toBeNull();
+  });
+
+  it("+2/+2 と凸。出したばかりのアイコンも、相手のアイコンに攻撃できる", () => {
+    let s = atTurn(4, ["f"], ["wall"]);
+    s = play(s, 0, 0);
+    expect(s.players.p1.field[0]?.canAttack).toBe(false);
+    const r = buzz(s, 0);
+    s = r.state;
+    expect(r.events).toContainEqual(
+      expect.objectContaining({ type: "buzz", player: "p1", slot: 0, attack: 2, hp: 2, left: 1 }),
+    );
+    const before = viewUnit(
+      play(atTurn(4, ["f"]), 0, 0),
+      "p1",
+      play(atTurn(4, ["f"]), 0, 0).players.p1.field[0] as Unit,
+      catalog,
+    );
+    const v = viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog);
+    expect(v.attack).toBe(before.attack + 2);
+    expect(v.hp).toBe(before.hp + 2);
+    expect(attackTargets(s, "p1", 0, catalog).every((t) => t.kind === "unit")).toBe(true);
+    expect(attackTargets(s, "p1", 0, catalog).length).toBeGreaterThan(0);
+  });
+
+  it("1ターンに1回、1試合に2回まで", () => {
+    let s = atTurn(4, ["f", "f"]);
+    s = play(play(s, 0, 0), 0, 1);
+    s = buzz(s, 0).state;
+    expect(() => buzz(s, 1)).toThrow(/1ターンに1回/);
+    s = end(end(s), "p2");
+    s = buzz(s, 1).state;
+    expect(buzzLeft(s, "p1")).toBe(0);
+    s = end(end(s), "p2");
+    expect(() => buzz(s, 0)).toThrow(/使い切り/);
+  });
+
+  it("バズの強化は晒しで消える（強化として扱う）", () => {
+    let s = atTurn(4, ["f"]);
+    s = play(s, 0, 0);
+    s = buzz(s, 0).state;
+    const u = s.players.p1.field[0] as Unit;
+    expect(u.atkBuff).toBe(2);
+    expect(u.hpBuff).toBe(2);
+  });
+
+  it("自分の場にアイコンがいなければ使えない。回数は設定で変えられる", () => {
+    const s = atTurn(4, []);
+    expect(buzzBlock(s, "p1")).toMatch(/いません/);
+    const g = createGame({ decks: { p1: F(12), p2: F(12) }, config: { buzzCount: 3 } });
+    expect(buzzLeft(g, "p1")).toBe(3);
   });
 });
 
@@ -1126,11 +1192,13 @@ describe("闇堕ちの姿の効果（確定除去・手札に戻す・マスタ�
     expect(r.state.players.p2.field[0]).toBeNull();
     expect(r.state.players.p2.hand).toHaveLength(hand + 1);
   });
-  it("闇堕ちの姿が手札に戻されたら、そのカードの闇堕ちは使い終わり", () => {
-    let s = game(["back"]);
+  it("闇堕ちの姿が手札に戻されたら、そのカードの闇堕ちは使い終わり（次に倒されても闇堕ちしない）", () => {
+    // p2 の闇堕ちは p2 のターンの始めに出る
+    let s = game(["back", "big"]);
     s.players.p2.trash = ["ren"];
+    s.players.p2.darkOmens = [{ cardId: "ren", slot: 0 }];
     s = end(s);
-    s = run(s, { type: "darkFall", player: "p2", cardId: "ren", slot: 0 }).state;
+    expect(s.players.p2.field[0]?.dark).toBe(true);
     s = end(s, "p2");
     s.players.p1.mana = 10;
     s = cast(s, 0);

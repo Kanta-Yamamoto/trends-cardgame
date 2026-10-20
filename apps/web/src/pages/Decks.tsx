@@ -24,7 +24,7 @@ import {
   newDeckId,
   saveCustomDecks,
 } from "../game/decks";
-import { DECK_INFO } from "../game/store";
+import { CATALOG as CARD_BY_ID, DECK_INFO } from "../game/store";
 
 type Filter = Attribute | "共通" | "全部";
 const FILTERS: Filter[] = ["全部", ...ATTRIBUTES, "共通"];
@@ -48,7 +48,7 @@ const countsOf = (cards: readonly string[]) => {
   return m;
 };
 
-/** デッキ構築：自分で 30 枚を組んで、この端末に保存する */
+/** デッキ構築：自分で 20 枚を組んで、この端末に保存する */
 export function Decks() {
   const [list, setList] = useState<CustomDeck[]>(() => loadCustomDecks());
   const [editing, setEditing] = useState<CustomDeck | null>(null);
@@ -85,7 +85,7 @@ export function Decks() {
         <h1>デッキ構築</h1>
         <p className="muted">
           {DECK_SIZE} 枚ちょうど・同じカードは {MAX_COPIES} 枚まで・属性は {MAX_DECK_ATTRIBUTES}{" "}
-          つ（共通カードはいくつでも）。 保存したデッキは、この端末の「CPU
+          つ（共通カードはいくつでも）・闇堕ちを持つカードは1種類まで。 保存したデッキは、この端末の「CPU
           と対戦」「オンライン対戦」で選べます。
         </p>
       </header>
@@ -195,6 +195,8 @@ function DeckEditor({
     if (total >= DECK_SIZE) return false;
     const a = c.attributes[0];
     if (a && !attrs.includes(a) && attrs.length >= MAX_DECK_ATTRIBUTES) return false;
+    // 闇堕ちを持つカードは1種類まで
+    if (c.dark && cards.some((id) => id !== c.id && CARD_BY_ID[id]?.dark)) return false;
     return true;
   };
   const add = (id: string) => setCounts((m) => new Map(m).set(id, (m.get(id) ?? 0) + 1));

@@ -1,10 +1,9 @@
-import { DARK_FALLS_PER_GAME } from "@trends/cards";
 import {
   applyAction,
   attackTargets,
+  buzzBlock,
   canUnitAttack,
   castTargets,
-  darkReady,
   effectiveCost,
   isShielded,
   opponent,
@@ -193,16 +192,17 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
 const WAIT_FOE = Symbol("wait-foe");
 
 /**
- * 差し出し（フィクサー）で差し出すアイコン。闇堕ちをまだ使っていない★5（倒されたら闇堕ちできる）があればそれを、
+ * 差し出し（フィクサー）で差し出すアイコン。闇堕ちを持つカード（倒されたら次のターンに闇堕ちして戻る）があればそれを、
  * なければいちばん価値の低いアイコン（トークンを先に）
  */
 export function autoSacrifice(state: GameState, player: PlayerId, catalog: Catalog): number {
   const slots = sacrificeCandidates(state, player);
-  const canFall = (state.players[player].darkFalls ?? 0) < DARK_FALLS_PER_GAME;
+  const spent = state.players[player].darkSpent ?? [];
   const dark = slots.find((slot) => {
     const u = state.players[player].field[slot];
-    if (!canFall) return false;
-    return !!u && !u.token && !u.dark && !u.darkUsed && !!catalog[u.cardId]?.dark;
+    return (
+      !!u && !u.token && !u.dark && !u.darkUsed && !spent.includes(u.cardId) && !!catalog[u.cardId]?.dark
+    );
   });
   if (dark !== undefined) return dark;
   const value = (slot: number) => {
@@ -219,6 +219,39 @@ export function autoSacrifice(state: GameState, player: PlayerId, catalog: Catal
     );
   };
   return [...slots].sort((a, b) => value(a) - value(b))[0] ?? -1;
+}
+
+/** 貪欲法のバズの使いどころ。使わないなら null */
+function pickBuzz(state: GameState, player: PlayerId, catalog: Catalog): number | null {
+  const foeId = opponent(player);
+  const foe = views(state, foeId, catalog);
+  const mine = views(state, player, catalog);
+  const guarded = foe.some((x) => x.v.guard);
+  let best: { slot: number; score: number } | null = null;
+  for (const m of mine) {
+    const u = m.v.unit;
+    const ready = canUnitAttack(state, u) || !u.canAttack;
+    if (!ready || state.turn <= u.boundUntil) continue;
+    const atk = m.v.attack + 2;
+    const hp = m.v.hp + 2;
+    for (const e of foe) {
+      if (guarded && !e.v.guard) continue;
+      if (m.v.attack >= e.v.hp) continue; // バズなしでも倒せる
+      if (atk < e.v.hp || e.v.attack >= hp) continue;
+      const score = worth(e.v);
+      if (!best || score > best.score) best = { slot: m.slot, score };
+    }
+  }
+  if (best && best.score >= 4) return best.slot;
+  // とどめ：ガードがいなくて、マスターに届く攻撃力の合計 +2 で倒せる
+  if (!guarded) {
+    const can = mine.filter((m) => canUnitAttack(state, m.v.unit) && !m.v.unit.rushOnly);
+    const total = can.reduce((n, m) => n + m.v.attack * m.v.unit.attacksLeft, 0);
+    const lp = state.players[foeId].lp;
+    if (can.length > 0 && total < lp && total + 2 * (can[0]?.v.unit.attacksLeft ?? 1) >= lp)
+      return (can[0] as { slot: number }).slot;
+  }
+  return null;
 }
 
 function planTurnInner(start: GameState, player: PlayerId, catalog: Catalog, actions: Action[]): Action[] {
@@ -269,15 +302,14 @@ function planTurnInner(start: GameState, player: PlayerId, catalog: Catalog, act
         }
       }
     });
-    // 闇堕ち：オワコンに闇堕ちできるカードがあれば、コストなしなので出す（相手の場にアイコンがいるときに。蘇生する闇堕ちは相手の場が空でも）
-    const ready = slot >= 0 ? darkReady(state, player, catalog) : [];
-    const darkId = ready[0];
-    const revives = catalog[darkId ?? ""]?.dark?.effects?.some((e) => e.do === "revive") ?? false;
-    if (darkId !== undefined && (revives || state.players[foeId].field.some((u) => u))) {
-      best = { score: 999, action: { type: "darkFall", player, cardId: darkId, slot } };
-    }
     if (!best) break;
     step((best as { action: Action }).action);
+  }
+
+  // 1.5 バズ：+2/+2 で倒せなかった相手のアイコンを倒せる（自分は残る）なら、いちばん価値の高い相手に。とどめになるときも使う
+  if (!state.winner && !state.pending && !buzzBlock(state, player)) {
+    const buzz = pickBuzz(state, player, catalog);
+    if (buzz !== null) step({ type: "buzz", player, slot: buzz });
   }
 
   // 2. 攻撃

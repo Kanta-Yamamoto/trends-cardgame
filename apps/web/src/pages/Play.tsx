@@ -3,11 +3,11 @@ import {
   type AttackPreview,
   type AttackTarget,
   attackTargets,
+  buzzBlock,
   type CastTarget,
-  canDarkFall,
   canUnitAttack,
   castTargets,
-  darkReady,
+  darkOmens,
   effectiveCost,
   fieldOf,
   type GameEvent,
@@ -36,6 +36,7 @@ import {
   animateEffects,
   flipCard,
   hasVisibleEffects,
+  markBuzzed,
   popDamage,
   popMaster,
 } from "../game/fx";
@@ -68,9 +69,15 @@ function describe(e: GameEvent): string {
     case "damaged":
       return `${nameOf(e.cardId)} に ${e.amount} ダメージ`;
     case "destroyed":
-      return `${who(e.player)}の ${nameOf(e.cardId)} がオワコンになった`;
+      return e.vanished
+        ? `${who(e.player)}の ${nameOf(e.cardId)}（闇堕ちの姿）が倒れて、消えた`
+        : `${who(e.player)}の ${nameOf(e.cardId)} がオワコンになった`;
+    case "darkOmen":
+      return `${who(e.player)}の ${nameOf(e.cardId)} が倒れた……闇の気配。次の${who(e.player)}のターンの始めに闇堕ちして戻ってくる`;
     case "darkFall":
-      return `${who(e.player)}の ${nameOf(e.cardId)} が、闇堕ちしてオワコンから戻ってきた！`;
+      return `${who(e.player)}の ${nameOf(e.cardId)} が、闇堕ちして戻ってきた！`;
+    case "buzz":
+      return `${who(e.player)}：${nameOf(e.cardId)} がバズった！ 攻撃力+${e.attack}・体力+${e.hp}・凸（バズ 残り${e.left}）`;
     case "restored":
       return `${who(e.player)}の ${nameOf(e.cardId)} が表に戻った`;
     case "status":
@@ -93,10 +100,6 @@ function describe(e: GameEvent): string {
       return "『フィクサー』：自分と相手は、それぞれ自分のアイコンを1体差し出す";
     case "sacrificed":
       return `${who(e.player)}の ${nameOf(e.cardId)} が差し出された`;
-    case "sauna":
-      return e.phase === "heat"
-        ? `サウナの熱：場のアイコンすべてに ${e.amount} ダメージ`
-        : `サウナで整う：場のアイコンすべてが ${e.amount} 回復`;
     case "specialWin":
       return `${who(e.player)}の山札が切れた。陰謀論者「これは世界のせいだ」──特殊勝利`;
     case "turnStarted":
@@ -258,7 +261,10 @@ function DeckSelect() {
           </li>
           <li>相手の場にガードがいる間は、ガードしか攻撃できない。晒し者になるとガードを失う</li>
           <li>
-            闇堕ちを持つ★5は、オワコンに行ったら自分のターンの好きなときに、コストなしで闇堕ちの姿で出せる（1試合に1回だけ。そのターンは相手のアイコンにだけ攻撃できる）
+            闇堕ちを持つ★5は、倒されたら次の自分のターンの始めに、闇堕ちの姿で自動で戻ってくる（出たターンは相手のアイコンにだけ攻撃できる）。闇堕ちの姿が倒されたら消える
+          </li>
+          <li>
+            バズ：1試合に2回（自分の4ターン目から。後攻は3ターン目から）、自分のアイコン1体に攻撃力+2・体力+2と凸
           </li>
         </ul>
       </details>
@@ -285,27 +291,78 @@ function DeckAce({ id }: { id?: string }) {
 }
 
 /**
- * フィールド展開の背景（今はユズハのサウナだけ）。盤面の後ろに絵を敷き、湯気をゆっくり立ちのぼらせる。
- * 熱（ターンの始め）は赤く、回復（ターンの終わり）は水色に一瞬光る
+ * 盤面の背景。闇堕ちを持つカードが倒されると「予兆」（持ち主の側から紫に染まる）、
+ * 闇堕ちの姿が場にいる間は「闇」（盤面全体が暗い闇のフィールドになる）
  */
-function FieldLayer({
-  kind,
-  mine,
-  pulse,
-}: {
-  kind: "sauna";
-  mine: boolean;
-  pulse: { id: number; phase: "heat" | "heal" } | null;
-}) {
+function FieldLayer({ kind, mine }: { kind: "dark" | "omen"; mine: boolean }) {
   return (
-    <div className={`field-layer field-${kind}`} aria-hidden="true">
-      <span className="field-steam" />
-      <span className="field-steam s2" />
-      {pulse && <span key={pulse.id} className={`field-pulse ${pulse.phase}`} />}
-      <span className="field-label">{mine ? "あなたの" : "相手の"}フィールド：サウナ</span>
+    <div className={`field-layer field-${kind} ${mine ? "mine" : "foe"}`} aria-hidden="true">
+      <span className="field-mist" />
+      <span className="field-mist m2" />
+      <span className="field-label">
+        {kind === "omen"
+          ? `${mine ? "あなた" : "相手"}の闇の気配……`
+          : `${mine ? "あなた" : "相手"}の闇が降りている`}
+      </span>
     </div>
   );
 }
+
+/** 闇の気配：倒れたエースの枠に灯る紫の炎 */
+function OmenFlame() {
+  return (
+    <span className="omen-flame" aria-hidden="true">
+      <i />
+      <i />
+      <i />
+    </span>
+  );
+}
+
+/** バズのカットイン：マスターと「バズ」の文字が、自分は左から・相手は右から差し込む */
+function BuzzCutIn({ cut, onDone }: { cut: BuzzCut; onDone: () => void }) {
+  const card = CATALOG[cut.cardId];
+  return (
+    <div
+      className={`buzz-cut ${cut.mine ? "mine" : "foe"}`}
+      aria-live="polite"
+      onAnimationEnd={(e) => e.target === e.currentTarget && onDone()}
+    >
+      <div className="bc-band">
+        <span className="bc-master">
+          <i aria-hidden="true">{cut.mine ? "YOU" : "VS"}</i>
+          <b>{cut.mine ? "あなた" : cut.foeName}のマスター</b>
+        </span>
+        <span className="bc-word" aria-hidden="true">
+          バズ
+        </span>
+        <span className="bc-target">
+          {card?.art && <span className="bc-art" style={{ backgroundImage: `url(${card.art})` }} />}
+          <span>
+            <b>{card?.name}</b>
+            <small>攻撃力+2・体力+2・凸</small>
+          </span>
+        </span>
+        <span className="bc-left" role="img" aria-label={`バズ 残り${cut.left}回`}>
+          {Array.from({ length: cut.total }, (_, k) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: 残りの玉は位置そのものが意味を持つ
+            <i key={k} className={k < cut.left ? "on" : ""} />
+          ))}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+type BuzzCut = {
+  id: number;
+  mine: boolean;
+  cardId: string;
+  foeName: string;
+  left: number;
+  total: number;
+  done: () => void;
+};
 
 /** デッキの色（単属性なら左右とも同じ色） */
 function deckGradient(attrs: readonly string[]) {
@@ -366,7 +423,7 @@ export function DeckGrid({
         )}
         {mine.length === 0 && broken === 0 && (
           <p className="muted deck-empty">
-            まだありません。「デッキを組む」から、30枚のデッキを自由に作れます
+            まだありません。「デッキを組む」から、20枚のデッキを自由に作れます
           </p>
         )}
       </div>
@@ -574,6 +631,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     attack,
     endTurn,
     sacrifice,
+    buzz,
     start,
     quit: quitGame,
     mode,
@@ -608,8 +666,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [logOpen, setLogOpen] = useState(false);
   const seen = useRef(0);
   const { stage, probe } = useStage();
-  // フィールドの熱・回復の一瞬の光（出来事が来るたびに id が変わり、アニメーションをやり直す）
-  const [fieldPulse, setFieldPulse] = useState<{ id: number; phase: "heat" | "heal" } | null>(null);
+  /** バズのカットイン */
+  const [buzzCut, setBuzzCut] = useState<BuzzCut | null>(null);
   /** ターン終了の確認を出しているか（押し間違いで終わらないように） */
   const [confirmEnd, setConfirmEnd] = useState(false);
 
@@ -699,7 +757,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             const from = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
             await animateEffects(shown, events, next, { from, tint });
           }
-        } else if (a.type === "play" || a.type === "darkFall") {
+        } else if (a.type === "play") {
           if (!visible) return;
           await wait(420); // 出たアイコンが場に着くのを待つ
           const uid = next.players[a.player].field[a.slot]?.uid;
@@ -709,6 +767,21 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           await animateEffects(shown, events, next, { from: null });
         }
       },
+      buzz: (g, a) =>
+        new Promise<void>((resolve) => {
+          const u = g.players[a.player].field[a.slot];
+          if (!u) return resolve();
+          const me = g.players[a.player];
+          setBuzzCut({
+            id: Date.now(),
+            mine: a.player === ME,
+            cardId: u.cardId,
+            foeName: useGame.getState().foeName,
+            left: Math.max(0, (me.buzzLeft ?? 0) - 1),
+            total: 2,
+            done: resolve,
+          });
+        }),
       darkFall: (cardId, player) =>
         new Promise<void>((resolve) => {
           setCut({ id: Date.now(), cardId, mine: player === ME, done: resolve });
@@ -771,9 +844,10 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             setFixer((f) => ({ id: f?.id ?? id, mine: f?.mine ?? false, gone: [...(f?.gone ?? []), name] })),
           t,
         );
-      } else if (e.type === "sauna") {
-        const pulse = { id, phase: e.phase };
-        setTimeout(() => setFieldPulse(pulse), t);
+      } else if (e.type === "buzz") {
+        // バズの対象を盤面で強調する（光の枠と「バズ」の札、+2/+2）
+        const uid = uidAt(e.player, e.slot);
+        if (uid) setTimeout(() => markBuzzed(uid, e.attack, e.hp), t);
       } else if (e.type === "darkFall" || e.type === "restored") {
         const uid = uidAt(e.player, e.slot);
         if (uid) setTimeout(() => flipCard(uid, e.type === "darkFall" ? "dark" : "restore"), t + 80);
@@ -797,9 +871,10 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const canCastOn = (side: "enemy" | "ally", slot: number) =>
     castOptions.some((t) => t.side === side && t.slot === slot);
   const targets = attacking ? attackTargets(game, ME, selection.slot, CATALOG) : [];
-  const placing = selection?.kind === "dark";
-  const myDark = myTurn ? darkReady(game, ME, CATALOG) : [];
-  const foeDark = darkReady(game, CPU, CATALOG);
+  const buzzing = selection?.kind === "buzz";
+  const buzzWhy = buzzBlock(game, ME);
+  const canBuzz = myTurn && !buzzWhy;
+  const omenAt = (owner: PlayerId, slot: number) => darkOmens(game, owner).find((o) => o.slot === slot);
   const canHit = (t: AttackTarget) =>
     targets.some((x) => (x.kind === "leader" ? t.kind === "leader" : t.kind === "unit" && t.slot === x.slot));
   const freeSlot = me.field.findIndex((u) => !u);
@@ -823,18 +898,16 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             ? selectedCard?.target
               ? "使う相手を選んでください（光っているアイコン）"
               : "もう一度カードを押すと投稿します"
-            : selection?.kind === "dark"
-              ? `紫に光る空き枠をタップして、${nameOf(selection.cardId)} を闇堕ちの姿で呼び戻す`
+            : buzzing
+              ? "バズさせる自分のアイコンを選んでください（攻撃力+2・体力+2・凸）"
               : selection?.kind === "hand"
                 ? "出す枠を押してください（もう一度カードを押すと、選ぶのをやめます）"
                 : attacking
                   ? foeGuarded
                     ? "攻撃先を選んでください（ガードがいるので、ガードしか攻撃できません）"
                     : "攻撃先を選んでください（光っているところ）"
-                  : canDarkFall(game, ME, CATALOG)
-                    ? stage.portrait
-                      ? "闇堕ちできるカードがオワコンにあります（自分のオワコンを押す）"
-                      : "闇堕ちできるカードがオワコンにあります（左のオワコンを押す）"
+                  : darkOmens(game, ME).length > 0
+                    ? "闇の気配……倒れたエースは、次の自分のターンの始めに闇堕ちして戻ってくる"
                     : stage.portrait
                       ? "手札を場へ引っぱって出す・投稿／アイコンを相手へ引っぱって攻撃（長押しで拡大）"
                       : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";
@@ -880,11 +953,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         view={view}
         onField
         drop={`ally:${slot}`}
-        className={`unit enter ${ready ? "ready" : "tired"} ${selected ? "selected" : ""} ${castable ? "targetable ally" : ""} ${sac ? "targetable sac" : ""} ${castable && drag?.over === `ally:${slot}` ? "drop-over" : ""}`}
+        className={`unit enter ${ready ? "ready" : "tired"} ${buzzing ? "buzz-pick" : ""} ${selected ? "selected" : ""} ${castable ? "targetable ally" : ""} ${sac ? "targetable sac" : ""} ${castable && drag?.over === `ally:${slot}` ? "drop-over" : ""}`}
         onPress={ready ? (e) => begin(e, { kind: "unit", slot }) : undefined}
         onClick={() => {
           if (justDragged()) return;
           if (sac) return sacrifice(slot);
+          if (buzzing) return buzz(slot);
           if (castable) return cast({ side: "ally", slot });
           if (selected) return select(null);
           setPeek(p);
@@ -944,6 +1018,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       mana={foe.mana}
       maxMana={foe.maxMana}
       hand={foe.hand.length}
+      buzz={foe.buzzLeft ?? 0}
       active={game.active === CPU}
       guarded={foeGuarded}
       shielded={isShielded(game, CPU)}
@@ -951,15 +1026,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       dropOver={drag?.over === "leader" && attacking && canHit({ kind: "leader" })}
       preview={preview({ kind: "leader" })}
       onClick={() => !justDragged() && attack({ kind: "leader" })}
-      piles={
-        <Piles
-          owner={CPU}
-          deck={foe.deck.length}
-          trash={foe.trash}
-          onTrash={() => setTrashView(CPU)}
-          dark={foeDark.length > 0 ? "foe" : undefined}
-        />
-      }
+      piles={<Piles owner={CPU} deck={foe.deck.length} trash={foe.trash} onTrash={() => setTrashView(CPU)} />}
     />
   );
   const meBar = (
@@ -970,17 +1037,10 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       mana={me.mana}
       maxMana={me.maxMana}
       hand={me.hand.length}
+      buzz={me.buzzLeft ?? 0}
       active={game.active === ME}
       shielded={isShielded(game, ME)}
-      piles={
-        <Piles
-          owner={ME}
-          deck={me.deck.length}
-          trash={me.trash}
-          onTrash={() => setTrashView(ME)}
-          dark={myDark.length > 0 ? "mine" : undefined}
-        />
-      }
+      piles={<Piles owner={ME} deck={me.deck.length} trash={me.trash} onTrash={() => setTrashView(ME)} />}
     />
   );
   const turnPill = !game.winner && (
@@ -989,18 +1049,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       {game.active === ME ? "あなたのターン" : "相手のターン"}
     </span>
   );
-  const darkGuide = placing && selection?.kind === "dark" && (
-    <div className="dark-guide" role="status">
-      <div className="dg-card">
-        <span className="dg-kicker">闇堕ち</span>
-        <b>{nameOf(selection.cardId)}を、どこに呼び戻す？</b>
-        <span className="dg-sub">紫に光る空き枠をタップ</span>
-      </div>
-      <button type="button" className="dg-cancel" onClick={() => select(null)}>
-        やめる
-      </button>
-    </div>
-  );
   const foeRow = (
     <div className="row">
       {SLOT_KEYS.map((key, slot) => {
@@ -1008,7 +1056,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         return u ? (
           unitCard(CPU, slot, u)
         ) : (
-          <div key={key} className={`slot ${slot === 2 ? "center" : ""}`} />
+          <div
+            key={key}
+            className={`slot ${slot === 2 ? "center" : ""} ${omenAt(CPU, slot) ? "omen-slot" : ""}`}
+          >
+            {omenAt(CPU, slot) && <OmenFlame />}
+          </div>
         );
       })}
     </div>
@@ -1023,35 +1076,20 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       {SLOT_KEYS.map((key, slot) => {
         const u = me.field[slot];
         if (u) return unitCard(ME, slot, u);
-        const drop = myTurn && ((selection?.kind === "hand" && !postSelected) || placing);
-        if (placing && drop)
-          return (
-            <button
-              key={key}
-              type="button"
-              data-drop={`slot:${slot}`}
-              className={`slot ${slot === 2 ? "center" : ""} droppable dark-drop`}
-              aria-label={`空き枠 ${slot + 1} に闇堕ちさせる`}
-              onClick={() => play(slot)}
-            >
-              <span className="dd-ring" aria-hidden="true" />
-              <span className="dd-tap" aria-hidden="true">
-                ここに
-                <br />
-                呼び戻す
-              </span>
-            </button>
-          );
+        const drop = myTurn && selection?.kind === "hand" && !postSelected;
+        const omen = omenAt(ME, slot);
         return (
           <button
             key={key}
             type="button"
             data-drop={`slot:${slot}`}
-            className={`slot ${slot === 2 ? "center" : ""} ${drop ? "droppable" : ""} ${drop && drag?.over === `slot:${slot}` ? "drop-over" : ""}`}
+            className={`slot ${slot === 2 ? "center" : ""} ${drop ? "droppable" : ""} ${drop && drag?.over === `slot:${slot}` ? "drop-over" : ""} ${omen ? "omen-slot" : ""}`}
             disabled={!drop}
-            aria-label={`空き枠 ${slot + 1}${slot === 2 ? "（センター）" : ""}`}
+            aria-label={`空き枠 ${slot + 1}${slot === 2 ? "（センター）" : ""}${omen ? `（闇の気配：${nameOf(omen.cardId)}）` : ""}`}
             onClick={() => play(slot)}
-          />
+          >
+            {omen && <OmenFlame />}
+          </button>
         );
       })}
     </div>
@@ -1064,6 +1102,23 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const handMore = me.hand.length >= 7 && (
     <button type="button" className="hand-more" onClick={() => setHandOpen(true)}>
       手札 {me.hand.length}枚を広げる
+    </button>
+  );
+  const buzzBtn = (
+    <button
+      type="button"
+      className={`btn buzz-btn ${buzzing ? "on" : ""} ${canBuzz ? "ready" : ""}`}
+      onClick={() => (buzzing ? select(null) : select({ kind: "buzz" }))}
+      disabled={!canBuzz && !buzzing}
+      title={buzzWhy ?? "自分のアイコン1体に攻撃力+2・体力+2・凸"}
+      aria-label={`バズ（残り${me.buzzLeft ?? 0}回）${buzzWhy ? `：${buzzWhy}` : ""}`}
+    >
+      バズ
+      <span className="buzz-pips" aria-hidden="true">
+        {[0, 1].map((k) => (
+          <i key={k} className={k < (me.buzzLeft ?? 0) ? "on" : ""} />
+        ))}
+      </span>
     </button>
   );
   const endTurnBtn = (
@@ -1109,9 +1164,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   };
   const field = fieldOf(game, CATALOG);
   const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}`;
-  const fieldLayer = field ? (
-    <FieldLayer kind={field.kind} mine={field.owner === ME} pulse={fieldPulse} />
-  ) : null;
+  const fieldLayer = field ? <FieldLayer kind={field.kind} mine={field.owner === ME} /> : null;
 
   return (
     <div className="play-full">
@@ -1141,7 +1194,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             </div>
             {foeBar}
             <div className="pfield">
-              {darkGuide}
               {foeRow}
               <div className="pmid">
                 {hintEl}
@@ -1150,6 +1202,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                   <button type="button" className="btn ghost small plog" onClick={() => setLogOpen(true)}>
                     記録
                   </button>
+                  {buzzBtn}
                   {endTurnBtn}
                 </span>
               </div>
@@ -1179,7 +1232,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                 {handEl}
                 <button
                   type="button"
-                  className={`hand-cancel ${selection && !placing ? "on" : ""}`}
+                  className={`hand-cancel ${selection ? "on" : ""}`}
                   onClick={cancelSelection}
                   aria-label="選んだカードを手札に戻す"
                   tabIndex={selection ? 0 : -1}
@@ -1199,7 +1252,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
 
             <div className={`col-center ${boardClass}`} data-drop="board">
               {fieldLayer}
-              {darkGuide}
               {foeRow}
               {hintEl}
               {meRow}
@@ -1220,6 +1272,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                   <p className="muted">カードを押すと、ここに表示します。長押しで画面いっぱいに拡大</p>
                 )}
               </div>
+              {buzzBtn}
               {endTurnBtn}
               <details className="log-box">
                 <summary>対戦の記録</summary>
@@ -1365,6 +1418,16 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           onNo={() => setConfirmEnd(false)}
         />
       )}
+      {buzzCut && (
+        <BuzzCutIn
+          key={buzzCut.id}
+          cut={buzzCut}
+          onDone={() => {
+            buzzCut.done();
+            setBuzzCut(null);
+          }}
+        />
+      )}
       {cut && CATALOG[cut.cardId] && (
         <DarkCutscene
           key={cut.id}
@@ -1394,49 +1457,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             <h2>
               {trashView === ME ? "あなた" : foeName}のオワコン（{game.players[trashView].trash.length}枚）
             </h2>
-            {trashView === ME && myDark.length > 0 && freeSlot >= 0 && (
-              <div className="dark-pick">
-                <p>闇堕ちの姿で、コストなしで出せます（そのターンは相手のアイコンにだけ攻撃できます）</p>
-                {myDark.map((id) => {
-                  const d = CATALOG[id]?.dark;
-                  if (!d) return null;
-                  return (
-                    <div key={id} className="dark-pick-item">
-                      <div className="dark-pick-info">
-                        <b className="dark-pick-name">
-                          {d.name}
-                          <span className="dark-pick-stats">
-                            <i className="t-atk">{d.attack}</i>／<i className="t-hp">{d.hp}</i>
-                          </span>
-                        </b>
-                        <span className="dark-pick-effect">
-                          <EffectText text={d.effect} />
-                        </span>
-                      </div>
-                      <div className="dark-pick-row">
-                        <button
-                          type="button"
-                          className="btn dark-pick-btn"
-                          onClick={() => {
-                            setTrashView(null);
-                            select({ kind: "dark", cardId: id });
-                          }}
-                        >
-                          {nameOf(id)} を闇堕ちさせる
-                        </button>
-                        <button
-                          type="button"
-                          className="btn ghost small"
-                          onClick={() => setZoom({ id, where: "trash", index: 0, dark: true })}
-                        >
-                          姿を大きく見る
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
             <div className="trash-grid">
               {game.players[trashView].trash.map((id, i) => {
                 const c = CATALOG[id];
@@ -1678,6 +1698,8 @@ interface BarProps {
   preview?: AttackPreview | null;
   onClick?: () => void;
   piles: React.ReactNode;
+  /** バズの残り回数 */
+  buzz?: number;
   children?: React.ReactNode;
 }
 
@@ -1697,6 +1719,7 @@ function PlayerBar({
   onClick,
   piles,
   children,
+  buzz,
 }: BarProps) {
   const pct = Math.max(0, Math.min(100, (lp / 20) * 100));
   const pips = Array.from({ length: Math.max(maxMana, mana) }, (_, i) => i < mana);
@@ -1728,6 +1751,14 @@ function PlayerBar({
       </span>
       <span className="pb-count">
         <span data-hand={side === "me" ? undefined : CPU}>手札 {hand}</span>
+        {buzz !== undefined && (
+          <span className="pb-buzz" title={`バズ 残り${buzz}回`}>
+            バズ
+            {[0, 1].map((k) => (
+              <i key={k} className={k < buzz ? "on" : ""} />
+            ))}
+          </span>
+        )}
       </span>
       {preview && <AttackBadge pv={preview} leader />}
     </>

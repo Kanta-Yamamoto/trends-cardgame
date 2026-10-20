@@ -22,32 +22,32 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: strin
   solo_flame: {
     ace: "c2",
     name: "凸待ち配信の夜",
-    text: "炎上・アグロ。速攻で殴り、晒しでガードをはがし、4ターン目のレンが連撃で場を片づける。6〜7ターン目に燃やし切る",
+    text: "炎上・アグロ。速攻で殴り、晒しでガードをはがし、6ターン目のレンが連撃で場を片づける。倒されても闇堕ちレンが全体を焼く",
   },
   solo_idol: {
     ace: "c13",
     name: "ドームへの道",
-    text: "メロい・ミッドレンジ。地下アイドルとファンを育て、親衛隊で守り、6ターン目のドームの歌姫ミレイで全員が一斉に跳ぶ",
+    text: "メロい・ミッドレンジ。ファンと地下アイドルを育て、親衛隊で守り、6ターン目のドームの歌姫ミレイで全員が一斉に跳ぶ",
   },
   solo_expert: {
     ace: "g4",
     name: "専門家、陰謀論に堕ちる",
-    text: "神・コントロール。有識者で引き続けて盤面を保ち、山札を引き切ると専門家が陰謀論者に闇堕ち。次の自分のターンまで守れば勝ち",
+    text: "神・コントロール。有識者で引いて盤面を保ち、山札が5枚以下になると専門家が陰謀論者に闇堕ち。引き切って守れば勝ち",
   },
   solo_meme: {
-    ace: "c8",
-    name: "大草原の主",
-    text: "草・数で押す。草を生やして場を埋め、4ターン目のワラが仲間の数だけ大きくなる。闇堕ちの嘲笑のワラで全員を強くして押し切る",
+    ace: "k5",
+    name: "伝説のコラ画像",
+    text: "草・数で押す。草を生やして場を埋め、ミーム女王とコラ画像で全員が一斉に殴る。倒されたら呪いのコラ画像が空き枠を草で埋める",
   },
   solo_heal: {
-    ace: "c10",
-    name: "サウナでととのう",
-    text: "癒し・耐久。ガードと回復で受け、4ターン目のユズハのサウナで場を熱し、回復するたびに相手のマスターを燃やす",
+    ace: "c5",
+    name: "ナギの子守唄",
+    text: "癒し・耐久。ガードと回復で受け、ユズハ・ミナモで回復を重ねて燃やす。6ターン目のナギで眠らせて守り切る",
   },
   fixer_meme: {
     ace: "c15",
     name: "仕込まれた闇堕ち",
-    text: "草＋共通・闇堕ちを早める。捨て駒をそろえ、『フィクサー』で自分のクサハミを差し出してすぐ闇堕ち（速攻）。倒れた草の数だけ強いクサハミと草の女王で殴る",
+    text: "草＋共通・闇堕ちを早める。『フィクサー』で自分のクサハミを差し出すと、次のターンの始めに毒草喰らいとして戻り速攻で殴る",
   },
 };
 
@@ -57,8 +57,8 @@ export const CPU: PlayerId = "p2";
 type Selection =
   | { kind: "hand"; index: number }
   | { kind: "attacker"; slot: number }
-  /** オワコンの闇堕ちできるカードを選んで、出す枠を待っている */
-  | { kind: "dark"; cardId: string }
+  /** バズさせる自分のアイコンを選んでいる */
+  | { kind: "buzz" }
   | null;
 
 export interface LogEntry {
@@ -106,6 +106,8 @@ interface GameStore {
   cast: (target?: CastTarget) => void;
   attack: (target: AttackTarget) => void;
   endTurn: () => void;
+  /** バズ：選んだ自分のアイコンに +2/+2 と凸（カットインを見せてから） */
+  buzz: (slot: number) => void;
   /** 差し出し（フィクサー）：自分のアイコンを1体選ぶ */
   sacrifice: (slot: number) => void;
   /** オンライン対戦を始める（再接続のときも、届いた状態で呼び直す） */
@@ -139,6 +141,8 @@ export interface Presenter {
   ) => Promise<void>;
   /** 闇堕ちの演出（画面全体）。自分・相手どちらの闇堕ちでも、state を進める前に見せる */
   darkFall?: (cardId: string, player: PlayerId) => Promise<void>;
+  /** バズのカットイン（マスターとバズ）。state を進める前に見せる */
+  buzz?: (game: GameState, action: Extract<Action, { type: "buzz" }>) => Promise<void>;
 }
 let presenter: Presenter | null = null;
 export const setPresenter = (p: Presenter | null) => {
@@ -150,7 +154,7 @@ let link: RemoteLink | null = null;
 let inbox: RemoteUpdate[] = [];
 let draining = false;
 
-type PlaceAction = Extract<Action, { type: "play" | "darkFall" }>;
+type PlaceAction = Extract<Action, { type: "play" }>;
 
 /** 出したアイコンだけを場に置いた、効果の前の姿（演出のあいだ画面に出す） */
 function placedOnly(prev: GameState, a: PlaceAction, next: GameState): GameState {
@@ -165,15 +169,20 @@ function placedOnly(prev: GameState, a: PlaceAction, next: GameState): GameState
       [a.player]: {
         ...me,
         mana: after.mana,
-        hand: a.type === "play" ? me.hand.filter((_, i) => i !== a.handIndex) : me.hand,
-        trash: a.type === "darkFall" ? after.trash : me.trash,
+        hand: me.hand.filter((_, i) => i !== a.handIndex),
         field: me.field.map((u, i) => (i === a.slot ? unit : u)),
       },
     },
   };
 }
 
-const isPlace = (a: Action): a is PlaceAction => a.type === "play" || a.type === "darkFall";
+const isPlace = (a: Action): a is PlaceAction => a.type === "play";
+
+/** 出来事の中の闇堕ち（ターンの始めに自動で起きる）の演出を、順に見せる */
+async function showDarkFalls(events: GameEvent[]) {
+  for (const e of events)
+    if (e.type === "darkFall" && presenter?.darkFall) await presenter.darkFall(e.cardId, e.player);
+}
 const hasEffects = (a: Action) => isPlace(a) || a.type === "cast" || a.type === "endTurn";
 
 export const useGame = create<GameStore>((set, get) => {
@@ -204,9 +213,14 @@ export const useGame = create<GameStore>((set, get) => {
       }
       // 相手が出した・使ったカードは、出来事からカードを知って大きく見せる
       const a = u.action;
-      if (a.type === "darkFall" && presenter?.darkFall && g) {
+      if (a.type === "buzz" && presenter?.buzz && g) {
         set({ animating: true });
-        await presenter.darkFall(a.cardId, a.player);
+        await presenter.buzz(g, a);
+        if (my !== runId) break;
+      }
+      if (u.events.some((e) => e.type === "darkFall") && presenter?.darkFall && g) {
+        set({ animating: true });
+        await showDarkFalls(u.events);
         if (my !== runId) break;
       }
       if ((a.type === "play" || a.type === "cast") && a.player === CPU && presenter?.revealFoe && g) {
@@ -281,11 +295,7 @@ export const useGame = create<GameStore>((set, get) => {
     const { state, events } = res;
     const my = runId;
     set({ animating: true, selection: null, error: null });
-    const intro =
-      a.type === "darkFall" && presenter.darkFall
-        ? presenter.darkFall(a.cardId, a.player)
-        : Promise.resolve();
-    return intro
+    return showDarkFalls(events)
       .then(() => present(game, a, events, state))
       .then(() => {
         if (my !== runId) return false;
@@ -345,6 +355,7 @@ export const useGame = create<GameStore>((set, get) => {
       // 相手（ME）の差し出しを待っている間は止まる（選んだら settleCpu から続きを考え直す）
       if (g.pending && !g.pending.waiting.includes(CPU)) return finish();
       if (a.type === "attack" && presenter) await presenter.beforeAttack(g, a);
+      if (a.type === "buzz" && presenter?.buzz) await presenter.buzz(g, a);
       if ((a.type === "play" || a.type === "cast") && presenter?.revealFoe) {
         const id = g.players[CPU].hand[a.handIndex];
         if (id) await presenter.revealFoe(g, id, a);
@@ -415,13 +426,8 @@ export const useGame = create<GameStore>((set, get) => {
     play: (slot) => {
       const sel = get().selection;
       if (!sel || get().cpuBusy || get().animating) return;
-      const a: Action | null =
-        sel.kind === "hand"
-          ? { type: "play", player: ME, handIndex: sel.index, slot }
-          : sel.kind === "dark"
-            ? { type: "darkFall", player: ME, cardId: sel.cardId, slot }
-            : null;
-      if (!a) return;
+      if (sel.kind !== "hand") return;
+      const a: Action = { type: "play", player: ME, handIndex: sel.index, slot };
       then(commit(a), (ok) => {
         if (!ok) return;
         set({ selection: null });
@@ -457,6 +463,30 @@ export const useGame = create<GameStore>((set, get) => {
       const my = runId;
       set({ animating: true, selection: null });
       presenter.beforeAttack(game, a).then(() => {
+        if (my !== runId) return;
+        dispatch(a);
+        set({ animating: false });
+      });
+    },
+    buzz: (slot) => {
+      const game = get().game;
+      if (!game || get().cpuBusy || get().animating) return;
+      const a: Action = { type: "buzz", player: ME, slot };
+      try {
+        applyAction(game, a, CATALOG);
+      } catch (e) {
+        if (e instanceof RuleError) return set({ error: e.message, selection: null });
+        throw e;
+      }
+      // オンラインでは、演出はサーバーから結果が届いてから
+      if (!presenter?.buzz || get().mode === "online") {
+        dispatch(a);
+        set({ selection: null });
+        return;
+      }
+      const my = runId;
+      set({ animating: true, selection: null });
+      presenter.buzz(game, a).then(() => {
         if (my !== runId) return;
         dispatch(a);
         set({ animating: false });

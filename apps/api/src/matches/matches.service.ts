@@ -30,7 +30,7 @@ const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 /**
  * デッキの指し方（構築済みの ID か "custom:…"）からカードの並びを得る。決まりを守っていなければ BadRequest。
- * 自分で組んだデッキも、サーバー側で 30枚・3枚まで・属性1つ＋共通を確かめる
+ * 自分で組んだデッキも、サーバー側で 20枚・2枚まで・属性1つ＋共通・闇堕ちを持つカードは1種類を確かめる
  */
 export function deckCards(ref: unknown): string[] {
   const cards = resolveDeckRef(ref, DECKS);
