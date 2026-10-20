@@ -1,5 +1,5 @@
 import type { AttackTarget, GameEvent, GameState, PlayerId, RuleCard, Unit } from "@trends/game-core";
-import { viewUnit } from "@trends/game-core";
+import { viewUnit, withRushBoost } from "@trends/game-core";
 
 /**
  * 対戦画面の演出（DOM を直接アニメーションさせる）。
@@ -140,7 +140,7 @@ function toTrash(el: HTMLElement | null, owner: PlayerId, to: "trash" | "hand" =
  * 倒れる予定のアイコンはトラッシュへ飛ばす。resolve したら state を更新してよい。
  */
 export async function animateAttack(
-  game: GameState,
+  before: GameState,
   player: PlayerId,
   from: number,
   target: AttackTarget,
@@ -148,6 +148,22 @@ export async function animateAttack(
 ): Promise<void> {
   if (!canAnimate() || reduced()) return;
   const foeId: PlayerId = player === "p1" ? "p2" : "p1";
+  // 凸で攻撃したときの強化は、先に見せてから殴る（強化と攻撃を同時に動かさない）
+  const boost = withRushBoost(before, player, from, target, catalog);
+  if (boost.state !== before) {
+    const boosted = boost.state.players[player].field[from];
+    if (boosted) {
+      const el = q(`[data-uid="${boosted.uid}"]`);
+      await showRushBoost(
+        el,
+        boost.events,
+        player,
+        from,
+        viewUnit(boost.state, player, boosted, catalog).attack,
+      );
+    }
+  }
+  const game = boost.state;
   const atk = game.players[player].field[from];
   const atkCard = atk ? catalog[atk.cardId] : undefined;
   const atkEl = atk ? q(`[data-uid="${atk.uid}"]`) : null;
@@ -209,6 +225,43 @@ export async function animateAttack(
   if (def && dv && dmg >= dv.hp && goesToTrash(def)) toTrash(defEl, foeId);
   if (def && counter >= av.hp && goesToTrash(atk)) toTrash(atkEl, player);
   await wait(60);
+}
+
+/** 凸の強化：攻撃するアイコンを光らせて「+1/+1」を出し、攻撃力の数字を先に上げる。見せ終わってから突進する */
+async function showRushBoost(
+  atk: HTMLElement | null,
+  events: GameEvent[],
+  player: PlayerId,
+  from: number,
+  attack: number,
+) {
+  if (!atk) return;
+  const ups = events.filter(
+    (e): e is Extract<GameEvent, { type: "buffed" }> =>
+      e.type === "buffed" && e.player === player && e.slot === from,
+  );
+  const a = ups.reduce((n, e) => n + e.attack, 0);
+  const h = ups.reduce((n, e) => n + e.hp, 0);
+  if (a === 0 && h === 0) return;
+  glow(atk, "#ffd76a");
+  popLabel(atk, `凸 ${a >= 0 ? "+" : ""}${a}/${h >= 0 ? "+" : ""}${h}`, "#ffd76a");
+  atk
+    .animate(
+      [
+        { transform: "none", filter: "brightness(1)" },
+        { transform: "translateY(-6px) scale(1.1)", filter: "brightness(1.5)", offset: 0.4 },
+        { transform: "none", filter: "brightness(1)" },
+      ],
+      { duration: 520, easing: "ease-out" },
+    )
+    .finished.catch(() => {});
+  // 攻撃力の数字は、ここで先に上げて見せる（盤面の state は攻撃のあとで進む。そのとき同じ値で描き直される）
+  const num = atk.querySelector<HTMLElement>(".mini-atk");
+  if (num && a !== 0) {
+    num.textContent = String(attack);
+    num.animate([{ transform: "scale(1.7)" }, { transform: "none" }], { duration: 360, easing: "ease-out" });
+  }
+  await wait(700);
 }
 
 /** 山札から1枚引く：裏向きのカードが山札から手札へ飛ぶ */

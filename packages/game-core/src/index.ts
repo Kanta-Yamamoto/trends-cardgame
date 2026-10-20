@@ -26,6 +26,7 @@ export {
   previewAttack,
   sacrificeCandidates,
   viewUnit,
+  withRushBoost,
 } from "./engine";
 export { nextRandom } from "./rng";
 export { DEFAULT_SEARCH, evaluate, planTurnSearch, type SearchOptions } from "./search";

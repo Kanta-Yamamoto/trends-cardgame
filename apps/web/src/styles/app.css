@@ -349,7 +349,7 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 
 /* ---------- 縦の舞台（スマホの縦持ち：幅 390 を基準に、上から相手→場→自分→説明→手札） ---------- */
 /* 余った高さは、場の間（案内とターン終了の行）と手札の上に 3:2 で配る */
-.stage .pstage { height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 3fr) auto auto auto minmax(0, 2fr); align-content: start; gap: 6px; padding: 6px; border-radius: 0; }
+.stage .pstage { height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 3fr) auto auto minmax(0, 2fr); align-content: start; gap: 6px; padding: 6px; border-radius: 0; }
 .ptop { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; min-height: 30px; }
 .ptop .quit { justify-self: start; padding: 5px 10px; font-size: 11px; }
 .ptop .turn-pill { display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; padding: 4px 12px; white-space: nowrap; }
@@ -377,6 +377,9 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .pmid { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 36px; }
 .pmid .hint { text-align: left; font-size: 11px; line-height: 1.45; min-height: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .pmid .end-turn { padding: 9px 14px; font-size: 13px; white-space: nowrap; }
+/* 記録とターン終了は、場の間の右にまとめる */
+.pmid-actions { display: inline-flex; align-items: center; gap: 6px; }
+.pmid .plog { padding: 8px 10px; font-size: 11px; }
 /* 押したカードの説明の帯（押すと画面いっぱいに拡大） */
 .peek-strip { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; height: 60px; padding: 5px 8px 5px 6px; border-radius: 12px; border: 1px solid var(--line); background: #ffffff0a; color: var(--text); text-align: left; }
 .ps-main { display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: center; gap: 8px; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
@@ -401,14 +404,19 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .ps-zoom { flex: none; font-size: 10px; font-weight: 800; color: var(--muted); padding: 4px 7px; border-radius: 99px; border: 1px solid #ffffff30; background: none; cursor: pointer; }
 /* 手札：扇で持ち、横より大きく。選んだカードは上に持ち上げる */
 /* 直近の出来事（押すと記録の一覧） */
-.plog-ticker { display: grid; gap: 1px; padding: 2px 10px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 10px; line-height: 1.35; text-align: left; cursor: pointer; min-height: 40px; align-content: end; }
+/* 説明の帯の下〜手札：押すと選んだカードを戻す受け皿（記録の一覧は開かない） */
+.phand-zone { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+.plog-ticker { display: grid; gap: 1px; padding: 2px 10px; color: var(--muted); font-size: 10px; line-height: 1.35; text-align: left; min-height: 40px; align-content: end; pointer-events: none; }
 .plog-ticker span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .plog-ticker span:last-child { color: var(--text); }
 .plog-ticker .ev-turnStarted { font-weight: 700; }
 .plog-ticker .ev-won { color: var(--gold); font-weight: 800; }
 .phand { position: relative; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; }
 /* 枚数が多いほど傾きを小さくして、端のカードが画面の外に出ないように（左右に 14px の余白） */
-.pstage .hand { --step: min(3.5deg, calc(12deg / var(--n))); padding: 18px 14px 24px; justify-content: center; }
+/* 右に 46px の余白（右手の親指で押す「戻す」の場所）を空けて並べる */
+.pstage .hand { --step: min(3.5deg, calc(12deg / var(--n))); padding: 18px 50px 24px 10px; justify-content: center; }
+.hand-cancel { position: absolute; right: 4px; bottom: 18px; width: 42px; height: 64%; max-height: 150px; display: grid; place-items: center; padding: 0; border-radius: 12px; border: 1.5px dashed #ffffff00; background: none; color: transparent; font: 800 11px/1.2 var(--f-ui); writing-mode: vertical-rl; letter-spacing: 0.2em; transition: border-color 0.15s, color 0.15s, background 0.15s; }
+.hand-cancel.on { border-color: #ffffff55; color: #ffffffcc; background: #ffffff0d; cursor: pointer; }
 /* 1枚あたり 50px は見えるように重ねて、残りの幅で大きく持つ（上限は舞台の高さで決めた --hand）。多いときは重ねて「広げる」で見る */
 .pstage .hand .mini { --w: clamp(88px, calc(100% - 20px - 50px * (var(--n) - 1)), var(--hand, 100px)); width: var(--w); transform-origin: 50% 112%; }
 .pstage .hand .mini + .mini { margin-left: min(-10px, calc((100% - var(--w) * (var(--n) + 0.4)) / (var(--n) - 1))); }
