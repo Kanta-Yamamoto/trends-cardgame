@@ -21,6 +21,8 @@ export function serveWeb(app: NestExpressApplication, dir = process.env.WEB_DIST
       // ビルドした JS・CSS は名前にハッシュが付くので、ずっと使ってよい
       else if (/[\\/]assets[\\/][^\\/]+-[\w-]{8,}\.(js|css)$/.test(path))
         res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      // カードの絵などの画像は、同じ名前のまま差し替えることがあるので毎回確かめさせる（変わっていなければ 304 で軽い）
+      else if (/\.(jpe?g|png|webp|gif|svg)$/i.test(path)) res.setHeader("Cache-Control", "no-cache");
     },
   });
   const index = resolve(dir, "index.html");
