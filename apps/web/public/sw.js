@@ -2,11 +2,11 @@
  * TRENDS のサービスワーカー（ホーム画面に追加したアプリを速く・電波が弱くても開けるようにする）
  * - 画面（HTML）：まずネットから取り、繋がらなければ前に保存したものを出す（更新がすぐ届く）
  * - ビルドした JS・CSS（名前にハッシュ付き）：一度取ったら保存したものを使う
- * - カードの絵：保存したものをすぐ出し、裏で新しいものに取り替える
+ * - カードの絵：保存したものをすぐ出し、裏でサーバーに確かめて新しいものに取り替える（ブラウザの HTTP キャッシュは使わない）
  * - API・ログイン・オンライン対戦（Socket.IO）：いつもネット（保存しない）
- * 中身を変えたら VERSION を上げる（古い保存は消える）
+ * 中身を変えたら VERSION を上げる（古い保存は消える）。今ある絵を同じ名前で差し替えたときも上げる（すぐ届くように）
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const PAGES = `trends-pages-${VERSION}`;
 const BUILD = `trends-build-${VERSION}`;
 const ART = `trends-art-${VERSION}`;
@@ -64,7 +64,8 @@ async function cacheFirst(request, cacheName) {
 async function staleWhileRevalidate(event, cacheName) {
   const cache = await caches.open(cacheName);
   const hit = await cache.match(event.request);
-  const fresh = fetch(event.request)
+  // 裏で取りに行くときは、ブラウザの HTTP キャッシュを通さずサーバーに確かめる（差し替えた絵が古いまま残らないように）
+  const fresh = fetch(event.request, { cache: "no-cache" })
     .then((res) => {
       if (res.ok) cache.put(event.request, res.clone());
       return res;
