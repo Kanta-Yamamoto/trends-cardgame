@@ -2884,7 +2884,9 @@
       }
     ],
     "effect": "相手のアイコンすべてに1ダメージ。自分の場にアイドル界隈がいれば、さらに1ダメージ。",
-    "flavor": "はい、お時間でーす。"
+    "flavor": "はい、お時間でーす。",
+    "art": "/assets/cards/m20-art.jpg",
+    "original": "assets/original/m20.webp"
   },
   {
     "id": "c11",
@@ -3455,7 +3457,9 @@
       }
     ],
     "effect": "倒されたとき、カードを1枚引く。",
-    "flavor": "使い捨てです。"
+    "flavor": "使い捨てです。",
+    "art": "/assets/cards/n15-art.jpg",
+    "original": "assets/original/n15.webp"
   },
   {
     "id": "n16",
@@ -3478,7 +3482,9 @@
       }
     ],
     "effect": "倒されたとき、攻撃力がいちばん高い相手のアイコンに2ダメージ。",
-    "flavor": "依頼は、もう済んでいる。"
+    "flavor": "依頼は、もう済んでいる。",
+    "art": "/assets/cards/n16-art.jpg",
+    "original": "assets/original/n16.webp"
   },
   {
     "id": "k19",
