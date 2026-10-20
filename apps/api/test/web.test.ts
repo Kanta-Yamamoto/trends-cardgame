@@ -23,6 +23,8 @@ describe("serveWeb", () => {
     writeFileSync(join(dir, "sw.js"), "// sw");
     writeFileSync(join(dir, "manifest.webmanifest"), "{}");
     writeFileSync(join(dir, "assets", "index-Ab12_cD3.js"), "//");
+    mkdirSync(join(dir, "assets", "cards"));
+    writeFileSync(join(dir, "assets", "cards", "c6-art.jpg"), "jpg");
     const mod = await Test.createTestingModule({ imports: [EmptyModule] }).compile();
     app = mod.createNestApplication<NestExpressApplication>();
     expect(serveWeb(app, dir)).toBe(true);
@@ -51,5 +53,12 @@ describe("serveWeb", () => {
   it("ハッシュ付きの JS はずっと使ってよい", async () => {
     const res = await request(app.getHttpServer()).get("/assets/index-Ab12_cD3.js");
     expect(res.headers["cache-control"]).toContain("immutable");
+  });
+
+  it("カードの絵は毎回確かめさせる（同じ名前で差し替えるため）", async () => {
+    const res = await request(app.getHttpServer()).get("/assets/cards/c6-art.jpg");
+    expect(res.status).toBe(200);
+    expect(res.headers["cache-control"]).toBe("no-cache");
+    expect(res.headers.etag).toBeTruthy();
   });
 });
