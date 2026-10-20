@@ -71,10 +71,10 @@ function describe(e: GameEvent): string {
       return `${nameOf(e.cardId)} に ${e.amount} ダメージ`;
     case "destroyed":
       return e.vanished
-        ? `${who(e.player)}の ${nameOf(e.cardId)}（闇堕ちの姿）が倒れて、消えた`
+        ? `${who(e.player)}の ${nameOf(e.cardId)}（闇堕ちの姿）が消えた`
         : `${who(e.player)}の ${nameOf(e.cardId)} がオワコンになった`;
     case "darkOmen":
-      return `${who(e.player)}の ${nameOf(e.cardId)} が倒れた……闇の気配。次の${who(e.player)}のターンの始めに闇堕ちして戻ってくる`;
+      return `${who(e.player)}の ${nameOf(e.cardId)} がオワコンになった……闇の気配。次の${who(e.player)}のターンの始めに闇堕ちして戻ってくる`;
     case "darkFall":
       return `${who(e.player)}の ${nameOf(e.cardId)} が、闇堕ちして戻ってきた！`;
     case "buzz":
@@ -262,7 +262,7 @@ function DeckSelect() {
           </li>
           <li>相手の場にガードがいる間は、ガードしか攻撃できない。晒し者になるとガードを失う</li>
           <li>
-            闇堕ちを持つ★5は、倒されたら次の自分のターンの始めに、闇堕ちの姿で自動で戻ってくる（出たターンは相手のアイコンにだけ攻撃できる）。闇堕ちの姿が倒されたら消える
+            闇堕ちを持つ★5は、オワコンになったら次の自分のターンの始めに、闇堕ちの姿で自動で戻ってくる（出たターンは相手のアイコンにだけ攻撃できる）。闇堕ちの姿がオワコンになったら消える
           </li>
           <li>
             バズ：1試合に2回（自分の4ターン目から。後攻は3ターン目から）、自分のアイコン1体に攻撃力+2・体力+2と凸
@@ -292,7 +292,7 @@ function DeckAce({ id }: { id?: string }) {
 }
 
 /**
- * 盤面の背景。闇堕ちを持つカードが倒されると「予兆」（持ち主の側から紫に染まる）、
+ * 盤面の背景。闇堕ちを持つカードがオワコンにされると「予兆」（持ち主の側から紫に染まる）、
  * 闇堕ちの姿が場にいる間は「闇」（盤面全体が暗い闇のフィールドになる）
  */
 function FieldLayer({ kind, mine }: { kind: "dark" | "omen"; mine: boolean }) {
@@ -309,7 +309,7 @@ function FieldLayer({ kind, mine }: { kind: "dark" | "omen"; mine: boolean }) {
   );
 }
 
-/** 闇の気配：倒れたエースの枠に灯る紫の炎 */
+/** 闇の気配：オワコンになったエースの枠に灯る紫の炎 */
 function OmenFlame() {
   return (
     <span className="omen-flame" aria-hidden="true">
@@ -568,16 +568,16 @@ type Peek = {
 /** ドラッグしているもの（手札のカード／攻撃するアイコン） */
 type DragSrc = { kind: "hand"; index: number } | { kind: "unit"; slot: number };
 
-/** 攻撃したときの見込み（与えるダメージ・倒せるか）を、攻撃先に重ねて出す */
+/** 攻撃したときの見込み（与えるダメージ・オワコンにできるか）を、攻撃先に重ねて出す */
 function AttackBadge({ pv, leader }: { pv: AttackPreview; leader?: boolean }) {
   const tag = leader
     ? pv.kills && "とどめ"
     : pv.kills && pv.dies
       ? "相打ち"
       : pv.kills
-        ? "倒せる"
+        ? "オワコン"
         : pv.dies
-          ? "倒される"
+          ? "返り討ち"
           : null;
   return (
     <span className={`atk-pv ${pv.kills ? "kill" : ""}`} aria-hidden="true">
@@ -911,7 +911,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                     ? "攻撃先を選んでください（ガードがいるので、ガードしか攻撃できません）"
                     : "攻撃先を選んでください（光っているところ）"
                   : darkOmens(game, ME).length > 0
-                    ? "闇の気配……倒れたエースは、次の自分のターンの始めに闇堕ちして戻ってくる"
+                    ? "闇の気配……オワコンになったエースは、次の自分のターンの始めに闇堕ちして戻ってくる"
                     : stage.portrait
                       ? "手札を場へ引っぱって出す・投稿／アイコンを相手へ引っぱって攻撃（長押しで拡大）"
                       : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";

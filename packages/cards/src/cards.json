@@ -23,7 +23,7 @@
         "do": "extraAttackOnKill"
       }
     ],
-    "effect": "連撃。場に出たとき、攻撃力がいちばん高い相手のアイコン1体に1ダメージ。相手のアイコンを倒すたび、もう1回攻撃できる。",
+    "effect": "連撃。場に出たとき、攻撃力がいちばん高い相手のアイコン1体に1ダメージ。相手のアイコンをオワコンにするたび、もう1回攻撃できる。",
     "flavor": "「遅えよ。全部、俺がもらってく」",
     "dark": {
       "name": "闇堕ちレン",
@@ -202,7 +202,7 @@
         "do": "copySelf"
       }
     ],
-    "effect": "場に出たとき、空いている枠にこのアイコンのコピーを1体出す（コピーはオワコンに行くと消える）。",
+    "effect": "場に出たとき、空いている枠にこのアイコンのコピーを1体出す（コピーはオワコンになると消える）。",
     "flavor": "↑これ考えたやつ天才",
     "art": "/assets/cards/k2-art.jpg",
     "original": "assets/original/k2.webp"
@@ -1505,7 +1505,7 @@
         "do": "copySelf"
       }
     ],
-    "effect": "場に出たとき、空いている枠にこのアイコンのコピーを2体出す（コピーはオワコンに行くと消える）。",
+    "effect": "場に出たとき、空いている枠にこのアイコンのコピーを2体出す（コピーはオワコンになると消える）。",
     "flavor": "どれが本物？",
     "art": "/assets/cards/k9-art.jpg",
     "original": "assets/original/k9.webp"
@@ -1583,7 +1583,7 @@
         "maxHp": 1
       }
     ],
-    "effect": "場に出たとき、体力が1以下の相手のアイコンすべてを倒す。",
+    "effect": "場に出たとき、体力が1以下の相手のアイコンすべてをオワコンにする。",
     "flavor": "それってあなたの感想ですよね、とは言わない。",
     "art": "/assets/cards/g6-art.jpg",
     "original": "assets/original/g6.webp"
@@ -1628,7 +1628,7 @@
         "maxHp": 1
       }
     ],
-    "effect": "ガード。場に出たとき、体力が1以下の相手のアイコンすべてを倒す。",
+    "effect": "ガード。場に出たとき、体力が1以下の相手のアイコンすべてをオワコンにする。",
     "flavor": "では、出席をとります。",
     "art": "/assets/cards/g8-art.jpg",
     "original": "assets/original/g8.webp"
@@ -2083,7 +2083,7 @@
         "amount": 1
       }
     ],
-    "effect": "ガード。凸。場に出たとき、体力が2以下の相手のアイコンすべてを倒す。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコン1体に1ダメージ。",
+    "effect": "ガード。凸。場に出たとき、体力が2以下の相手のアイコンすべてをオワコンにする。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコン1体に1ダメージ。",
     "flavor": "「知らないことは、まだ調べていないことだけ」",
     "art": "/assets/cards/c7-art.jpg",
     "original": "assets/original/c7.webp"
@@ -2782,7 +2782,7 @@
         "do": "destroy"
       }
     ],
-    "effect": "相手のアイコン1体を倒す。",
+    "effect": "相手のアイコン1体をオワコンにする。",
     "flavor": "はい、論破。",
     "art": "/assets/cards/g17-art.jpg",
     "original": "assets/original/g17.webp"
@@ -2806,7 +2806,7 @@
         "do": "destroy"
       }
     ],
-    "effect": "ダメージを受けている相手のアイコン1体を倒す。",
+    "effect": "ダメージを受けている相手のアイコン1体をオワコンにする。",
     "flavor": "火に油、燃料に薪。",
     "art": "/assets/cards/f20-art.jpg",
     "original": "assets/original/f20.webp"
@@ -3242,8 +3242,8 @@
         "card": "t-kusa"
       }
     ],
-    "effect": "自分の草が、このゲームでオワコンに行った数だけ攻撃力+1。",
-    "flavor": "倒れた草も、残さずいただきます。",
+    "effect": "自分の草が、このゲームでオワコンになった数だけ攻撃力+1。",
+    "flavor": "オワコンになった草も、残さずいただきます。",
     "art": "/assets/cards/c14-art.jpg",
     "original": "assets/original/c14.webp",
     "subject": "/assets/cards/c14-subject.webp",
@@ -3268,7 +3268,7 @@
           "count": 2
         }
       ],
-      "effect": "速攻。自分の草が、このゲームでオワコンに行った数だけ攻撃力+1。闇堕ちしたとき、草を2体出す。"
+      "effect": "速攻。自分の草が、このゲームでオワコンになった数だけ攻撃力+1。闇堕ちしたとき、草を2体出す。"
     }
   },
   {
@@ -3288,7 +3288,7 @@
         "do": "sacrifice"
       }
     ],
-    "effect": "場に出たとき、自分と相手は、それぞれ自分のアイコンを1体選ぶ。選ばれたアイコンは倒される。",
+    "effect": "場に出たとき、自分と相手は、それぞれ自分のアイコンを1体選ぶ。選ばれたアイコンはオワコンになる。",
     "flavor": "その闇堕ち、仕込みです。",
     "art": "/assets/cards/c15-art.jpg",
     "subject": "/assets/cards/c15-subject.webp",
@@ -3456,7 +3456,7 @@
         "count": 1
       }
     ],
-    "effect": "倒されたとき、カードを1枚引く。",
+    "effect": "オワコンになったとき、カードを1枚引く。",
     "flavor": "使い捨てです。",
     "art": "/assets/cards/n15-art.jpg",
     "original": "assets/original/n15.webp"
@@ -3481,7 +3481,7 @@
         "amount": 2
       }
     ],
-    "effect": "倒されたとき、攻撃力がいちばん高い相手のアイコン1体に2ダメージ。",
+    "effect": "オワコンになったとき、攻撃力がいちばん高い相手のアイコン1体に2ダメージ。",
     "flavor": "依頼は、もう済んでいる。",
     "art": "/assets/cards/n16-art.jpg",
     "original": "assets/original/n16.webp"
@@ -3510,7 +3510,7 @@
         "card": "t-kusa"
       }
     ],
-    "effect": "場に出たとき、草を2体出す。自分の草が、このゲームでオワコンに行った数だけ攻撃力+1。",
+    "effect": "場に出たとき、草を2体出す。自分の草が、このゲームでオワコンになった数だけ攻撃力+1。",
     "flavor": "枯れた草ほど、よく燃える。",
     "art": "/assets/cards/k19-art.jpg",
     "original": "assets/original/kusa-queen.webp"

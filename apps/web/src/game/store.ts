@@ -22,7 +22,7 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: strin
   solo_flame: {
     ace: "c2",
     name: "凸待ち配信の夜",
-    text: "炎上・アグロ。速攻で殴り、晒しでガードをはがし、6ターン目のレンが連撃で場を片づける。倒されても闇堕ちレンが全体を焼く",
+    text: "炎上・アグロ。速攻で殴り、晒しでガードをはがし、6ターン目のレンが連撃で場を片づける。オワコンになっても闇堕ちレンが全体を焼く",
   },
   solo_idol: {
     ace: "c13",
@@ -37,7 +37,7 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: strin
   solo_meme: {
     ace: "k5",
     name: "伝説のコラ画像",
-    text: "草・数で押す。草を生やして場を埋め、ミーム女王とコラ画像で全員が一斉に殴る。倒されたら呪いのコラ画像が空き枠を草で埋める",
+    text: "草・数で押す。草を生やして場を埋め、ミーム女王とコラ画像で全員が一斉に殴る。オワコンになったら呪いのコラ画像が空き枠を草で埋める",
   },
   solo_heal: {
     ace: "c5",
