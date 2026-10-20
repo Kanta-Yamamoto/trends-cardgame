@@ -84,3 +84,25 @@ export const appSettings = pgTable("app_settings", {
   value: text("value").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** 自分で組んだデッキ（ログインしたユーザーごとに一覧をまるごと持つ。どの端末から入っても同じデッキを使えるように） */
+export const userDecks = pgTable("user_decks", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  /** web の CustomDeck の配列（id・name・cards・updated） */
+  decks: jsonb("decks").$type<SavedDeck[]>().notNull().default([]),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+/** 保存するデッキ1つ分（web の CustomDeck と同じ形） */
+export interface SavedDeck {
+  id: string;
+  name: string;
+  cards: string[];
+  /** 保存した時刻（ミリ秒） */
+  updated: number;
+}

@@ -12,7 +12,7 @@ const BUILD = `trends-build-${VERSION}`;
 const ART = `trends-art-${VERSION}`;
 const FONTS = `trends-fonts-${VERSION}`;
 const KEEP = [PAGES, BUILD, ART, FONTS];
-const API_PREFIXES = ["/cards", "/health", "/auth", "/matches", "/socket.io"];
+const API_PREFIXES = ["/cards", "/health", "/auth", "/matches", "/me", "/socket.io"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
