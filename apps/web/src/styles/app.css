@@ -8,8 +8,10 @@
   --gold: #f2cf7a;
   --accent: #8fd8ff;
   --foe: #ff5a6a;
-  --f-ui: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
-  --f-mark: "Cinzel", "Times New Roman", serif;
+  /* 画面の文字：M PLUS 1（ゲームでよく使われる角ゴシック）。数字・ロゴ：Lilita One（太く丸いゲームらしい数字） */
+  --f-ui: "M PLUS 1", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --f-mark: "Lilita One", "M PLUS 1", sans-serif;
+  --f-head: "Dela Gothic One", "M PLUS 1", sans-serif;
 }
 * { box-sizing: border-box; }
 /* 素早い2回タップで拡大しない（iPhone はメタタグの user-scalable=no を無視するので CSS で止める） */
@@ -20,6 +22,8 @@ body {
   background: radial-gradient(110% 70% at 50% 0%, var(--night-2), var(--night) 70%) fixed;
   color: var(--text);
   font-family: var(--f-ui);
+  /* 太さが1種類しかない書体（Dela Gothic One・Lilita One）を、ブラウザが無理に太らせない */
+  font-synthesis-weight: none;
 }
 button { font: inherit; color: inherit; }
 .shell { max-width: 1100px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right)) 40px max(16px, env(safe-area-inset-left)); }

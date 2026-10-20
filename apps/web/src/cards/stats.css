@@ -13,7 +13,7 @@
   box-shadow: 0 0 0 0.12em #ffffffd9, 0 0.2em 0.5em #0007;
 }
 .stat small { font: 800 0.42em/1 var(--f-ui, sans-serif); letter-spacing: 0.08em; opacity: 0.85; }
-.stat b { font: 800 1.25em/1 "Cinzel", "Times New Roman", serif; font-variant-numeric: tabular-nums; text-shadow: 0 0.06em 0.12em #0008; }
+.stat b { font: 400 1.3em/1 "Lilita One", "M PLUS 1", sans-serif; font-variant-numeric: tabular-nums; text-shadow: 0 0.06em 0.12em #0008; }
 .stat-atk { background: radial-gradient(circle at 35% 30%, #ff7a7a, var(--atk) 45%, var(--atk-deep)); }
 .stat-hp { background: radial-gradient(circle at 35% 30%, #8cc4ff, var(--hp) 45%, var(--hp-deep)); }
 .stat-hp.hurt b { color: var(--hurt); }

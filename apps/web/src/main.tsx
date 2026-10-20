@@ -3,6 +3,13 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router";
 import { App } from "./App";
+// 書体はアプリに同梱する（Google Fonts に繋がらない環境・スマホアプリ・オフラインでも同じ見た目に）
+import "@fontsource/m-plus-1/400.css";
+import "@fontsource/m-plus-1/700.css";
+import "@fontsource/m-plus-1/800.css";
+import "@fontsource/m-plus-1/900.css";
+import "@fontsource/lilita-one/400.css";
+import "@fontsource/dela-gothic-one/400.css";
 import "./cards/cards.css";
 import "./cards/generic.css";
 import "./cards/rare.css";
