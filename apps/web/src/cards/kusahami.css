@@ -1,0 +1,198 @@
+/* ★5 の専用デザイン（第7弾）：クサハミ（.s-kusahami）。大食い配信。コストはお皿、効果は「おかわり伝票」
+   闇堕ちの姿（.is-darkform）は、同じ作りのまま夜の紫と毒の黄緑に変える */
+
+/* ---------- 共通の土台（rare5b.css と同じ作り） ---------- */
+.s-kusahami {
+  .card {
+    --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; --nx: 0; --ny: 0; --g: 0;
+    --art: url(/assets/cards/c14-art.jpg); --subject: url(/assets/cards/c14-subject.webp);
+    position: relative; width: 100%; aspect-ratio: 63 / 88; border-radius: 4.2% / 3%;
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transition: transform 0.12s ease-out;
+    overflow: hidden; isolation: isolate;
+  }
+  .card-inner { position: absolute; inset: 0; font-size: calc(var(--w, 360px) / 24); }
+  .layer { position: absolute; inset: 0; }
+  .stats { font-size: 0.95em; }
+  .win { clip-path: inset(4.4% 5.2% 4.4% 5.2% round 6%); }
+  .bg {
+    background: var(--art) center 8% / cover no-repeat;
+    transform: translate(calc(var(--nx) * -7px), calc(var(--ny) * -7px)) scale(1.06);
+  }
+  .subject {
+    background: var(--subject) center 8% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
+    clip-path: inset(0 5.2% 0 5.2%); pointer-events: none;
+  }
+  .subject-shine {
+    mask: var(--subject) center 8% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 8px), calc(var(--ny) * 8px)) scale(1.06);
+    clip-path: inset(0 5.2% 0 5.2%);
+    mix-blend-mode: soft-light; opacity: calc(0.2 + var(--g) * 0.5); pointer-events: none;
+  }
+  .rarity, .cost, .dark-tag { position: absolute; z-index: 3; }
+  .dark-tag {
+    right: 7%; top: 12%; font-size: 0.75em; font-weight: 800;
+    padding: 0.2em 0.6em; border-radius: 99px; background: #1a0d24; color: #d9c2ff; box-shadow: 0 0 0 1px #8f7bff;
+  }
+  .plate { position: absolute; left: 6%; right: 6%; bottom: 5%; z-index: 2; display: grid; gap: 0.3em; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 0.4em; flex-wrap: wrap; }
+  .chip { font-size: 0.68em; }
+  .effect { margin: 0; text-wrap: pretty; }
+  .dark-note { margin: 0; font-size: 0.66em; font-weight: 700; color: #7a5bd0; }
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5em; }
+  .glare { z-index: 4; pointer-events: none; }
+}
+
+/* =========================================================
+   クサハミ：草原のランチョンマット。お皿のコスト、おかわり伝票
+   ========================================================= */
+.s-kusahami {
+  --leaf: #9be15a; --leaf-2: #e4ffc4; --moss: #4a8f22; --deep: #24510f; --ink: #2b2a18;
+  --fur: #c99a62; --fur-2: #f4e2c4; --sauce: #e36b3a; --paper: #fffbef;
+  --f-name: "Dela Gothic One", "Hiragino Sans", sans-serif;
+  --f-body: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", sans-serif;
+  --f-num: "Fredoka", "Arial Rounded MT Bold", sans-serif;
+
+  .card { color: var(--ink); background: #f3f9e6; box-shadow: 0 30px 60px -20px #000b, 0 0 60px -12px #9be15aaa, 0 0 0 1px #ffffff70; }
+  /* 枠：ギンガムチェックのランチョンマット（若葉色） */
+  .meadow {
+    background:
+      linear-gradient(115deg, transparent 30%, #ffffff90 46%, #fff 50%, #ffffff90 54%, transparent 70%) var(--mx) var(--my) / 250% 250% no-repeat,
+      repeating-linear-gradient(0deg, #9be15a55 0 0.6em, transparent 0.6em 1.2em),
+      repeating-linear-gradient(90deg, #9be15a55 0 0.6em, transparent 0.6em 1.2em),
+      linear-gradient(160deg, var(--leaf-2), #f8ffe9 45%, var(--leaf-2));
+  }
+  /* 食べこぼした草のかけら（傾けると転がる） */
+  .crumbs {
+    background:
+      radial-gradient(ellipse 40% 18% at 50% 50%, var(--moss) 0 50%, transparent 55%) 0 0 / 3.4em 2.9em,
+      radial-gradient(ellipse 30% 14% at 50% 50%, var(--leaf) 0 50%, transparent 55%) 1.6em 1.3em / 2.6em 2.3em;
+    background-position: calc(var(--nx) * -22px) calc(var(--ny) * -14px), calc(1.6em + var(--nx) * -12px) calc(1.3em + var(--ny) * -8px);
+    mask: linear-gradient(#000, transparent 9%, transparent 91%, #000), linear-gradient(90deg, #000, transparent 7%, transparent 93%, #000);
+    mask-composite: add;
+    opacity: 0.45;
+  }
+  /* 草原の日ざし */
+  .sunbeam {
+    background:
+      linear-gradient(calc(160deg + var(--nx) * 6deg), transparent 35%, #ffffff55 45%, transparent 52%),
+      radial-gradient(50% 35% at calc(70% + var(--nx) * 8%) 0%, #fffbe0bb, transparent 70%);
+    mix-blend-mode: screen; opacity: calc(0.35 + var(--g) * 0.45);
+  }
+  /* 舞う光の粒 */
+  .spores {
+    background:
+      radial-gradient(circle, #ffffffd0 0 0.12em, transparent 0.16em) 0 0 / 2.8em 2.4em,
+      radial-gradient(circle, #e4ffc4c0 0 0.09em, transparent 0.13em) 1.2em 1em / 2.1em 1.9em;
+    background-position: calc(var(--nx) * 16px) calc(var(--ny) * -20px), calc(1.2em + var(--nx) * 9px) calc(1em + var(--ny) * -12px);
+    mask: radial-gradient(60% 50% at var(--mx) var(--my), #000, transparent);
+    mix-blend-mode: screen; opacity: calc(0.2 + var(--g) * 0.5);
+  }
+  /* 枠の縁：お皿のふち */
+  .rim {
+    inset: 4.4% 5.2%; border-radius: 6%; pointer-events: none;
+    box-shadow: 0 0 0 0.16em #fff, 0 0 0 0.32em var(--leaf), 0 0 0 0.42em #fff, 0 0 1.2em 0.3em #9be15a88;
+  }
+  .subject { filter: drop-shadow(0 6px 12px #24510f88); }
+  .subject-shine {
+    background: linear-gradient(120deg, var(--leaf-2), #fff, #fff2c0, var(--leaf-2)); background-size: 300% 300%; background-position: var(--mx) var(--my);
+  }
+  /* 「もぐもぐ」の擬音（ゆれる） */
+  .mukbang {
+    inset: auto; left: 8%; top: 13%; z-index: 3; width: auto; height: auto;
+    font: 400 1.1em/1 var(--f-name); letter-spacing: 0.06em; color: #fff; writing-mode: vertical-rl;
+    text-shadow: 0.07em 0 0 var(--deep), -0.07em 0 0 var(--deep), 0 0.07em 0 var(--deep), 0 -0.07em 0 var(--deep), 0.05em 0.05em 0 var(--deep), -0.05em -0.05em 0 var(--deep), 0 0.14em 0 var(--deep), 0 0 0.5em #fff;
+    transform: rotate(-8deg); animation: kusahami-munch 0.9s ease-in-out infinite;
+  }
+  .dark-tag { top: 12%; }
+  /* コスト：お皿 */
+  .cost {
+    left: 2.4%; top: 1.6%; width: 17%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
+    background:
+      radial-gradient(circle, #fff 0 52%, #e9f3dc 53% 58%, #fff 59% 100%);
+    box-shadow: 0 0 0 0.12em var(--leaf), 0 0 0 0.24em #fff, 0 0.35em 0.8em -0.2em #000a, inset 0 -0.2em 0.4em #24510f22;
+  }
+  .cost b { font: 700 2.05em/1 var(--f-num); color: var(--deep); }
+  .rarity {
+    right: 7%; top: 6%; font-size: 0.8em; letter-spacing: 0.12em; color: var(--deep);
+    padding: 0.35em 0.75em; border-radius: 2em; background: #ffffffe0; box-shadow: 0 0 0 1px var(--leaf);
+  }
+  .name { display: grid; justify-items: center; }
+  .name .epi { font: 700 0.72em/1.2 var(--f-body); letter-spacing: 0.3em; color: #fff; text-shadow: 0 0 0.4em var(--deep), 0 0 0.8em var(--deep); }
+  .name h3 {
+    margin: 0; font: 400 2.1em/1.05 var(--f-name); letter-spacing: 0.24em; padding-left: 0.24em; color: #fff;
+    text-shadow: 0.05em 0 0 var(--deep), -0.05em 0 0 var(--deep), 0 0.05em 0 var(--deep), 0 -0.05em 0 var(--deep), 0 0.09em 0 var(--deep), 0 0 0.6em var(--leaf);
+  }
+  /* 効果：おかわり伝票（上がミシン目） */
+  .slip {
+    position: relative; display: grid; gap: 0.3em; padding: 0.7em 0.85em 0.5em; border-radius: 0.2em 0.2em 0.6em 0.6em;
+    background:
+      radial-gradient(circle at 50% 0, transparent 0.18em, var(--paper) 0.2em) 0 0 / 0.7em 0.5em repeat-x,
+      linear-gradient(180deg, var(--paper) 0.5em, #fff7e0);
+    background-position: 0 -0.25em, 0 0;
+    box-shadow: 0 0 0 0.1em #e8dcbf, 0 0.3em 1em -0.3em #24510f88;
+  }
+  .label {
+    font: 800 0.74em/1 var(--f-body); letter-spacing: 0.2em; color: var(--sauce);
+    padding: 0.25em 0.5em; border: 0.1em solid var(--sauce); border-radius: 0.2em; transform: rotate(-3deg);
+  }
+  .chip.kaiwai { background: #4a8f2214; color: var(--deep); box-shadow: inset 0 0 0 1px #4a8f2233; }
+  .effect { font: 700 0.86em/1.55 var(--f-body); color: var(--ink); }
+  .effect .kw { color: var(--moss); background: linear-gradient(transparent 60%, #e4ffc4 60%); }
+  .dark-note { color: #6a55c9; }
+  .tally { flex: 1; font: 700 0.7em/1 var(--f-body); letter-spacing: 0.1em; color: #b9a988; }
+  .glare {
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffffffcc 0%, #e4ffc440 25%, transparent 55%);
+    mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);
+  }
+
+  /* ---------- 闇堕ち：毒草喰らいのクサハミ（夜の紫と毒の黄緑） ---------- */
+  .card.is-darkform {
+    --art: url(/assets/cards/c14-dark-art.jpg); --subject: url(/assets/cards/c14-dark-subject.webp);
+    --leaf: #b6ff3a; --leaf-2: #3b2352; --moss: #9be12a; --deep: #140a22; --ink: #efe6ff; --paper: #23163a;
+    background: #1a1029; box-shadow: 0 30px 60px -20px #000d, 0 0 60px -10px #b6ff3a88, 0 0 0 2px #8f5bff;
+  }
+  .card.is-darkform .meadow {
+    background:
+      linear-gradient(115deg, transparent 30%, #b6ff3a40 46%, #d8ff9a80 50%, #b6ff3a40 54%, transparent 70%) var(--mx) var(--my) / 250% 250% no-repeat,
+      repeating-linear-gradient(0deg, #8f5bff40 0 0.6em, transparent 0.6em 1.2em),
+      repeating-linear-gradient(90deg, #8f5bff40 0 0.6em, transparent 0.6em 1.2em),
+      linear-gradient(160deg, #2a1840, #170d26 50%, #2a1840);
+  }
+  .card.is-darkform .crumbs { opacity: 0.6; filter: hue-rotate(40deg) saturate(1.4); }
+  .card.is-darkform .sunbeam {
+    background: radial-gradient(50% 35% at calc(70% + var(--nx) * 8%) 0%, #b08cff66, transparent 70%);
+  }
+  .card.is-darkform .spores {
+    background:
+      radial-gradient(circle, #c9a8ffd0 0 0.12em, transparent 0.16em) 0 0 / 2.8em 2.4em,
+      radial-gradient(circle, #b6ff3ab0 0 0.09em, transparent 0.13em) 1.2em 1em / 2.1em 1.9em;
+  }
+  .card.is-darkform .rim { box-shadow: 0 0 0 0.16em #0c0616, 0 0 0 0.32em #8f5bff, 0 0 0 0.42em #0c0616, 0 0 1.4em 0.3em #b6ff3a66; }
+  .card.is-darkform .subject { filter: drop-shadow(0 6px 14px #000c); }
+  .card.is-darkform .subject-shine { background: linear-gradient(120deg, #8f5bff, #d8ff9a, #8f5bff); background-size: 300% 300%; background-position: var(--mx) var(--my); }
+  .card.is-darkform .mukbang {
+    color: #d8ff9a;
+    text-shadow: 0.06em 0 0 #3b1a66, -0.06em 0 0 #3b1a66, 0 0.06em 0 #3b1a66, 0 -0.06em 0 #3b1a66, 0 0 0.5em #b6ff3a;
+  }
+  .card.is-darkform .cost { background: radial-gradient(circle, #2a1840 0 52%, #3b2352 53% 58%, #2a1840 59% 100%); box-shadow: 0 0 0 0.12em #8f5bff, 0 0 0 0.24em #0c0616, 0 0.35em 0.8em -0.2em #000c; }
+  .card.is-darkform .cost b { color: #d8ff9a; }
+  .card.is-darkform .rarity { color: #d8ff9a; background: #1a1029e0; box-shadow: 0 0 0 1px #8f5bff; }
+  .card.is-darkform .name .epi { text-shadow: 0 0 0.4em #000, 0 0 0.8em #8f5bff; }
+  .card.is-darkform .name h3 { text-shadow: 0.05em 0 0 #2a1048, -0.05em 0 0 #2a1048, 0 0.05em 0 #2a1048, 0 -0.05em 0 #2a1048, 0 0.09em 0 #000, 0 0 0.6em #b6ff3a; }
+  .card.is-darkform .slip {
+    background:
+      radial-gradient(circle at 50% 0, transparent 0.18em, var(--paper) 0.2em) 0 0 / 0.7em 0.5em repeat-x,
+      linear-gradient(180deg, var(--paper) 0.5em, #1b1030);
+    background-position: 0 -0.25em, 0 0;
+    box-shadow: 0 0 0 0.1em #8f5bff88, 0 0.3em 1em -0.3em #000c;
+  }
+  .card.is-darkform .label { color: #b6ff3a; border-color: #b6ff3a; }
+  .card.is-darkform .chip.kaiwai { background: #b6ff3a1a; color: #d8ff9a; box-shadow: inset 0 0 0 1px #b6ff3a44; }
+  .card.is-darkform .effect .kw { color: #d8ff9a; background: linear-gradient(transparent 60%, #8f5bff66 60%); }
+  .card.is-darkform .tally { color: #6d5a8f; }
+  .card.is-darkform .glare { background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #d8ff9a88 0%, #8f5bff40 25%, transparent 55%); }
+}
+@keyframes kusahami-munch { 0%, 100% { transform: rotate(-8deg) translateY(0); } 50% { transform: rotate(-4deg) translateY(-0.15em); } }
+@media (prefers-reduced-motion: reduce) { .s-kusahami .mukbang { animation: none; } }

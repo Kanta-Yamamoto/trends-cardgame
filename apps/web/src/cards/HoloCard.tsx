@@ -8,6 +8,7 @@ import { GenericFace } from "./faces/Generic";
 import { HibanaFace } from "./faces/Hibana";
 import { IdolFace } from "./faces/Idol";
 import { KaguraFace } from "./faces/Kagura";
+import { KusahamiFace } from "./faces/Kusahami";
 import { LalaFace } from "./faces/Lala";
 import { MinamoFace } from "./faces/Minamo";
 import { MireiFace } from "./faces/Mirei";
@@ -37,6 +38,7 @@ const FACES: Record<string, { cls: string; Face: ComponentType<{ card: CardDef }
   c11: { cls: "s-ruri", Face: RuriFace },
   c12: { cls: "s-lala", Face: LalaFace },
   c13: { cls: "s-mirei", Face: MireiFace },
+  c14: { cls: "s-kusahami", Face: KusahamiFace },
   c15: { cls: "s-fixer", Face: FixerFace },
 };
 
