@@ -26,6 +26,11 @@ export interface FxStage {
   };
   /** 演出を 1 つ始める（描画を動かす）。終わったら返り値の関数を呼ぶ */
   hold: () => () => void;
+  /**
+   * 舞台を一時的に、画面全体を覆う演出（闇堕ちなど）より手前に出す。返り値の関数で元に戻す。
+   * ふだんは盤面の上・拡大表示の下にいる
+   */
+  raise: (zIndex: number) => () => void;
 }
 
 let boot: Promise<FxStage | null> | null = null;
@@ -87,10 +92,24 @@ async function create(): Promise<FxStage | null> {
     };
   };
 
+  let raised = 0;
+  const raise = (zIndex: number) => {
+    raised += 1;
+    app.canvas.style.zIndex = String(zIndex);
+    let done = false;
+    return () => {
+      if (done) return;
+      done = true;
+      raised -= 1;
+      if (raised === 0) app.canvas.style.zIndex = "";
+    };
+  };
+
   return {
     pixi,
     app,
     root,
+    raise,
     tex: { glow: glowTexture(pixi), spark: sparkTexture(pixi), puff: puffTexture(pixi) },
     hold,
   };
