@@ -27,6 +27,8 @@ import { AttrChips } from "../cards/AttrChips";
 import { EffectText, HelpTerm } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
+import { fxStage } from "../fx/stage";
+import { summonWaveLater } from "../fx/summonWave";
 import { CardZoom } from "../game/CardZoom";
 import { type DarkCut, DarkCutscene } from "../game/DarkCutscene";
 import { useDecksChanged } from "../game/deckSync";
@@ -738,6 +740,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     onCancel: () => select(null),
   });
 
+  // 演出の舞台（PixiJS）を先に用意しておく（最初の演出で読み込み待ちにならないように）
+  useEffect(() => {
+    void fxStage();
+  }, []);
+
   // 攻撃の演出を store に登録する（演出が終わってから state を進める）
   useEffect(() => {
     setPresenter({
@@ -819,6 +826,14 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     const uidAt = (p: PlayerId, slot: number) => g?.players[p].field[slot]?.uid;
     let t = 0;
     for (const { id, e, fx } of fresh) {
+      // ★5 のアイコンが場に着いた瞬間に、属性の色の小さな波動（落ちてくる動きの着地に合わせる）
+      if (e.type === "played") {
+        const card = CATALOG[e.cardId];
+        const uid = uidAt(e.player, e.slot);
+        if (card?.type === "icon" && card.rarity === 5 && uid) {
+          summonWaveLater(uid, card.attributes, t + 160);
+        }
+      }
       // 効果の演出で見せ終わった数字は出さない
       if (fx && (e.type === "damaged" || e.type === "leaderDamaged" || e.type === "leaderHealed")) continue;
       if (e.type === "turnStarted") {

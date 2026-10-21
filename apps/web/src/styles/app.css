@@ -288,6 +288,8 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 
 /* 演出のレイヤー（攻撃・ドロー・ダメージの数字） */
 #fx-layer { position: fixed; inset: 0; z-index: 35; pointer-events: none; }
+/* PixiJS の演出の舞台（fx/stage.ts）。盤面（.play-full）の上、拡大表示（.zoom）より下 */
+#fx-stage { position: fixed; inset: 0; z-index: 15; pointer-events: none; }
 .fx-num { position: fixed; font: 900 34px/1 var(--f-mark); color: #fff; -webkit-text-stroke: 1.5px #7a0a14; text-shadow: 0 0 14px #ff3b4c, 0 3px 0 #7a0a14; }
 .fx-num.heal { -webkit-text-stroke-color: #0b5a2e; text-shadow: 0 0 14px #3dff8b, 0 3px 0 #0b5a2e; }
 .fx-burst { position: fixed; width: 90px; height: 90px; border-radius: 50%; border: 6px solid var(--c); box-shadow: 0 0 30px var(--c), inset 0 0 20px var(--c); }
