@@ -2,6 +2,7 @@ import { type CardDef, type DeckId } from "@trends/cards";
 import {
   type AttackPreview,
   type AttackTarget,
+  applyAction,
   attackTargets,
   buzzBlock,
   type CastTarget,
@@ -671,6 +672,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   /** 対戦の記録（縦の舞台では下から出る一覧） */
   const [logOpen, setLogOpen] = useState(false);
   const seen = useRef(0);
+  /** マスターへの攻撃が当たった瞬間に先に見せたライフ（state が進むまでの間の表示）。同じ出来事の数字を二重に出さないためにも使う */
+  const [lpHit, setLpHit] = useState<{ player: PlayerId; lp: number } | null>(null);
+  const hitShown = useRef<{ player: PlayerId; lp: number } | null>(null);
+  // 攻撃のあと state が進んだら、本当のライフの表示に戻す
+  // biome-ignore lint/correctness/useExhaustiveDependencies: game が変わったときだけ戻す
+  useEffect(() => setLpHit(null), [game]);
   const { stage, probe } = useStage();
   /** バズのカットイン */
   const [buzzCut, setBuzzCut] = useState<BuzzCut | null>(null);
@@ -748,7 +755,25 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   // 攻撃の演出を store に登録する（演出が終わってから state を進める）
   useEffect(() => {
     setPresenter({
-      beforeAttack: (g, a) => animateAttack(g, a.player, a.from, a.target, CATALOG),
+      beforeAttack: (g, a) => {
+        // マスターへの攻撃は、当たった瞬間にライフの表示を減らす（演出のあとでもう一度減ったように見せない）
+        const foeId: PlayerId = a.player === ME ? CPU : ME;
+        let lp: number | undefined;
+        if (a.target.kind === "leader") {
+          try {
+            lp = applyAction(g, a, CATALOG).state.players[foeId].lp;
+          } catch {
+            lp = undefined;
+          }
+        }
+        return animateAttack(g, a.player, a.from, a.target, CATALOG, {
+          onImpact: () => {
+            if (lp === undefined || lp === g.players[foeId].lp) return;
+            hitShown.current = { player: foeId, lp };
+            setLpHit({ player: foeId, lp });
+          },
+        });
+      },
       turnIntro: 1100,
       resolveEffects: async (shown, a, events, next) => {
         const visible = hasVisibleEffects(events);
@@ -846,6 +871,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         const { player, amount } = e;
         setTimeout(() => popMaster(player, `+${amount}`, "heal"), t);
       } else if (e.type === "leaderDamaged" && !fresh.some((l) => l.e.type === "battle")) {
+        // マスターへの攻撃のダメージは、当たった瞬間に見せ終わっている
+        const shown = hitShown.current;
+        if (shown && shown.player === e.player && shown.lp === e.lp) {
+          hitShown.current = null;
+          continue;
+        }
         const { player, amount } = e;
         setTimeout(() => popMaster(player, `-${amount}`, "dmg"), t);
       } else if (e.type === "damaged") {
@@ -1033,7 +1064,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     <PlayerBar
       side="foe"
       name={foeName}
-      lp={foe.lp}
+      lp={lpHit?.player === CPU ? lpHit.lp : foe.lp}
       mana={foe.mana}
       maxMana={foe.maxMana}
       hand={foe.hand.length}
@@ -1052,7 +1083,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     <PlayerBar
       side="me"
       name="あなた"
-      lp={me.lp}
+      lp={lpHit?.player === ME ? lpHit.lp : me.lp}
       mana={me.mana}
       maxMana={me.maxMana}
       hand={me.hand.length}
@@ -1203,7 +1234,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         }
       >
         {stage.portrait ? (
-          /* 縦の舞台：上から 相手 → 相手の場 → 案内 → 自分の場 → 自分 → 押したカードの説明 → 直近の出来事＋バズ・ターン終了 → 手札 */
+          /* 縦の舞台：上から 相手 → 相手の場 → 自分の場 → 自分 → 押したカードの説明 → バズ・ターン終了 →（余白）→ 手札 */
           <div className={`pstage ${boardClass}`} data-drop="board">
             {fieldLayer}
             <div className="ptop">
@@ -1219,13 +1250,17 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             {foeBar}
             <div className="pfield">
               {foeRow}
-              {/* 場と場の間は案内だけ（ボタンは親指の届く手札の上の右へ） */}
-              <div className="pmid">{hintEl}</div>
+              {/* 場と場の間には何も置かない（案内の文は出さない。反則のときだけ、短く知らせて消える） */}
+              {error && (
+                <p key={error} className="ptoast" role="alert">
+                  {error}
+                </p>
+              )}
               {meRow}
             </div>
             {meBar}
             <PeekStrip card={peekCard} view={peek?.view} onOpen={() => setZoom(peek)} />
-            {/* 直近の出来事は見せるだけ。ここから下（手札のまわりの空き）を押すと、選んだカードを手札に戻す */}
+            {/* ここから下（手札のまわりの空き）を押すと、選んだカードを手札に戻す */}
             {/* biome-ignore lint/a11y/useKeyWithClickEvents: キーボードでは「戻す」ボタンで同じことができる */}
             {/* biome-ignore lint/a11y/noStaticElementInteractions: 余白を押して選択をやめるための受け皿 */}
             <div
@@ -1236,13 +1271,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               }}
             >
               <div className="pdock">
-                <div className="plog-ticker" aria-hidden="true">
-                  {log.slice(-3).map(({ id, e }) => (
-                    <span key={id} className={`ev-${e.type}`}>
-                      {describe(e)}
-                    </span>
-                  ))}
-                </div>
                 {/* 操作のボタンは、手札を持つ右手の親指が届く右下にまとめる（スマホのカードゲームの定番の位置） */}
                 <span className="pdock-actions">
                   {buzzBtn}
