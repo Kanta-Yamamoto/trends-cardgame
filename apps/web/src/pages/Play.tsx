@@ -752,6 +752,20 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     void fxStage();
   }, []);
 
+  // 闇堕ちの字の書体を先に読み込んでおく（初めての闇堕ちで、別の書体のまま出ないように）
+  useEffect(() => {
+    void document.fonts?.load('400 1em "Zen Antique"', "闇堕ち").catch(() => {});
+  }, []);
+
+  // 開発中だけ、闇堕ちの演出とカードの拡大をブラウザから出せるようにする（演出の確認用）
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    (window as unknown as { __playFx?: unknown }).__playFx = {
+      darkFall: (cardId: string, mine = true) => setCut({ id: Date.now(), cardId, mine, done: () => {} }),
+      zoom: (id: string) => setZoom({ id, where: "hand", index: 0 }),
+    };
+  }, []);
+
   // 攻撃の演出を store に登録する（演出が終わってから state を進める）
   useEffect(() => {
     setPresenter({
