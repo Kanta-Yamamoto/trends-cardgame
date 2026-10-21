@@ -1203,28 +1203,24 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         }
       >
         {stage.portrait ? (
-          /* 縦の舞台：上から 相手 → 相手の場 → 案内＋ターン終了 → 自分の場 → 自分 → 押したカードの説明 → 手札 */
+          /* 縦の舞台：上から 相手 → 相手の場 → 案内 → 自分の場 → 自分 → 押したカードの説明 → 直近の出来事＋バズ・ターン終了 → 手札 */
           <div className={`pstage ${boardClass}`} data-drop="board">
             {fieldLayer}
             <div className="ptop">
               {quitBtn}
               {turnPill}
-              <span className="ptop-right">{resignBtn}</span>
+              <span className="ptop-right">
+                <button type="button" className="btn ghost small plog" onClick={() => setLogOpen(true)}>
+                  記録
+                </button>
+                {resignBtn}
+              </span>
             </div>
             {foeBar}
             <div className="pfield">
               {foeRow}
-              <div className="pmid">
-                {hintEl}
-                {/* 押すボタンはここにまとめる（手札のまわりは、選んだカードを戻すための余白にする） */}
-                <span className="pmid-actions">
-                  <button type="button" className="btn ghost small plog" onClick={() => setLogOpen(true)}>
-                    記録
-                  </button>
-                  {buzzBtn}
-                  {endTurnBtn}
-                </span>
-              </div>
+              {/* 場と場の間は案内だけ（ボタンは親指の届く手札の上の右へ） */}
+              <div className="pmid">{hintEl}</div>
               {meRow}
             </div>
             {meBar}
@@ -1239,12 +1235,19 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                 if (!t.closest(".mini, button")) cancelSelection();
               }}
             >
-              <div className="plog-ticker" aria-hidden="true">
-                {log.slice(-3).map(({ id, e }) => (
-                  <span key={id} className={`ev-${e.type}`}>
-                    {describe(e)}
-                  </span>
-                ))}
+              <div className="pdock">
+                <div className="plog-ticker" aria-hidden="true">
+                  {log.slice(-3).map(({ id, e }) => (
+                    <span key={id} className={`ev-${e.type}`}>
+                      {describe(e)}
+                    </span>
+                  ))}
+                </div>
+                {/* 操作のボタンは、手札を持つ右手の親指が届く右下にまとめる（スマホのカードゲームの定番の位置） */}
+                <span className="pdock-actions">
+                  {buzzBtn}
+                  {endTurnBtn}
+                </span>
               </div>
               <div className="phand">
                 {handMore}

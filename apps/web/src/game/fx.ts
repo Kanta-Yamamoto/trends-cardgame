@@ -30,6 +30,18 @@ function layer(): HTMLElement {
 
 const center = (r: DOMRect) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 
+/**
+ * 画面のふちのアイコンに出す札や数字が、画面の外に見切れないようにずらす。
+ * 札は横の中心（translate(-50%)）で置くので、幅の半分＋余白より内側に収める。
+ */
+function keepInside(n: HTMLElement, x: number) {
+  const half = n.offsetWidth / 2;
+  const margin = 8;
+  const vw = document.documentElement.clientWidth || window.innerWidth;
+  const clamped = Math.min(Math.max(x, half + margin), vw - half - margin);
+  n.style.left = `${clamped}px`;
+}
+
 /** 数字が跳ねて消える（ダメージは赤、回復は緑） */
 export function popNumber(target: HTMLElement | null, text: string, kind: "dmg" | "heal" = "dmg") {
   if (!target || !canAnimate()) return;
@@ -41,6 +53,7 @@ export function popNumber(target: HTMLElement | null, text: string, kind: "dmg" 
   n.style.left = `${c.x}px`;
   n.style.top = `${c.y}px`;
   layer().appendChild(n);
+  keepInside(n, c.x);
   n.animate(
     [
       { transform: "translate(-50%, -50%) scale(0.4)", opacity: 0 },
@@ -440,6 +453,7 @@ function popLabel(target: HTMLElement | null, text: string, color: string) {
   n.style.left = `${c.x}px`;
   n.style.top = `${c.y}px`;
   layer().appendChild(n);
+  keepInside(n, c.x);
   n.animate(
     [
       { transform: "translate(-50%, -20%) scale(0.5)", opacity: 0 },
