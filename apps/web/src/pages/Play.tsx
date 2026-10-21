@@ -660,8 +660,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   } | null>(null);
   /** 闇堕ちの演出（画面全体） */
   const [cut, setCut] = useState<DarkCut | null>(null);
-  /** 手札が多いときに、全部を大きく並べて見る */
-  const [handOpen, setHandOpen] = useState(false);
   const [peek, setPeek] = useState<Peek | null>(null);
   /** 画面いっぱいに大きく見ているカード（スマホで効果を読むため） */
   const [zoom, setZoom] = useState<Peek | null>(null);
@@ -1038,7 +1036,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     );
   };
 
-  const handCard = (id: string, i: number, inSheet = false) => {
+  const handCard = (id: string, i: number) => {
     const card = CATALOG[id];
     if (!card) return null;
     const cost = effectiveCost(game, ME, id, CATALOG);
@@ -1054,15 +1052,14 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         inHand
         card={card}
         cost={cost}
-        className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""} ${!inSheet && drag?.src.kind === "hand" && drag.src.index === i ? (card.type === "post" && card.target ? "selected" : "drag-src") : ""}`}
-        // 手元で扇のように持つ（真ん中からのずれ。広げた一覧では使わない）
-        style={inSheet ? undefined : ({ "--f": i - (me.hand.length - 1) / 2 } as CSSProperties)}
-        onPress={inSheet || !usable ? undefined : (e) => begin(e, { kind: "hand", index: i })}
+        className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""} ${drag?.src.kind === "hand" && drag.src.index === i ? (card.type === "post" && card.target ? "selected" : "drag-src") : ""}`}
+        // 手元で扇のように持つ（真ん中からのずれ）
+        style={{ "--f": i - (me.hand.length - 1) / 2 } as CSSProperties}
+        onPress={!usable ? undefined : (e) => begin(e, { kind: "hand", index: i })}
         onClick={() => {
           if (justDragged()) return;
           setPeek(p);
           if (!myTurn) return;
-          if (inSheet) setHandOpen(false);
           if (selected && card.type === "post" && !card.target) return cast();
           // アイコンは、出す枠を自分で選んだときだけ出す（もう一度押しても勝手に出さず、選ぶのをやめる）
           select(selected ? null : { kind: "hand", index: i });
@@ -1162,11 +1159,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     <div className="hand" data-hand={ME} data-drop="hand" style={{ "--n": me.hand.length } as CSSProperties}>
       {me.hand.map((id, i) => handCard(id, i))}
     </div>
-  );
-  const handMore = me.hand.length >= 7 && (
-    <button type="button" className="hand-more" onClick={() => setHandOpen(true)}>
-      手札 {me.hand.length}枚を広げる
-    </button>
   );
   const buzzBtn = (
     <button
@@ -1292,7 +1284,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                 </span>
               </div>
               <div className="phand">
-                {handMore}
                 {handEl}
                 <button
                   type="button"
@@ -1320,7 +1311,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               {hintEl}
               {meRow}
               {handEl}
-              {handMore}
             </div>
 
             <div className="col-right">
@@ -1454,19 +1444,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           </span>
           <div className="fr-card">
             <HoloCard card={CATALOG[reveal.cardId] as CardDef} idle={false} />
-          </div>
-        </div>
-      )}
-
-      {handOpen && (
-        <div className="sheet" role="dialog" aria-modal="true" aria-label="手札">
-          <button type="button" className="sheet-bg" aria-label="閉じる" onClick={() => setHandOpen(false)} />
-          <div className="sheet-body hand-sheet">
-            <h2>手札（{me.hand.length}枚）</h2>
-            <div className="hand-grid">{me.hand.map((id, i) => handCard(id, i, true))}</div>
-            <button type="button" className="btn ghost" onClick={() => setHandOpen(false)}>
-              閉じる
-            </button>
           </div>
         </div>
       )}
