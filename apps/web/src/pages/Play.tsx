@@ -807,7 +807,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           }
         } else if (a.type === "play") {
           if (!visible) return;
-          await wait(420); // 出たアイコンが場に着くのを待つ
+          await wait(560); // 出たアイコンが場に着いて弾むのを待ってから、効果を出す
           const uid = next.players[a.player].field[a.slot]?.uid;
           const from = uid ? document.querySelector<HTMLElement>(`[data-uid="${uid}"]`) : null;
           await animateEffects(shown, events, next, { from, tint });
@@ -852,6 +852,30 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     return () => setPresenter(null);
   }, []);
 
+  // アイコンが場に新しく現れたら、その場で着地の演出（溜め → 叩きつけ → 衝撃 → 余韻）。
+  // 出来事（ログ）ではなく画面に現れた時点で動かすので、登場時の効果より先に着地する
+  // （効果があるとき、store は出したアイコンだけを先に置いた盤面を見せてから効果を見せる）
+  const onField = useRef<Set<number> | null>(null);
+  useLayoutEffect(() => {
+    if (!game) {
+      onField.current = null;
+      return;
+    }
+    const now = new Set<number>();
+    const fresh: Unit[] = [];
+    for (const p of [ME, CPU] as const)
+      for (const u of game.players[p].field) {
+        if (!u) continue;
+        now.add(u.uid);
+        if (onField.current && !onField.current.has(u.uid)) fresh.push(u);
+      }
+    onField.current = now;
+    for (const u of fresh) {
+      const card = CATALOG[u.cardId];
+      if (card) fieldEntry(document.querySelector<HTMLElement>(`[data-uid="${u.uid}"]`), card);
+    }
+  }, [game]);
+
   // 新しい出来事に合わせて演出を出す（ターン開始のバナー・ドロー・効果の数字・闇堕ち）
   useLayoutEffect(() => {
     const last = log.at(-1)?.id ?? 0;
@@ -863,14 +887,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     const uidAt = (p: PlayerId, slot: number) => g?.players[p].field[slot]?.uid;
     let t = 0;
     for (const { id, e, fx } of fresh) {
-      // アイコンがバトル場に出たとき：溜め → 叩きつけ → 着地の衝撃 → 余韻（★が高いほど強く。★5 は波動も）
-      if (e.type === "played" || e.type === "summoned" || e.type === "revived") {
-        const card = CATALOG[e.cardId];
-        const uid = uidAt(e.player, e.slot);
-        if (card?.type === "icon" && uid) {
-          fieldEntry(document.querySelector<HTMLElement>(`[data-uid="${uid}"]`), card, t);
-        }
-      }
       // 効果の演出で見せ終わった数字は出さない
       if (fx && (e.type === "damaged" || e.type === "leaderDamaged" || e.type === "leaderHealed")) continue;
       if (e.type === "turnStarted") {
