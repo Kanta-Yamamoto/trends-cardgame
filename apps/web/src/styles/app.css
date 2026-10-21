@@ -421,7 +421,6 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .pstage .hand .mini { --w: clamp(88px, calc(100% - 20px - 50px * (var(--n) - 1)), var(--hand, 100px)); width: var(--w); transform-origin: 50% 112%; }
 .pstage .hand .mini + .mini { margin-left: min(-10px, calc((100% - var(--w) * (var(--n) + 0.4)) / (var(--n) - 1))); }
 .pstage .hand .mini.in-hand.selected { z-index: 4; transform: translateY(-34px) scale(1.12); }
-.pstage .hand-more { position: static; align-self: flex-end; margin: 0 10px 10px 0; }
 .pstage .mini-name { font-size: 10px; }
 /* 対戦の記録（縦の舞台では下から出る一覧） */
 .sheet .log-sheet { align-self: center; width: min(92vw, 560px); background: var(--night-2); border-radius: 16px; border: 1px solid var(--line); }
@@ -465,12 +464,6 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 @keyframes fx-target { to { outline-color: #ffd36e; box-shadow: 0 0 18px #ff5a5f; } }
 @media (prefers-reduced-motion: reduce) { .foe-reveal, .fx-targeted { animation: none; } }
 
-/* ---------- 手札が多いとき ---------- */
-.stage .hand-more { position: absolute; right: 14px; bottom: calc(var(--slot, 100px) * 0.92 * 1.4 + 18px); z-index: 3; padding: 5px 10px; border-radius: 99px; border: 1px solid var(--gold); background: #0b1018e6; color: var(--gold); font-weight: 800; font-size: 11px; cursor: pointer; }
-.hand-sheet h2 { margin: 0 0 10px; font-size: 16px; }
-.hand-grid { width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; max-height: 70dvh; overflow: auto; padding: 4px; }
-.hand-grid .mini { width: 100%; }
-.sheet .hand-sheet { align-self: center; width: min(92vw, 760px); background: var(--night-2); border-radius: 16px; border: 1px solid var(--line); }
 .stage .col-center { position: relative; }
 
 /* ---------- カードを画面いっぱいに拡大（スマホで効果を読む） ---------- */
