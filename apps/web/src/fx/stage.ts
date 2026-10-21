@@ -21,6 +21,8 @@ export interface FxStage {
     glow: Texture;
     /** 4 方向に光が伸びるきらめき */
     spark: Texture;
+    /** ふちがやわらかい雲のかたまり（霧・煙） */
+    puff: Texture;
   };
   /** 演出を 1 つ始める（描画を動かす）。終わったら返り値の関数を呼ぶ */
   hold: () => () => void;
@@ -85,7 +87,13 @@ async function create(): Promise<FxStage | null> {
     };
   };
 
-  return { pixi, app, root, tex: { glow: glowTexture(pixi), spark: sparkTexture(pixi) }, hold };
+  return {
+    pixi,
+    app,
+    root,
+    tex: { glow: glowTexture(pixi), spark: sparkTexture(pixi), puff: puffTexture(pixi) },
+    hold,
+  };
 }
 
 /** 丸い光（白 → 透明）。tint で色を付けて、加算合成で重ねる */
@@ -131,6 +139,30 @@ function sparkTexture(pixi: Pixi): Texture {
     ray(r, r * 0.09);
     ray(r * 0.09, r);
     ray(r * 0.32, r * 0.32);
+  }
+  return pixi.Texture.from(c);
+}
+
+/** 雲のかたまり：丸い光をいくつかずらして重ね、ふちを不揃いにする（霧・煙の 1 粒） */
+function puffTexture(pixi: Pixi): Texture {
+  const size = 128;
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const g = c.getContext("2d");
+  if (g) {
+    const blob = (x: number, y: number, r: number, a: number) => {
+      const grad = g.createRadialGradient(x, y, 0, x, y, r);
+      grad.addColorStop(0, `rgba(255,255,255,${a})`);
+      grad.addColorStop(0.5, `rgba(255,255,255,${a * 0.45})`);
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = grad;
+      g.fillRect(0, 0, size, size);
+    };
+    blob(64, 70, 46, 0.55);
+    blob(44, 60, 30, 0.45);
+    blob(84, 56, 32, 0.4);
+    blob(62, 44, 26, 0.35);
+    blob(80, 82, 24, 0.3);
   }
   return pixi.Texture.from(c);
 }

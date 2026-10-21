@@ -1,5 +1,9 @@
 import type { AttackTarget, GameEvent, GameState, PlayerId, RuleCard, Unit } from "@trends/game-core";
 import { viewUnit, withRushBoost } from "@trends/game-core";
+import { gsap } from "gsap";
+import { dissolve } from "../fx/dissolve";
+import { healMist } from "../fx/healMist";
+import { impact } from "../fx/impact";
 
 /**
  * 対戦画面の演出（DOM を直接アニメーションさせる）。
@@ -10,7 +14,8 @@ import { viewUnit, withRushBoost } from "@trends/game-core";
 const reduced = () =>
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const canAnimate = () => typeof document !== "undefined" && typeof Element.prototype.animate === "function";
-const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+/** 待ち。GSAP の時間で数える（開発中に __gsap で演出をまとめて遅くしても、間合いがずれないように） */
+const wait = (ms: number) => new Promise<void>((r) => gsap.delayedCall(ms / 1000, r));
 const q = (sel: string) => document.querySelector<HTMLElement>(sel);
 
 function layer(): HTMLElement {
@@ -105,6 +110,9 @@ function toTrash(el: HTMLElement | null, owner: PlayerId, to: "trash" | "hand" =
     to === "hand" ? `[data-hand="${owner}"]` : `[data-pile="trash-${owner}"]`,
   )?.getBoundingClientRect();
   const ghost = el.cloneNode(true) as HTMLElement;
+  // 場に出たときの落ちてくる動き（.enter）を抜け殻でやり直さないように外す
+  ghost.classList.remove("enter");
+  ghost.style.animation = "none";
   ghost.classList.add("fx-ghost");
   Object.assign(ghost.style, {
     left: `${from.left}px`,
@@ -113,6 +121,11 @@ function toTrash(el: HTMLElement | null, owner: PlayerId, to: "trash" | "hand" =
     height: `${from.height}px`,
   });
   layer().appendChild(ghost);
+  // オワコンへ行くアイコンは、黒く染まって溶けるように消える
+  if (to === "trash") {
+    void dissolve(ghost);
+    return;
+  }
   const dx = pile ? center(pile).x - center(from).x : 0;
   const dy = pile ? center(pile).y - center(from).y : 40;
   const s = pile ? pile.width / from.width : 0.5;
@@ -208,8 +221,16 @@ export async function animateAttack(
 
   // 突進が当たる瞬間
   await wait(820 * 0.58);
-  const hit = center(d);
-  burst(hit, "#ff5a4a");
+  // ぶつかった点：受けた側のカードの、攻撃してきた側のふち寄り
+  const src = center(a);
+  const dst = center(d);
+  const len = Math.hypot(dst.x - src.x, dst.y - src.y) || 1;
+  const reach = Math.min(d.width, d.height) * 0.32;
+  const hit = { x: dst.x - ((dst.x - src.x) / len) * reach, y: dst.y - ((dst.y - src.y) / len) * reach };
+  const power = def ? 1 + Math.min(0.5, dmg / 8) : 1.35 + Math.min(0.4, dmg / 10);
+  void impact(hit, src, atkCard.attributes, a.width, power);
+  // ヒットストップ：当たった瞬間に一瞬だけ止めて、重さを出す
+  lunge.pause();
   popNumber(defEl, `-${dmg}`);
   if (def && defCard) {
     shake(defEl, 1);
@@ -218,6 +239,8 @@ export async function animateAttack(
     shake(defEl, 0.6);
     quake(Math.min(2, 0.6 + dmg / 4));
   }
+  await wait(def ? 70 : 90);
+  lunge.play();
   await lunge.finished.catch(() => {});
   atkEl.style.zIndex = "";
 
@@ -334,6 +357,7 @@ export function popMaster(player: PlayerId, text: string, kind: "dmg" | "heal") 
   const el = q(`[data-master="${player}"]`);
   popNumber(el, text, kind);
   if (kind === "dmg") shake(el, 0.5);
+  else void healMist(el);
 }
 
 /** 闇堕ち：紫の閃光とともに裏返る（restore なら白く光って表に戻る） */
@@ -516,6 +540,7 @@ export async function animateEffects(
           color: "#6dffa8",
           land: (el) => {
             glow(el, "#6dffa8");
+            void healMist(el);
             popNumber(el, `+${e.amount}`, "heal");
           },
         });
@@ -526,6 +551,7 @@ export async function animateEffects(
           color: "#6dffa8",
           land: (el) => {
             glow(el, "#6dffa8");
+            void healMist(el);
             popNumber(el, `+${e.amount}`, "heal");
           },
         });
