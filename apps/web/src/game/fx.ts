@@ -171,8 +171,13 @@ export async function animateAttack(
   from: number,
   target: AttackTarget,
   catalog: Record<string, RuleCard>,
+  /** onImpact：当たった瞬間に呼ぶ（マスターのライフの表示を、当たったのと同時に減らすため） */
+  opts: { onImpact?: () => void } = {},
 ): Promise<void> {
-  if (!canAnimate() || reduced()) return;
+  if (!canAnimate() || reduced()) {
+    opts.onImpact?.();
+    return;
+  }
   const foeId: PlayerId = player === "p1" ? "p2" : "p1";
   // 凸で攻撃したときの強化は、先に見せてから殴る（強化と攻撃を同時に動かさない）
   const boost = withRushBoost(before, player, from, target, catalog);
@@ -244,6 +249,7 @@ export async function animateAttack(
   void impact(hit, src, atkCard.attributes, a.width, power);
   // ヒットストップ：当たった瞬間に一瞬だけ止めて、重さを出す
   lunge.pause();
+  opts.onImpact?.();
   popNumber(defEl, `-${dmg}`);
   if (def && defCard) {
     shake(defEl, 1);
