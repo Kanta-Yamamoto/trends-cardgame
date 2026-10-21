@@ -149,11 +149,6 @@ button { font: inherit; color: inherit; }
 .mini.targetable.ally { box-shadow: 0 0 0 2px #7dffb0, 0 0 24px #7dffb099; animation: none; cursor: pointer; }
 .mini.targetable, .pb-main.targetable { cursor: pointer; box-shadow: 0 0 0 2px var(--foe), 0 0 24px #ff5a6a99; animation: threat 0.9s ease-in-out infinite; }
 @keyframes threat { 50% { box-shadow: 0 0 0 2px var(--foe), 0 0 8px #ff5a6a55; } }
-.mini.enter { animation: drop-in 0.42s cubic-bezier(.2, 1.4, .4, 1) both; }
-@keyframes drop-in { from { transform: translateY(-26px) scale(1.15); opacity: 0; } }
-.mini.foe-unit.enter { animation-name: drop-in-foe; }
-@keyframes drop-in-foe { from { transform: translateY(26px) scale(1.15); opacity: 0; } }
-.mini.targetable.enter, .mini.ready.enter { animation-fill-mode: none; }
 
 .hand { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 10px; padding-top: 6px; }
 @media (hover: hover) { .mini.in-hand:hover:not(:disabled) { transform: translateY(-6px); } }
@@ -287,6 +282,7 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .sheet .trash-list { align-self: center; background: var(--night-2); border-radius: 16px; border: 1px solid var(--line); }
 
 /* 演出のレイヤー（攻撃・ドロー・ダメージの数字） */
+/* 場に出たアイコンの動きは fx/fieldEntry.ts（GSAP） */
 #fx-layer { position: fixed; inset: 0; z-index: 35; pointer-events: none; }
 /* PixiJS の演出の舞台（fx/stage.ts）。盤面（.play-full）の上、拡大表示（.zoom）より下 */
 #fx-stage { position: fixed; inset: 0; z-index: 15; pointer-events: none; }

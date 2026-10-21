@@ -28,8 +28,8 @@ import { AttrChips } from "../cards/AttrChips";
 import { EffectText, HelpTerm } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
+import { fieldEntry } from "../fx/fieldEntry";
 import { fxStage } from "../fx/stage";
-import { summonWaveLater } from "../fx/summonWave";
 import { CardZoom } from "../game/CardZoom";
 import { type DarkCut, DarkCutscene } from "../game/DarkCutscene";
 import { useDecksChanged } from "../game/deckSync";
@@ -865,12 +865,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     const uidAt = (p: PlayerId, slot: number) => g?.players[p].field[slot]?.uid;
     let t = 0;
     for (const { id, e, fx } of fresh) {
-      // ★5 のアイコンが場に着いた瞬間に、属性の色の小さな波動（落ちてくる動きの着地に合わせる）
-      if (e.type === "played") {
+      // アイコンがバトル場に出たとき：溜め → 叩きつけ → 着地の衝撃 → 余韻（★が高いほど強く。★5 は波動も）
+      if (e.type === "played" || e.type === "summoned" || e.type === "revived") {
         const card = CATALOG[e.cardId];
         const uid = uidAt(e.player, e.slot);
-        if (card?.type === "icon" && card.rarity === 5 && uid) {
-          summonWaveLater(uid, card.attributes, t + 160);
+        if (card?.type === "icon" && uid) {
+          fieldEntry(document.querySelector<HTMLElement>(`[data-uid="${uid}"]`), card, t);
         }
       }
       // 効果の演出で見せ終わった数字は出さない

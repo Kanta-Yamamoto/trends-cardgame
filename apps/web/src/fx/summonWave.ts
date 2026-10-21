@@ -9,13 +9,6 @@ if (import.meta.env.DEV && typeof window !== "undefined") {
   (window as unknown as { __gsap?: typeof gsap }).__gsap = gsap;
 }
 
-/** ms 後に、場のアイコン（data-uid）へ波動を出す。待ちも GSAP の時間で数える（演出をまとめて遅くして確かめられるように） */
-export function summonWaveLater(uid: number, attributes: readonly Attribute[], delayMs: number) {
-  gsap.delayedCall(delayMs / 1000, () => {
-    void summonWave(document.querySelector<HTMLElement>(`[data-uid="${uid}"]`), attributes);
-  });
-}
-
 /**
  * ★5 のアイコンが場に着いた瞬間の、小さめの波動。
  * 中心がふわっと光り → 属性の色の輪が 2 重に広がり → きらめきが外へ散る（全体で約 0.8 秒）。
