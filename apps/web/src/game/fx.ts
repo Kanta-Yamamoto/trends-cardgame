@@ -277,8 +277,8 @@ export function markBuzzed(uid: number, attack: number, hp: number) {
   void el.offsetWidth; // アニメーションをやり直す
   el.classList.add("fx-buzzed");
   if (canAnimate() && !reduced()) {
-    glow(el, "#ffe14d");
-    popLabel(el, `バズ +${attack}/+${hp}`, "#ffe14d");
+    glow(el, "#9d7bff");
+    popLabel(el, `バズ +${attack}/+${hp}`, "#5ef2ff");
   }
   setTimeout(() => el.classList.remove("fx-buzzed"), 2200);
 }

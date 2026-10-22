@@ -8,6 +8,7 @@ import {
   type CastTarget,
   canUnitAttack,
   castTargets,
+  DEFAULT_CONFIG,
   darkOmens,
   effectiveCost,
   fieldOf,
@@ -577,6 +578,65 @@ function EndTurnConfirm({
   );
 }
 
+/** バズの確認：対象のアイコンと、バズしたあとの攻撃力・体力・残りの回数を見せる */
+function BuzzConfirm({
+  card,
+  view,
+  left,
+  onYes,
+  onNo,
+}: {
+  card: CardDef;
+  view: UnitView;
+  left: number;
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onNo();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onNo]);
+  return (
+    <div
+      className="zoom-sheet end-confirm buzz-confirm"
+      role="alertdialog"
+      aria-modal="true"
+      aria-label="バズの確認"
+    >
+      <button type="button" className="zoom-sheet-bg" aria-label="やめる" onClick={onNo} />
+      <div className="end-confirm-body">
+        <div className="bzc-head">
+          {card.art && <span className="bzc-art" style={{ backgroundImage: `url(${card.art})` }} />}
+          <div>
+            <p className="end-confirm-q">{card.name}をバズらせますか？</p>
+            <p className="bzc-stats">
+              <span className="atk">
+                攻撃力 {view.attack} → <b>{view.attack + DEFAULT_CONFIG.buzzAttack}</b>
+              </span>
+              <span className="hp">
+                体力 {view.hp} → <b>{view.hp + DEFAULT_CONFIG.buzzHp}</b>
+              </span>
+              <span>凸が付く</span>
+            </p>
+          </div>
+        </div>
+        <p className="bzc-left">
+          残り {left} 回 → {Math.max(0, left - 1)} 回
+        </p>
+        <div className="end-confirm-actions">
+          <button type="button" className="btn ghost" onClick={onNo}>
+            やめる
+          </button>
+          <button type="button" className="btn buzz-btn bzc-go" onClick={onYes}>
+            バズらせる
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type Peek = {
   id: string;
   view?: UnitView;
@@ -699,6 +759,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [buzzCut, setBuzzCut] = useState<BuzzCut | null>(null);
   /** ターン終了の確認を出しているか（押し間違いで終わらないように） */
   const [confirmEnd, setConfirmEnd] = useState(false);
+  /** バズの確認を出している自分のアイコンの枠（アイコンを選んでからバズを押すと出る） */
+  const [buzzAsk, setBuzzAsk] = useState<number | null>(null);
+  /** バズが使えるようになった回数。増えるたびに、ボタンの枠の光を右回りに走らせる */
+  const [buzzWake, setBuzzWake] = useState(0);
+  const buzzWas = useRef(false);
 
   const handUsable = (g: GameState, i: number) => {
     const id = g.players[ME].hand[i];
@@ -951,6 +1016,14 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     }
   }, [log]);
 
+  // バズが使えるようになったら（自分のターンの始め・4ターン目になったとき）、ボタンの枠を光らせる。
+  // 演出中・CPU の思考中の出入りでは光らせ直さないよう、盤面の状態だけで見る
+  const buzzOpen = !!game && game.active === ME && !game.winner && !game.pending && !buzzBlock(game, ME);
+  useEffect(() => {
+    if (buzzOpen && !buzzWas.current) setBuzzWake((k) => k + 1);
+    buzzWas.current = buzzOpen;
+  }, [buzzOpen]);
+
   if (!game || !deck) return null;
   const me = game.players[ME];
   const foe = game.players[CPU];
@@ -970,6 +1043,14 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const buzzing = selection?.kind === "buzz";
   const buzzWhy = buzzBlock(game, ME);
   const canBuzz = myTurn && !buzzWhy;
+  // バズの対象：いま選んでいる自分のアイコン（攻撃のために選んだもの・押して説明を出したもの）
+  const buzzTarget = (() => {
+    if (attacking) return selection.slot;
+    if (peek?.where !== "mine") return null;
+    const u = me.field[peek.index];
+    return u && u.cardId === peek.id ? peek.index : null;
+  })();
+  const buzzAskUnit = buzzAsk === null ? undefined : me.field[buzzAsk];
   const omenAt = (owner: PlayerId, slot: number) => darkOmens(game, owner).find((o) => o.slot === slot);
   const canHit = (t: AttackTarget) =>
     targets.some((x) => (x.kind === "leader" ? t.kind === "leader" : t.kind === "unit" && t.slot === x.slot));
@@ -1054,7 +1135,10 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         onClick={() => {
           if (justDragged()) return;
           if (sac) return sacrifice(slot);
-          if (buzzing) return buzz(slot);
+          if (buzzing) {
+            setPeek(p);
+            return setBuzzAsk(slot);
+          }
           if (castable) return cast({ side: "ally", slot });
           if (selected) return select(null);
           setPeek(p);
@@ -1198,11 +1282,17 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     <button
       type="button"
       className={`btn buzz-btn ${buzzing ? "on" : ""} ${canBuzz ? "ready" : ""}`}
-      onClick={() => (buzzing ? select(null) : select({ kind: "buzz" }))}
+      onClick={() => {
+        if (buzzing) return select(null);
+        // アイコンを選んであれば確認を出す。選んでいなければ、選ぶところから
+        if (buzzTarget !== null) return setBuzzAsk(buzzTarget);
+        select({ kind: "buzz" });
+      }}
       disabled={!canBuzz && !buzzing}
-      title={buzzWhy ?? "自分のアイコン1体に攻撃力+2・体力+2・凸"}
+      title={buzzWhy ?? "選んだ自分のアイコン1体に攻撃力+2・体力+2・凸"}
       aria-label={`バズ（残り${me.buzzLeft ?? 0}回）${buzzWhy ? `：${buzzWhy}` : ""}`}
     >
+      {buzzOpen && buzzWake > 0 && <span key={buzzWake} className="buzz-ring" aria-hidden="true" />}
       バズ
       <span className="buzz-pips" aria-hidden="true">
         {[0, 1].map((k) => (
@@ -1491,6 +1581,21 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             endTurn();
           }}
           onNo={() => setConfirmEnd(false)}
+        />
+      )}
+      {buzzAsk !== null && buzzAskUnit && canBuzz && (
+        <BuzzConfirm
+          card={CATALOG[buzzAskUnit.cardId] as CardDef}
+          view={viewUnit(game, ME, buzzAskUnit, CATALOG)}
+          left={me.buzzLeft ?? 0}
+          onYes={() => {
+            setBuzzAsk(null);
+            buzz(buzzAsk);
+          }}
+          onNo={() => {
+            setBuzzAsk(null);
+            if (buzzing) select(null);
+          }}
         />
       )}
       {buzzCut && (
