@@ -21,7 +21,7 @@ const RARITY_LABEL: Record<number, string> = {
 
 /**
  * カード一覧。★5 から順に、★ごとの段に並べる。
- * スマホの縦持ちでは、段ごとに横へスワイプして見る（1枚が大きく、縦に長くならない）
+ * 段ごとに横へスワイプして見る（1枚が大きく、縦に長くならない）
  */
 export function Gallery() {
   const { data, isLoading } = useQuery({ queryKey: ["cards"], queryFn: fetchCards });
@@ -46,7 +46,7 @@ export function Gallery() {
       <header className="page-head">
         <h1>カード一覧</h1>
         <p className="muted">
-          カードを押すと拡大して、効果を大きな文字で読めます。スマホの縦持ちでは、段ごとに横へスワイプして見られます。
+          カードを押すと拡大して、効果を大きな文字で読めます。段ごとに横へスワイプして見られます。
         </p>
         {data?.fallback && (
           <p className="notice">API に接続できないため、アプリに同梱したカードデータを表示しています。</p>

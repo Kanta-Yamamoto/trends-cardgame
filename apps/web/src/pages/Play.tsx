@@ -33,7 +33,6 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router";
-import { AttrChips } from "../cards/AttrChips";
 import { EffectText, HelpTerm } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
@@ -142,18 +141,12 @@ function describe(e: GameEvent): string {
 }
 
 /**
- * 対戦画面は「舞台」を作って、画面に合わせて拡大・縮小する。
- * - 切り欠き・ホームバー（セーフエリア）を除いた範囲に収める（iPhone の横画面で左右が欠けて重なるのを防ぐ）
- * - 横長の画面ほど舞台を低くして、カードを大きく・横いっぱいに使う（16:9 で 960×540、20:9 で 960×432 まで）
- * - 舞台の高さに合わせて、場の枠の大きさ（--slot）を決める
- * - 縦持ち（幅＜高さ）は、スマホの縦画面を基準にした縦の舞台（幅 390。高さは画面の縦横比に合わせて 720〜860）。
- *   場の枠は横幅から（5 枠が横いっぱい）、手札の大きさは舞台の高さから決める
+ * 対戦画面は「舞台」を作って、画面に合わせて拡大・縮小する。画面はスマホの縦の舞台1つだけ
+ * （PC やスマホの横持ちでも同じ舞台を、収まる大きさで中央に置く。2つの画面を保守しないため）
+ * - 切り欠き・ホームバー（セーフエリア）を除いた範囲に収める
+ * - 幅 390。高さは画面の縦横比に合わせて 740〜860（横長の画面では 860）
+ * - 場の枠は横幅から（5 枠が横いっぱい）、手札の大きさは舞台の高さから決める
  */
-const STAGE_W = 960;
-const STAGE_H = 540;
-const STAGE_H_MIN = 432;
-/** 場の枠の幅から決まる、舞台の縦の長さ（余白＋案内＋場2段＋手札）。stage の CSS と合わせる */
-const fitSlot = (height: number) => Math.min(100, Math.floor((height - 84) / 4.08));
 const PORTRAIT_W = 390;
 const PORTRAIT_H_MIN = 740;
 const PORTRAIT_H_MAX = 860;
@@ -171,8 +164,6 @@ export interface Stage {
   slot: number;
   cx: number;
   cy: number;
-  /** 縦の舞台（スマホの縦持ち） */
-  portrait: boolean;
   /** 手札のカードの幅 */
   hand: number;
 }
@@ -187,40 +178,23 @@ function safeArea(probe: HTMLElement | null) {
 export function measureStage(vw: number, vh: number, safe = { t: 0, r: 0, b: 0, l: 0 }): Stage {
   const w = Math.max(1, vw - safe.l - safe.r);
   const h = Math.max(1, vh - safe.t - safe.b);
-  const aspect = w / h;
-  const cx = safe.l + w / 2;
-  const cy = safe.t + h / 2;
-  if (w < h) {
-    const height = Math.min(PORTRAIT_H_MAX, Math.max(PORTRAIT_H_MIN, PORTRAIT_W / aspect));
-    return {
-      width: PORTRAIT_W,
-      height,
-      scale: Math.min(w / PORTRAIT_W, h / height),
-      slot: fitPortraitSlot(PORTRAIT_W),
-      cx,
-      cy,
-      portrait: true,
-      hand: fitHand(height),
-    };
-  }
-  const height = Math.min(STAGE_H, Math.max(STAGE_H_MIN, STAGE_W / aspect));
-  const width = Math.max(STAGE_W, height * aspect);
-  const slot = fitSlot(height);
+  // 横長の画面（PC・スマホの横持ち）はスマホの縦画面と同じ高さ（860）にする
+  const height =
+    w >= h ? PORTRAIT_H_MAX : Math.min(PORTRAIT_H_MAX, Math.max(PORTRAIT_H_MIN, (PORTRAIT_W * h) / w));
   return {
-    width,
+    width: PORTRAIT_W,
     height,
-    scale: Math.min(w / width, h / height),
-    slot,
-    cx,
-    cy,
-    portrait: false,
-    hand: Math.round(slot * 0.92),
+    scale: Math.min(w / PORTRAIT_W, h / height),
+    slot: fitPortraitSlot(PORTRAIT_W),
+    cx: safe.l + w / 2,
+    cy: safe.t + h / 2,
+    hand: fitHand(height),
   };
 }
 
 function useStage() {
   const probe = useRef<HTMLDivElement>(null);
-  const [stage, setStage] = useState<Stage>(() => measureStage(STAGE_W, STAGE_H));
+  const [stage, setStage] = useState<Stage>(() => measureStage(PORTRAIT_W, PORTRAIT_H_MAX));
   useLayoutEffect(() => {
     // 拡大の影響を受けない大きさで測る（iPhone で拡大されても舞台が縮まない）
     const on = () => {
@@ -1183,35 +1157,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     attacking && canHit(t) ? previewAttack(game, ME, selection.slot, t, CATALOG) : null;
   const foeGuarded = foe.field.some((u) => u && viewUnit(game, CPU, u, CATALOG).guard);
   const peekCard = (peek ? CATALOG[peek.id] : null) ?? null;
-  const hint = game.winner
-    ? ""
-    : game.pending
-      ? sacSlots.length > 0
-        ? "『フィクサー』：差し出す自分のアイコンを1体選んでください（赤く光っているアイコン）"
-        : "相手が差し出すアイコンを選んでいます…"
-      : game.active === CPU
-        ? online
-          ? `${foeName}のターンです`
-          : "CPU が考えています…"
-        : !myTurn
-          ? ""
-          : postSelected
-            ? selectedCard?.target
-              ? "使う相手を選んでください（光っているアイコン）"
-              : "もう一度カードを押すと投稿します"
-            : buzzing
-              ? "バズさせる自分のアイコンを選んでください（攻撃力+2・体力+2・凸）"
-              : selection?.kind === "hand"
-                ? "出す枠を押してください（もう一度カードを押すと、選ぶのをやめます）"
-                : attacking
-                  ? foeGuarded
-                    ? "攻撃先を選んでください（ガードがいるので、ガードしか攻撃できません）"
-                    : "攻撃先を選んでください（光っているところ）"
-                  : darkOmens(game, ME).length > 0
-                    ? "闇の気配……オワコンになったエースは、次の自分のターンの始めに闇堕ちして戻ってくる"
-                    : stage.portrait
-                      ? "手札を場へ引っぱって出す・投稿／アイコンを相手へ引っぱって攻撃（長押しで拡大）"
-                      : "手札をドラッグして場に出す・投稿／アイコンを相手へドラッグして攻撃（タップでも可・長押しで拡大）";
 
   const unitCard = (owner: PlayerId, slot: number, u: Unit) => {
     const card = CATALOG[u.cardId] as CardDef;
@@ -1348,7 +1293,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   );
   const turnPill = !game.winner && (
     <span className={`turn-pill ${game.active === ME ? "mine" : "foe"}`}>
-      {stage.portrait && <small>TURN {game.turn}</small>}
+      <small>TURN {game.turn}</small>
       {game.active === ME ? "あなたのターン" : "相手のターン"}
     </span>
   );
@@ -1368,11 +1313,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         );
       })}
     </div>
-  );
-  const hintEl = (
-    <p className={`hint ${error ? "is-error" : ""}`} aria-live="polite" role={error ? "alert" : undefined}>
-      {error ?? hint}
-    </p>
   );
   const meRow = (
     <div className="row">
@@ -1459,7 +1399,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   );
   const quitBtn = (
     <button type="button" className="btn ghost quit" onClick={quit}>
-      {stage.portrait ? (online ? "ロビーへ" : "戻る") : online ? "ロビーに戻る" : "デッキ選択に戻る"}
+      {online ? "ロビーへ" : "戻る"}
     </button>
   );
   /** 選んだカード（手札・攻撃するアイコン）をやめて、手札を元の形に戻す */
@@ -1474,7 +1414,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     <div className="play-full">
       <div className="safe-probe" ref={probe} aria-hidden="true" />
       <div
-        className={`stage ${stage.portrait ? "portrait" : ""}`}
+        className="stage portrait"
         style={
           {
             left: stage.cx,
@@ -1487,104 +1427,63 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           } as CSSProperties
         }
       >
-        {stage.portrait ? (
-          /* 縦の舞台：上から 相手 → 相手の場 → 自分の場 → 自分 → 押したカードの説明 → バズ・ターン終了 →（余白）→ 手札 */
-          <div className={`pstage ${boardClass}`} data-drop="board">
-            {fieldLayer}
-            <div className="ptop">
-              {quitBtn}
-              {turnPill}
-              <span className="ptop-right">
-                <button type="button" className="btn ghost small plog" onClick={() => setLogOpen(true)}>
-                  記録
-                </button>
-                {resignBtn}
+        {/* 縦の舞台：上から 相手 → 相手の場 → 自分の場 → 自分 → 押したカードの説明 → バズ・ターン終了 →（余白）→ 手札 */}
+        <div className={`pstage ${boardClass}`} data-drop="board">
+          {fieldLayer}
+          <div className="ptop">
+            {quitBtn}
+            {turnPill}
+            <span className="ptop-right">
+              <button type="button" className="btn ghost small plog" onClick={() => setLogOpen(true)}>
+                記録
+              </button>
+              {resignBtn}
+            </span>
+          </div>
+          {foeBar}
+          <div className="pfield">
+            {foeRow}
+            {/* 場と場の間には何も置かない（案内の文は出さない。反則のときだけ、短く知らせて消える） */}
+            {error && (
+              <p key={error} className="ptoast" role="alert">
+                {error}
+              </p>
+            )}
+            {meRow}
+          </div>
+          {meBar}
+          <PeekStrip card={peekCard} view={peek?.view} onOpen={() => setZoom(peek)} />
+          {/* ここから下（手札のまわりの空き）を押すと、選んだカードを手札に戻す */}
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: キーボードでは「戻す」ボタンで同じことができる */}
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: 余白を押して選択をやめるための受け皿 */}
+          <div
+            className="phand-zone"
+            onClick={(e) => {
+              const t = e.target as HTMLElement;
+              if (!t.closest(".mini, button")) cancelSelection();
+            }}
+          >
+            <div className="pdock">
+              {/* 操作のボタンは、手札を持つ右手の親指が届く右下にまとめる（スマホのカードゲームの定番の位置） */}
+              <span className="pdock-actions">
+                {buzzBtn}
+                {endTurnBtn}
               </span>
             </div>
-            {foeBar}
-            <div className="pfield">
-              {foeRow}
-              {/* 場と場の間には何も置かない（案内の文は出さない。反則のときだけ、短く知らせて消える） */}
-              {error && (
-                <p key={error} className="ptoast" role="alert">
-                  {error}
-                </p>
-              )}
-              {meRow}
-            </div>
-            {meBar}
-            <PeekStrip card={peekCard} view={peek?.view} onOpen={() => setZoom(peek)} />
-            {/* ここから下（手札のまわりの空き）を押すと、選んだカードを手札に戻す */}
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: キーボードでは「戻す」ボタンで同じことができる */}
-            {/* biome-ignore lint/a11y/noStaticElementInteractions: 余白を押して選択をやめるための受け皿 */}
-            <div
-              className="phand-zone"
-              onClick={(e) => {
-                const t = e.target as HTMLElement;
-                if (!t.closest(".mini, button")) cancelSelection();
-              }}
-            >
-              <div className="pdock">
-                {/* 操作のボタンは、手札を持つ右手の親指が届く右下にまとめる（スマホのカードゲームの定番の位置） */}
-                <span className="pdock-actions">
-                  {buzzBtn}
-                  {endTurnBtn}
-                </span>
-              </div>
-              <div className="phand">
-                {handEl}
-                <button
-                  type="button"
-                  className={`hand-cancel ${selection ? "on" : ""}`}
-                  onClick={cancelSelection}
-                  aria-label="選んだカードを手札に戻す"
-                  tabIndex={selection ? 0 : -1}
-                >
-                  <span aria-hidden="true">戻す</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="stage-grid">
-            <div className="col-left">
-              {foeBar}
-              {turnPill}
-              {meBar}
-            </div>
-
-            <div className={`col-center ${boardClass}`} data-drop="board">
-              {fieldLayer}
-              {foeRow}
-              {hintEl}
-              {meRow}
+            <div className="phand">
               {handEl}
-            </div>
-
-            <div className="col-right">
-              <div className="peek">
-                {peekCard ? (
-                  <PeekCard
-                    key={peekCard.id}
-                    card={peekCard}
-                    view={peek?.view}
-                    onOpen={() => setZoom(peek)}
-                  />
-                ) : (
-                  <p className="muted">カードを押すと、ここに表示します。長押しで画面いっぱいに拡大</p>
-                )}
-              </div>
-              {buzzBtn}
-              {endTurnBtn}
-              <details className="log-box">
-                <summary>対戦の記録</summary>
-                {logList}
-              </details>
-              {resignBtn}
-              {quitBtn}
+              <button
+                type="button"
+                className={`hand-cancel ${selection ? "on" : ""}`}
+                onClick={cancelSelection}
+                aria-label="選んだカードを手札に戻す"
+                tabIndex={selection ? 0 : -1}
+              >
+                <span aria-hidden="true">戻す</span>
+              </button>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {logOpen && (
@@ -1800,41 +1699,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         <Result game={game} onAgain={online ? undefined : () => start(deck)} onQuit={quit} online={online} />
       )}
     </div>
-  );
-}
-
-/** 大きく表示するカード。場のアイコンなら今の状態（闇堕ち・ダメージ・強化）も添える */
-function PeekCard({ card, view, onOpen }: { card: CardDef; view?: UnitView; onOpen: () => void }) {
-  const dark = view?.unit.dark && card.dark;
-  return (
-    <>
-      {/* 押すと画面いっぱいに拡大して、効果を大きな文字で読める */}
-      <div className={dark ? "peek-dark" : undefined}>
-        <HoloCard card={card} darkForm={!!dark} interactive idle={false} onClick={onOpen} />
-      </div>
-      <button type="button" className="btn ghost peek-zoom" onClick={onOpen}>
-        大きく見る
-      </button>
-      {view && (
-        <div className="peek-note">
-          {dark && <b className="peek-darkname">闇堕ち：{card.dark?.name}</b>}
-          <span>
-            攻撃 <b className="t-atk">{view.attack}</b>・体力 <b className="t-hp">{view.hp}</b>/{view.maxHp}
-          </span>
-          {view.keywords.length > 0 && <span>{view.keywords.join("・")}</span>}
-          {view.exposed && <span>晒し者（ガードを失い、強化が消えた）</span>}
-          {view.unit.exposeAtTurnEnd && <span>ターンの終わりに晒し者になる（炎上商法）</span>}
-          {view.asleep && <span>眠っている（このターンは攻撃できない）</span>}
-          {view.unit.silenced && <span>訂正済み（キーワードと効果が消えている）</span>}
-        </div>
-      )}
-      {!view && card.dark && <p className="peek-note">闇堕ちの姿は、闇堕ちするまで分からない</p>}
-      {!view && (
-        <div className="peek-chips">
-          <AttrChips card={card} />
-        </div>
-      )}
-    </>
   );
 }
 
