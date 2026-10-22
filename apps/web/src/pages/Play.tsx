@@ -283,11 +283,23 @@ function DeckSelect() {
 function DeckAce({ id }: { id?: string }) {
   const card = id ? CATALOG[id] : undefined;
   if (!card?.art) return null;
+  // 専用のカード面を持つ★5は、カードデータに切り抜きの指定が無い（面の CSS が直接読む）。同じ名前の切り抜きを使う
+  const subject =
+    card.subject ?? (card.rarity === 5 ? card.art.replace(/-art\.jpg$/, "-subject.webp") : undefined);
   return (
     <span className="deck-ace" aria-hidden="true">
       <span className="deck-ace-bg" style={{ backgroundImage: `url(${card.art})` }} />
-      {card.subject ? (
-        <img className="deck-ace-subject" src={card.subject} alt="" loading="lazy" draggable={false} />
+      {subject ? (
+        <img
+          className="deck-ace-subject"
+          src={subject}
+          alt=""
+          loading="lazy"
+          draggable={false}
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
       ) : null}
       <span className="deck-ace-shade" />
     </span>
@@ -368,8 +380,14 @@ type BuzzCut = {
   done: () => void;
 };
 
+/** エースで決まるデッキの色。『フィクサー』（c15）は白・黒・赤だけのカードなので、属性の色ではなく黒にする */
+const ACE_GRADIENT: Record<string, string> = {
+  c15: "linear-gradient(125deg, #3a3a3e, #0b0b0d 55%, #000)",
+};
+
 /** デッキの色（単属性なら左右とも同じ色） */
-function deckGradient(attrs: readonly string[]) {
+function deckGradient(attrs: readonly string[], ace?: string) {
+  if (ace && ACE_GRADIENT[ace]) return ACE_GRADIENT[ace];
   const [a, b = a] = attrs.map((x) => ATTR_META[x as keyof typeof ATTR_META]);
   if (!a) return "linear-gradient(125deg, #6b7280, #374151)";
   return `linear-gradient(125deg, ${a.color}, ${a.deep} 50%, ${b?.deep} 50%, ${b?.color})`;
@@ -403,7 +421,7 @@ export function DeckGrid({
       key={sel.ref}
       type="button"
       className="deck-pick"
-      style={{ background: deckGradient(sel.attrs) }}
+      style={{ background: deckGradient(sel.attrs, sel.ace) }}
       onClick={() => pick(sel)}
     >
       <DeckAce id={sel.ace} />
@@ -482,7 +500,7 @@ function DeckConfirm({
     <div className="zoom-sheet deck-confirm" role="dialog" aria-modal="true" aria-label="デッキの確認">
       <button type="button" className="zoom-sheet-bg" aria-label="選び直す" onClick={onCancel} />
       <div className="deck-confirm-body">
-        <div className="deck-confirm-head" style={{ background: deckGradient(deck.attrs) }}>
+        <div className="deck-confirm-head" style={{ background: deckGradient(deck.attrs, deck.ace) }}>
           <span className="deck-attrs">{deck.attrs.length > 0 ? deck.attrs.join(" × ") : "共通"}</span>
           <strong>{deck.name}</strong>
           <span>{deck.text}</span>
