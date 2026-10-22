@@ -20,13 +20,13 @@ const RARITY_LABEL: Record<number, string> = {
 };
 
 /**
- * カード一覧。★5 から順に、★ごとの段に並べる。
- * 段ごとに横へスワイプして見る（1枚が大きく、縦に長くならない）
+ * カード一覧。★5 から順に、★ごとのまとまりで 3 列に並べる（縦にスクロールするだけで全部見られる）。
+ * 押すと拡大し、拡大したまま「前へ・次へ」で、絞り込んだ並びの前後のカードを順に見られる
  */
 export function Gallery() {
   const { data, isLoading } = useQuery({ queryKey: ["cards"], queryFn: fetchCards });
   const [filter, setFilter] = useState<Filter>(null);
-  const [zoom, setZoom] = useState<CardDef | null>(null);
+  const [zoomId, setZoomId] = useState<string | null>(null);
 
   // 同じ★の中は、属性ごと（共通は最後）に、コストの低い順
   const group = (c: CardDef) => (c.attributes[0] ? ATTRIBUTES.indexOf(c.attributes[0]) : ATTRIBUTES.length);
@@ -40,13 +40,17 @@ export function Gallery() {
   const rows = [5, 4, 3, 2, 1]
     .map((r) => ({ rarity: r, cards: cards.filter((c) => c.rarity === r) }))
     .filter((r) => r.cards.length > 0);
+  // 拡大で前後に移る順番は、画面に並んでいる順（★の高い順）
+  const order = rows.flatMap((r) => r.cards);
+  const zoomAt = zoomId ? order.findIndex((c) => c.id === zoomId) : -1;
+  const zoom = zoomAt >= 0 ? order[zoomAt] : undefined;
 
   return (
     <section className="page">
       <header className="page-head">
         <h1>カード一覧</h1>
         <p className="muted">
-          カードを押すと拡大して、効果を大きな文字で読めます。段ごとに横へスワイプして見られます。
+          カードを押すと拡大して、効果を大きな文字で読めます。拡大したまま「前へ・次へ」で順に見られます。
         </p>
         {data?.fallback && (
           <p className="notice">API に接続できないため、アプリに同梱したカードデータを表示しています。</p>
@@ -83,21 +87,31 @@ export function Gallery() {
               <span className="g-stars">{"★".repeat(row.rarity)}</span>
               {RARITY_LABEL[row.rarity]}
               <small>{row.cards.length}枚</small>
-              <span className="g-swipe" aria-hidden="true">
-                スワイプ →
-              </span>
             </h2>
             <div className="gallery">
               {row.cards.map((c) => (
                 <div key={c.id} className="g-item">
-                  <HoloCard card={c} compact onClick={() => setZoom(c)} />
+                  <HoloCard card={c} compact onClick={() => setZoomId(c.id)} />
                 </div>
               ))}
             </div>
           </section>
         ))
       )}
-      {zoom && <CardZoom key={zoom.id} card={zoom} darkPreview onClose={() => setZoom(null)} />}
+      {zoom && (
+        <CardZoom
+          key={zoom.id}
+          card={zoom}
+          darkPreview
+          nav={{
+            index: zoomAt + 1,
+            total: order.length,
+            prev: () => setZoomId(order[zoomAt - 1]?.id ?? zoom.id),
+            next: () => setZoomId(order[zoomAt + 1]?.id ?? zoom.id),
+          }}
+          onClose={() => setZoomId(null)}
+        />
+      )}
     </section>
   );
 }
