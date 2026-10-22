@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { builtinDeck } from "./decks";
-import { CATALOG, CPU, ME, useGame } from "./store";
+import { CATALOG, CPU, ME, setPresenter, useGame } from "./store";
 
 describe("対戦ストア", () => {
   beforeEach(() => {
@@ -81,6 +81,63 @@ describe("対戦ストア", () => {
     expect(after?.players[ME].field[0]).toBeNull();
     expect(after?.players[CPU].field[0]).toBeNull();
     expect(after?.players[ME].field[1]?.cardId).toBe("c15");
+  });
+
+  it("『フィクサー』：演出があるときは、差し出しが決まった操作も演出を見せてから盤面を進める", async () => {
+    const shown: { type: string; gone: number }[] = [];
+    setPresenter({
+      beforeAttack: async () => {},
+      turnIntro: 0,
+      resolveEffects: async (_s, a, events) => {
+        shown.push({ type: a.type, gone: events.filter((e) => e.type === "sacrificed").length });
+      },
+    });
+    try {
+      const g = structuredClone(useGame.getState().game);
+      if (!g) throw new Error("no game");
+      g.players[ME].mana = 30;
+      g.players[ME].hand = ["n1", "c15"];
+      g.players[CPU].field[0] = {
+        uid: 902,
+        cardId: "n5",
+        damage: 0,
+        canAttack: false,
+        attacksLeft: 0,
+        atkBuff: 0,
+        hpBuff: 0,
+        dark: false,
+        darkUsed: false,
+        exposed: false,
+        boundUntil: 0,
+        silenced: false,
+        noGuard: false,
+        token: false,
+      };
+      useGame.setState({ game: g });
+      const until = async (ok: () => boolean) => {
+        for (let i = 0; i < 400 && !ok(); i++) await new Promise((r) => setTimeout(r, 5));
+      };
+      const idle = () => !useGame.getState().animating;
+      useGame.getState().select({ kind: "hand", index: 0 });
+      useGame.getState().play(0);
+      await until(idle);
+      useGame.getState().select({ kind: "hand", index: 0 });
+      useGame.getState().play(1);
+      await until(() => idle() && !!useGame.getState().game?.pending?.waiting.every((p) => p === ME));
+      expect(useGame.getState().game?.pending?.waiting).toEqual([ME]);
+      useGame.getState().sacrifice(0);
+      await until(() => idle() && !useGame.getState().game?.pending);
+      const after = useGame.getState().game;
+      expect(after?.players[ME].field[0]).toBeNull();
+      expect(after?.players[CPU].field[0]).toBeNull();
+      // CPU の差し出し（まだ待ちが残る）と、自分の差し出し（2体が引き抜かれる）の両方が演出を通った
+      expect(shown.filter((x) => x.type === "sacrifice")).toEqual([
+        { type: "sacrifice", gone: 0 },
+        { type: "sacrifice", gone: 2 },
+      ]);
+    } finally {
+      setPresenter(null);
+    }
   });
 
   for (const delay of [0, 5]) {

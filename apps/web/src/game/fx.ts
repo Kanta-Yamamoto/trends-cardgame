@@ -1,6 +1,7 @@
 import type { AttackTarget, GameEvent, GameState, PlayerId, RuleCard, Unit } from "@trends/game-core";
 import { viewUnit, withRushBoost } from "@trends/game-core";
 import { gsap } from "gsap";
+import { pierce } from "../fx/blade";
 import { dissolve } from "../fx/dissolve";
 import { healMist } from "../fx/healMist";
 import { impact } from "../fx/impact";
@@ -646,7 +647,21 @@ export async function animateEffects(
   await Promise.all(flights);
   // 当たったところを少し見せてから
   if (hits.length > 0) await wait(520);
+  retireUnits(shown, events, next);
+  await wait(hits.length > 0 ? 460 : 0);
+}
 
+/**
+ * 場からいなくなるアイコン（次の state にいないもの）を、オワコンへ（手札に戻ったものは手札へ）飛ばす。
+ * skip のアイコンは、別の演出で消し終えているので飛ばさない
+ */
+export function retireUnits(
+  shown: GameState,
+  events: GameEvent[],
+  next: GameState,
+  skip?: ReadonlySet<number>,
+) {
+  if (!canAnimate() || reduced()) return;
   // 手札に戻ったアイコンは手札へ
   const bounced = new Set(
     events.flatMap((e) => {
@@ -660,9 +675,25 @@ export async function animateEffects(
   );
   for (const p of ["p1", "p2"] as const) {
     for (const u of shown.players[p].field) {
-      if (u && !alive.has(u.uid))
+      if (u && !alive.has(u.uid) && !skip?.has(u.uid))
         toTrash(q(`[data-uid="${u.uid}"]`), p, bounced.has(u.uid) ? "hand" : "trash");
     }
   }
-  await wait(hits.length > 0 ? 460 : 0);
+}
+
+/**
+ * 『調停者』の裁き：damaged の対象に、青白い刃を1本ずつ重く突き刺す。刺さった瞬間に体力の数字を見せる。
+ * 刃が抜けたら、いなくなるアイコンをオワコンへ送る
+ */
+export async function animateJudge(shown: GameState, events: GameEvent[], next: GameState): Promise<void> {
+  if (!canAnimate() || reduced()) return;
+  const targets = events.flatMap((e) => {
+    if (e.type !== "damaged") return [];
+    const u = shown.players[e.player].field[e.slot];
+    const el = u ? q(`[data-uid="${u.uid}"]`) : null;
+    return el ? [{ el, amount: e.amount }] : [];
+  });
+  await Promise.all(targets.map((t, i) => pierce(t.el, i * 300, () => popNumber(t.el, `-${t.amount}`))));
+  retireUnits(shown, events, next);
+  await wait(targets.length > 0 ? 520 : 0);
 }
