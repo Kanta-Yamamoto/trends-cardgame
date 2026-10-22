@@ -12,18 +12,22 @@ import { HELP } from "../help/help";
  * 場のアイコンなら、今の攻撃力・体力・状態も添える。カードを押すと文字を隠して絵だけを見られる。
  * darkPreview のときは、闇堕ちを持つカードの「闇堕ちすると」の姿と効果を添え、絵も切り替えられる
  * （対戦中もカード一覧でも）。initialDark で最初から闇堕ちの姿で開く。
+ * nav を渡すと、下に「前へ・次へ」を出して、拡大したまま前後のカードへ移れる（← → キーでも）。
  */
 export function CardZoom({
   card,
   view,
   darkPreview = false,
   initialDark = false,
+  nav,
   onClose,
 }: {
   card: CardDef;
   view?: UnitView;
   darkPreview?: boolean;
   initialDark?: boolean;
+  /** 一覧の中の位置（1 から）と全体の数、前後へ移る関数 */
+  nav?: { index: number; total: number; prev: () => void; next: () => void };
   onClose: () => void;
 }) {
   const [textHidden, setTextHidden] = useState(false);
@@ -40,10 +44,14 @@ export function CardZoom({
   const keywords = live?.keywords ?? (dark ? (card.dark?.keywords ?? []) : card.keywords);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowLeft" && nav && nav.index > 1) nav.prev();
+      else if (e.key === "ArrowRight" && nav && nav.index < nav.total) nav.next();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, nav]);
 
   return (
     <div className="zoom-sheet" role="dialog" aria-modal="true" aria-label={`${name} を拡大`}>
@@ -127,6 +135,19 @@ export function CardZoom({
           </button>
         </div>
       </div>
+      {nav && (
+        <nav className="zs-nav" aria-label="前後のカード">
+          <button type="button" className="btn ghost" onClick={nav.prev} disabled={nav.index <= 1}>
+            ‹ 前へ
+          </button>
+          <span className="zs-nav-pos">
+            {nav.index} / {nav.total}
+          </span>
+          <button type="button" className="btn ghost" onClick={nav.next} disabled={nav.index >= nav.total}>
+            次へ ›
+          </button>
+        </nav>
+      )}
     </div>
   );
 }
