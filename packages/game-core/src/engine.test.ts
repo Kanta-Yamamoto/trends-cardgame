@@ -120,6 +120,7 @@ const catalog: Record<string, RuleCard> = {
   oldcard: icon("oldcard", 1, 1, 1, { retired: true }),
   fixer: icon("fixer", 4, 2, 3, { effects: [{ do: "sacrifice" }] }),
   judge: icon("judge", 5, 2, 5, { effects: [{ do: "judge" }] }),
+  director: icon("director", 5, 2, 4, { effects: [{ do: "stageAces" }] }),
   hagashi: post("hagashi", 3, {
     effects: [
       { do: "damage", to: "allEnemies", amount: 1 },
@@ -609,6 +610,43 @@ describe("調停（『調停者』）", () => {
     s = play(s, 0, 0);
     expect(s.players.p1.field[0]?.cardId).toBe("judge");
     expect(s.players.p2.field[0]).toBeNull();
+  });
+});
+
+describe("演出（『演出家』）", () => {
+  // 闇堕ちを持つカード（テスト用のカタログから1枚選ぶ）
+  const ace = Object.values(catalog).find((c) => c.dark && c.type === "icon")?.id as string;
+  it("両方に空き枠があれば、それぞれの山札から闇堕ちを持つカードを1枚ずつ出す。場に出たときの効果は働かない", () => {
+    let s = withFoe(["director"], ["f"]);
+    s.players.p1.deck.unshift(ace);
+    s.players.p2.deck.unshift(ace);
+    const deckBefore = { p1: s.players.p1.deck.length, p2: s.players.p2.deck.length };
+    const r = run(s, { type: "play", player: "p1", handIndex: 0, slot: 0 });
+    s = r.state;
+    expect(s.players.p1.field[1]?.cardId).toBe(ace);
+    expect(s.players.p2.field[1]?.cardId).toBe(ace);
+    expect(s.players.p1.field[1]?.dark).toBe(false);
+    expect(s.players.p1.deck.length).toBe(deckBefore.p1 - 1);
+    expect(s.players.p2.deck.length).toBe(deckBefore.p2 - 1);
+    expect(r.events.filter((e) => e.type === "summoned")).toHaveLength(2);
+    // 場に出たときの効果（played の後の効果のイベント）は、出たエースからは起きない
+    expect(r.events.filter((e) => e.type === "played")).toHaveLength(1);
+  });
+  it("どちらかの場が埋まっていれば、どちらにも出ない", () => {
+    let s = withFoe(["director"], ["f", "f", "f", "f", "f"]);
+    s.players.p1.deck.unshift(ace);
+    s.players.p2.deck.unshift(ace);
+    s = play(s, 0, 0);
+    expect(s.players.p1.field.filter(Boolean)).toHaveLength(1);
+    expect(s.players.p2.deck[0]).toBe(ace);
+  });
+  it("山札に闇堕ちを持つカードが無い側は出さない（もう片方は出す）", () => {
+    let s = withFoe(["director"], ["f"]);
+    s.players.p1.deck.unshift(ace);
+    s.players.p2.deck = s.players.p2.deck.filter((id) => !catalog[id]?.dark);
+    s = play(s, 0, 0);
+    expect(s.players.p1.field[1]?.cardId).toBe(ace);
+    expect(s.players.p2.field.filter(Boolean)).toHaveLength(1);
   });
 });
 

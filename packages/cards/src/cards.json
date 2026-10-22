@@ -3318,6 +3318,29 @@
     "original": "assets/original/c16.webp"
   },
   {
+    "id": "c17",
+    "name": "『演出家』",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 5,
+    "cost": 5,
+    "attack": 2,
+    "hp": 4,
+    "attributes": [],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "stageAces"
+      }
+    ],
+    "effect": "場に出たとき、自分と相手の両方に空いている枠があれば、自分と相手は、それぞれ自分の山札から闇堕ちを持つカードを1枚出す（場に出たときの効果は働かない）。",
+    "flavor": "",
+    "art": "/assets/cards/c17-art.jpg",
+    "subject": "/assets/cards/c17-subject.webp",
+    "original": "assets/original/c17.webp"
+  },
+  {
     "id": "i18",
     "name": "子猫",
     "epithet": "",

@@ -749,6 +749,25 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       emit({ type: "sacrificeAsk", player, waiting });
       break;
     }
+    case "stageAces": {
+      // 演出：両方に空き枠があるときだけ（公平に）、それぞれの山札から闇堕ちを持つカードを1枚ずつ出す。
+      // デッキの決まりで闇堕ち持ちは1種類だが、決まりが変わってもいいように山札の中からランダムに選ぶ。
+      // 舞台に上げるだけなので、場に出たときの効果は働かない
+      const sides = [player, foeId] as const;
+      if (sides.some((pid) => !state.players[pid].field.some((u) => !u))) break;
+      for (const pid of sides) {
+        const p = state.players[pid];
+        const found = p.deck.flatMap((id, i) => (catalog[id]?.dark ? [i] : []));
+        if (found.length === 0) continue;
+        const at = found[Math.floor(random(state) * found.length)] as number;
+        const [cardId] = p.deck.splice(at, 1);
+        const slot = p.field.findIndex((u) => !u);
+        if (cardId === undefined || slot < 0) continue;
+        p.field[slot] = newUnit(state, cardId, catalog, false);
+        emit({ type: "summoned", player: pid, cardId, slot });
+      }
+      break;
+    }
     case "judge": {
       // 調停：敵味方を区別せず、攻撃力がいちばん高いアイコンすべてをオワコンにする（このアイコンは除く）
       const sides = [player, foeId] as const;
