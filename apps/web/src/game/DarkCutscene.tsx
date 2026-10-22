@@ -1,7 +1,7 @@
 import type { CardDef } from "@trends/cards";
 import { gsap } from "gsap";
 import { type CSSProperties, useLayoutEffect, useRef } from "react";
-import { embers, shatter } from "../fx/shatter";
+import { disintegrate, embers } from "../fx/shatter";
 
 export interface DarkCut {
   id: number;
@@ -11,23 +11,14 @@ export interface DarkCut {
   done: () => void;
 }
 
-/** ひびの線（絵の真ん中から外へ） */
-const CRACKS = [
-  "M50 50 L38 30 L41 18 L30 0",
-  "M50 50 L66 34 L72 20 L88 8",
-  "M50 50 L74 52 L88 46 L100 54",
-  "M50 50 L62 70 L58 86 L66 100",
-  "M50 50 L36 64 L22 70 L8 88",
-  "M50 50 L28 48 L14 40 L0 44",
-];
-
-/** 闇堕ちの演出は画面全体（z-index 200）。PixiJS の破片はその上に出す */
+/** 闇堕ちの演出は画面全体（z-index 200）。PixiJS の砂の粒はその上に出す */
 const Z_PIXI = 210;
 
 /**
  * 闇堕ちの演出（約 2.4 秒）。時間の流れを 4 つに分けて、重みと緩急をつける。
  * 1. 溜め（0〜0.75 秒）：画面が闇に沈み、元の絵がゆっくり迫りながら色を失い、小刻みに震えが強くなる
- * 2. 解放（0.75 秒）：ひびが一気に走り、絵が砕け散る。白紫の閃光と衝撃の輪、大きな揺れ
+ * 2. 解放（0.78 秒〜）：元の絵が左から右へ黒い砂になって流れ去り、その奥から闇堕ちの姿が浮かぶ。
+ *    画面全体を揺らしたり白く光らせたりはしない（盤面が透けて点滅して見え、処理落ちのように見えるため）
  * 3. 衝撃（0.9 秒〜）：闇堕ちの姿が飛び込み、斜めの帯に「闇堕ち」の字が 1 字ずつ叩きつけられる
  * 4. 余韻（〜2.4 秒）：紫の火の粉がゆっくり昇り、字がわずかに迫る。最後は一気に抜けて消える
  * 自分・相手どちらの闇堕ちでも出す。押すと飛ばせる。
@@ -61,7 +52,7 @@ export function DarkCutscene({
     };
     if (reduce) {
       gsap.set($(".dc-to"), { opacity: 1 });
-      gsap.set($(".dc-from, .dc-cracks"), { opacity: 0 });
+      gsap.set($(".dc-from"), { opacity: 0 });
       const t = gsap.timeline({ onComplete: finish });
       t.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.2 }).to(el, { opacity: 0, duration: 0.2 }, 0.9);
       tl.current = t;
@@ -80,11 +71,9 @@ export function DarkCutscene({
     gsap.set($(".dc-veil"), { opacity: 0 });
     gsap.set($(".dc-tendrils"), { opacity: 0, scale: 1.25 });
     gsap.set(portrait, { opacity: 0, scale: 0.86, y: 18 });
-    gsap.set($(".dc-from"), { filter: "saturate(1) brightness(1)" });
-    gsap.set($(".dc-to"), { opacity: 0, scale: 1.35, filter: "brightness(2.4)" });
-    gsap.set($(".dc-cracks path"), { strokeDashoffset: 1 });
+    gsap.set($(".dc-from"), { filter: "saturate(1) brightness(1)", "--cut": "0%" });
+    gsap.set($(".dc-to"), { opacity: 0, scale: 1.12, filter: "brightness(0.4)" });
     gsap.set($(".dc-flash"), { opacity: 0 });
-    gsap.set($(".dc-ring"), { opacity: 0, scale: 0.2 });
     gsap.set($(".dc-band"), { scaleX: 0, opacity: 1 });
     gsap.set(chars, { opacity: 0, scale: 3.2, y: -10 });
     gsap.set($(".dc-sub"), { opacity: 0, x: mine ? -40 : 40 });
@@ -107,37 +96,23 @@ export function DarkCutscene({
         0.42 + i * 0.05,
       );
     }
-    // ひびが一気に走る（ゆっくり → 速く）
-    t.to($(".dc-cracks path"), { strokeDashoffset: 0, duration: 0.16, ease: "expo.in", stagger: 0.015 }, 0.6);
-
-    // 2. 解放：砕ける・閃光・衝撃の輪・大きな揺れ
+    // 2. 解放：震えを止めてから、元の絵を左から右へ砂にする。闇堕ちの姿は砂の奥から浮かぶ
     const BREAK = 0.78;
-    t.add(() => {
-      const r = portrait.getBoundingClientRect();
-      void shatter(r, { colors: [0x2a0a3c, 0x5b1d86, 0x9a4dff, 0x14061e], zIndex: Z_PIXI });
-    }, BREAK)
-      .set($(".dc-from, .dc-cracks"), { opacity: 0 }, BREAK)
-      .to($(".dc-flash"), { opacity: 1, duration: 0.04, ease: "none" }, BREAK)
-      .to($(".dc-flash"), { opacity: 0, duration: 0.35, ease: "power2.out" }, BREAK + 0.06)
-      .to($(".dc-ring"), { opacity: 1, scale: 0.4, duration: 0.01 }, BREAK)
-      .to($(".dc-ring"), { scale: 2.6, opacity: 0, duration: 0.6, ease: "expo.out" }, BREAK + 0.01)
-      .to(portrait, { x: 0, rotation: 0, scale: 1, duration: 0.01 }, BREAK)
+    const SWEEP = 0.6;
+    const fromArt = card.art;
+    t.to(portrait, { x: 0, rotation: 0, duration: 0.03, ease: "power1.out" }, BREAK - 0.01)
+      .add(() => {
+        const r = portrait.getBoundingClientRect();
+        void disintegrate(r, fromArt, { zIndex: Z_PIXI, sweep: SWEEP });
+      }, BREAK + 0.03)
+      .to($(".dc-from"), { "--cut": "108%", duration: SWEEP, ease: "none" }, BREAK + 0.03)
+      .to($(".dc-flash"), { opacity: 1, duration: 0.25, ease: "power1.out" }, BREAK + 0.1)
+      .to($(".dc-flash"), { opacity: 0, duration: 0.6, ease: "power1.inOut" }, BREAK + 0.35)
       .to(
         $(".dc-to"),
-        { opacity: 1, scale: 1, filter: "brightness(1)", duration: 0.5, ease: "expo.out" },
-        BREAK,
+        { opacity: 1, scale: 1, filter: "brightness(1)", duration: 0.7, ease: "power2.out" },
+        BREAK + 0.25,
       );
-    const shake = [
-      [-14, 8],
-      [12, -10],
-      [-9, -6],
-      [7, 7],
-      [-4, 3],
-      [0, 0],
-    ];
-    shake.forEach(([x, y], i) => {
-      t.to(el, { x, y, duration: 0.045, ease: "none" }, BREAK + i * 0.045);
-    });
 
     // 3. 衝撃：斜めの帯がはしり、「闇堕ち」の字を 1 字ずつ叩きつける（大きく速く → 止まる）
     const SLAM = 0.98;
@@ -151,7 +126,8 @@ export function DarkCutscene({
       [-5, 2],
       [0, 0],
     ].forEach(([x, y], i) => {
-      t.to(el, { x, y, duration: 0.04, ease: "none" }, LAST + i * 0.04);
+      // 画面全体ではなく、帯と字だけを揺らす（全体を揺らすと、ふちから盤面が透けて点滅して見える）
+      t.to($(".dc-band, .dc-text"), { y, x, duration: 0.04, ease: "none" }, LAST + i * 0.04);
     });
 
     // 4. 余韻：火の粉が昇り、字がわずかに迫る → 最後は一気に抜ける
@@ -170,7 +146,7 @@ export function DarkCutscene({
     return () => {
       t.kill();
     };
-  }, [mine]);
+  }, [mine, card.art]);
 
   const vars = {
     "--from": card.art ? `url(${card.art})` : "none",
@@ -188,14 +164,8 @@ export function DarkCutscene({
     >
       <span className="dc-veil" />
       <span className="dc-tendrils" />
-      <span className="dc-ring" />
       <span className="dc-portrait">
         <span className="dc-art dc-from" />
-        <svg className="dc-cracks" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          {CRACKS.map((d) => (
-            <path key={d} d={d} pathLength={1} />
-          ))}
-        </svg>
         <span className="dc-art dc-to" />
       </span>
       <span className="dc-flash" />
