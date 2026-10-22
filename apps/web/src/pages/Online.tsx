@@ -247,7 +247,13 @@ export function OnlineRoom() {
       if (m.state && m.me && m.opponent) {
         const sel = deckFromRef(m.me.deck);
         if (sel)
-          useGame.getState().startOnline({ deck: sel, foeName: m.opponent.name, state: m.state, link });
+          useGame.getState().startOnline({
+            deck: sel,
+            foeName: m.opponent.name,
+            foeDeckRef: m.opponent.deck,
+            state: m.state,
+            link,
+          });
       }
     });
     socket.on("update", (u: RemoteUpdate) => useGame.getState().receive(u));
