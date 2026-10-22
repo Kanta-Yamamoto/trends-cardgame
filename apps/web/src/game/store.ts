@@ -209,7 +209,9 @@ async function showDarkFalls(events: GameEvent[]) {
   for (const e of events)
     if (e.type === "darkFall" && presenter?.darkFall) await presenter.darkFall(e.cardId, e.player);
 }
-const hasEffects = (a: Action) => isPlace(a) || a.type === "cast" || a.type === "endTurn";
+/** 演出を見せてから state を進める操作（差し出しは、選ばれたアイコンが糸で引き抜かれるのを見せる） */
+const hasEffects = (a: Action) =>
+  isPlace(a) || a.type === "cast" || a.type === "endTurn" || a.type === "sacrifice";
 
 export const useGame = create<GameStore>((set, get) => {
   const appendLog = (events: GameEvent[], fx = false) => {
@@ -342,10 +344,15 @@ export const useGame = create<GameStore>((set, get) => {
     const g = get().game;
     if (!g || g.winner) return;
     // 自分の選択で差し出し待ちが終わった直後もここに来る。そのときは待ちが無くても CPU の手番を再開する
-    if (g.pending?.waiting.includes(CPU))
-      dispatch({ type: "sacrifice", player: CPU, slot: autoSacrifice(g, CPU, CATALOG) });
-    const after = get().game;
-    if (after && !after.pending && !after.winner && after.active === CPU && !get().cpuBusy) runCpu();
+    if (g.pending?.waiting.includes(CPU)) {
+      // CPU が最後に選ぶときは引き抜きの演出があるので、見せ終わってから続ける
+      const my = runId;
+      then(commit({ type: "sacrifice", player: CPU, slot: autoSacrifice(g, CPU, CATALOG) }), (ok) => {
+        if (ok && my === runId) settleCpu();
+      });
+      return;
+    }
+    if (!g.pending && g.active === CPU && !get().cpuBusy) runCpu();
   };
 
   /** CPU のターンを planTurnSearch（先読みする CPU）の通りに1手ずつ進める */
@@ -473,9 +480,11 @@ export const useGame = create<GameStore>((set, get) => {
     sacrifice: (slot) => {
       const g = get().game;
       if (!g?.pending?.waiting.includes(ME) || get().animating) return;
-      if (!dispatch({ type: "sacrifice", player: ME, slot })) return;
-      set({ selection: null });
-      settleCpu();
+      then(commit({ type: "sacrifice", player: ME, slot }), (ok) => {
+        if (!ok) return;
+        set({ selection: null });
+        settleCpu();
+      });
     },
     cast: (target) => {
       const sel = get().selection;

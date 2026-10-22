@@ -23,6 +23,7 @@ import {
   type UnitView,
   viewUnit,
 } from "@trends/game-core";
+import { gsap } from "gsap";
 import {
   type CSSProperties,
   useCallback,
@@ -36,8 +37,9 @@ import { Link } from "react-router";
 import { EffectText, HelpTerm } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
-import { fieldEntry } from "../fx/fieldEntry";
+import { fieldEntry, landed } from "../fx/fieldEntry";
 import { fxStage } from "../fx/stage";
+import { ArbiterField } from "../game/ArbiterField";
 import { CardZoom } from "../game/CardZoom";
 import { type DarkCut, DarkCutscene } from "../game/DarkCutscene";
 import { DirectorField } from "../game/DirectorField";
@@ -50,15 +52,18 @@ import {
   deckFromRef,
   loadCustomDecks,
 } from "../game/decks";
+import { FixerField, type FixerHandle } from "../game/FixerField";
 import {
   animateAttack,
   animateDraw,
   animateEffects,
+  animateJudge,
   flipCard,
   hasVisibleEffects,
   markBuzzed,
   popDamage,
   popMaster,
+  retireUnits,
 } from "../game/fx";
 import { MiniCard } from "../game/MiniCard";
 import { CATALOG, CPU, DECK_INFO, ME, openingMs, setPresenter, useGame } from "../game/store";
@@ -66,6 +71,8 @@ import { useDragPlay } from "../game/useDragPlay";
 import { layoutViewport, lockZoom, resetZoom } from "../viewport";
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+/** 演出（GSAP）と同じ時計で待つ。着地などの GSAP の動きに間合いを合わせたいところで使う */
+const gwait = (ms: number) => new Promise<void>((r) => gsap.delayedCall(ms / 1000, r));
 const SLOT_KEYS = Array.from({ length: SLOTS }, (_, i) => `slot-${i}`);
 const nameOf = (id: string) => CATALOG[id]?.name ?? id;
 const who = (p: string) => (p === ME ? "あなた" : useGame.getState().foeName);
@@ -463,9 +470,9 @@ type BuzzCut = {
   done: () => void;
 };
 
-/** エースで決まるデッキの色。『フィクサー』（c15）は白・黒・赤だけのカードなので黒に、『演出家』（c17）は真紅と黒の二色にする */
+/** エースで決まるデッキの色。運営サイドの二色のカード（『フィクサー』c15＝黒と白、『演出家』c17＝真紅と黒）は、カード面と同じ二色を斜線で分ける */
 const ACE_GRADIENT: Record<string, string> = {
-  c15: "linear-gradient(125deg, #3a3a3e, #0b0b0d 55%, #000)",
+  c15: "linear-gradient(160deg, #0e0d0c 0 46%, #f2f1ee 46%)",
   // 『演出家』（c17）：真紅と黒の二色。斜線で分ける
   c17: "linear-gradient(160deg, #cf1b10 0 46%, #1c171c 46%)",
 };
@@ -831,8 +838,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   /** 画面いっぱいに大きく見ているカード（スマホで効果を読むため） */
   const [zoom, setZoom] = useState<Peek | null>(null);
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
-  /** 『フィクサー』の登場（画面全体の暗転とスポットライト）と、差し出されたアイコンの名前 */
-  const [fixer, setFixer] = useState<{ id: number; mine: boolean; gone?: string[] } | null>(null);
+  /** 『フィクサー』の登場：バトル場が黒に沈み、場のアイコンに白い糸が垂れる（差し出しが決まるまで続く） */
+  const [fixer, setFixer] = useState<{ id: number; mine: boolean; exclude?: number } | null>(null);
+  const fixerApi = useRef<FixerHandle>(null);
+  /** 『調停者』の登場：刃を振るう間、バトル場が青のフィールドになる */
+  const [arbiter, setArbiter] = useState<{ id: number; leaving: boolean } | null>(null);
   /** 『演出家』の登場：バトル場全体の背景を真紅と黒の二色が支配する */
   const [director, setDirector] = useState<number | null>(null);
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
@@ -985,11 +995,69 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             await animateEffects(shown, events, next, { from, tint });
           }
         } else if (a.type === "play") {
+          const does = (x: string) => !!card?.effects.some((f) => f.do === x);
+          const uid = next.players[a.player].field[a.slot]?.uid;
+          // 出たアイコンが着地した瞬間から、運営サイドの演出を始める
+          const touch = () => (uid !== undefined ? landed(uid) : wait(320));
+          if (does("stageAces")) {
+            // 『演出家』：着地と同時に舞台が二色になり、0.4 秒たってからエースが舞台に上がる（この Promise が終わると盤面が進む）
+            await touch();
+            setDirector(Date.now());
+            await gwait(400);
+            return;
+          }
+          if (does("sacrifice")) {
+            // 『フィクサー』：場が黒に沈み、糸が垂れてから、差し出しを選ぶ
+            await touch();
+            setFixer({
+              id: Date.now(),
+              mine: a.player === ME,
+              ...(uid !== undefined ? { exclude: uid } : {}),
+            });
+            await gwait(900);
+            return;
+          }
+          if (does("judge")) {
+            // 『調停者』：場が青のフィールドになり、帯が止まりかけたところで、対象に刃を突き刺す
+            await touch();
+            const id = Date.now();
+            setArbiter({ id, leaving: false });
+            await gwait(450);
+            await animateJudge(shown, events, next);
+            setArbiter((x) => (x?.id === id ? { id, leaving: true } : x));
+            return;
+          }
           if (!visible) return;
           await wait(560); // 出たアイコンが場に着いて弾むのを待ってから、効果を出す
-          const uid = next.players[a.player].field[a.slot]?.uid;
-          const from = uid ? document.querySelector<HTMLElement>(`[data-uid="${uid}"]`) : null;
+          const from = uid !== undefined ? document.querySelector<HTMLElement>(`[data-uid="${uid}"]`) : null;
           await animateEffects(shown, events, next, { from, tint });
+        } else if (a.type === "sacrifice") {
+          // 差し出しが決まった：選ばれたアイコンを糸で上へ引き抜いてから、幕を閉じる
+          const uids = events.flatMap((e) =>
+            e.type === "sacrificed" ? [shown.players[e.player].field[e.slot]?.uid ?? -1] : [],
+          );
+          if (uids.length === 0) return;
+          const api = fixerApi.current;
+          if (api) await api.pull(uids);
+          api?.close();
+          // 引き抜いたアイコンは消し終えているので、残りのいなくなるアイコンだけをオワコンへ送る
+          const left: GameState = api
+            ? {
+                ...shown,
+                players: {
+                  p1: {
+                    ...shown.players.p1,
+                    field: shown.players.p1.field.map((u) => (u && uids.includes(u.uid) ? null : u)),
+                  },
+                  p2: {
+                    ...shown.players.p2,
+                    field: shown.players.p2.field.map((u) => (u && uids.includes(u.uid) ? null : u)),
+                  },
+                },
+              }
+            : shown;
+          if (visible) await animateEffects(left, events, next, { from: null });
+          else retireUnits(left, events, next);
         } else if (visible) {
           await animateEffects(shown, events, next, { from: null });
         }
@@ -1091,22 +1159,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       } else if (e.type === "damaged") {
         const uid = uidAt(e.player, e.slot);
         if (uid) setTimeout(() => popDamage(uid, e.amount), t);
-      } else if (e.type === "played" && CATALOG[e.cardId]?.effects.some((x) => x.do === "sacrifice")) {
-        // 『フィクサー』の登場：ほかのカードに無い、画面全体の暗転
-        const intro = { id, mine: e.player === ME };
-        setTimeout(() => setFixer(intro), t);
-        t += 1400;
-      } else if (e.type === "played" && CATALOG[e.cardId]?.effects.some((x) => x.do === "stageAces")) {
-        // 『演出家』の登場：斜線が降りてきて止まるまで待ってから、エースを舞台に上げる
-        setTimeout(() => setDirector(id), t);
-        t += 1500;
-      } else if (e.type === "sacrificed") {
-        const name = `${CATALOG[e.cardId]?.name ?? ""}（${e.player === ME ? "あなた" : "相手"}）`;
-        setTimeout(
-          () =>
-            setFixer((f) => ({ id: f?.id ?? id, mine: f?.mine ?? false, gone: [...(f?.gone ?? []), name] })),
-          t,
-        );
       } else if (e.type === "buzz") {
         // バズの対象を盤面で強調する（光の枠と「バズ」の札、+2/+2）
         const uid = uidAt(e.player, e.slot);
@@ -1117,6 +1169,15 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       }
     }
   }, [log, openingOn]);
+
+  // 『フィクサー』の黒い場は、差し出しを選んでいる間だけ続く。選ぶ人がいない（誰も差し出せない）ときは、名前を見せてから閉じる。
+  // 差し出しが決まったときは、引き抜きの演出のあとに resolveEffects が閉じる
+  const sacPending = game?.pending?.kind === "sacrifice";
+  useEffect(() => {
+    if (!fixer || sacPending || animating) return;
+    const id = window.setTimeout(() => fixerApi.current?.close(), 1400);
+    return () => window.clearTimeout(id);
+  }, [fixer, sacPending, animating]);
 
   // バズが使えるようになったら（自分のターンの始め・4ターン目になったとき）、ボタンの枠を光らせる。
   // 演出中・CPU の思考中の出入りでは光らせ直さないよう、盤面の状態だけで見る
@@ -1411,7 +1472,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     if (selection) select(null);
   };
   const field = fieldOf(game, CATALOG);
-  const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}${director !== null ? " field-director" : ""}`;
+  const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}${director !== null ? " field-director" : ""}${arbiter ? " field-arbiter" : ""}${fixer ? " field-fixer" : ""}`;
   const fieldLayer = field ? <FieldLayer kind={field.kind} mine={field.owner === ME} /> : null;
 
   return (
@@ -1435,6 +1496,18 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         <div className={`pstage ${boardClass}`} data-drop="board">
           {fieldLayer}
           {director !== null && <DirectorField key={director} onDone={() => setDirector(null)} />}
+          {arbiter && (
+            <ArbiterField key={arbiter.id} leaving={arbiter.leaving} onDone={() => setArbiter(null)} />
+          )}
+          {fixer && (
+            <FixerField
+              key={fixer.id}
+              ref={fixerApi}
+              mine={fixer.mine}
+              exclude={fixer.exclude}
+              onDone={() => setFixer(null)}
+            />
+          )}
           <div className="ptop">
             {quitBtn}
             {turnPill}
@@ -1549,32 +1622,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           return <AttackArrow from={from} to={to} hot={hot} ally={where === "ally"} />;
         })()}
 
-      {fixer && (
-        <div
-          key={fixer.id}
-          className={`fixer-cut ${fixer.gone ? "gone" : ""}`}
-          aria-hidden="true"
-          onAnimationEnd={(e) => e.target === e.currentTarget && setFixer(null)}
-        >
-          <div className="fx-beam" />
-          {!fixer.gone && (
-            <div className="fx-face">
-              <i />
-              <i />
-              <i />
-            </div>
-          )}
-          <div className="fx-title">
-            <small>{fixer.mine ? "あなたの" : "相手の"}裏で、誰かが糸を引いている</small>
-            <b>『フィクサー』</b>
-            {fixer.gone ? (
-              <span>差し出された：{fixer.gone.join("・")}</span>
-            ) : (
-              <span>自分と相手は、それぞれ自分のアイコンを1体差し出す</span>
-            )}
-          </div>
-        </div>
-      )}
       {banner && (
         <div
           key={banner.id}

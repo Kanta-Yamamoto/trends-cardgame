@@ -35,6 +35,8 @@ export function fieldEntry(
     .to(el, { y: 0, scale: 1, duration: 0.1, ease: "power4.in" })
     // 3. 衝撃：つぶれて一瞬止まる（ヒットストップ）
     .add(() => {
+      // 着地した瞬間を知らせる（登場時の演出を、着地に合わせて始めるため。landed() が待つ）
+      el.dispatchEvent(new CustomEvent("fx-landed", { bubbles: true }));
       void landingImpact(el.getBoundingClientRect(), card.attributes, r);
       if (big) shakeBoard(r === 5 ? 6 : 3);
       if (r === 5) void summonWave(el, card.attributes);
@@ -165,4 +167,23 @@ async function landingImpact(rect: Rect, attributes: readonly Attribute[], rarit
   await tl.then();
   fx.destroy({ children: true });
   release();
+}
+
+/**
+ * 場に出た uid のアイコンが着地するまで待つ（fieldEntry の衝撃の瞬間）。
+ * 演出を切っている・要素が見つからないときのために、limitMs で打ち切る
+ */
+export function landed(uid: number, limitMs = 700): Promise<void> {
+  return new Promise((resolve) => {
+    const finish = () => {
+      document.removeEventListener("fx-landed", on);
+      window.clearTimeout(id);
+      resolve();
+    };
+    const on = (e: Event) => {
+      if ((e.target as HTMLElement | null)?.dataset?.uid === String(uid)) finish();
+    };
+    document.addEventListener("fx-landed", on);
+    const id = window.setTimeout(finish, fxEnabled() ? limitMs : 0);
+  });
 }
