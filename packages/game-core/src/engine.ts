@@ -749,6 +749,24 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       emit({ type: "sacrificeAsk", player, waiting });
       break;
     }
+    case "judge": {
+      // 調停：敵味方を区別せず、攻撃力がいちばん高いアイコンすべてをオワコンにする（このアイコンは除く）
+      const sides = [player, foeId] as const;
+      let top = -1;
+      for (const pid of sides)
+        state.players[pid].field.forEach((u, slot) => {
+          if (!u || (pid === player && slot === ctx.selfSlot)) return;
+          top = Math.max(top, viewUnit(state, pid, u, catalog).attack);
+        });
+      if (top < 0) break;
+      for (const pid of sides)
+        state.players[pid].field.forEach((u, slot) => {
+          if (!u || (pid === player && slot === ctx.selfSlot)) return;
+          const v = viewUnit(state, pid, u, catalog);
+          if (v.attack === top) damageUnit(state, pid, slot, Math.max(1, v.hp), emit);
+        });
+      break;
+    }
     case "damagePerEnemy": {
       // 相手の場が賑わっているほど大きく燃える。数えるのは効果が働いた瞬間
       const foeField = state.players[foeId].field;

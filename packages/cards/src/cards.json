@@ -3295,6 +3295,28 @@
     "original": "assets/original/c15.webp"
   },
   {
+    "id": "c16",
+    "name": "『調停者』",
+    "epithet": "",
+    "type": "icon",
+    "rarity": 5,
+    "cost": 5,
+    "attack": 2,
+    "hp": 5,
+    "attributes": [],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "judge"
+      }
+    ],
+    "effect": "場に出たとき、自分と相手の場で攻撃力がいちばん高いアイコンすべてをオワコンにする（このアイコンは除く）。",
+    "art": "/assets/cards/c16-art.jpg",
+    "subject": "/assets/cards/c16-subject.webp",
+    "original": "assets/original/c16.webp"
+  },
+  {
     "id": "i18",
     "name": "子猫",
     "epithet": "",

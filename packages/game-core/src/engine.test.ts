@@ -119,6 +119,7 @@ const catalog: Record<string, RuleCard> = {
   eater: icon("eater", 3, 1, 3, { effects: [{ on: "passive", do: "attackPerLostToken", card: "kusa" }] }),
   oldcard: icon("oldcard", 1, 1, 1, { retired: true }),
   fixer: icon("fixer", 4, 2, 3, { effects: [{ do: "sacrifice" }] }),
+  judge: icon("judge", 5, 2, 5, { effects: [{ do: "judge" }] }),
   hagashi: post("hagashi", 3, {
     effects: [
       { do: "damage", to: "allEnemies", amount: 1 },
@@ -582,6 +583,32 @@ describe("差し出し（フィクサー）", () => {
     expect(at).toBeGreaterThanOrEqual(0);
     expect(plan[at + 1]).toEqual({ type: "sacrifice", player: "p1", slot: 0 });
     expect(plan.at(-1)?.type).toBe("sacrifice");
+  });
+});
+
+describe("調停（『調停者』）", () => {
+  it("場に出たとき、敵味方の場で攻撃力がいちばん高いアイコンをオワコンにする", () => {
+    let s = withFoe(["basher", "judge"], ["big", "wall"]);
+    s = play(s, 0, 0);
+    s = play(s, 0, 1);
+    expect(s.players.p2.field[0]).toBeNull();
+    expect(s.players.p2.field[1]?.cardId).toBe("wall");
+    expect(s.players.p1.field[0]?.cardId).toBe("basher");
+    expect(s.players.p1.field[1]?.cardId).toBe("judge");
+  });
+  it("いちばん高いのが自分のアイコンでもオワコンにする。同じ攻撃力なら両方", () => {
+    let s = withFoe(["big", "judge"], ["big", "wall"]);
+    s = play(s, 0, 0);
+    s = play(s, 0, 1);
+    expect(s.players.p1.field[0]).toBeNull();
+    expect(s.players.p2.field[0]).toBeNull();
+    expect(s.players.p2.field[1]?.cardId).toBe("wall");
+  });
+  it("このアイコン自身は除く（自身がいちばん高くても、その次を斬る）", () => {
+    let s = withFoe(["judge"], ["f"]);
+    s = play(s, 0, 0);
+    expect(s.players.p1.field[0]?.cardId).toBe("judge");
+    expect(s.players.p2.field[0]).toBeNull();
   });
 });
 
