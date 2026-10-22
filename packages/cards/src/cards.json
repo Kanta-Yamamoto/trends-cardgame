@@ -3312,6 +3312,7 @@
       }
     ],
     "effect": "場に出たとき、自分と相手の場で攻撃力がいちばん高いアイコンすべてをオワコンにする（このアイコンは除く）。",
+    "flavor": "",
     "art": "/assets/cards/c16-art.jpg",
     "subject": "/assets/cards/c16-subject.webp",
     "original": "assets/original/c16.webp"
