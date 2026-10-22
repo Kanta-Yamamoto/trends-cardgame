@@ -830,15 +830,20 @@ describe("デッキの決まり", () => {
     const commons = ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8", "n9", "n10"].flatMap((id) => [id, id]);
     expect(validateDeck(commons, real)).toEqual([]);
   });
-  it("構築済みデッキは単属性で、5属性に1つずつある（ほかに『フィクサー』が主役の草のデッキ）", () => {
+  it("構築済みデッキは単属性で、5属性に1つずつある（ほかに『フィクサー』が主役の草のデッキと、運営サイドの★5 3枚のデッキ）", () => {
     const solo = Object.entries(DECKS).filter(([id]) => id.startsWith("solo_"));
     const attrs = solo.map(([, d]) => deckAttributes(d, real).join("×"));
     expect([...attrs].sort()).toEqual([...ATTRIBUTES].sort());
     expect(deckAttributes(DECKS.fixer_meme, real)).toEqual(["草"]);
     expect(DECKS.fixer_meme.filter((c) => c === "c15")).toHaveLength(2);
+    expect(deckAttributes(DECKS.unei_idol, real)).toEqual(["メロい"]);
+    for (const id of ["c15", "c16", "c17"]) expect(DECKS.unei_idol.filter((c) => c === id)).toHaveLength(2);
   });
-  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、共通カードを4枚入れる", () => {
+  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、共通カードを4枚入れる（運営デッキは共通で固める）", () => {
+    // 運営デッキ（unei_）は、共通で固めるのがコンセプト（オーナー）なので、共通の枚数の決まりから外す
+    expect(DECKS.unei_idol.filter((c) => real[c]?.attributes.length === 0)).toHaveLength(14);
     for (const [id, deck] of Object.entries(DECKS)) {
+      if (id.startsWith("unei_")) continue;
       const aces = deck.filter((c) => real[c]?.dark);
       const commons = deck.filter((c) => real[c]?.attributes.length === 0);
       expect({ id, aces: aces.length, kinds: new Set(aces).size, commons: commons.length }).toEqual({

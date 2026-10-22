@@ -123,6 +123,9 @@ importers:
       '@fontsource/zen-antique':
         specifier: 5.3.0
         version: 5.3.0
+      '@fontsource/zen-old-mincho':
+        specifier: 5.3.1
+        version: 5.3.1
       '@tanstack/react-query':
         specifier: ^5.104.3
         version: 5.104.3(react@19.3.1)
@@ -843,6 +846,9 @@ packages:
 
   '@fontsource/zen-antique@5.3.0':
     resolution: {integrity: sha512-G9iu1kgpr0MvBWVoR+DjoVMgK5zdVVeMQ+qdHJ42ec8Ag+574uWuykjMbOn9Nfq560swzixiTNdMlWoNzzyCAg==}
+
+  '@fontsource/zen-old-mincho@5.3.1':
+    resolution: {integrity: sha512-wahFUlw1s0zKkxiTRj9jJiyVrdNT5uHNYWakr6cDEIgp91YoP/LOvfD2+JVIKiXIwTChDM1oW1yqXJbdtlI56w==}
 
   '@inquirer/ansi@1.0.2':
     resolution: {integrity: sha512-S8qNSZiYzFd0wAcyG5AXCvUHC5Sr7xpZ9wZ2py9XR88jUz8wooStVx5M6dRzczbBWjic9NP7+rY0Xi7qqK/aMQ==}
@@ -4335,6 +4341,8 @@ snapshots:
   '@fontsource/m-plus-1@5.3.1': {}
 
   '@fontsource/zen-antique@5.3.0': {}
+
+  '@fontsource/zen-old-mincho@5.3.1': {}
 
   '@inquirer/ansi@1.0.2': {}
 
