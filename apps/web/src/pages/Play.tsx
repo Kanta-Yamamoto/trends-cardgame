@@ -402,11 +402,6 @@ function FieldLayer({ kind, mine }: { kind: "dark" | "omen"; mine: boolean }) {
     <div className={`field-layer field-${kind} ${mine ? "mine" : "foe"}`} aria-hidden="true">
       <span className="field-mist" />
       <span className="field-mist m2" />
-      <span className="field-label">
-        {kind === "omen"
-          ? `${mine ? "あなた" : "相手"}の闇の気配……`
-          : `${mine ? "あなた" : "相手"}の闇が降りている`}
-      </span>
     </div>
   );
 }

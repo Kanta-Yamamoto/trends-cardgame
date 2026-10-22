@@ -611,13 +611,12 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .dc-art { position: absolute; inset: 0; background-position: center 20%; background-size: cover; }
 .dc-from { background-image: var(--from); }
 .dc-to { background-image: var(--to); }
-.dc-cracks { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
-.dc-cracks path {
-  fill: none; stroke: #f6ecff; stroke-width: 1.4; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1;
-  filter: drop-shadow(0 0 4px #b06bff) drop-shadow(0 0 10px #7a2cc0);
+/* 元の絵は左から右へ、砂になって消える（--cut を GSAP で進める。消えた分は PixiJS の黒い粒になる） */
+.dc-from {
+  -webkit-mask-image: linear-gradient(90deg, transparent calc(var(--cut, 0%) - 4%), #000 calc(var(--cut, 0%) + 4%));
+  mask-image: linear-gradient(90deg, transparent calc(var(--cut, 0%) - 4%), #000 calc(var(--cut, 0%) + 4%));
 }
-.dc-flash { inset: 0; background: radial-gradient(60% 50% at 50% 40%, #ffffff, #e6cfffcc 40%, #9a4dff00 75%); }
-.dc-ring { width: min(40vh, 62vw); aspect-ratio: 1; top: calc(12vh + min(40vh, 62vw) * 0.25); border-radius: 50%; border: 3px solid #e6cfff; box-shadow: 0 0 30px #b06bff, inset 0 0 30px #b06bff; }
+.dc-flash { inset: 0; background: radial-gradient(55% 45% at 50% 40%, #c79bff99, #7a2cc055 45%, #9a4dff00 75%); }
 /* 斜めの帯（Persona のような切り込み）。字はこの上に叩きつける */
 .dc-band {
   left: -10%; right: -10%; bottom: 14vh; height: clamp(84px, 15vh, 150px);
@@ -738,7 +737,8 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
   animation: field-dark-in 1.4s ease-out both;
 }
 .field-mist {
-  position: absolute; left: -20%; right: -20%; height: 70%; filter: blur(8px);
+  /* ぼかし（filter: blur）は使わない：動く大きな面をぼかすとスマホで処理落ちする。グラデーションのふちで柔らかくする */
+  position: absolute; left: -20%; right: -20%; height: 70%;
   background:
     radial-gradient(35% 30% at 25% 50%, #b06bff33, transparent 70%),
     radial-gradient(30% 26% at 70% 60%, #8a2bd02e, transparent 70%);
@@ -750,12 +750,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .field-mist.m2 { animation-duration: 15s; animation-delay: -6s; opacity: 0.7; }
 @keyframes field-mist { 0%, 100% { transform: translateX(-6%); } 50% { transform: translateX(6%); } }
 @keyframes field-omen-in { from { opacity: 0; } }
-@keyframes field-dark-in { from { opacity: 0; filter: brightness(2.2); } }
-.field-label {
-  position: absolute; right: 8px; bottom: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
-  color: #e8d0ff; background: #00000066; border: 1px solid #b06bff66; padding: 2px 8px; border-radius: 99px;
-}
-.field-omen.foe .field-label { bottom: auto; top: 6px; }
+@keyframes field-dark-in { from { opacity: 0; } }
 /* 闇の気配：倒れたエースの枠に灯る紫の炎 */
 .slot.omen-slot { position: relative; border-color: #b06bffaa; background: radial-gradient(60% 60% at 50% 65%, #8a2bd044, transparent 75%); overflow: visible; }
 .omen-flame { position: absolute; left: 50%; bottom: 16%; width: 46%; height: 62%; transform: translateX(-50%); pointer-events: none; }
