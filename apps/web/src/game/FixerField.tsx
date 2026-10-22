@@ -1,27 +1,25 @@
 import { gsap } from "gsap";
 import { type Ref, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { cone, easeInOut, lerp, type Pt, SQUARE, slash, THIN, toClip } from "../cards/directorMotion";
+import { type Bleed, bleedMask, makeBleed, paintMask } from "../cards/inkBleed";
 
 /**
- * 『フィクサー』が場に出たとき：バトル場が黒に沈み、場のアイコンすべてに上から白い糸が垂れる（見た目だけ。ルールは game-core）。
- * 『演出家』のフィールドと同じ言葉づかいで、テーマの色は黒。
- * 1. 黒い斜線が降りてきて、盤面を覆い切る（速く入って、最後はゆっくり）
+ * 『フィクサー』が場に出たとき：バトル場が黒に滲み、場のアイコンすべてに上から白い糸が垂れる（見た目だけ。ルールは game-core）。
+ * カード面と同じ「白が滲んで黒になる」動き（cards/inkBleed.ts）で、テーマの色は黒。
+ * 1. 紙に墨が染みこむように、盤面のふちから黒がゆっくり滲んで、全面が黒になる
  * 2. 『フィクサー』の名前が浮かび、糸が上から1本ずつ垂れて、アイコンの頭につながる
  * 3. 差し出しが決まったら、選ばれたアイコンの糸がぴんと張り、上へ引き抜かれる。ほかの糸はするすると上へ戻る（pull）
- * 4. 黒い幕が上の一点を軸に回って、細い黒い一本の糸になり、ゆっくり閉じて消える（close）
+ * 4. 黒のまま残り、ターンが終わったら、黒が滲んで引いていき、元の盤面に戻る（close）
  */
 export interface FixerHandle {
   /** 選ばれたアイコンを糸で上へ引き抜く（終わったら resolve） */
   pull: (uids: number[]) => Promise<void>;
-  /** 幕を閉じて消える */
+  /** 黒が滲んで引き、消える */
   close: () => void;
 }
 
-const TILT = 12;
-const APEX: Pt = [50, -6];
-const IN_MS = 800;
-const CURTAIN_MS = 600;
-const CLOSE_MS = 1150;
+/** 滲んで黒になるまで・滲んで戻るまでの長さ */
+const IN_MS = 2200;
+const OUT_MS = 2200;
 
 interface Thread {
   uid: number;
@@ -49,22 +47,27 @@ export function FixerField({
   const [threads, setThreads] = useState<Thread[]>([]);
   const [size, setSize] = useState({ w: 100, h: 100 });
   const closing = useRef(false);
+  const bleed = useRef<Bleed | null>(null);
   const done = useRef(onDone);
   done.current = onDone;
 
-  // 1. 黒が降りてきて覆い切る
+  // 1. 盤面のふちから黒が滲んで、全面が黒になる（盤面の比に合わせた低い解像度の場）
   useEffect(() => {
     const el = ink.current;
     if (!el) return;
+    const w = 40;
+    const h = Math.max(20, Math.round((w * el.offsetHeight) / Math.max(1, el.offsetWidth)));
+    bleed.current = makeBleed(w, h, 23, [0.5, 0.45]);
+    const b = bleed.current;
     if (reduced()) {
-      el.style.clipPath = toClip(SQUARE);
+      paintMask(el, bleedMask(b, 1));
       return;
     }
     let raf = 0;
     const t0 = performance.now();
     const step = (now: number) => {
       const u = Math.min(1, (now - t0) / IN_MS);
-      el.style.clipPath = u < 1 ? toClip(slash(lerp(-35, 140, 1 - (1 - u) ** 4), TILT)) : toClip(SQUARE);
+      paintMask(el, bleedMask(b, u));
       if (u < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
@@ -120,21 +123,13 @@ export function FixerField({
       return;
     }
     box.classList.add("closing");
+    const b = bleed.current;
     const t0 = performance.now();
     const step = (now: number) => {
-      const t = now - t0;
-      if (t < CURTAIN_MS) {
-        const u = t / CURTAIN_MS;
-        el.style.clipPath = toClip(cone(lerp((88 * Math.PI) / 180, THIN, 1 - (1 - u) ** 2), APEX));
-      } else if (t < CURTAIN_MS + CLOSE_MS) {
-        const u = (t - CURTAIN_MS) / CLOSE_MS;
-        el.style.clipPath = toClip(cone(lerp(THIN, 0, easeInOut(u)), APEX));
-      } else {
-        el.style.clipPath = toClip([]);
-        done.current();
-        return;
-      }
-      requestAnimationFrame(step);
+      const u = Math.min(1, (now - t0) / OUT_MS);
+      if (b) paintMask(el, bleedMask(b, 1 - u));
+      if (u < 1) requestAnimationFrame(step);
+      else done.current();
     };
     requestAnimationFrame(step);
   };
