@@ -88,6 +88,10 @@ interface GameStore {
   foeName: string;
   /** 自分が選んだデッキ（構築済みか、自分で組んだもの）。null ならデッキ選択画面 */
   deck: DeckSel | null;
+  /** 相手のデッキ（構築済みデッキの ID か "custom:…"）。オープニングで見せる */
+  foeDeckRef: string | null;
+  /** 新しい対戦が始まるたびに増える。画面はこれが変わったらオープニングを見せる */
+  opening: number;
   game: GameState | null;
   log: LogEntry[];
   error: string | null;
@@ -111,7 +115,13 @@ interface GameStore {
   /** 差し出し（フィクサー）：自分のアイコンを1体選ぶ */
   sacrifice: (slot: number) => void;
   /** オンライン対戦を始める（再接続のときも、届いた状態で呼び直す） */
-  startOnline: (o: { deck: DeckSel; foeName: string; state: GameState; link: RemoteLink }) => void;
+  startOnline: (o: {
+    deck: DeckSel;
+    foeName: string;
+    foeDeckRef?: string;
+    state: GameState;
+    link: RemoteLink;
+  }) => void;
   /** サーバーから届いた1手を反映する（攻撃なら演出のあとで） */
   receive: (u: RemoteUpdate) => void;
   resign: () => void;
@@ -152,6 +162,17 @@ export const setPresenter = (p: Presenter | null) => {
 let link: RemoteLink | null = null;
 /** サーバーから届いた手を、順番に1つずつ反映する */
 let inbox: RemoteUpdate[] = [];
+/**
+ * 対戦の始めのオープニング（両者のデッキを見せる）の長さ（ms）。この間は CPU も相手の手も止めておく。
+ * テストでは待たない。動きを減らす設定のときは短く
+ */
+export function openingMs(): number {
+  if (import.meta.env.MODE === "test" || typeof window === "undefined") return 0;
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 1200 : 2700;
+}
+/** オープニングが終わる時刻（Date.now()）。それまでは CPU を動かさず、届いた相手の手も見せない */
+let openingEnds = 0;
+const openingLeft = () => Math.max(0, openingEnds - Date.now());
 let draining = false;
 
 type PlaceAction = Extract<Action, { type: "play" }>;
@@ -203,6 +224,7 @@ export const useGame = create<GameStore>((set, get) => {
     if (draining) return;
     draining = true;
     const my = runId;
+    if (openingLeft() > 0) await new Promise((r) => setTimeout(r, openingLeft()));
     while (inbox.length > 0 && my === runId) {
       const u = inbox.shift() as RemoteUpdate;
       const g = get().game;
@@ -372,6 +394,8 @@ export const useGame = create<GameStore>((set, get) => {
     mode: "cpu",
     foeName: "CPU",
     deck: null,
+    foeDeckRef: null,
+    opening: 0,
     game: null,
     log: [],
     error: null,
@@ -393,10 +417,13 @@ export const useGame = create<GameStore>((set, get) => {
         seed,
         first,
       });
+      openingEnds = Date.now() + openingMs();
       set({
         mode: "cpu",
         foeName: "CPU",
         deck,
+        foeDeckRef: cpuDeck,
+        opening: get().opening + 1,
         game,
         log: [{ id: 1, e: { type: "turnStarted", player: first, turn: 1, mana: game.players[first].mana } }],
         error: null,
@@ -404,7 +431,10 @@ export const useGame = create<GameStore>((set, get) => {
         cpuBusy: false,
         animating: false,
       });
-      runCpu();
+      const my = runId;
+      const wait = openingLeft();
+      if (wait > 0) setTimeout(() => my === runId && runCpu(), wait);
+      else runCpu();
     },
     quit: () => {
       runId++;
@@ -414,6 +444,7 @@ export const useGame = create<GameStore>((set, get) => {
         mode: "cpu",
         foeName: "CPU",
         deck: null,
+        foeDeckRef: null,
         game: null,
         log: [],
         error: null,
@@ -500,9 +531,12 @@ export const useGame = create<GameStore>((set, get) => {
         if (get().mode === "cpu") runCpu();
       });
     },
-    startOnline: ({ deck, foeName, state, link: l }) => {
+    startOnline: ({ deck, foeName, foeDeckRef, state, link: l }) => {
       const same = get().mode === "online" && get().deck?.ref === deck.ref && link === l;
       if (!same) runId++;
+      // 始まったばかりの対戦に入ったときだけオープニングを見せる（途中からの再接続では見せない）
+      const fresh = !same && state.turn === 1;
+      if (fresh) openingEnds = Date.now() + openingMs();
       link = l;
       inbox = [];
       draining = false;
@@ -510,6 +544,8 @@ export const useGame = create<GameStore>((set, get) => {
         mode: "online",
         foeName,
         deck,
+        foeDeckRef: foeDeckRef ?? null,
+        opening: fresh ? get().opening + 1 : get().opening,
         game: state,
         // 再接続のときは記録を残す
         log: same ? get().log : [],

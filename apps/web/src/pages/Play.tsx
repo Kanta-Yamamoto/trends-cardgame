@@ -23,7 +23,15 @@ import {
   type UnitView,
   viewUnit,
 } from "@trends/game-core";
-import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link } from "react-router";
 import { AttrChips } from "../cards/AttrChips";
 import { EffectText, HelpTerm } from "../cards/EffectText";
@@ -34,7 +42,14 @@ import { fxStage } from "../fx/stage";
 import { CardZoom } from "../game/CardZoom";
 import { type DarkCut, DarkCutscene } from "../game/DarkCutscene";
 import { useDecksChanged } from "../game/deckSync";
-import { builtinDeck, customDeckSel, type DeckSel, deckErrors, loadCustomDecks } from "../game/decks";
+import {
+  builtinDeck,
+  customDeckSel,
+  type DeckSel,
+  deckErrors,
+  deckFromRef,
+  loadCustomDecks,
+} from "../game/decks";
 import {
   animateAttack,
   animateDraw,
@@ -46,7 +61,7 @@ import {
   popMaster,
 } from "../game/fx";
 import { MiniCard } from "../game/MiniCard";
-import { CATALOG, CPU, DECK_INFO, ME, setPresenter, useGame } from "../game/store";
+import { CATALOG, CPU, DECK_INFO, ME, openingMs, setPresenter, useGame } from "../game/store";
 import { useDragPlay } from "../game/useDragPlay";
 import { layoutViewport, lockZoom, resetZoom } from "../viewport";
 
@@ -281,12 +296,109 @@ function DeckSelect() {
  * デッキ選択のサムネのエース：背景の絵をうっすら敷き、切り抜き（あれば）を右に大きく出す。
  * 文字は左に置くので、左から右へ暗さを抜くグラデーションを重ねて読みやすくする
  */
+/** オープニングで見せる相手のデッキ。自分で組んだデッキは中身の名前を出さず「オリジナルデッキ」に */
+function foeDeckSel(ref: string | null): DeckSel {
+  const sel = ref ? deckFromRef(ref) : null;
+  if (!sel) return { ref: ref ?? "", name: "相手のデッキ", text: "", cards: [], attrs: [] };
+  return ref?.startsWith("custom:") ? { ...sel, name: "オリジナルデッキ" } : sel;
+}
+
+/**
+ * 対戦の始めのオープニング。画面を斜めに切り分け、上に相手・下に自分のデッキ（色・属性・エース）を
+ * 点対称に並べてから「BATTLE START」。どちらの画面でも自分が下になるので、両者で同じ見え方になる
+ */
+function Opening({
+  me,
+  foe,
+  foeName,
+  ms,
+  onDone,
+}: {
+  me: DeckSel;
+  foe: DeckSel;
+  foeName: string;
+  ms: number;
+  onDone: () => void;
+}) {
+  const done = useRef(onDone);
+  done.current = onDone;
+  useEffect(() => {
+    const t = setTimeout(() => done.current(), ms);
+    return () => clearTimeout(t);
+  }, [ms]);
+  return (
+    <div
+      className="opening"
+      style={{ "--op-ms": `${ms}ms` } as CSSProperties}
+      role="status"
+      aria-label={`${foeName}「${foe.name}」対 あなた「${me.name}」。バトルスタート`}
+    >
+      <OpeningSide side="foe" sel={foe} who={foeName} />
+      <OpeningSide side="me" sel={me} who="あなた" />
+      <svg className="op-slash" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <line x1="-2" y1="61.2" x2="102" y2="38.8" />
+      </svg>
+      <span className="op-vs" aria-hidden="true">
+        VS
+      </span>
+      <strong className="op-start" aria-hidden="true">
+        <span>BATTLE</span>
+        <span>START</span>
+      </strong>
+    </div>
+  );
+}
+
+function OpeningSide({ side, sel, who }: { side: "me" | "foe"; sel: DeckSel; who: string }) {
+  const ace = sel.ace ? CATALOG[sel.ace] : undefined;
+  const subject = ace ? aceSubject(ace) : undefined;
+  return (
+    <div className={`op-side ${side}`} style={{ background: deckGradient(sel.attrs, sel.ace) }}>
+      {ace?.art && <span className="op-bg" style={{ backgroundImage: `url(${ace.art})` }} />}
+      {subject && (
+        <img
+          className="op-ace"
+          src={subject}
+          alt=""
+          draggable={false}
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+      )}
+      <div className="op-info">
+        <span className="op-who">{who}</span>
+        <strong className="op-name">{sel.name}</strong>
+        <span className="op-attrs">
+          {sel.attrs.length === 0 ? (
+            <span className="op-attr common">共通</span>
+          ) : (
+            sel.attrs.map((a) => (
+              <span
+                key={a}
+                className="op-attr"
+                style={{ background: ATTR_META[a].color, color: ATTR_META[a].deep }}
+              >
+                <i aria-hidden="true">{ATTR_META[a].mark}</i>
+                {a}
+              </span>
+            ))
+          )}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** エースの切り抜き。専用のカード面を持つ★5は、カードデータに切り抜きの指定が無い（面の CSS が直接読む）ので、同じ名前の切り抜きを使う */
+function aceSubject(card: CardDef): string | undefined {
+  return card.subject ?? (card.rarity === 5 ? card.art?.replace(/-art\.jpg$/, "-subject.webp") : undefined);
+}
+
 function DeckAce({ id }: { id?: string }) {
   const card = id ? CATALOG[id] : undefined;
   if (!card?.art) return null;
-  // 専用のカード面を持つ★5は、カードデータに切り抜きの指定が無い（面の CSS が直接読む）。同じ名前の切り抜きを使う
-  const subject =
-    card.subject ?? (card.rarity === 5 ? card.art.replace(/-art\.jpg$/, "-subject.webp") : undefined);
+  const subject = aceSubject(card);
   return (
     <span className="deck-ace" aria-hidden="true">
       <span className="deck-ace-bg" style={{ backgroundImage: `url(${card.art})` }} />
@@ -701,6 +813,9 @@ function AttackArrow({
 }
 
 /** 対戦の画面。CPU 戦とオンライン対戦で共通（onQuit を渡すと「戻る」でそれを呼ぶ） */
+/** 見せ終わったオープニングの番号（store の opening） */
+let openingSeen = 0;
+
 export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const {
     game,
@@ -721,6 +836,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     quit: quitGame,
     mode,
     foeName,
+    foeDeckRef,
+    opening,
     resign,
   } = useGame();
   const online = mode === "online";
@@ -748,6 +865,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   /** 対戦の記録（縦の舞台では下から出る一覧） */
   const [logOpen, setLogOpen] = useState(false);
   const seen = useRef(0);
+  /** 見せ終わったオープニング（画面を作り直しても、同じ対戦で見せ直さない） */
+  const [openSeen, setOpenSeen] = useState(openingSeen);
+  // テストなど、オープニングの長さが 0 のときは見せない
+  const openingOn = opening > openSeen && openingMs() > 0;
+  const foeDeck = useMemo(() => foeDeckSel(foeDeckRef), [foeDeckRef]);
   /** マスターへの攻撃が当たった瞬間に先に見せたライフ（state が進むまでの間の表示）。同じ出来事の数字を二重に出さないためにも使う */
   const [lpHit, setLpHit] = useState<{ player: PlayerId; lp: number } | null>(null);
   const hitShown = useRef<{ player: PlayerId; lp: number } | null>(null);
@@ -961,6 +1083,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
 
   // 新しい出来事に合わせて演出を出す（ターン開始のバナー・ドロー・効果の数字・闇堕ち）
   useLayoutEffect(() => {
+    // オープニングの間は、ターン開始のバナーなどを出さずに待つ（終わったら続きから出す）
+    if (openingOn) return;
     const last = log.at(-1)?.id ?? 0;
     if (last < seen.current) seen.current = 0; // 新しい対戦
     const fresh = log.filter((l) => l.id > seen.current);
@@ -1014,7 +1138,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         if (uid) setTimeout(() => flipCard(uid, e.type === "darkFall" ? "dark" : "restore"), t + 80);
       }
     }
-  }, [log]);
+  }, [log, openingOn]);
 
   // バズが使えるようになったら（自分のターンの始め・4ターン目になったとき）、ボタンの枠を光らせる。
   // 演出中・CPU の思考中の出入りでは光らせ直さないよう、盤面の状態だけで見る
@@ -1581,6 +1705,19 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             endTurn();
           }}
           onNo={() => setConfirmEnd(false)}
+        />
+      )}
+      {openingOn && deck && (
+        <Opening
+          key={opening}
+          me={deck}
+          foe={foeDeck}
+          foeName={online ? foeName : "CPU"}
+          ms={openingMs()}
+          onDone={() => {
+            openingSeen = opening;
+            setOpenSeen(opening);
+          }}
         />
       )}
       {buzzAsk !== null && buzzAskUnit && canBuzz && (
