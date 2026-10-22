@@ -767,6 +767,15 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .omen-flame i:nth-child(2) { width: 40%; left: 32%; height: 70%; animation-delay: -0.4s; opacity: 0.7; }
 .omen-flame i:nth-child(3) { width: 40%; left: 68%; height: 60%; animation-delay: -0.8s; opacity: 0.6; }
 @keyframes omen-flicker { 0%, 100% { transform: translateX(-50%) scale(1, 1); } 50% { transform: translateX(-50%) scale(0.9, 1.12); } }
+/* 『演出家』の登場：バトル場全体の背景を真紅と黒の二色が支配する（形は DirectorField.tsx が毎フレーム切る） */
+.board.field-director { isolation: isolate; }
+.director-field {
+  position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none;
+  background: #1c171c; animation: director-in 0.3s ease-out both; transition: opacity 0.5s ease-out;
+}
+.director-field.out { opacity: 0; }
+.director-field .df-red { position: absolute; inset: 0; background: #cf1b10; clip-path: polygon(0 0, 0 0, 0 0); }
+@keyframes director-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .field-mist, .omen-flame i, .field-dark.field-layer, .field-omen.field-layer { animation: none; } }
 
 /* バズ：ボタン（残りの玉）、マスターの帯の残り、カットイン、盤面での対象の強調 */

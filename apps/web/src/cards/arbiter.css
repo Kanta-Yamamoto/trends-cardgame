@@ -1,0 +1,113 @@
+/* ★5『調停者』（.s-arbiter）だけのデザイン。紺・群青・白の3色。名前と効果欄が一太刀で斬られ、合わさって元に戻る */
+
+.s-arbiter {
+  --night: #070b1f; --navy: #0d1638; --ultra: #1f3cff; --ice: #eef2ff; --mist: #9aa6d6;
+  --f-name: "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
+  --f-num: "Lilita One", "Arial Black", sans-serif;
+  /* 斬り口：左 73%・右 58% の高さを通る線（カード全体の割合） */
+  --cut-top: polygon(0 0, 100% 0, 100% 58%, 0 73%);
+  --cut-bot: polygon(0 73%, 100% 58%, 100% 100%, 0 100%);
+
+  .card {
+    --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; --nx: 0; --ny: 0; --g: 0;
+    --art: url(/assets/cards/c16-art.jpg); --subject: url(/assets/cards/c16-subject.webp);
+    position: relative; width: 100%; aspect-ratio: 63 / 88; border-radius: 4.2% / 3%;
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transition: transform 0.12s ease-out;
+    overflow: hidden; isolation: isolate;
+    color: var(--ice); background: var(--navy);
+    box-shadow: 0 30px 70px -18px #000, 0 0 0 1px #ffffff22, 0 0 40px -14px #1f3cff88;
+  }
+  .card-inner { position: absolute; inset: 0; font-size: calc(var(--w, 360px) / 24); }
+  .layer { position: absolute; inset: 0; }
+
+  /* 絵：下へ行くほど夜の紺に溶ける */
+  .bg {
+    background: var(--art) center 30% / cover no-repeat;
+    transform: translate(calc(var(--nx) * -6px), calc(var(--ny) * -6px)) scale(1.05);
+    mask: linear-gradient(#000 52%, transparent 86%);
+  }
+  .subject {
+    background: var(--subject) center 30% / cover no-repeat;
+    transform: translate(calc(var(--nx) * 7px), calc(var(--ny) * 7px)) scale(1.05);
+    mask: linear-gradient(#000 50%, transparent 80%);
+    filter: drop-shadow(0 6px 10px #000a); pointer-events: none;
+  }
+  .shade { background: linear-gradient(180deg, transparent 45%, var(--night) 82%); pointer-events: none; }
+  .frame {
+    inset: 2.4%; border: 0.08em solid #eef2ff55; border-radius: 3% / 2.2%;
+    pointer-events: none; z-index: 7;
+  }
+  .glare {
+    z-index: 8; pointer-events: none;
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffffff38 0%, #ffffff10 25%, transparent 55%);
+    mix-blend-mode: overlay; opacity: calc(0.25 + var(--g) * 0.7);
+  }
+
+  /* 斬られる板：同じ中身を2枚重ね、斬り口で上下に分ける。止まっているときは1枚に見える */
+  .cut { z-index: 3; }
+  .cut-top { clip-path: var(--cut-top); }
+  .cut-bot { clip-path: var(--cut-bot); }
+
+  .cost { position: absolute; left: 4%; top: 2.8%; width: 15%; aspect-ratio: 1; display: grid; place-items: center; }
+  .cost::before {
+    content: ""; position: absolute; inset: 0; transform: rotate(45deg) scale(0.74);
+    background: var(--ultra); box-shadow: 0 0 0 0.18em var(--ice), 0 0 1em #1f3cffaa;
+  }
+  .cost b { position: relative; font: 400 2.25em/1 var(--f-num); color: var(--ice); }
+  .rarity {
+    position: absolute; right: 5%; top: 4%; font-size: 1em; letter-spacing: 0.08em;
+    color: var(--ice); text-shadow: 0 0 0.5em var(--ultra);
+  }
+
+  .plate { position: absolute; left: 6%; right: 6%; bottom: 4.8%; display: grid; gap: 0.7em; text-align: left; }
+  .name { display: flex; align-items: baseline; gap: 0.7em; }
+  .name h3 {
+    margin: 0; font: 800 2.6em/1 var(--f-name); letter-spacing: 0.06em; color: var(--ice);
+    text-shadow: 0 0 1.2em var(--ultra), 0 0.05em 0.3em #000;
+  }
+  .name .en { font: 400 0.75em/1 var(--f-num); letter-spacing: 0.5em; color: var(--mist); }
+  .box {
+    display: grid; gap: 0.55em; padding: 0.85em 0.95em;
+    background: #0d1638d9; border-left: 0.28em solid var(--ultra);
+    clip-path: polygon(0 0, calc(100% - 1.2em) 0, 100% 1.2em, 100% 100%, 0 100%);
+  }
+  .effect { margin: 0; font: 600 0.86em/1.6 var(--f-body, inherit); color: var(--ice); text-wrap: pretty; }
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 0.4em; }
+  .chip { font-size: 0.68em; }
+  .chip.common { background: var(--ice); color: var(--night); }
+
+  /* 一太刀の光と破片。止まっているときは見えない */
+  .slash { z-index: 6; width: 100%; height: 100%; pointer-events: none; opacity: 0; }
+  .slash line { stroke: var(--ice); stroke-linecap: round; fill: none; }
+  .slash .draw { stroke-width: 2.5px; filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #1f3cff); }
+  .slash .glow { stroke-width: 9px; opacity: 0.12; }
+  .shard { position: absolute; z-index: 5; background: var(--ice); opacity: 0; pointer-events: none; }
+  .s1 { left: 28%; top: 68%; width: 2.2%; height: 1.1%; --dx: -1em; --dy: -1.3em; --r: -40deg; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+  .s2 { left: 56%; top: 64%; width: 1.6%; height: 1%; --dx: 1.1em; --dy: -0.9em; --r: 70deg; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+  .s3 { left: 78%; top: 60%; width: 2.6%; height: 0.9%; --dx: 1.4em; --dy: 0.7em; --r: 20deg; background: var(--ultra); clip-path: polygon(0 50%, 100% 0, 100% 100%); }
+  .s4 { left: 12%; top: 71%; width: 1.4%; height: 1.2%; --dx: -0.7em; --dy: 1em; --r: 110deg; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+
+  /* 触れるカード（拡大・手札）が出たときだけ、ずれた状態から合わさる。1回だけ */
+  .card.is-live .cut-top { animation: arb-slip-a 1.1s cubic-bezier(0.6, 0, 0.2, 1) 0.2s both; }
+  .card.is-live .cut-bot { animation: arb-slip-b 1.1s cubic-bezier(0.6, 0, 0.2, 1) 0.2s both; }
+  .card.is-live .slash { animation: arb-slash 1.5s ease-out both; }
+  .card.is-live .slash .draw { stroke-dasharray: 200; animation: arb-draw 0.3s ease-out both; }
+  .card.is-live .shard { animation: arb-fly 0.9s cubic-bezier(0.2, 0.9, 0.2, 1) 0.15s both; }
+
+  .card.is-compact .box { padding: 0.6em 0.8em; }
+  .card.is-compact .effect { font-size: 0.8em; line-height: 1.45; }
+  .card.text-hidden .plate { opacity: 0; translate: 0 15%; pointer-events: none; }
+}
+
+@keyframes arb-slip-a { 0%, 25% { translate: -0.4em -0.27em; } 100% { translate: 0 0; } }
+@keyframes arb-slip-b { 0%, 25% { translate: 0.4em 0.27em; } 100% { translate: 0 0; } }
+@keyframes arb-slash { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes arb-draw { from { stroke-dashoffset: 200; } to { stroke-dashoffset: 0; } }
+@keyframes arb-fly {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--r)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .s-arbiter .card.is-live :is(.cut-top, .cut-bot, .slash, .slash .draw, .shard) { animation: none; }
+}

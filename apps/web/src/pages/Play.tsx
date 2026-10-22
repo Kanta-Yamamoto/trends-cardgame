@@ -40,6 +40,7 @@ import { fieldEntry } from "../fx/fieldEntry";
 import { fxStage } from "../fx/stage";
 import { CardZoom } from "../game/CardZoom";
 import { type DarkCut, DarkCutscene } from "../game/DarkCutscene";
+import { DirectorField } from "../game/DirectorField";
 import { useDecksChanged } from "../game/deckSync";
 import {
   builtinDeck,
@@ -830,6 +831,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
   /** 『フィクサー』の登場（画面全体の暗転とスポットライト）と、差し出されたアイコンの名前 */
   const [fixer, setFixer] = useState<{ id: number; mine: boolean; gone?: string[] } | null>(null);
+  /** 『演出家』の登場：バトル場全体の背景を真紅と黒の二色が支配する */
+  const [director, setDirector] = useState<number | null>(null);
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
   /** 対戦の記録（縦の舞台では下から出る一覧） */
   const [logOpen, setLogOpen] = useState(false);
@@ -1091,6 +1094,10 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         const intro = { id, mine: e.player === ME };
         setTimeout(() => setFixer(intro), t);
         t += 1400;
+      } else if (e.type === "played" && CATALOG[e.cardId]?.effects.some((x) => x.do === "stageAces")) {
+        // 『演出家』の登場：斜線が降りてきて止まるまで待ってから、エースを舞台に上げる
+        setTimeout(() => setDirector(id), t);
+        t += 1500;
       } else if (e.type === "sacrificed") {
         const name = `${CATALOG[e.cardId]?.name ?? ""}（${e.player === ME ? "あなた" : "相手"}）`;
         setTimeout(
@@ -1402,7 +1409,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     if (selection) select(null);
   };
   const field = fieldOf(game, CATALOG);
-  const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}`;
+  const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}${director !== null ? " field-director" : ""}`;
   const fieldLayer = field ? <FieldLayer kind={field.kind} mine={field.owner === ME} /> : null;
 
   return (
@@ -1425,6 +1432,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         {/* 縦の舞台：上から 相手 → 相手の場 → 自分の場 → 自分 → 押したカードの説明 → バズ・ターン終了 →（余白）→ 手札 */}
         <div className={`pstage ${boardClass}`} data-drop="board">
           {fieldLayer}
+          {director !== null && <DirectorField key={director} onDone={() => setDirector(null)} />}
           <div className="ptop">
             {quitBtn}
             {turnPill}
