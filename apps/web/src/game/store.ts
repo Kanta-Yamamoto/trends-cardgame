@@ -49,6 +49,11 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: strin
     name: "草ミッドレンジ",
     text: "「クサハミ」の闇堕ち能力で一撃勝利を目指そう",
   },
+  unei_idol: {
+    ace: "c17",
+    name: "運営ミッドレンジ",
+    text: "「演出家」で両者のエースを舞台に上げ、「調停者」と「フィクサー」で場を裁こう",
+  },
 };
 
 export const ME: PlayerId = "p1";

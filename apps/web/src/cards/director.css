@@ -1,0 +1,73 @@
+/* ★5『演出家』（.s-director）だけのデザイン。真紅と黒の二色。基準は Project の docs/design-standard-director.md
+   大きさはカードの幅を 24 で割った em（カードの幅 100 のとき 1em ≒ 4.17）で書く */
+
+.s-director {
+  --dr-red: #cf1b10;
+  /* 純黒ではなく、スーツの黒に合わせる（黒の側でスーツが地に溶ける） */
+  --dr-black: #1c171c;
+  --dr-atk: #ff4057;
+  --dr-hp: #3d8bff;
+  --dr-name: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --dr-num: "Lilita One", "Arial Black", sans-serif;
+
+  .card {
+    --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; --nx: 0; --ny: 0; --g: 0;
+    --subject: url(/assets/cards/c17-subject.webp);
+    position: relative; width: 100%; aspect-ratio: 63 / 88; border-radius: 4.2% / 3%;
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transition: transform 0.12s ease-out;
+    overflow: hidden; isolation: isolate;
+    background: var(--dr-black);
+    box-shadow: 0 30px 70px -20px #000, 0 0 0 1px #ffffff1c;
+  }
+  .card-inner { position: absolute; inset: 0; font-size: calc(var(--w, 360px) / 24); }
+  .layer { position: absolute; inset: 0; }
+
+  /* 主色の層（境目の形は Director.tsx が clip-path で切る。最初は止まった二色） */
+  .dr-red {
+    background: var(--dr-red);
+    clip-path: polygon(0 0, 100% 0, 100% 27%, 0 57%);
+  }
+  /* 人物：幅 96%・上寄せ。下は文字の帯に向かって地に溶かす（水平に切らない） */
+  .dr-sub {
+    background: var(--subject) 50% 4% / 96% auto no-repeat;
+    mask-image: linear-gradient(#000 56%, transparent 74%);
+    -webkit-mask-image: linear-gradient(#000 56%, transparent 74%);
+    pointer-events: none;
+  }
+
+  /* 文字：黒の上では主色、主色の上では黒（反転の層を同じ形で切って重ねる） */
+  .dr-ui { color: var(--dr-red); }
+  .dr-ui.inv {
+    color: var(--dr-black); pointer-events: none;
+    clip-path: polygon(0 0, 100% 0, 100% 27%, 0 57%);
+  }
+  .dr-cost { position: absolute; left: 6%; top: 3.5%; font: 400 2.9em/1 var(--dr-num); }
+  .dr-stars { position: absolute; right: 5%; top: 4.5%; font-size: 0.95em; letter-spacing: 0.08em; }
+  .dr-plate { position: absolute; left: 6%; right: 6%; bottom: 5.5%; display: grid; gap: 0.58em; text-align: left; }
+  .dr-name { display: flex; align-items: baseline; gap: 0.7em; white-space: nowrap; }
+  .dr-name h3 { margin: 0; font: 900 2.52em/1 var(--dr-name); letter-spacing: 0.06em; color: inherit; }
+  .dr-en { font: 400 0.77em/1 var(--dr-num); letter-spacing: 0.5em; }
+  .dr-effect {
+    margin: 0; font-size: 0.78em; line-height: 1.65; font-weight: 800; color: inherit;
+    border-top: 0.1em solid currentColor; padding-top: 0.53em; text-wrap: pretty;
+  }
+  .dr-effect .kw-help { color: inherit; }
+  .dr-foot { display: flex; justify-content: space-between; align-items: center; }
+  .dr-kind { font: 400 0.72em/1 var(--dr-num); letter-spacing: 0.35em; }
+  /* 攻撃力は赤、体力は青（ゲームの決まり）。ここだけ二色の外の色 */
+  .dr-stats { display: flex; gap: 0.58em; margin-left: auto; }
+  .dr-stats i {
+    font: 400 1.68em/1 var(--dr-num); font-style: normal; color: #fff;
+    min-width: 1.5em; height: 1.5em; display: grid; place-items: center;
+  }
+  .dr-stats .a { background: var(--dr-atk); }
+  .dr-stats .h { background: var(--dr-hp); }
+
+  /* 一覧（文字を小さく） */
+  .card.is-compact .dr-effect { font-size: 0.72em; line-height: 1.5; }
+  .card.is-compact .dr-kind { display: none; }
+  /* 文字を隠して絵だけを見せる */
+  .card.text-hidden .dr-plate { opacity: 0; translate: 0 15%; pointer-events: none; }
+  .card.text-hidden .dr-sub { mask-image: none; -webkit-mask-image: none; }
+}

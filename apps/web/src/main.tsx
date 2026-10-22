@@ -12,6 +12,8 @@ import "@fontsource/lilita-one/400.css";
 import "@fontsource/dela-gothic-one/400.css";
 // 闇堕ちの演出の大きな文字（重いアンティーク明朝。文字の範囲ごとに分かれていて、使う字の分だけ読み込まれる）
 import "@fontsource/zen-antique/400.css";
+// 運営サイドの★5（『演出家』など、二色のカード面）の名前の明朝
+import "@fontsource/zen-old-mincho/900.css";
 import "./cards/cards.css";
 import "./cards/generic.css";
 import "./cards/rare.css";
