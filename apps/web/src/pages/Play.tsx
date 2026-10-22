@@ -1097,7 +1097,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       } else if (e.type === "played" && CATALOG[e.cardId]?.effects.some((x) => x.do === "stageAces")) {
         // 『演出家』の登場：斜線が降りてきて止まるまで待ってから、エースを舞台に上げる
         setTimeout(() => setDirector(id), t);
-        t += 2400;
+        t += 1500;
       } else if (e.type === "sacrificed") {
         const name = `${CATALOG[e.cardId]?.name ?? ""}（${e.player === ME ? "あなた" : "相手"}）`;
         setTimeout(

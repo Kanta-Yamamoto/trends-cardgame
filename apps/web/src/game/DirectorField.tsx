@@ -3,8 +3,8 @@ import { useEffect, useRef } from "react";
 /**
  * 『演出家』が場に出たとき、バトル場全体の背景を真紅と黒の二色が支配する演出（見た目だけ。ルールは game-core）。
  * カード面の基準（docs/design-standard-director.md）と同じ動き：
- * 黒い地に斜線が上から降りてきて止まる（最初は速く、最後はゆっくり）→ そのまま止まる →
- * 上の一点を軸に幕のふちが回って細い光の筋になり（そこそこ速く）→ ゆっくり閉じて黒 → 消える。
+ * 黒い地に斜線が上から降りてきて止まる（最初は速く、最後はゆっくり）→ 3 秒止まる → 降り切って真紅 →
+ * 上の一点を軸に幕のふちが回って細い光の筋になり（そこそこ速く）→ ゆっくり閉じて黒 → 消える（約 7 秒）。
  */
 const SQUARE: [number, number][] = [
   [0, 0],
@@ -53,11 +53,14 @@ function cone(h: number): Pt[] {
 }
 const MID = 42;
 const THIN = Math.atan(11 / 106);
+// 秒数は広告用の短縮版と同じ（オーナー：「この秒数がいい感じ」）
 const SCENES: { d: number; f: (u: number) => Pt[] }[] = [
-  { d: 2200, f: (u) => slash(lerp(-30, MID, 1 - (1 - u) ** 5)) }, // 降りてきて止まる
-  { d: 1600, f: () => slash(MID) }, // 止まっている間に、エースが舞台に上がる
-  { d: 700, f: (u) => cone(lerp((88 * Math.PI) / 180, THIN, 1 - (1 - u) ** 2)) },
-  { d: 1500, f: (u) => cone(lerp(THIN, 0, ease(u))) },
+  { d: 1500, f: (u) => slash(lerp(-30, MID, 1 - (1 - u) ** 5)) }, // 降りてきて止まる（最初は速く、最後はゆっくり）
+  { d: 3000, f: () => slash(MID) }, // 止まっている間に、エースが舞台に上がる
+  { d: 600, f: (u) => slash(lerp(MID, 135, ease(u))) }, // 降り切って全面が真紅
+  { d: 150, f: () => SQUARE },
+  { d: 600, f: (u) => cone(lerp((88 * Math.PI) / 180, THIN, 1 - (1 - u) ** 2)) }, // 上を軸に幕が回る
+  { d: 1150, f: (u) => cone(lerp(THIN, 0, ease(u))) }, // ゆっくり閉じて黒
 ];
 /** 演出全体の長さ（このあと 0.5 秒で消える） */
 export const DIRECTOR_MS = SCENES.reduce((a, s) => a + s.d, 0);
