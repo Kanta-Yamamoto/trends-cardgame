@@ -878,31 +878,16 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .unit.targetable.sac { box-shadow: 0 0 0 2px #f2f1ee, 0 0 16px #ffffffaa; animation: sac-pulse 1.1s ease-in-out infinite; }
 @keyframes sac-pulse { 50% { box-shadow: 0 0 0 2px #f2f1ee, 0 0 28px #ffffff; } }
 
-/* 『フィクサー』の登場：バトル場が黒に滲み、場のアイコンに上から白い糸が垂れる。ターンが終わるまで黒のまま（FixerField.tsx が滲みと糸を動かす） */
+/* 『フィクサー』の登場：バトル場が黒に滲む。ターンが終わるまで黒のまま（FixerField.tsx が滲みを動かす） */
 .board.field-fixer { isolation: isolate; }
 .fixer-field { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; }
 .fixer-field .ff-ink { position: absolute; inset: 0; background: #0e0d0c; mask-image: linear-gradient(transparent, transparent); -webkit-mask-image: linear-gradient(transparent, transparent); }
-.fixer-field .ff-threads { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.ff-threads line { stroke: #f2f1ee; stroke-width: 1.1; opacity: 0.72; stroke-linecap: round; filter: drop-shadow(0 0 2px #ffffffaa); }
-.fixer-field.closing .ff-threads { opacity: 0; transition: opacity 0.3s ease-out; }
-/* 名前：真ん中に浮かんで、ゆっくり消える（選ぶ間はアイコンを隠さない） */
-.fixer-caption {
-  position: absolute; left: 0; right: 0; top: 50%; z-index: 8; display: grid; justify-items: center; gap: 6px;
-  translate: 0 -50%; padding: 14px 16px; text-align: center; color: #f2f1ee; pointer-events: none;
-  background: linear-gradient(90deg, transparent, #0e0d0cf0 18%, #0e0d0cf0 82%, transparent);
-  animation: ff-caption 2.6s cubic-bezier(.2,.8,.2,1) 0.35s both;
-}
-.fixer-caption small { font-size: 11px; letter-spacing: 0.32em; opacity: 0.75; white-space: nowrap; }
-/* 舞台（幅 390px）ごと拡大縮小されるので、画面の大きさ（vmin）ではなく px で決める。名前は折り返さない */
-.fixer-caption b { font: 900 34px/1 "Zen Old Mincho", "Hiragino Mincho ProN", serif; letter-spacing: 0.06em; white-space: nowrap; }
-.fixer-caption .ff-en { font: 400 11px/1 "Lilita One", "Arial Black", sans-serif; letter-spacing: 0.6em; padding-left: 0.6em; }
-.fixer-caption .ff-rule { margin-top: 4px; padding-top: 7px; border-top: 1px solid currentColor; font-size: 12px; font-weight: 800; white-space: nowrap; }
-@keyframes ff-caption {
-  0% { opacity: 0; letter-spacing: 0.4em; filter: blur(6px); }
-  18% { opacity: 1; filter: blur(0); }
-  75% { opacity: 1; }
-  100% { opacity: 0; }
-}
+/* 差し出しの黒い閃光（fx/blackFlash.ts）：盤面の中に置くキャンバス */
+.fx-blackflash { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none; }
+/* 貫いた一瞬（0.3 秒止まる間）だけ白黒が入れ替わる：地は白い紙、アイコンは黒い影 */
+.board.fx-fixer-flip .fixer-field { background: #f2f1ee; }
+.board.fx-fixer-flip .fixer-field .ff-ink { visibility: hidden; }
+.board.fx-fixer-flip .unit { filter: brightness(0) !important; box-shadow: none; }
 
 /* 『調停者』の登場：夜の紺の地に、群青の帯が右下がりに走る（ArbiterField.tsx が帯の形を動かす） */
 .board.field-arbiter { isolation: isolate; }

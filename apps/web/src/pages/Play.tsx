@@ -62,6 +62,7 @@ import {
   animateDraw,
   animateEffects,
   animateJudge,
+  animateSacrifice,
   flipCard,
   hasVisibleEffects,
   markBuzzed,
@@ -800,8 +801,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   /** 画面いっぱいに大きく見ているカード（スマホで効果を読むため） */
   const [zoom, setZoom] = useState<Peek | null>(null);
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
-  /** 『フィクサー』の登場：バトル場が黒に沈み、場のアイコンに白い糸が垂れる（差し出しが決まるまで続く） */
-  const [fixer, setFixer] = useState<{ id: number; mine: boolean; exclude?: number } | null>(null);
+  /** 『フィクサー』の登場：バトル場が黒に滲む（出したターンが終わるまで続く） */
+  const [fixer, setFixer] = useState<{ id: number } | null>(null);
   const fixerApi = useRef<FixerHandle>(null);
   /** 『調停者』の登場：刃を振るう間、バトル場が青のフィールドになる */
   const [arbiter, setArbiter] = useState<{ id: number; leaving: boolean } | null>(null);
@@ -979,13 +980,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             return;
           }
           if (does("sacrifice")) {
-            // 『フィクサー』：場が黒に沈み、糸が垂れてから、差し出しを選ぶ
+            // 『フィクサー』：場が黒に滲み始めてから、差し出しを選ぶ
             await touch();
-            setFixer({
-              id: Date.now(),
-              mine: a.player === ME,
-              ...(uid !== undefined ? { exclude: uid } : {}),
-            });
+            setFixer({ id: Date.now() });
             await gwait(900);
             return;
           }
@@ -1003,15 +1000,14 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           const from = uid !== undefined ? document.querySelector<HTMLElement>(`[data-uid="${uid}"]`) : null;
           await animateEffects(shown, events, next, { from, tint });
         } else if (a.type === "sacrifice") {
-          // 差し出しが決まった：選ばれたアイコンを糸で上へ引き抜く（黒い場はターンが終わるまで残す）
+          // 差し出しが決まった：選ばれたアイコンを、真上で溜めた黒い閃光で貫く（黒い場はターンが終わるまで残す）
           const uids = events.flatMap((e) =>
             e.type === "sacrificed" ? [shown.players[e.player].field[e.slot]?.uid ?? -1] : [],
           );
           if (uids.length === 0) return;
-          const api = fixerApi.current;
-          if (api) await api.pull(uids);
-          // 引き抜いたアイコンは消し終えているので、残りのいなくなるアイコンだけをオワコンへ送る
-          const left: GameState = api
+          const pierced = await animateSacrifice(shown, events, ME);
+          // 貫いたアイコンはオワコンへ送り終えているので、残りのいなくなるアイコンだけを送る
+          const left: GameState = pierced
             ? {
                 ...shown,
                 players: {
@@ -1463,15 +1459,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           {arbiter && (
             <ArbiterField key={arbiter.id} leaving={arbiter.leaving} onDone={() => setArbiter(null)} />
           )}
-          {fixer && (
-            <FixerField
-              key={fixer.id}
-              ref={fixerApi}
-              mine={fixer.mine}
-              exclude={fixer.exclude}
-              onDone={() => setFixer(null)}
-            />
-          )}
+          {fixer && <FixerField key={fixer.id} ref={fixerApi} onDone={() => setFixer(null)} />}
           <div className="ptop">
             {quitBtn}
             {turnPill}
