@@ -584,6 +584,9 @@ function afterHeal(ctx: Ctx) {
         emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: e.hp });
       } else if (e.do === "healBurn") {
         damageLeader(state, opponent(player), e.amount, emit);
+      } else if (e.do === "healStrike") {
+        const at = strongestEnemy(state, player, catalog);
+        if (at >= 0) damageUnit(state, opponent(player), at, e.amount, emit);
       }
     }
   });

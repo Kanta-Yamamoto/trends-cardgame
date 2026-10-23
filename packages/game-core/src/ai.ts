@@ -105,6 +105,11 @@ function judgePost(
     const t = guards.sort((a, b) => worth(b.v) - worth(a.v))[0] ?? foes.filter((x) => !x.v.exposed)[0];
     return t ? { score: guards.length > 0 ? 6 : 2, target: enemy(t.slot) } : null;
   }
+  if (card.effects.some((e) => e.do === "bind" && e.to === "allEnemies")) {
+    // 相手のアイコンすべてを眠らせる（優しい世界）：止められる攻撃力の合計で見る
+    const stopped = foes.filter((x) => !x.v.asleep).reduce((s, x) => s + x.v.attack, 0);
+    return stopped >= 5 ? { score: stopped * 2 } : null;
+  }
   if (effects.includes("bind")) {
     const t = foes.filter((x) => !x.v.asleep).sort((a, b) => b.v.attack - a.v.attack)[0];
     return t && t.v.attack >= 2 ? { score: t.v.attack * 4, target: enemy(t.slot) } : null;
