@@ -22,13 +22,13 @@
         "do": "extraAttackOnKill"
       }
     ],
-    "effect": "連撃。場に出たとき、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。相手のキャラクターを破壊するたび、もう1回攻撃できる。",
+    "effect": "連撃。【場に出たとき】攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。相手のキャラクターを破壊するたび、もう1回攻撃できる。",
     "dark": {
       "name": "闇堕ちレン",
       "attack": 6,
       "hp": 3,
       "keywords": ["突進", "連撃"],
-      "effect": "突進。連撃。闇堕ちしたとき、相手のキャラクターすべてに1ダメージ。",
+      "effect": "突進。連撃。【闇堕ちしたとき】相手のキャラクターすべてに1ダメージ。",
       "art": "/assets/cards/c2-dark-art.jpg",
       "subject": "/assets/cards/c2-dark-subject.webp",
       "original": "assets/original/c2-dark.webp",
@@ -80,7 +80,7 @@
         "amount": 2
       }
     ],
-    "effect": "突進。破壊されたとき、相手のプレイヤーに2ダメージ。",
+    "effect": "突進。【破壊されたとき】相手のプレイヤーに2ダメージ。",
     "art": "/assets/cards/f2-art.jpg",
     "original": "assets/original/f2.webp"
   },
@@ -148,7 +148,7 @@
         "amount": 2
       }
     ],
-    "effect": "場に出たとき、草を2体出す。自分のライフを2回復する。",
+    "effect": "【場に出たとき】草を2体出す。自分のライフを2回復する。",
     "art": "/assets/cards/k1-art.jpg",
     "original": "assets/original/k1.webp"
   },
@@ -169,7 +169,7 @@
         "do": "copySelf"
       }
     ],
-    "effect": "ガード。場に出たとき、自分の空いている枠に、トークンとしてこのキャラクターのコピーを1体出す。",
+    "effect": "ガード。【場に出たとき】自分の空いている枠に、トークンとしてこのキャラクターのコピーを1体出す。",
     "art": "/assets/cards/k2-art.jpg",
     "original": "assets/original/k2.webp"
   },
@@ -245,7 +245,7 @@
         "do": "breakthrough"
       }
     ],
-    "effect": "自分の場のほかのミーム種族1体につき攻撃力+1。場に出たとき、自分のキャラクターすべてに速攻を付ける。このターン、自分のキャラクターすべてはガードを無視して攻撃できる。",
+    "effect": "自分の場のほかのミーム種族1体につき攻撃力+1。【場に出たとき】自分のキャラクターすべてに速攻を付ける。このターン、自分のキャラクターすべてはガードを無視して攻撃できる。",
     "art": "/assets/cards/k5-art.jpg",
     "subject": "/assets/cards/k5-subject.webp",
     "original": "assets/original/k5.webp",
@@ -254,7 +254,7 @@
       "attack": 5,
       "hp": 4,
       "keywords": ["突進"],
-      "effect": "突進。闇堕ちしたとき、自分の空いている枠すべてに草を出す。",
+      "effect": "突進。【闇堕ちしたとき】自分の空いている枠すべてに草を出す。",
       "art": "/assets/cards/k5-dark-art.jpg",
       "subject": "/assets/cards/k5-dark-subject.webp",
       "original": "assets/original/k5-dark.webp",
@@ -305,13 +305,13 @@
         "flank": true
       }
     ],
-    "effect": "注目。場に出たとき、隣に親衛隊を1体出す。センターに出したときは、左右に2体出す。",
+    "effect": "注目。【場に出たとき】隣に親衛隊を1体出す。センターに出したときは、左右に2体出す。",
     "dark": {
       "name": "闇深アイドル",
       "attack": 6,
       "hp": 4,
       "keywords": ["突進", "連撃"],
-      "effect": "突進。連撃。闇堕ちしたとき、攻撃力が4以下の相手のキャラクターのうち、攻撃力がいちばん高い1体を奪う。",
+      "effect": "突進。連撃。【闇堕ちしたとき】攻撃力が4以下の相手のキャラクターのうち、攻撃力がいちばん高い1体を奪う。",
       "art": "/assets/cards/m1-dark-art.jpg",
       "subject": "/assets/cards/m1-dark-subject.webp",
       "original": "assets/original/m1-dark.webp",
@@ -362,7 +362,7 @@
         "hp": 1
       }
     ],
-    "effect": "場に出たとき、ランダムな自分のほかのキャラクター1体に攻撃力+1・体力+1。",
+    "effect": "【場に出たとき】ランダムな自分のほかのキャラクター1体に攻撃力+1・体力+1。",
     "art": "/assets/cards/m3-art.jpg",
     "original": "assets/original/m3.webp"
   },
@@ -428,7 +428,7 @@
         "amount": 1
       }
     ],
-    "effect": "注目。場に出たとき、自分のキャラクターすべてと自分のライフを2回復する。自分のターンの終わりに、自分のキャラクターすべてと自分のライフを1回復する。",
+    "effect": "注目。【場に出たとき】自分のキャラクターすべてと自分のライフを2回復する。自分のターンの終わりに、自分のキャラクターすべてと自分のライフを1回復する。",
     "art": "/assets/cards/c3-art.jpg",
     "subject": "/assets/cards/c3-subject.webp",
     "original": "assets/original/c3-minamo.png"
@@ -578,7 +578,7 @@
         "amount": 10
       }
     ],
-    "effect": "場に出たとき、相手のプレイヤーに「次の自分のターンの終わりに10ダメージを受ける」効果を付与する。",
+    "effect": "【場に出たとき】相手のプレイヤーに「次の自分のターンの終わりに10ダメージを受ける」効果を付与する。",
     "art": "/assets/cards/c1-art.jpg",
     "subject": "/assets/cards/c1-subject.webp",
     "original": "assets/original/c1-shirogane.png"
@@ -602,7 +602,7 @@
         "ifHandAtMost": 3
       }
     ],
-    "effect": "場に出たとき、手札が3枚以下なら、カードを1枚引く。",
+    "effect": "【場に出たとき】手札が3枚以下なら、カードを1枚引く。",
     "art": "/assets/cards/g1-art.jpg",
     "original": "assets/original/g1.webp"
   },
@@ -662,7 +662,7 @@
         "count": 1
       }
     ],
-    "effect": "場に出たとき、カードを1枚引く。",
+    "effect": "【場に出たとき】カードを1枚引く。",
     "art": "/assets/cards/g4-art.jpg",
     "subject": "/assets/cards/g4-subject.webp",
     "original": "assets/original/g4.webp",
@@ -749,7 +749,7 @@
         "count": 1
       }
     ],
-    "effect": "場に出たとき、カードを1枚引く。",
+    "effect": "【場に出たとき】カードを1枚引く。",
     "art": "/assets/cards/n6-art.jpg",
     "original": "assets/original/n6.webp"
   },
@@ -836,7 +836,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を晒し状態にする。",
+    "effect": "【場に出たとき】攻撃力がいちばん高い相手のキャラクター1体を晒し状態にする。",
     "art": "/assets/cards/f6-art.jpg",
     "original": "assets/original/f6.webp"
   },
@@ -879,7 +879,7 @@
         "amount": 1
       }
     ],
-    "effect": "場に出たとき、相手のキャラクターすべてに1ダメージ。",
+    "effect": "【場に出たとき】相手のキャラクターすべてに1ダメージ。",
     "art": "/assets/cards/f9-art.jpg",
     "original": "assets/original/f9.webp"
   },
@@ -901,7 +901,7 @@
         "to": "allEnemies"
       }
     ],
-    "effect": "速攻。場に出たとき、相手のキャラクターすべてを晒し状態にする。",
+    "effect": "速攻。【場に出たとき】相手のキャラクターすべてを晒し状態にする。",
     "art": "/assets/cards/f10-art.jpg",
     "original": "assets/original/f10.webp"
   },
@@ -922,7 +922,7 @@
         "per": 2
       }
     ],
-    "effect": "場に出たとき、相手のキャラクターすべてに、相手のキャラクター1体につき2ダメージ。",
+    "effect": "【場に出たとき】相手のキャラクターすべてに、相手のキャラクター1体につき2ダメージ。",
     "art": "/assets/cards/c4-art.jpg",
     "original": "assets/original/c4.webp"
   },
@@ -949,7 +949,7 @@
         }
       }
     ],
-    "effect": "場に出たとき、自分の場に推し属性が3体以上いれば、攻撃力+2・体力+2。",
+    "effect": "【場に出たとき】自分の場に推し属性が3体以上いれば、攻撃力+2・体力+2。",
     "art": "/assets/cards/m6-art.jpg",
     "original": "assets/original/m6.webp"
   },
@@ -987,7 +987,7 @@
         "maxAttack": 4
       }
     ],
-    "effect": "注目。場に出たとき、攻撃力が4以下の相手のキャラクターのうち、攻撃力がいちばん高い1体を奪う。",
+    "effect": "注目。【場に出たとき】攻撃力が4以下の相手のキャラクターのうち、攻撃力がいちばん高い1体を奪う。",
     "art": "/assets/cards/m9-art.jpg",
     "original": "assets/original/m9.webp"
   },
@@ -1010,7 +1010,7 @@
         "amount": 3
       }
     ],
-    "effect": "破壊されたとき、自分のライフを3回復する。",
+    "effect": "【破壊されたとき】自分のライフを3回復する。",
     "art": "/assets/cards/i7-art.jpg",
     "original": "assets/original/i7.webp"
   },
@@ -1032,7 +1032,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を眠り状態にする。",
+    "effect": "【場に出たとき】攻撃力がいちばん高い相手のキャラクター1体を眠り状態にする。",
     "art": "/assets/cards/i8-art.jpg",
     "original": "assets/original/i8.webp"
   },
@@ -1058,13 +1058,13 @@
         "do": "lullaby"
       }
     ],
-    "effect": "ガード。場に出たとき、相手のキャラクターすべてを眠り状態にする。相手のターンの始めに、攻撃力がいちばん高い相手のキャラクター1体を眠り状態にする。",
+    "effect": "ガード。【場に出たとき】相手のキャラクターすべてを眠り状態にする。相手のターンの始めに、攻撃力がいちばん高い相手のキャラクター1体を眠り状態にする。",
     "dark": {
       "name": "病みボイス ナギ",
       "attack": 4,
       "hp": 4,
       "keywords": ["突進", "連撃"],
-      "effect": "突進。連撃。闇堕ちしたとき、相手のキャラクターすべてを眠り状態にする。",
+      "effect": "突進。連撃。【闇堕ちしたとき】相手のキャラクターすべてを眠り状態にする。",
       "art": "/assets/cards/c5-dark-art.jpg",
       "subject": "/assets/cards/c5-dark-subject.webp",
       "original": "assets/original/c5-dark.webp",
@@ -1098,7 +1098,7 @@
         "count": 1
       }
     ],
-    "effect": "場に出たとき、草を1体出す。",
+    "effect": "【場に出たとき】草を1体出す。",
     "art": "/assets/cards/k6-art.jpg",
     "original": "assets/original/k6.webp"
   },
@@ -1125,7 +1125,7 @@
         }
       }
     ],
-    "effect": "場に出たとき、自分の場に自然属性が2体以上いれば、自分のほかのキャラクターすべてに攻撃力+1。",
+    "effect": "【場に出たとき】自分の場に自然属性が2体以上いれば、自分のほかのキャラクターすべてに攻撃力+1。",
     "art": "/assets/cards/k7-art.jpg",
     "original": "assets/original/k7.webp"
   },
@@ -1168,7 +1168,7 @@
         "count": 1
       }
     ],
-    "effect": "場に出たとき、山札から有識者種族のカードを1枚探して手札に加える。なければカードを1枚引く。",
+    "effect": "【場に出たとき】山札から有識者種族のカードを1枚探して手札に加える。なければカードを1枚引く。",
     "art": "/assets/cards/g5-art.jpg",
     "original": "assets/original/g5.webp"
   },
@@ -1190,7 +1190,7 @@
         "maxHp": 2
       }
     ],
-    "effect": "場に出たとき、体力が2以下の相手のキャラクターすべてを破壊する。",
+    "effect": "【場に出たとき】体力が2以下の相手のキャラクターすべてを破壊する。",
     "art": "/assets/cards/g6-art.jpg",
     "original": "assets/original/g6.webp"
   },
@@ -1237,7 +1237,7 @@
         "amount": 3
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を破壊する。自分のライフを3回復する。",
+    "effect": "【場に出たとき】攻撃力がいちばん高い相手のキャラクター1体を破壊する。自分のライフを3回復する。",
     "art": "/assets/cards/g8-art.jpg",
     "original": "assets/original/g8.webp"
   },
@@ -1284,7 +1284,7 @@
         "amount": 2
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体に2ダメージ。",
+    "effect": "【場に出たとき】攻撃力がいちばん高い相手のキャラクター1体に2ダメージ。",
     "art": "/assets/cards/x1-art.jpg",
     "original": "assets/original/x1.webp"
   },
@@ -1307,7 +1307,7 @@
         "count": 1
       }
     ],
-    "effect": "注目。場に出たとき、草を1体出す。",
+    "effect": "注目。【場に出たとき】草を1体出す。",
     "art": "/assets/cards/x2-art.jpg",
     "original": "assets/original/x2.webp"
   },
@@ -1400,7 +1400,7 @@
         "amount": 1
       }
     ],
-    "effect": "速攻。場に出たとき、このターン攻撃力+3。このターンの終わりに、このキャラクターを晒し状態にする。自分のターンの終わりに、相手のプレイヤーに1ダメージ。",
+    "effect": "速攻。【場に出たとき】このターン攻撃力+3。このターンの終わりに、このキャラクターを晒し状態にする。自分のターンの終わりに、相手のプレイヤーに1ダメージ。",
     "art": "/assets/cards/c9-art.jpg",
     "original": "assets/original/c9.webp",
     "dark": {
@@ -1416,7 +1416,7 @@
           "amount": 2
         }
       ],
-      "effect": "突進。闇堕ちしたとき、相手のキャラクターすべてに2ダメージ。",
+      "effect": "突進。【闇堕ちしたとき】相手のキャラクターすべてに2ダメージ。",
       "art": "/assets/cards/c9-dark-art.jpg",
       "subject": "/assets/cards/c9-dark-subject.webp"
     }
@@ -1461,7 +1461,7 @@
         "hp": 2
       }
     ],
-    "effect": "破壊されたとき、ランダムな自分のキャラクター1体に攻撃力+2・体力+2。",
+    "effect": "【破壊されたとき】ランダムな自分のキャラクター1体に攻撃力+2・体力+2。",
     "art": "/assets/cards/m12-art.jpg",
     "original": "assets/original/m12.webp"
   },
@@ -1484,7 +1484,7 @@
         "amount": 2
       }
     ],
-    "effect": "注目。場に出たとき、自分のキャラクターすべてと自分のライフを2回復する。",
+    "effect": "注目。【場に出たとき】自分のキャラクターすべてと自分のライフを2回復する。",
     "art": "/assets/cards/m13-art.jpg",
     "original": "assets/original/m13.webp"
   },
@@ -1525,7 +1525,7 @@
         "maxAttack": 3
       }
     ],
-    "effect": "注目。場に出たとき、攻撃力が3以下の相手のキャラクターのうち、攻撃力がいちばん高い1体を奪う。",
+    "effect": "注目。【場に出たとき】攻撃力が3以下の相手のキャラクターのうち、攻撃力がいちばん高い1体を奪う。",
     "art": "/assets/cards/c6-art.jpg",
     "original": "assets/original/c6.webp"
   },
@@ -1547,7 +1547,7 @@
         "amount": 1
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。",
+    "effect": "【場に出たとき】攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。",
     "art": "/assets/cards/g10-art.jpg",
     "original": "assets/original/g10.webp"
   },
@@ -1589,7 +1589,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を沈黙状態にする。",
+    "effect": "【場に出たとき】攻撃力がいちばん高い相手のキャラクター1体を沈黙状態にする。",
     "art": "/assets/cards/g12-art.jpg",
     "original": "assets/original/g12.webp"
   },
@@ -1640,7 +1640,7 @@
         "amount": 1
       }
     ],
-    "effect": "ガード。突進。場に出たとき、体力が2以下の相手のキャラクターすべてを破壊する。自分のターンの終わりに、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。",
+    "effect": "ガード。突進。【場に出たとき】体力が2以下の相手のキャラクターすべてを破壊する。自分のターンの終わりに、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。",
     "art": "/assets/cards/c7-art.jpg",
     "original": "assets/original/c7.webp"
   },
@@ -1698,7 +1698,7 @@
         "amount": 1
       }
     ],
-    "effect": "場に出たとき、自分の場のキャラクター1体につき、相手のプレイヤーに1ダメージ。",
+    "effect": "【場に出たとき】自分の場のキャラクター1体につき、相手のプレイヤーに1ダメージ。",
     "art": "/assets/cards/k14-art.jpg",
     "original": "assets/original/k14.webp"
   },
@@ -1724,7 +1724,7 @@
         "count": 2
       }
     ],
-    "effect": "自分の場のほかのキャラクター1体につき攻撃力+1。場に出たとき、草を2体出す。",
+    "effect": "自分の場のほかのキャラクター1体につき攻撃力+1。【場に出たとき】草を2体出す。",
     "art": "/assets/cards/c8-art.jpg",
     "original": "assets/original/c8.webp"
   },
@@ -1813,7 +1813,7 @@
         "amount": 2
       }
     ],
-    "effect": "ガード。手札にある間、このゲームで自分が回復の効果を使った回数だけコスト-1。場に出たとき、自分のキャラクターすべてと自分のライフを2回復する。",
+    "effect": "ガード。手札にある間、このゲームで自分が回復の効果を使った回数だけコスト-1。【場に出たとき】自分のキャラクターすべてと自分のライフを2回復する。",
     "art": "/assets/cards/i13-art.jpg",
     "original": "assets/original/i13.webp"
   },
@@ -1904,7 +1904,7 @@
         "amount": 1
       }
     ],
-    "effect": "ガード。破壊されたとき、相手のキャラクターすべてに1ダメージ。",
+    "effect": "ガード。【破壊されたとき】相手のキャラクターすべてに1ダメージ。",
     "art": "/assets/cards/f16-art.jpg",
     "original": "assets/original/f16.webp"
   },
@@ -1927,7 +1927,7 @@
         "count": 2
       }
     ],
-    "effect": "破壊されたとき、草を2体出す。",
+    "effect": "【破壊されたとき】草を2体出す。",
     "art": "/assets/cards/k15-art.jpg",
     "original": "assets/original/k15.webp"
   },
@@ -1951,7 +1951,7 @@
         "kaiwai": "アイドル"
       }
     ],
-    "effect": "場に出たとき、自分のほかのアイドル種族すべてに攻撃力+2・体力+2。",
+    "effect": "【場に出たとき】自分のほかのアイドル種族すべてに攻撃力+2・体力+2。",
     "art": "/assets/cards/m16-art.jpg",
     "original": "assets/original/m16.webp"
   },
@@ -1977,7 +1977,7 @@
         }
       }
     ],
-    "effect": "場に出たとき、自分の場にアイドル種族がいれば、カードを1枚引く。",
+    "effect": "【場に出たとき】自分の場にアイドル種族がいれば、カードを1枚引く。",
     "art": "/assets/cards/m17-art.jpg",
     "original": "assets/original/m17.webp"
   },
@@ -2000,7 +2000,7 @@
         "amount": 1
       }
     ],
-    "effect": "場に出たとき、自分のキャラクターすべてと自分のライフを1回復する。",
+    "effect": "【場に出たとき】自分のキャラクターすべてと自分のライフを1回復する。",
     "art": "/assets/cards/i15-art.jpg",
     "original": "assets/original/i15.webp"
   },
@@ -2022,7 +2022,7 @@
         "count": 2
       }
     ],
-    "effect": "場に出たとき、カードを2枚引く。",
+    "effect": "【場に出たとき】カードを2枚引く。",
     "art": "/assets/cards/g16-art.jpg",
     "original": "assets/original/g16.webp"
   },
@@ -2045,7 +2045,7 @@
         "count": 1
       }
     ],
-    "effect": "突進。突進で攻撃したとき、草を1体出す。",
+    "effect": "突進。【突進で攻撃したとき】草を1体出す。",
     "art": "/assets/cards/k16-art.jpg",
     "original": "assets/original/k16.webp"
   },
@@ -2179,7 +2179,7 @@
         "to": "costliestEnemy"
       }
     ],
-    "effect": "場に出たとき、コストがいちばん高い相手のキャラクター1体を持ち主の手札に戻す。",
+    "effect": "【場に出たとき】コストがいちばん高い相手のキャラクター1体を持ち主の手札に戻す。",
     "art": "/assets/cards/c11-art.jpg",
     "subject": "/assets/cards/c11-subject.webp",
     "original": "assets/original/c11.webp",
@@ -2195,7 +2195,7 @@
           "maxCost": 3
         }
       ],
-      "effect": "突進。闇堕ちしたとき、墓地のコストが3以下の自分のキャラクターのうち、コストがいちばん高い1体を場に戻す。場に出たときの効果も働く。",
+      "effect": "突進。【闇堕ちしたとき】墓地のコストが3以下の自分のキャラクターのうち、コストがいちばん高い1体を場に戻す。【場に出たとき】も働く。",
       "art": "/assets/cards/c11-dark-art.jpg",
       "subject": "/assets/cards/c11-dark-subject.webp",
       "original": "assets/original/c11-dark.webp"
@@ -2226,7 +2226,7 @@
         "amount": 2
       }
     ],
-    "effect": "突進。場に出たとき、相手のプレイヤーに2ダメージ。自分のライフを2回復する。",
+    "effect": "突進。【場に出たとき】相手のプレイヤーに2ダメージ。自分のライフを2回復する。",
     "art": "/assets/cards/f22-art.jpg",
     "original": "assets/original/f22.webp"
   },
@@ -2277,7 +2277,7 @@
         "attack": 0
       }
     ],
-    "effect": "注目。場に出たとき、自分のほかのキャラクターすべてに攻撃力+2・体力+1。自分のキャラクターすべてに速攻を付ける。",
+    "effect": "注目。【場に出たとき】自分のほかのキャラクターすべてに攻撃力+2・体力+1。自分のキャラクターすべてに速攻を付ける。",
     "dark": {
       "name": "病み期のミレイ",
       "attack": 5,
@@ -2291,7 +2291,7 @@
           "attack": 2
         }
       ],
-      "effect": "突進。注目。闇堕ちしたとき、相手のキャラクターすべての攻撃力-2。",
+      "effect": "突進。注目。【闇堕ちしたとき】相手のキャラクターすべての攻撃力-2。",
       "art": "/assets/cards/c13-dark-art.jpg",
       "original": "assets/original/c13-dark.webp",
       "subject": "/assets/cards/c13-dark-subject.webp"
@@ -2335,7 +2335,7 @@
         "amount": 2
       }
     ],
-    "effect": "ガード。場に出たとき、相手のキャラクターすべてに2ダメージ。",
+    "effect": "ガード。【場に出たとき】相手のキャラクターすべてに2ダメージ。",
     "art": "/assets/cards/g19-art.jpg",
     "original": "assets/original/g19.webp"
   },
@@ -2422,7 +2422,7 @@
           "count": 2
         }
       ],
-      "effect": "速攻。自分の草が、このゲームで破壊された数だけ攻撃力+1。闇堕ちしたとき、草を2体出す。"
+      "effect": "速攻。自分の草が、このゲームで破壊された数だけ攻撃力+1。【闇堕ちしたとき】草を2体出す。"
     }
   },
   {
@@ -2441,7 +2441,7 @@
         "do": "sacrifice"
       }
     ],
-    "effect": "場に出たとき、自分と相手は、それぞれ自分のキャラクターを1体選ぶ。選ばれたキャラクターは破壊される。",
+    "effect": "【場に出たとき】自分と相手は、それぞれ自分のキャラクターを1体選ぶ。選ばれたキャラクターは破壊される。",
     "art": "/assets/cards/c15-art.jpg",
     "subject": "/assets/cards/c15-subject.webp",
     "original": "assets/original/c15.webp"
@@ -2462,7 +2462,7 @@
         "do": "judge"
       }
     ],
-    "effect": "場に出たとき、このキャラクターを除いて、自分と相手の場で攻撃力がいちばん高いキャラクターすべてを破壊する。",
+    "effect": "【場に出たとき】このキャラクターを除いて、自分と相手の場で攻撃力がいちばん高いキャラクターすべてを破壊する。",
     "art": "/assets/cards/c16-art.jpg",
     "subject": "/assets/cards/c16-subject.webp",
     "original": "assets/original/c16.webp"
@@ -2483,7 +2483,7 @@
         "do": "stageAces"
       }
     ],
-    "effect": "場に出たとき、自分と相手の両方に空いている枠があれば、自分と相手は、それぞれ自分の山札から闇堕ちを持つカードを1枚出し、そのキャラクターに突進を付ける。そのキャラクターの場に出たときの効果は働かない。",
+    "effect": "【場に出たとき】自分と相手の両方に空いている枠があれば、自分と相手は、それぞれ自分の山札から闇堕ちを持つカードを1枚出し、そのキャラクターに突進を付ける。そのキャラクターの【場に出たとき】は働かない。",
     "art": "/assets/cards/c17-art.jpg",
     "subject": "/assets/cards/c17-subject.webp",
     "original": "assets/original/c17.webp"
@@ -2507,7 +2507,7 @@
         "amount": 2
       }
     ],
-    "effect": "場に出たとき、自分のライフを2回復する。",
+    "effect": "【場に出たとき】自分のライフを2回復する。",
     "art": "/assets/cards/i18-art.jpg",
     "original": "assets/original/i18.webp"
   },
@@ -2530,7 +2530,7 @@
         "amount": 3
       }
     ],
-    "effect": "場に出たとき、自分のキャラクターすべてと自分のライフを3回復する。",
+    "effect": "【場に出たとき】自分のキャラクターすべてと自分のライフを3回復する。",
     "art": "/assets/cards/i19-art.jpg",
     "original": "assets/original/i19.webp"
   },
@@ -2608,7 +2608,7 @@
         "count": 1
       }
     ],
-    "effect": "破壊されたとき、カードを1枚引く。",
+    "effect": "【破壊されたとき】カードを1枚引く。",
     "art": "/assets/cards/n15-art.jpg",
     "original": "assets/original/n15.webp"
   },
@@ -2631,7 +2631,7 @@
         "amount": 2
       }
     ],
-    "effect": "破壊されたとき、攻撃力がいちばん高い相手のキャラクター1体に2ダメージ。",
+    "effect": "【破壊されたとき】攻撃力がいちばん高い相手のキャラクター1体に2ダメージ。",
     "art": "/assets/cards/n16-art.jpg",
     "original": "assets/original/n16.webp"
   },
@@ -2658,7 +2658,7 @@
         "card": "t-kusa"
       }
     ],
-    "effect": "自分の草が、このゲームで破壊された数だけ攻撃力+1。場に出たとき、草を2体出す。",
+    "effect": "自分の草が、このゲームで破壊された数だけ攻撃力+1。【場に出たとき】草を2体出す。",
     "art": "/assets/cards/k19-art.jpg",
     "original": "assets/original/kusa-queen.webp"
   }

@@ -4,7 +4,7 @@ import type { CardDef } from "./types";
 export { CPU_DECKS } from "./cpuDecks";
 export { DECKS, type DeckId } from "./decks";
 export * from "./glossary";
-export { darkEffectText, effectText, type NameOf } from "./text";
+export { darkEffectText, effectText, MAX_EFFECT_LENGTH, type NameOf, TRIGGER_LABELS } from "./text";
 export * from "./types";
 
 export const CARDS: readonly CardDef[] = raw as CardDef[];
