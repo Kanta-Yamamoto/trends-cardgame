@@ -40,11 +40,11 @@ import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { frameRect, frameSize } from "../frame";
 import { fieldEntry, landed } from "../fx/fieldEntry";
-import { fxStage } from "../fx/stage";
+import { fxEnabled, fxStage } from "../fx/stage";
 import { ArbiterField } from "../game/ArbiterField";
 import { CardZoom } from "../game/CardZoom";
 import { type DarkCut, DarkCutscene } from "../game/DarkCutscene";
-import { DirectorField } from "../game/DirectorField";
+import { DirectorField, type StagedAce } from "../game/DirectorField";
 import { useDecksChanged } from "../game/deckSync";
 import {
   builtinDeck,
@@ -803,7 +803,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   /** 『調停者』の登場：刃を振るう間、バトル場が青のフィールドになる */
   const [arbiter, setArbiter] = useState<{ id: number; leaving: boolean } | null>(null);
   /** 『演出家』の登場：バトル場全体の背景を真紅と黒の二色が支配する */
-  const [director, setDirector] = useState<number | null>(null);
+  const [director, setDirector] = useState<{ id: number; aces: StagedAce[] } | null>(null);
+  /** 『演出家』で舞台に上がるエース。ふつうの着地の代わりに、血の滴とクラウンで見せる（DirectorField が動かす） */
+  const stagedAces = useRef(new Set<number>());
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
   /** 対戦の記録（縦の舞台では下から出る一覧） */
   const [logOpen, setLogOpen] = useState(false);
@@ -958,9 +960,16 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           // 出たアイコンが着地した瞬間から、運営サイドの演出を始める
           const touch = () => (uid !== undefined ? landed(uid) : wait(320));
           if (does("stageAces")) {
-            // 『演出家』：着地と同時に舞台が二色になり、0.4 秒たってからエースが舞台に上がる（この Promise が終わると盤面が進む）
+            // 『演出家』：着地と同時に舞台が二色になり、0.4 秒たってから出した側のエース、その 0.5 秒あとに相手のエースが、
+            // 血の滴とクラウンで舞台に上がる（この Promise が終わると盤面が進む。エースは DirectorField が見せるまで隠しておく）
             await touch();
-            setDirector(Date.now());
+            const aces: StagedAce[] = events.flatMap((e) => {
+              if (e.type !== "summoned") return [];
+              const ace = next.players[e.player].field[e.slot];
+              return ace ? [{ uid: ace.uid, at: e.player === a.player ? 400 : 900 }] : [];
+            });
+            if (fxEnabled()) for (const s of aces) stagedAces.current.add(s.uid);
+            setDirector({ id: Date.now(), aces });
             await gwait(400);
             return;
           }
@@ -1068,7 +1077,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     onField.current = now;
     for (const u of fresh) {
       const card = CATALOG[u.cardId];
-      if (card) fieldEntry(document.querySelector<HTMLElement>(`[data-uid="${u.uid}"]`), card);
+      const el = document.querySelector<HTMLElement>(`[data-uid="${u.uid}"]`);
+      if (stagedAces.current.delete(u.uid)) {
+        // 『演出家』で上がるエースは、描かれる前に隠して、血の滴とクラウンに任せる
+        if (el) el.style.opacity = "0";
+      } else if (card) fieldEntry(el, card);
     }
   }, [game]);
 
@@ -1439,7 +1452,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         {/* 縦の舞台：上から 相手 → 相手の場 → 自分の場 → 自分 → 押したカードの説明 → バズ・ターン終了 →（余白）→ 手札 */}
         <div className={`pstage ${boardClass}`} data-drop="board">
           {fieldLayer}
-          {director !== null && <DirectorField key={director} onDone={() => setDirector(null)} />}
+          {director !== null && (
+            <DirectorField key={director.id} aces={director.aces} onDone={() => setDirector(null)} />
+          )}
           {arbiter && (
             <ArbiterField key={arbiter.id} leaving={arbiter.leaving} onDone={() => setArbiter(null)} />
           )}
