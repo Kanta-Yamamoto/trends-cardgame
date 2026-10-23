@@ -1733,13 +1733,14 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
   const dark = !!view?.unit.dark && card.dark;
   const art = dark ? (card.dark?.art ?? card.art) : card.art;
   const name = dark ? card.dark?.name : card.name;
-  const effect = (dark ? card.dark?.effect : card.effect) || "効果なし";
-  const keywords = view?.keywords ?? card.keywords;
+  const effect = (dark ? card.dark?.effect : card.effect) ?? "";
+  // 効果文に書いていないキーワード（バズなどで付いたもの）だけを札で出す。説明は語を押した先の小窓
+  const keywords = (view?.keywords ?? card.keywords).filter((k) => !effect.includes(`${k}。`));
   const states = view
     ? [
         view.exposed && "晒し状態",
         view.unit.exposeAtTurnEnd && "ターンの終わりに晒される",
-        view.asleep && "眠っている",
+        view.asleep && "眠り状態",
         view.unit.silenced && "沈黙状態",
         view.hp < view.maxHp && "ダメージあり",
       ].filter((x): x is string => !!x)
@@ -1777,7 +1778,11 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
             {keywords.map((k) => (
               <HelpTerm key={k} term={k} className="ps-kw" />
             ))}
-            {states.length > 0 && <em className="ps-state">{states.join("・")}</em>}
+            {states.length > 0 && (
+              <em className="ps-state">
+                <EffectText text={states.join("・")} />
+              </em>
+            )}
             <EffectText text={effect} />
           </span>
         </span>
