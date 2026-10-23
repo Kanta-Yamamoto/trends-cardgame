@@ -17,20 +17,29 @@
 /* 素早い2回タップで拡大しない（iPhone はメタタグの user-scalable=no を無視するので CSS で止める） */
 html, body { touch-action: manipulation; }
 /* 画面の枠（frame.ts）：すべての画面と演出を、スマホの縦の画面1つの中だけで出す。
-   transform を持たせて、中の position: fixed（モーダル・全画面の演出）が枠いっぱいに広がるようにする。スクロールは中の .app-scroll */
-html, body, #root { height: 100%; }
-body { overflow: hidden; }
-.app-frame {
-  position: relative; width: min(100%, 480px); height: 100vh; height: 100dvh; margin: 0 auto;
-  overflow: hidden; transform: translateZ(0);
+   スマホの縦（幅 480px まで）では、枠は何もしない（ページのスクロール・全画面の要素・演出の層は、枠を入れる前と同じ）。
+   それより広い画面（PC・横持ち）だけ、枠に transform を持たせて、中の position: fixed（モーダル・全画面の演出）を枠いっぱいに収め、
+   スクロールは中の .app-scroll にする（10月23日：スマホで枠に transform を持たせたら、PixiJS の演出が出なくなったため） */
+.app-frame { position: relative; width: 100%; max-width: 480px; margin: 0 auto; }
+@media (min-width: 481px) {
+  html, body, #root { height: 100%; }
+  body { overflow: hidden; }
+  .app-frame { height: 100vh; height: 100dvh; overflow: hidden; transform: translateZ(0); }
+  .app-scroll { height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; }
 }
-.app-scroll { height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; }
-/* 画面座標で置く層：枠の中で「左上がブラウザの画面の左上」になるようにずらす（はみ出した分は枠で切られる） */
-#fx-layer, .vp-layer {
+/* 画面座標で置く演出の層（#fx-layer・PixiJS の #fx-stage）は、枠の外（body の直下）に、画面いっぱいに置く（枠を入れる前と同じ）。
+   広い画面だけ、枠の外にはみ出した分を切る（--frame-*。frame.ts が書く） */
+#fx-layer, #fx-stage { position: fixed; inset: 0; pointer-events: none; }
+@media (min-width: 481px) {
+  #fx-layer, #fx-stage {
+    clip-path: inset(var(--frame-y, 0px) calc(100% - var(--frame-x, 0px) - var(--frame-w, 100%)) 0 var(--frame-x, 0px));
+  }
+}
+/* 指の位置に付いてくる表示（ドラッグ中のカードと矢印）：画面座標で置くので、枠の中では左上をブラウザの左上にずらす */
+.vp-layer {
   position: fixed; left: calc(-1 * var(--frame-x, 0px)); top: calc(-1 * var(--frame-y, 0px));
-  width: 100vw; height: 100vh; transform: translateZ(0); pointer-events: none;
+  width: 100vw; height: 100vh; transform: translateZ(0); pointer-events: none; z-index: 60;
 }
-.vp-layer { z-index: 60; }
 body {
   margin: 0;
   min-height: 100vh;
@@ -299,8 +308,8 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 /* 場に出たアイコンの動きは fx/fieldEntry.ts（GSAP） */
 #fx-layer { z-index: 35; }
 /* PixiJS の演出の舞台（fx/stage.ts）。盤面（.play-full）の上、拡大表示（.zoom）より下 */
-/* PixiJS の舞台：画面座標で描くので、#fx-layer と同じく枠の中でずらして置く（大きさは PixiJS がブラウザの画面に合わせる） */
-#fx-stage { position: fixed; left: calc(-1 * var(--frame-x, 0px)); top: calc(-1 * var(--frame-y, 0px)); z-index: 15; pointer-events: none; }
+/* PixiJS の舞台（大きさは PixiJS がブラウザの画面に合わせる） */
+#fx-stage { z-index: 15; }
 .fx-num { position: fixed; font: 900 34px/1 var(--f-mark); color: #fff; -webkit-text-stroke: 1.5px #7a0a14; text-shadow: 0 0 14px #ff3b4c, 0 3px 0 #7a0a14; }
 .fx-num.heal { -webkit-text-stroke-color: #0b5a2e; text-shadow: 0 0 14px #3dff8b, 0 3px 0 #0b5a2e; }
 .fx-burst { position: fixed; width: 90px; height: 90px; border-radius: 50%; border: 6px solid var(--c); box-shadow: 0 0 30px var(--c), inset 0 0 20px var(--c); }

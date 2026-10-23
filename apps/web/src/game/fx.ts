@@ -1,7 +1,7 @@
 import type { AttackTarget, GameEvent, GameState, PlayerId, RuleCard, Unit } from "@trends/game-core";
 import { viewUnit, withRushBoost } from "@trends/game-core";
 import { gsap } from "gsap";
-import { appFrame, frameRect } from "../frame";
+import { frameRect } from "../frame";
 import { dissolve } from "../fx/dissolve";
 import { healMist } from "../fx/healMist";
 import { impact } from "../fx/impact";
@@ -25,7 +25,8 @@ function layer(): HTMLElement {
   if (!el) {
     el = document.createElement("div");
     el.id = "fx-layer";
-    appFrame().appendChild(el);
+    // 演出の層は body の直下に、画面いっぱいに置く（広い画面では、枠の外を CSS で切る。frame.ts）
+    document.body.appendChild(el);
   }
   return el;
 }

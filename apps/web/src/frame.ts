@@ -1,45 +1,50 @@
+import { layoutViewport } from "./viewport";
+
 /**
  * 画面の枠：すべての画面と演出を「スマホの縦の画面」1つの中だけで出すための、アプリの一番外側の箱（#app-frame）。
  *
  * オーナーの決まり：PC 用の画面は作らない。PC でもスマホの横持ちでも、縦の画面を中央に置き、その中だけで動かす。
- * そこで、ここを根っこで一括で決める（個々の画面や演出で気をつけなくてよいように）。
- * - 枠は幅 480px まで・高さは画面いっぱい。CSS の transform を持たせてあるので、中の position: fixed の要素
- *   （モーダル・全画面の演出・カットイン）は、ブラウザの画面ではなく、この枠いっぱいに広がる。はみ出した分は切る
- * - 演出の層（#fx-layer・PixiJS の #fx-stage）と、指の位置に付いてくる表示（.vp-layer）は、画面座標
- *   （getBoundingClientRect・clientX）で置くので、枠の中で「左上がブラウザの画面の左上」になるようにずらして置く
- *   （--frame-x・--frame-y）。枠の外にはみ出した分は、枠で切られる
- * - スクロールは枠の中の .app-scroll がする（枠そのものは動かない。だからモーダルはスクロールしても枠に止まる）
+ * - スマホの縦（幅 480px まで）：枠は何もしない。ページのスクロール・全画面の要素・演出の層は、枠を入れる前と同じ
+ *   （10月23日：スマホで枠に transform を持たせ、演出の層を枠の中へ移したら、PixiJS の演出が出なくなった）
+ * - それより広い画面（PC・横持ち）：枠（幅 480px・高さは画面いっぱい・中央）に transform を持たせ、中の position: fixed
+ *   （モーダル・全画面の演出・カットイン）が枠いっぱいに収まるようにする。スクロールは枠の中の .app-scroll
+ * - 演出の層（#fx-layer・PixiJS の #fx-stage）は、どちらでも body の直下に画面いっぱいに置き、広い画面だけ枠の外を切る
+ * - 大きさ・位置は、どちらでも frameSize()・frameRect() で測る（window.innerWidth を直接使わない）
  */
 
 export const FRAME_ID = "app-frame";
+/** 枠の幅の上限（app.css の .app-frame と合わせる） */
+export const FRAME_MAX = 480;
 
 /** 枠の要素（無ければ body。テストなど） */
 export function appFrame(): HTMLElement {
   return document.getElementById(FRAME_ID) ?? document.body;
 }
 
-/** 枠の画面上の四角（ブラウザの画面の座標） */
-export function frameRect(): DOMRect {
-  return appFrame().getBoundingClientRect();
-}
-
 /** 枠の大きさ（レイアウト上の幅と高さ。iPhone で拡大されても変わらない） */
 export function frameSize(): { width: number; height: number } {
-  const el = appFrame();
-  return { width: el.clientWidth || window.innerWidth, height: el.clientHeight || window.innerHeight };
+  const { width, height } = layoutViewport();
+  return { width: Math.min(width, FRAME_MAX), height };
 }
 
-/** 枠の位置を CSS 変数（--frame-x・--frame-y）に書き、画面の大きさが変わるたびに書き直す */
+/** 枠の画面上の四角（ブラウザの画面の座標）。枠は中央に置く */
+export function frameRect(): DOMRect {
+  const vw = document.documentElement.clientWidth || window.innerWidth;
+  const { width, height } = frameSize();
+  const w = Math.min(width, vw);
+  return new DOMRect((vw - w) / 2, 0, w, height);
+}
+
+/** 枠の位置と大きさを CSS 変数（--frame-x・--frame-y・--frame-w）に書き、画面の大きさが変わるたびに書き直す */
 export function watchFrame() {
-  const el = document.getElementById(FRAME_ID);
-  if (!el) return;
   const put = () => {
-    const r = el.getBoundingClientRect();
-    document.documentElement.style.setProperty("--frame-x", `${r.left}px`);
-    document.documentElement.style.setProperty("--frame-y", `${r.top}px`);
+    const r = frameRect();
+    const root = document.documentElement.style;
+    root.setProperty("--frame-x", `${r.left}px`);
+    root.setProperty("--frame-y", `${r.top}px`);
+    root.setProperty("--frame-w", `${r.width}px`);
   };
   put();
   window.addEventListener("resize", put);
   window.addEventListener("orientationchange", () => setTimeout(put, 300));
-  if (typeof ResizeObserver !== "undefined") new ResizeObserver(put).observe(el);
 }
