@@ -11,22 +11,53 @@ import {
   type Action,
   actionFrom,
   applyAction,
+  type Clock,
+  clockAction,
   createGame,
   type GameEvent,
   type GameState,
   type PlayerId,
   type RuleCard,
+  RuleError,
+  rateGame,
   resolveDeckRef,
+  startClock,
+  tickClock,
   validateDeck,
 } from "@trends/game-core";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
-import { type MatchRow, matches, users } from "../db/schema";
+import { type MatchRatings, type MatchRow, matches, users } from "../db/schema";
 
 const CATALOG = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string, RuleCard>;
 /** 読み間違えやすい文字（0/O・1/I など）を除いた合言葉の文字 */
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const newCode = () => Array.from({ length: 6 }, () => CODE_CHARS[randomInt(CODE_CHARS.length)]).join("");
+
+/** 対戦を1手進めた結果（両者に送る） */
+export interface Step {
+  row: MatchRow;
+  action: Action;
+  events: GameEvent[];
+  state: GameState;
+}
+
+/** ランダムマッチで組まれた1人分 */
+export interface Pairing {
+  userId: string;
+  deck: string;
+}
+
+/** 新しい対戦の状態と時計（先攻は乱数で決める） */
+function newGame(p1Deck: string, p2Deck: string) {
+  const state = createGame({
+    decks: { p1: deckCards(p1Deck), p2: deckCards(p2Deck) },
+    seed: randomInt(1, 2 ** 31 - 1),
+    first: randomInt(2) === 0 ? "p1" : "p2",
+  });
+  return { state, clock: startClock(state, Date.now()) };
+}
 
 /**
  * デッキの指し方（構築済みの ID か "custom:…"）からカードの並びを得る。決まりを守っていなければ BadRequest。
@@ -44,6 +75,8 @@ export function deckCards(ref: unknown): string[] {
 export interface MatchInfo {
   code: string;
   status: string;
+  /** friend（合言葉の部屋）/ random（ランダムマッチ） */
+  kind: string;
   /** deck は、構築済みデッキの ID か "custom:…"（自分で組んだデッキ） */
   players: Record<PlayerId, { id: string; name: string; deck: string } | null>;
 }
@@ -58,14 +91,32 @@ export class MatchesService {
   /** 部屋を作る（作った人が p1） */
   async create(userId: string, deck: unknown) {
     deckCards(deck);
+    return this.info(await this.insert({ p1Id: userId, p1Deck: deck as string }));
+  }
+
+  /** ランダムマッチで組まれた 2 人の対戦を始める（レーティングが動く） */
+  async createRandom(a: Pairing, b: Pairing) {
+    const [p1, p2] = randomInt(2) === 0 ? [a, b] : [b, a];
+    return this.insert({
+      kind: "random",
+      status: "playing",
+      p1Id: p1.userId,
+      p1Deck: p1.deck,
+      p2Id: p2.userId,
+      p2Deck: p2.deck,
+      ...newGame(p1.deck, p2.deck),
+    });
+  }
+
+  /** 合言葉を付けて部屋を作る（まれに重なったら作り直す） */
+  private async insert(values: Omit<typeof matches.$inferInsert, "code">) {
     for (let i = 0; i < 5; i++) {
-      const code = Array.from({ length: 6 }, () => CODE_CHARS[randomInt(CODE_CHARS.length)]).join("");
       const [row] = await this.db
         .insert(matches)
-        .values({ code, p1Id: userId, p1Deck: deck as string })
+        .values({ ...values, code: newCode() })
         .onConflictDoNothing()
         .returning();
-      if (row) return this.info(row);
+      if (row) return row;
     }
     throw new Error("合言葉を作れませんでした");
   }
@@ -82,42 +133,125 @@ export class MatchesService {
       const row = await this.find(code);
       if (row.p1Id === userId || row.p2Id === userId) return row;
       if (row.p2Id) throw new ForbiddenException("この部屋はもう2人そろっています");
-      const p2Cards = deckCards(deck);
-      const seed = randomInt(1, 2 ** 31 - 1);
-      const state = createGame({
-        decks: { p1: deckCards(row.p1Deck), p2: p2Cards },
-        seed,
-        first: randomInt(2) === 0 ? "p1" : "p2",
-      });
+      deckCards(deck);
+      const { state, clock } = newGame(row.p1Deck, deck as string);
       const [next] = await this.db
         .update(matches)
-        .set({ p2Id: userId, p2Deck: deck as string, status: "playing", state })
+        .set({ p2Id: userId, p2Deck: deck as string, status: "playing", state, clock })
         .where(eq(matches.id, row.id))
         .returning();
       return next as MatchRow;
     });
   }
 
-  /** 操作を1つ進める（反則なら RuleError） */
+  /**
+   * 操作を1つ進める（反則なら RuleError）。時間が過ぎていたら、先に時間切れの処理（自動の差し出し・時間切れ負け）を進める。
+   * そのあと操作が反則になったときは、進めた手と一緒にエラー文を返す（進めた手も両者に送るため）
+   */
   act(code: string, userId: string, action: Action) {
-    return this.serial(code, async () => {
+    return this.serial(code, async (): Promise<{ steps: Step[]; error?: string }> => {
+      if (action.type === "timeout") throw new BadRequestException("その操作はできません");
       const row = await this.find(code);
       const pid = this.seat(row, userId);
       if (!row.state) throw new BadRequestException("まだ対戦が始まっていません");
-      const real = actionFrom(action, pid);
-      const { state, events } = applyAction(row.state, real, CATALOG);
-      const winnerId = state.winner ? (state.winner === "p1" ? row.p1Id : row.p2Id) : null;
-      const [next] = await this.db
+      const now = Date.now();
+      const steps = await this.catchUp(row, now);
+      const last = steps.at(-1)?.row ?? row;
+      try {
+        steps.push(await this.advance(last, actionFrom(action, pid), now));
+      } catch (e) {
+        if (steps.length && e instanceof RuleError) return { steps, error: e.message };
+        throw e;
+      }
+      return { steps };
+    });
+  }
+
+  /** 時間が過ぎていたら、時間切れの処理を進める（タイマーと、部屋に入り直したときに呼ぶ） */
+  tick(code: string) {
+    return this.serial(code, async () => {
+      const row = await this.find(code);
+      const steps = await this.catchUp(row, Date.now());
+      return { steps, row: steps.at(-1)?.row ?? row };
+    });
+  }
+
+  /** 時計で決着を待っている対戦（サーバーが起動したときに、タイマーを掛け直す） */
+  playing() {
+    return this.db
+      .select()
+      .from(matches)
+      .where(and(eq(matches.status, "playing"), isNotNull(matches.clock)));
+  }
+
+  /** 過ぎた時間の分だけ、サーバーが代わりに操作する */
+  private async catchUp(row: MatchRow, now: number): Promise<Step[]> {
+    const steps: Step[] = [];
+    let cur = row;
+    // 自動の差し出しのあと、手番の人も時間切れ…と続くことがあるので、何回か見る
+    for (let i = 0; i < 4 && cur.state && cur.clock; i++) {
+      const due = clockAction(cur.clock, cur.state, now, CATALOG);
+      if (!due) break;
+      const step = await this.advance(cur, due, now);
+      steps.push(step);
+      cur = step.row;
+    }
+    return steps;
+  }
+
+  /** 1手進めて保存する。決着したら、ランダムマッチならレーティングを動かす */
+  private async advance(row: MatchRow, action: Action, now: number): Promise<Step> {
+    const prev = row.state as GameState;
+    const { state, events } = applyAction(prev, action, CATALOG);
+    const clock: Clock | null = row.clock ? tickClock(row.clock, prev, state, now) : null;
+    const next = state.winner
+      ? await this.finish(row, state, clock)
+      : (
+          await this.db
+            .update(matches)
+            .set({ state, clock, status: "playing" })
+            .where(eq(matches.id, row.id))
+            .returning()
+        )[0];
+    return { row: next as MatchRow, action, events: events as GameEvent[], state: state as GameState };
+  }
+
+  /** 決着を保存する。ランダムマッチなら、同じ取引の中で両者のレーティングを動かす（1 試合で 1 回だけ） */
+  private finish(row: MatchRow, state: GameState, clock: Clock | null) {
+    const winnerId = state.winner === "p1" ? row.p1Id : row.p2Id;
+    return this.db.transaction(async (tx) => {
+      const [done] = await tx
         .update(matches)
-        .set({ state, status: state.winner ? "finished" : "playing", winnerId })
-        .where(eq(matches.id, row.id))
+        .set({ state, clock, status: "finished", winnerId })
+        .where(and(eq(matches.id, row.id), eq(matches.status, "playing")))
         .returning();
-      return {
-        row: next as MatchRow,
-        action: real,
-        events: events as GameEvent[],
-        state: state as GameState,
+      if (!done) throw new RuleError("game_over", "対戦は終了しています");
+      const loserId = winnerId === row.p1Id ? row.p2Id : row.p1Id;
+      if (done.kind !== "random" || !winnerId || !loserId || winnerId === loserId) return done;
+      const people = await tx
+        .select({ id: users.id, rating: users.rating })
+        .from(users)
+        .where(inArray(users.id, [winnerId, loserId]))
+        .for("update");
+      const before = (id: string) => people.find((p) => p.id === id)?.rating ?? 1500;
+      const r = rateGame(before(winnerId), before(loserId));
+      const after = (id: string) => (id === winnerId ? r.winner : r.loser);
+      for (const id of [winnerId, loserId])
+        await tx
+          .update(users)
+          .set({
+            rating: after(id),
+            ratedGames: sql`${users.ratedGames} + 1`,
+            wins: sql`${users.wins} + ${id === winnerId ? 1 : 0}`,
+          })
+          .where(eq(users.id, id));
+      const p2Id = row.p2Id as string;
+      const ratings: MatchRatings = {
+        p1: { before: before(row.p1Id), after: after(row.p1Id) },
+        p2: { before: before(p2Id), after: after(p2Id) },
       };
+      const [rated] = await tx.update(matches).set({ ratings }).where(eq(matches.id, row.id)).returning();
+      return rated as MatchRow;
     });
   }
 
@@ -139,6 +273,7 @@ export class MatchesService {
     return {
       code: row.code,
       status: row.status,
+      kind: row.kind,
       players: { p1: who(row.p1Id, row.p1Deck), p2: who(row.p2Id, row.p2Deck) },
     };
   }

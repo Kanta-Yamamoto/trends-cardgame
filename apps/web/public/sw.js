@@ -6,13 +6,13 @@
  * - API・ログイン・オンライン対戦（Socket.IO）：いつもネット（保存しない）
  * 中身を変えたら VERSION を上げる（古い保存は消える）。今ある絵を同じ名前で差し替えたときも上げる（すぐ届くように）
  */
-const VERSION = "v5";
+const VERSION = "v6";
 const PAGES = `trends-pages-${VERSION}`;
 const BUILD = `trends-build-${VERSION}`;
 const ART = `trends-art-${VERSION}`;
 const FONTS = `trends-fonts-${VERSION}`;
 const KEEP = [PAGES, BUILD, ART, FONTS];
-const API_PREFIXES = ["/cards", "/health", "/auth", "/matches", "/me", "/socket.io"];
+const API_PREFIXES = ["/cards", "/health", "/auth", "/matches", "/me", "/rankings", "/socket.io"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
