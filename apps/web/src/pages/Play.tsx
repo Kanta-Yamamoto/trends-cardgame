@@ -1931,8 +1931,8 @@ interface BarProps {
 }
 
 /**
- * 持ち時間の表示。手番の人は、まずターンの 30 秒が減り、使い切ると持ち時間が減る（赤くなる）。
- * 手番でない人は、持ち時間の残りだけ。差し出しを選ぶ番なら、その残り
+ * 持ち時間の表示。手番の人は、ターンの残り（30 秒まで）と持ち時間（1 試合 5 分）が一緒に減る。
+ * ターンの残り 10 秒・持ち時間 30 秒を切ると赤くなる。手番でない人は、持ち時間の残りだけ。差し出しを選ぶ番なら、その残り
  */
 function ClockChip({ left, mine }: { left: ClockLeft; mine?: boolean }) {
   const who = mine ? "あなた" : "相手";
@@ -1946,15 +1946,15 @@ function ClockChip({ left, mine }: { left: ClockLeft; mine?: boolean }) {
         選ぶ <b>{formatClock(left.pick)}</b>
       </span>
     );
-  const inBank = left.running && left.turn <= 0;
-  const hurry = left.running && (inBank ? left.bank <= 30_000 : left.turn <= 10_000);
+  const low = left.bank <= 30_000;
+  const hurry = left.running && (left.turn <= 10_000 || low);
   return (
     <span
-      className={`pb-clock ${left.running ? "run" : ""} ${inBank ? "bank" : ""} ${hurry ? "hurry" : ""}`}
+      className={`pb-clock ${left.running ? "run" : ""} ${low ? "bank" : ""} ${hurry ? "hurry" : ""}`}
       role="timer"
       aria-label={`${who}の${left.running ? `ターンの残り ${formatClock(left.turn)}、` : ""}持ち時間 ${formatClock(left.bank)}`}
     >
-      {left.running && !inBank && <b>{formatClock(left.turn)}</b>}
+      {left.running && <b>{formatClock(left.turn)}</b>}
       <small>
         持ち時間 <i>{formatClock(left.bank)}</i>
       </small>

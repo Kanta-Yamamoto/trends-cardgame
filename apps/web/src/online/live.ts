@@ -47,11 +47,11 @@ export interface ClockLeft {
 export function leftAt(c: ClockView, at: number, now: number, who: PlayerId, active: PlayerId): ClockLeft {
   const running = c.running === who;
   const passed = running ? Math.max(0, now - at - c.holdMs) : 0;
-  const over = Math.max(0, passed - c.turnLeft);
+  // 持ち時間は、自分のターンのあいだずっと減る（ターンの 30 秒と同時に）
   return {
     running,
     turn: running ? Math.max(0, c.turnLeft - passed) : 0,
-    bank: Math.max(0, c.bank[who] - over),
+    bank: Math.max(0, c.bank[who] - passed),
     pick: c.pickLeft !== null && who !== active ? Math.max(0, c.pickLeft - (now - at)) : null,
   };
 }
