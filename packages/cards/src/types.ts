@@ -130,8 +130,8 @@ export type CardEffect = (
   | { do: "bounce"; to?: "costliestEnemy" }
   /** 次の相手のターンが終わるまで、自分のマスターはダメージを受けない */
   | { do: "shieldMaster" }
-  /** お告げ：次の相手のターンの終わりに、相手のマスターに amount ダメージ（ミコト）。出したアイコンがいなくなっても働く */
-  | { do: "prophecy"; amount: number }
+  /** 相手のマスターに「次の自分のターンの終わりに amount ダメージを受ける」効果を付与する（ミコト） */
+  | { do: "delayedDamage"; amount: number }
   /** 自分の場のアイコン per 体につき1枚引く（最大 max 枚。トークンも数える） */
   | { do: "drawPerAllies"; per: number; max: number }
   /** 変身：相手のアイコンを card（トークン）にする。to が無ければ投稿の対象、strongestEnemy なら攻撃力がいちばん高い相手 */

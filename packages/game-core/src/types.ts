@@ -104,10 +104,10 @@ export interface PlayerState {
   /** この通算ターンまで、マスターはダメージを受けない（0 なら守られていない） */
   shieldUntil?: number;
   /**
-   * このプレイヤーが出したお告げ（ミコト）。次の相手のターンの終わりに、相手のマスターに amount ダメージ。
-   * turn はお告げを出した通算ターン（そのターンのうちには働かない。追加のターンが挟まっても、相手のターンまで待つ）
+   * このマスターに付与された「次の自分のターンの終わりに amount ダメージを受ける」効果（ミコト）。
+   * turn は付与された通算ターン（そのターンのうちには働かない）。働いたら消える
    */
-  prophecies?: { cardId: string; amount: number; turn: number }[];
+  delayedDamage?: { cardId: string; amount: number; turn: number }[];
 }
 
 export interface GameState {
@@ -189,10 +189,10 @@ export type GameEvent =
   | { type: "bounced"; player: PlayerId; slot: number; cardId: string }
   /** マスターが守られた（shielded：守りを得た／blocked：ダメージを防いだ） */
   | { type: "shield"; player: PlayerId; kind: "shielded" | "blocked"; amount: number }
-  /** お告げを出した（player はお告げを出した人。次の相手のターンの終わりに、相手のマスターに amount ダメージ） */
-  | { type: "prophecy"; player: PlayerId; cardId: string; amount: number }
-  /** お告げが果たされた（player はお告げを出した人。このあと相手のマスターへのダメージが続く） */
-  | { type: "prophecyFulfilled"; player: PlayerId; cardId: string; amount: number }
+  /** マスターに「次の自分のターンの終わりに amount ダメージを受ける」効果が付いた（player は付けられた人） */
+  | { type: "delayedDamageSet"; player: PlayerId; cardId: string; amount: number }
+  /** 付いていた効果が働いた（player は付けられた人。このあとマスターへのダメージが続く） */
+  | { type: "delayedDamageFired"; player: PlayerId; cardId: string; amount: number }
   | { type: "extraTurn"; player: PlayerId }
   | { type: "buffed"; player: PlayerId; slot: number; cardId: string; attack: number; hp: number }
   | { type: "healed"; player: PlayerId; slot: number; cardId: string; amount: number }
