@@ -32,7 +32,7 @@ pnpm build
 ## ルール
 
 - ゲームのルールは必ず `packages/game-core` に書き、テストを付ける。画面側にルールを書かない
-- 画面・効果文の用語は `docs/glossary.md`（用語集）、効果文の文の型は `docs/card-text.md` に従う（用語集の案が決まるまでは `docs/rules.md` の「用語」）。画面・効果文の用語は `docs/rules.md` の「用語」にそろえる（マスター・ライフ・アイコン・攻撃力・体力・話題力）。攻撃力は赤、体力は青で表示する
+- 画面・効果文の用語は `docs/glossary.md`（用語集）、効果文の文の型は `docs/card-text.md` に従う。用語集の案が決まるまでは `docs/rules.md` の「用語」にそろえる（マスター・ライフ・アイコン・攻撃力・体力・話題力）。攻撃力は赤、体力は青で表示する
 - 効果文の言い回し（引く・出す・回復・対象の書き方など）は `docs/rules.md` の「効果文の書き方」にそろえる
 - `applyAction` は元の state を変更しない。反則は `RuleError`（日本語のメッセージ）を投げる
 - 新しいカード：`packages/cards/src/cards.json` に追加 → 効果があれば `packages/game-core/src/abilities.ts` にカード ID で登録 → 表示は `apps/web/src/cards/faces/` にデザインを追加して `HoloCard.tsx` の `FACES` に登録
