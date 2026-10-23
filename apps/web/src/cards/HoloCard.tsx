@@ -158,7 +158,8 @@ export function HoloCard({
   const onPointerMove = (e: React.PointerEvent) => {
     const el = cardRef.current;
     if (!el || !live) return;
-    const r = el.getBoundingClientRect();
+    // 傾いたカード自身の外形は傾きで変わるので、傾かない親の枠で測る
+    const r = (el.parentElement ?? el).getBoundingClientRect();
     const nx = ((e.clientX - r.left) / r.width) * 2 - 1;
     const ny = ((e.clientY - r.top) / r.height) * 2 - 1;
     lastMove.current = performance.now();
@@ -182,10 +183,13 @@ export function HoloCard({
     </div>
   );
 
+  // 遠近は .card のすぐ親に付ける（間にボタンが入ると効かず、右下と左上の傾きが同じ形に見える）
+  const perspective: CSSProperties = { perspective: 1100 };
+
   return (
-    <div className={`holo ${cls}`} style={{ perspective: 1100 }}>
+    <div className={`holo ${cls}`} style={onClick ? undefined : perspective}>
       {onClick ? (
-        <button type="button" className="holo-btn" onClick={onClick}>
+        <button type="button" className="holo-btn" style={perspective} onClick={onClick}>
           {body}
         </button>
       ) : (
