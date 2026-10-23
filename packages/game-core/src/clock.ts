@@ -4,8 +4,9 @@ import type { Action, GameState, PlayerId, RuleCard } from "./types";
 
 /**
  * オンライン対戦の持ち時間。
- * - 毎ターン、まず 30 秒（ターンの時間）。使い切ると、個人の持ち時間（1 試合で 5 分）から減る
- * - ターンの時間と持ち時間をどちらも使い切ったら、時間切れで負け
+ * - 個人の持ち時間は 1 試合で 5 分。自分のターンのあいだ、最初の 1 秒から減る
+ * - 1 ターンは 30 秒まで。過ぎたら自動でターンを終える（差し出しを選ぶ番なら、先に自動で選ぶ）
+ * - 持ち時間を使い切ったら、時間切れで負け
  * - 相手の手番の途中で差し出し（フィクサー）を選ぶ番になったら、手番の人の時計は止め、選ぶ人は 15 秒以内に選ぶ。
  *   過ぎたら自動で選ぶ（相手が選ばないせいで手番の人が時間切れにならないように）
  * 時刻はミリ秒（Date.now()）。サーバーが持ち、画面には clockFor で残りの時間だけ渡す。
@@ -19,7 +20,7 @@ export const CLOCK = {
 } as const;
 
 export interface Clock {
-  /** 残りの持ち時間（ターンの時間を超えて使った分を、ターンが終わるたびに引く） */
+  /** 残りの持ち時間（このターンが始まった時点の値。ターンが終わるたびに、そのターンで使った分を引く） */
   bank: Record<PlayerId, number>;
   /** 手番の人の時計が動き出した時刻。止まっているあいだは null */
   since: number | null;
@@ -71,28 +72,31 @@ function settle(clock: Clock, state: GameState, now: number): Clock {
 }
 
 /**
- * 操作のあとの時計。ターンが変わったら（もう一度ターンを行うときも）、ターンの時間を超えた分を
+ * 操作のあとの時計。ターンが変わったら（もう一度ターンを行うときも）、そのターンで使った時間を
  * 前の手番の人の持ち時間から引き、新しいターンの時計を動かす
  */
 export function tickClock(clock: Clock, prev: GameState, next: GameState, now: number): Clock {
   if (next.turn === prev.turn || next.winner) return settle(clock, next, now);
-  const over = Math.max(0, used(clock, now) - CLOCK.turnMs);
-  const bank = { ...clock.bank, [prev.active]: Math.max(0, clock.bank[prev.active] - over) };
+  const bank = { ...clock.bank, [prev.active]: Math.max(0, clock.bank[prev.active] - used(clock, now)) };
   return settle({ bank, since: now, spent: 0, pickSince: null }, next, now);
 }
 
-/** 次に時間切れが起きる時刻（決着していれば null） */
+/** このターンで使える時間（ターンの 30 秒か、残りの持ち時間の短いほう） */
+const turnLimit = (clock: Clock, state: GameState) => Math.min(CLOCK.turnMs, clock.bank[state.active]);
+
+/** 次に時間が切れる時刻（ターンの終わり・持ち時間の切れ・差し出しの待ちの早いほう。決着していれば null） */
 export function clockDeadline(clock: Clock, state: GameState): number | null {
   if (state.winner) return null;
   const times: number[] = [];
-  if (clock.since !== null) times.push(clock.since + CLOCK.turnMs + clock.bank[state.active] - clock.spent);
+  if (clock.since !== null) times.push(clock.since + turnLimit(clock, state) - clock.spent);
   if (clock.pickSince !== null) times.push(clock.pickSince + CLOCK.pickMs);
   return times.length ? Math.min(...times) : null;
 }
 
 /**
- * 時間が過ぎていたら、サーバーが代わりに行う操作。差し出しの時間切れは自動で選び、
- * ターンの時間切れは負け（timeout）。何も過ぎていなければ null
+ * 時間が過ぎていたら、サーバーが代わりに行う操作。差し出しの待ちの切れは自動で選ぶ。
+ * 持ち時間を使い切ったら負け（timeout）。ターンの 30 秒を過ぎたらターンを終える（差し出しを選ぶ番なら、先に自動で選ぶ）。
+ * 何も過ぎていなければ null
  */
 export function clockAction(
   clock: Clock,
@@ -105,9 +109,14 @@ export function clockAction(
     const player = opponent(state.active);
     return { type: "sacrifice", player, slot: autoSacrifice(state, player, catalog) };
   }
-  if (clock.since !== null && now >= clock.since + CLOCK.turnMs + clock.bank[state.active] - clock.spent)
-    return { type: "timeout", player: state.active };
-  return null;
+  if (clock.since === null) return null;
+  const u = used(clock, now);
+  const player = state.active;
+  if (u >= clock.bank[player]) return { type: "timeout", player };
+  if (u < CLOCK.turnMs) return null;
+  if (state.pending?.waiting.includes(player))
+    return { type: "sacrifice", player, slot: autoSacrifice(state, player, catalog) };
+  return { type: "endTurn", player };
 }
 
 /** 画面に渡す時計（見る人を p1 にそろえる。ms は送った時点の残り） */
@@ -116,7 +125,7 @@ export interface ClockView {
   running: PlayerId | null;
   /** 手番の人のターンの時間の残り */
   turnLeft: number;
-  /** 両者の残りの持ち時間（手番の人は、今ターンの時間を超えて使っている分も引いた値） */
+  /** 両者の残りの持ち時間（手番の人は、このターンで使っている分も引いた値） */
   bank: Record<PlayerId, number>;
   /** 差し出しを選ぶ残り（手番でない人が選ぶ番のときだけ） */
   pickLeft: number | null;
@@ -127,11 +136,11 @@ export interface ClockView {
 export function clockFor(clock: Clock, state: GameState, now: number, viewer: PlayerId): ClockView {
   const u = used(clock, now);
   const active = state.active;
-  const bank = { ...clock.bank, [active]: Math.max(0, clock.bank[active] - Math.max(0, u - CLOCK.turnMs)) };
+  const bank = { ...clock.bank, [active]: Math.max(0, clock.bank[active] - u) };
   const flip = (p: PlayerId) => (viewer === "p1" ? p : opponent(p));
   return {
     running: clock.since === null || state.winner ? null : flip(active),
-    turnLeft: Math.max(0, CLOCK.turnMs - u),
+    turnLeft: Math.max(0, turnLimit(clock, state) - u),
     bank: { p1: bank[flip("p1")], p2: bank[flip("p2")] },
     pickLeft: clock.pickSince === null ? null : Math.max(0, clock.pickSince + CLOCK.pickMs - now),
     holdMs: clock.since === null ? 0 : Math.max(0, clock.since - now),
