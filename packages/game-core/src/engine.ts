@@ -368,6 +368,11 @@ function draw(state: GameState, player: PlayerId, emit: Emit): boolean {
   return true;
 }
 
+/** このプレイヤーのマスターに、次の自分のターンの終わりに来るお告げのダメージの合計（相手が出したお告げ） */
+export function incomingProphecy(state: GameState, player: PlayerId): number {
+  return (state.players[opponent(player)].prophecies ?? []).reduce((n, p) => n + p.amount, 0);
+}
+
 /** マスターが守られていて、ダメージを受けないか */
 export function isShielded(state: GameState, player: PlayerId): boolean {
   return state.turn <= (state.players[player].shieldUntil ?? 0);
@@ -946,6 +951,12 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       emit({ type: "bounced", player: foeId, slot, cardId: u.cardId });
       break;
     }
+    case "prophecy": {
+      const cardId = self?.cardId ?? "";
+      me.prophecies = [...(me.prophecies ?? []), { cardId, amount: e.amount, turn: state.turn }];
+      emit({ type: "prophecy", player, cardId, amount: e.amount });
+      break;
+    }
     case "shieldMaster":
       me.shieldUntil = state.turn + 1;
       emit({ type: "shield", player, kind: "shielded", amount: 0 });
@@ -1342,6 +1353,17 @@ export function applyAction(
         }
       });
       resolveDeaths(state, catalog, emit, config);
+      // お告げ：相手が前のターンまでに出したお告げが、このターンの終わりに自分のマスターに落ちる
+      const due = (foe.prophecies ?? []).filter((p) => p.turn < state.turn);
+      if (due.length > 0) {
+        foe.prophecies = (foe.prophecies ?? []).filter((p) => p.turn >= state.turn);
+        for (const p of due) {
+          emit({ type: "prophecyFulfilled", player: foeId, cardId: p.cardId, amount: p.amount });
+          damageLeader(state, player, p.amount, emit);
+        }
+        checkWinner(state, player, emit);
+        if (state.winner) break;
+      }
       // 追加のターンがあれば、相手に渡さずにもう一度自分のターン
       const next = (me.extraTurns ?? 0) > 0 ? player : foeId;
       if (next === player) me.extraTurns -= 1;
