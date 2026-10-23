@@ -35,16 +35,59 @@ export interface FxStage {
 }
 
 let boot: Promise<FxStage | null> | null = null;
+/** 用意に失敗した時刻（続けて失敗しないよう、少し間をあけて作り直す） */
+let failedAt = 0;
+const RETRY_MS = 2000;
 
-/** 舞台を用意する（2 回目からは同じものを返す）。WebGL が使えない環境では null */
+/**
+ * 舞台を用意する（2 回目からは同じものを返す）。WebGL が使えない環境では null。
+ *
+ * 一度失敗しても、その結果を覚えたままにはしない（10月23日の不具合）。前は失敗すると null を覚え続け、
+ * 衝撃・オワコンの消え方・着地の光など PixiJS の演出が、ページを読み直すまで二度と出なくなっていた。失敗のきっかけ：
+ * - 開いている画面の裏で本番を入れ替えると、古い画面が読みに行く PixiJS のファイルがサーバーから消えている
+ * - スマホで WebGL が OS に止められる（裏に回した・メモリが足りない）
+ * そこで、失敗したら少し間をあけて作り直す。WebGL が止められたら、舞台を捨てて次の演出で作り直す。
+ * キャンバスが画面から外れていたら（画面の枠を作り直したなど）、作り直す
+ */
 export function fxStage(): Promise<FxStage | null> {
-  if (!boot) {
-    boot = create().catch((e: unknown) => {
-      console.warn("[fx] 演出の舞台を用意できませんでした", e);
-      return null;
+  if (boot) {
+    const cur = boot;
+    return cur.then((s) => {
+      // キャンバスが画面から外れていたら作り直す
+      if (s && !s.app.canvas.isConnected) {
+        if (boot === cur) boot = null;
+        discard(s);
+        return fxStage();
+      }
+      return s;
     });
   }
-  return boot;
+  if (failedAt && performance.now() - failedAt < RETRY_MS) return Promise.resolve(null);
+  const p: Promise<FxStage | null> = create()
+    .then((s) => {
+      // 演出を出さない環境（テスト・動きを減らす設定）では、次に呼ばれたときにまた確かめる
+      if (!s && boot === p) boot = null;
+      return s;
+    })
+    .catch((e: unknown) => {
+      console.warn("[fx] 演出の舞台を用意できませんでした。少しあとで作り直します", e);
+      if (boot === p) boot = null;
+      failedAt = performance.now();
+      return null;
+    });
+  boot = p;
+  return p;
+}
+
+/** 今の舞台を捨てる（次に fxStage() を呼んだときに作り直す） */
+function discard(stage: FxStage) {
+  try {
+    stage.app.ticker.stop();
+    stage.app.canvas.remove();
+    stage.app.destroy(true, { children: true, texture: true });
+  } catch {
+    // 壊れた舞台は片付けに失敗してもよい
+  }
 }
 
 /** 演出を出してよいか（テスト環境・「視差効果を減らす」設定では出さない） */
@@ -72,6 +115,18 @@ async function create(): Promise<FxStage | null> {
   app.canvas.setAttribute("aria-hidden", "true");
   // 画面の枠の中に置く（枠の外にはみ出した演出は切られる。frame.ts）
   appFrame().appendChild(app.canvas);
+  // WebGL が止められたら、この舞台は捨てて、次の演出で作り直す
+  app.canvas.addEventListener(
+    "webglcontextlost",
+    (e) => {
+      e.preventDefault();
+      console.warn("[fx] WebGL が止められました。次の演出で舞台を作り直します");
+      const mine = boot;
+      boot = null;
+      void mine?.then((s) => s && discard(s));
+    },
+    { once: true },
+  );
 
   const root = new pixi.Container();
   app.stage.addChild(root);
