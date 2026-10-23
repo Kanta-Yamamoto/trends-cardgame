@@ -809,7 +809,7 @@ describe("デッキの決まり", () => {
     expect(resolveDeckRef(42, DECKS)).toBeNull();
   });
   it("ニュートラルのカードは属性に数えない", () => {
-    expect(deckAttributes(["n1", "n2", "f6"], real)).toEqual(["炎"]);
+    expect(deckAttributes(["n5", "n2", "f6"], real)).toEqual(["炎"]);
   });
   it("1つの属性＋ニュートラルのカードの20枚は組める（ニュートラルのカードだけでもよい）。闇堕ちを持つカードは1種類まで、★5は何種類でも", () => {
     const flame = DECKS.solo_flame;

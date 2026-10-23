@@ -101,30 +101,6 @@
     "original": "assets/original/f3.webp"
   },
   {
-    "id": "f4",
-    "name": "晒し",
-    "type": "post",
-    "rarity": 1,
-    "cost": 1,
-    "attributes": ["炎"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "expose"
-      },
-      {
-        "do": "draw",
-        "count": 1
-      }
-    ],
-    "effect": "相手のキャラクター1体を晒し状態にする。カードを1枚引く。",
-    "target": "enemyIcon",
-    "art": "/assets/cards/f4-art.jpg",
-    "original": "assets/original/f4.webp",
-    "retired": true
-  },
-  {
     "id": "f5",
     "name": "大炎上",
     "type": "post",
@@ -708,23 +684,6 @@
     }
   },
   {
-    "id": "n1",
-    "name": "通りすがりの一般人",
-    "type": "icon",
-    "rarity": 1,
-    "cost": 1,
-    "attack": 1,
-    "hp": 1,
-    "attributes": [],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [],
-    "effect": "",
-    "art": "/assets/cards/n1-art.jpg",
-    "original": "assets/original/n1.webp",
-    "retired": true
-  },
-  {
     "id": "n2",
     "name": "ROM専",
     "type": "icon",
@@ -755,23 +714,6 @@
     "effect": "ガード。",
     "art": "/assets/cards/n3-art.jpg",
     "original": "assets/original/n3.webp"
-  },
-  {
-    "id": "n4",
-    "name": "新規アカウント",
-    "type": "icon",
-    "rarity": 1,
-    "cost": 2,
-    "attack": 2,
-    "hp": 2,
-    "attributes": [],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [],
-    "effect": "",
-    "art": "/assets/cards/n4-art.jpg",
-    "original": "assets/original/n4.webp",
-    "retired": true
   },
   {
     "id": "n5",
@@ -810,26 +752,6 @@
     "effect": "場に出たとき、カードを1枚引く。",
     "art": "/assets/cards/n6-art.jpg",
     "original": "assets/original/n6.webp"
-  },
-  {
-    "id": "n7",
-    "name": "拡散希望",
-    "type": "post",
-    "rarity": 1,
-    "cost": 1,
-    "attributes": [],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "draw",
-        "count": 1
-      }
-    ],
-    "effect": "カードを1枚引く。",
-    "art": "/assets/cards/n7-art.jpg",
-    "original": "assets/original/n7.webp",
-    "retired": true
   },
   {
     "id": "n8",
@@ -917,34 +839,6 @@
     "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を晒し状態にする。",
     "art": "/assets/cards/f6-art.jpg",
     "original": "assets/original/f6.webp"
-  },
-  {
-    "id": "f7",
-    "name": "便乗アカウント",
-    "type": "icon",
-    "rarity": 2,
-    "cost": 1,
-    "attack": 1,
-    "hp": 1,
-    "attributes": ["炎"],
-    "kaiwai": ["ミーム"],
-    "keywords": ["速攻"],
-    "effects": [
-      {
-        "on": "play",
-        "do": "buffSelf",
-        "attack": 1,
-        "hp": 0,
-        "if": {
-          "allies": "炎",
-          "atLeast": 3
-        }
-      }
-    ],
-    "effect": "速攻。場に出たとき、自分の場に炎属性が3体以上いれば、攻撃力+1。",
-    "art": "/assets/cards/f7-art.jpg",
-    "original": "assets/original/f7.webp",
-    "retired": true
   },
   {
     "id": "f8",
@@ -1076,28 +970,6 @@
     "original": "assets/original/m7.webp"
   },
   {
-    "id": "m8",
-    "name": "握手会",
-    "type": "post",
-    "rarity": 1,
-    "cost": 1,
-    "attributes": ["推し"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "buff",
-        "attack": 1,
-        "hp": 1
-      }
-    ],
-    "effect": "自分のキャラクター1体に攻撃力+1・体力+1。",
-    "target": "allyIcon",
-    "art": "/assets/cards/m8-art.jpg",
-    "original": "assets/original/m8.webp",
-    "retired": true
-  },
-  {
     "id": "m9",
     "name": "ホスト系配信者",
     "type": "icon",
@@ -1118,27 +990,6 @@
     "effect": "注目。場に出たとき、攻撃力が4以下の相手のキャラクターのうち、攻撃力がいちばん高い1体を奪う。",
     "art": "/assets/cards/m9-art.jpg",
     "original": "assets/original/m9.webp"
-  },
-  {
-    "id": "m10",
-    "name": "ペンライトの海",
-    "type": "post",
-    "rarity": 3,
-    "cost": 3,
-    "attributes": ["推し"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "buffAllies",
-        "attack": 1,
-        "hp": 1
-      }
-    ],
-    "effect": "自分のキャラクターすべてに攻撃力+1・体力+1。",
-    "art": "/assets/cards/m10-art.jpg",
-    "original": "assets/original/m10.webp",
-    "retired": true
   },
   {
     "id": "i7",
@@ -1184,27 +1035,6 @@
     "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を眠り状態にする。",
     "art": "/assets/cards/i8-art.jpg",
     "original": "assets/original/i8.webp"
-  },
-  {
-    "id": "i9",
-    "name": "アニマルセラピー",
-    "type": "post",
-    "rarity": 2,
-    "cost": 2,
-    "attributes": ["水"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "heal",
-        "to": "allAlliesAndMaster",
-        "amount": 3
-      }
-    ],
-    "effect": "自分のキャラクターすべてと自分のライフを3回復する。",
-    "art": "/assets/cards/i9-art.jpg",
-    "original": "assets/original/i9.webp",
-    "retired": true
   },
   {
     "id": "c5",
@@ -1318,61 +1148,6 @@
     "effect": "草を2体出す。",
     "art": "/assets/cards/k8-art.jpg",
     "original": "assets/original/k8.webp"
-  },
-  {
-    "id": "k9",
-    "name": "量産型アイコン",
-    "type": "icon",
-    "rarity": 3,
-    "cost": 4,
-    "attack": 1,
-    "hp": 1,
-    "attributes": ["自然"],
-    "kaiwai": ["ミーム"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "copySelf"
-      },
-      {
-        "on": "play",
-        "do": "copySelf"
-      }
-    ],
-    "effect": "場に出たとき、自分の空いている枠に、トークンとしてこのキャラクターのコピーを2体出す。",
-    "art": "/assets/cards/k9-art.jpg",
-    "original": "assets/original/k9.webp",
-    "retired": true
-  },
-  {
-    "id": "k10",
-    "name": "ミーム女王",
-    "type": "icon",
-    "rarity": 4,
-    "cost": 5,
-    "attack": 2,
-    "hp": 3,
-    "attributes": ["自然"],
-    "kaiwai": ["ミーム"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "fill",
-        "card": "t-kusa"
-      },
-      {
-        "on": "play",
-        "do": "rally",
-        "attack": 0,
-        "totsu": true
-      }
-    ],
-    "effect": "場に出たとき、自分の空いている枠すべてに草を出す。自分のキャラクターすべてに突進を付ける。",
-    "art": "/assets/cards/k10-art.jpg",
-    "original": "assets/original/k10.webp",
-    "retired": true
   },
   {
     "id": "g5",
@@ -1535,23 +1310,6 @@
     "effect": "注目。場に出たとき、草を1体出す。",
     "art": "/assets/cards/x2-art.jpg",
     "original": "assets/original/x2.webp"
-  },
-  {
-    "id": "f11",
-    "name": "炎上ウォッチャー",
-    "type": "icon",
-    "rarity": 1,
-    "cost": 1,
-    "attack": 1,
-    "hp": 1,
-    "attributes": ["炎"],
-    "kaiwai": [],
-    "keywords": ["突進"],
-    "effects": [],
-    "effect": "突進。",
-    "art": "/assets/cards/f11-art.jpg",
-    "original": "assets/original/f11.webp",
-    "retired": true
   },
   {
     "id": "f12",
@@ -1923,29 +1681,6 @@
     "original": "assets/original/k12.webp"
   },
   {
-    "id": "k13",
-    "name": "ミーム動画編集者",
-    "type": "icon",
-    "rarity": 3,
-    "cost": 4,
-    "attack": 2,
-    "hp": 3,
-    "attributes": ["自然"],
-    "kaiwai": ["配信者"],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "burnPerAlly",
-        "amount": 1,
-        "kaiwai": "ミーム"
-      }
-    ],
-    "effect": "場に出たとき、自分の場のミーム種族1体につき、相手のプレイヤーに1ダメージ。",
-    "art": "/assets/cards/k13-art.jpg",
-    "original": "assets/original/k13.webp",
-    "retired": true
-  },
-  {
     "id": "k14",
     "name": "トレンドメーカー",
     "type": "icon",
@@ -2151,56 +1886,6 @@
     "original": "assets/original/f15.webp"
   },
   {
-    "id": "i14",
-    "name": "同接感謝",
-    "type": "post",
-    "rarity": 2,
-    "cost": 2,
-    "attributes": ["水"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "buffAllies",
-        "attack": 0,
-        "hp": 2,
-        "kaiwai": "配信者"
-      },
-      {
-        "do": "heal",
-        "to": "master",
-        "amount": 2
-      }
-    ],
-    "effect": "自分の配信者種族すべてに体力+2。自分のライフを2回復する。",
-    "art": "/assets/cards/i14-art.jpg",
-    "original": "assets/original/i14.webp",
-    "retired": true
-  },
-  {
-    "id": "m15",
-    "name": "推しへのファンレター",
-    "type": "post",
-    "rarity": 2,
-    "cost": 2,
-    "attributes": ["推し"],
-    "kaiwai": [],
-    "keywords": [],
-    "target": "allyIcon",
-    "targetKaiwai": "アイドル",
-    "effects": [
-      {
-        "do": "buff",
-        "attack": 2,
-        "hp": 2
-      }
-    ],
-    "effect": "自分のアイドル種族1体に攻撃力+2・体力+2。",
-    "art": "/assets/cards/m15-art.jpg",
-    "original": "assets/original/m15.webp",
-    "retired": true
-  },
-  {
     "id": "f16",
     "name": "炎上中のアイドル",
     "type": "icon",
@@ -2269,60 +1954,6 @@
     "effect": "場に出たとき、自分のほかのアイドル種族すべてに攻撃力+2・体力+2。",
     "art": "/assets/cards/m16-art.jpg",
     "original": "assets/original/m16.webp"
-  },
-  {
-    "id": "g14",
-    "name": "引用リツイート",
-    "type": "post",
-    "rarity": 2,
-    "cost": 2,
-    "attributes": ["神"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "tutor",
-        "kaiwai": "有識者",
-        "count": 1
-      },
-      {
-        "do": "draw",
-        "count": 1,
-        "if": {
-          "kaiwai": "有識者",
-          "atLeast": 1
-        }
-      }
-    ],
-    "effect": "山札から有識者種族のカードを1枚探して手札に加える。なければカードを1枚引く。自分の場に有識者種族がいれば、さらにカードを1枚引く。",
-    "art": "/assets/cards/g14-art.jpg",
-    "original": "assets/original/g14.webp",
-    "retired": true
-  },
-  {
-    "id": "g15",
-    "name": "ミーム考古学者",
-    "type": "icon",
-    "rarity": 3,
-    "cost": 3,
-    "attack": 1,
-    "hp": 3,
-    "attributes": ["自然"],
-    "kaiwai": ["有識者"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "buffAllies",
-        "attack": 1,
-        "hp": 1,
-        "kaiwai": "ミーム"
-      }
-    ],
-    "effect": "場に出たとき、自分のほかのミーム種族すべてに攻撃力+1・体力+1。",
-    "art": "/assets/cards/g15-art.jpg",
-    "original": "assets/original/g15.webp",
-    "retired": true
   },
   {
     "id": "m17",
@@ -2417,67 +2048,6 @@
     "effect": "突進。突進で攻撃したとき、草を1体出す。",
     "art": "/assets/cards/k16-art.jpg",
     "original": "assets/original/k16.webp"
-  },
-  {
-    "id": "i16",
-    "name": "もふもふタイム",
-    "type": "post",
-    "rarity": 2,
-    "cost": 2,
-    "attributes": ["水"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "buffAllies",
-        "attack": 1,
-        "hp": 2,
-        "kaiwai": "動物"
-      },
-      {
-        "do": "heal",
-        "to": "master",
-        "amount": 2
-      }
-    ],
-    "effect": "自分の動物種族すべてに攻撃力+1・体力+2。自分のライフを2回復する。",
-    "art": "/assets/cards/i16-art.jpg",
-    "original": "assets/original/i16.webp",
-    "retired": true
-  },
-  {
-    "id": "f18",
-    "name": "クソリプ職人",
-    "type": "icon",
-    "rarity": 2,
-    "cost": 2,
-    "attack": 2,
-    "hp": 1,
-    "attributes": ["炎"],
-    "kaiwai": ["ミーム"],
-    "keywords": ["突進"],
-    "effects": [],
-    "effect": "突進。",
-    "art": "/assets/cards/f18-art.jpg",
-    "original": "assets/original/f18.webp",
-    "retired": true
-  },
-  {
-    "id": "f19",
-    "name": "煽りスタンプ",
-    "type": "icon",
-    "rarity": 1,
-    "cost": 1,
-    "attack": 1,
-    "hp": 1,
-    "attributes": ["炎"],
-    "kaiwai": ["ミーム"],
-    "keywords": ["速攻"],
-    "effects": [],
-    "effect": "速攻。",
-    "art": "/assets/cards/f19-art.jpg",
-    "original": "assets/original/f19.webp",
-    "retired": true
   },
   {
     "id": "g17",
@@ -2632,23 +2202,6 @@
     }
   },
   {
-    "id": "f21",
-    "name": "荒らし",
-    "type": "icon",
-    "rarity": 2,
-    "cost": 2,
-    "attack": 2,
-    "hp": 1,
-    "attributes": ["炎"],
-    "kaiwai": ["ミーム"],
-    "keywords": ["速攻"],
-    "effects": [],
-    "effect": "速攻。",
-    "art": "/assets/cards/f21-art.jpg",
-    "original": "assets/original/f21.webp",
-    "retired": true
-  },
-  {
     "id": "f22",
     "name": "プロ炎上家",
     "type": "icon",
@@ -2676,31 +2229,6 @@
     "effect": "突進。場に出たとき、相手のプレイヤーに2ダメージ。自分のライフを2回復する。",
     "art": "/assets/cards/f22-art.jpg",
     "original": "assets/original/f22.webp"
-  },
-  {
-    "id": "f23",
-    "name": "炎上まとめ",
-    "type": "post",
-    "rarity": 2,
-    "cost": 2,
-    "attributes": ["炎"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "draw",
-        "count": 1
-      },
-      {
-        "do": "damage",
-        "to": "enemyMaster",
-        "amount": 1
-      }
-    ],
-    "effect": "カードを1枚引く。相手のプレイヤーに1ダメージ。",
-    "art": "/assets/cards/f23-art.jpg",
-    "original": "assets/original/f23.webp",
-    "retired": true
   },
   {
     "id": "m19",
@@ -2850,59 +2378,6 @@
     "effect": "相手のキャラクター1体を草にする。",
     "art": "/assets/cards/k18-art.jpg",
     "original": "assets/original/k18.webp"
-  },
-  {
-    "id": "c12",
-    "name": "ララ",
-    "type": "icon",
-    "rarity": 5,
-    "cost": 6,
-    "attack": 3,
-    "hp": 5,
-    "attributes": ["自然"],
-    "kaiwai": ["ミーム", "配信者"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "fill",
-        "card": "t-kusa"
-      },
-      {
-        "on": "turnEnd",
-        "do": "summon",
-        "card": "t-kusa",
-        "count": 2
-      }
-    ],
-    "effect": "場に出たとき、自分の空いている枠すべてに草を出す。自分のターンの終わりに、草を2体出す。",
-    "dark": {
-      "name": "黒歴史のララ",
-      "attack": 4,
-      "hp": 4,
-      "keywords": ["突進"],
-      "effects": [
-        {
-          "on": "play",
-          "do": "transform",
-          "card": "t-kusa",
-          "to": "strongestEnemy"
-        },
-        {
-          "on": "play",
-          "do": "fill",
-          "card": "t-kusa"
-        }
-      ],
-      "effect": "突進。闇堕ちしたとき、攻撃力がいちばん高い相手のキャラクター1体を草にする。自分の空いている枠すべてに草を出す。",
-      "art": "/assets/cards/c12-dark-art.jpg",
-      "original": "assets/original/c12-dark.webp",
-      "subject": "/assets/cards/c12-dark-subject.webp"
-    },
-    "art": "/assets/cards/c12-art.jpg",
-    "original": "assets/original/c12.webp",
-    "subject": "/assets/cards/c12-subject.webp",
-    "retired": true
   },
   {
     "id": "c14",
@@ -3058,36 +2533,6 @@
     "effect": "場に出たとき、自分のキャラクターすべてと自分のライフを3回復する。",
     "art": "/assets/cards/i19-art.jpg",
     "original": "assets/original/i19.webp"
-  },
-  {
-    "id": "i20",
-    "name": "温泉宿の女将",
-    "type": "icon",
-    "rarity": 4,
-    "cost": 6,
-    "attack": 3,
-    "hp": 6,
-    "attributes": ["水"],
-    "kaiwai": ["配信者"],
-    "keywords": ["ガード"],
-    "effects": [
-      {
-        "on": "play",
-        "do": "heal",
-        "to": "allAlliesAndMaster",
-        "amount": 3
-      },
-      {
-        "on": "turnEnd",
-        "do": "heal",
-        "to": "master",
-        "amount": 1
-      }
-    ],
-    "effect": "ガード。場に出たとき、自分のキャラクターすべてと自分のライフを3回復する。自分のターンの終わりに、自分のライフを1回復する。",
-    "art": "/assets/cards/i20-art.jpg",
-    "original": "assets/original/i20.webp",
-    "retired": true
   },
   {
     "id": "n12",

@@ -6,8 +6,11 @@ import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { CardZoom } from "../game/CardZoom";
 
-/** お蔵入りのカード（同梱データの印で見る。API の DB には印の列が無い） */
-const RETIRED = new Set(CARDS.filter((c) => c.retired).map((c) => c.id));
+/**
+ * 一覧に出すカード（同梱データで見る）。API の DB には、お蔵入りの印の列が無く、
+ * cards.json から消したカードの行も残るので、同梱データにあってお蔵入りでないものだけを出す
+ */
+const LISTED = new Set(CARDS.filter((c) => !c.retired).map((c) => c.id));
 
 type Filter = Attribute | "ニュートラル" | null;
 
@@ -107,7 +110,7 @@ export function Gallery() {
     !filter || (filter === "ニュートラル" ? c.attributes.length === 0 : c.attributes.includes(filter));
   // やり直しても失敗したときは data が空になるので、同梱データを出し続ける
   const cards = (data ?? BUNDLED_CARDS)
-    .filter((c) => !c.token && !RETIRED.has(c.id) && match(c))
+    .filter((c) => !c.token && LISTED.has(c.id) && match(c))
     .sort(
       (a, b) => b.rarity - a.rarity || group(a) - group(b) || a.cost - b.cost || a.id.localeCompare(b.id),
     );
