@@ -523,11 +523,9 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .zs-stats b { font: 800 22px/1 var(--f-mark); margin: 0 2px; }
 .zs-max { color: var(--muted); }
 .zs-effect { margin: 0; font-size: 16px; line-height: 1.7; }
-.zs-keywords { margin: 0; display: grid; gap: 6px; font-size: 13.5px; }
-.zs-keywords div { display: grid; grid-template-columns: auto 1fr; gap: 8px; }
-.zs-keywords dt { font-weight: 800; color: var(--gold); }
-.zs-keywords dd { margin: 0; color: var(--text); }
-.zs-states { margin: 0; padding-left: 18px; font-size: 13.5px; color: #ffb4b4; }
+.zs-tags { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; font-size: 13.5px; }
+.zs-tag { padding: 2px 10px; border-radius: 999px; background: #ffffff14; color: var(--gold); font-weight: 800; }
+.zs-states .zs-tag { color: #ffb4b4; }
 .zs-note { margin: 0; font-size: 12px; color: var(--muted); }
 .zoom-sheet-text .btn { justify-self: start; }
 .zoom-sheet-body { grid-template-columns: minmax(0, 1fr); justify-items: center; overflow: auto; }
