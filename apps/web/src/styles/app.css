@@ -826,6 +826,9 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 }
 .director-field.out { opacity: 0; }
 .director-field .df-red { position: absolute; inset: 0; background: #cf1b10; clip-path: polygon(0 0, 0 0, 0 0); }
+/* 舞台に上がるエースの血の滴とクラウン（fx/bloodCrown.ts）。df-crown はカードの後ろ、director-crown はカードの前 */
+.director-field .df-crown, .director-crown { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.director-crown { z-index: 3; border-radius: inherit; }
 @keyframes director-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .field-mist, .omen-flame i, .field-dark.field-layer, .field-omen.field-layer { animation: none; } }
 
