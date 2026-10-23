@@ -40,7 +40,8 @@ import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { frameRect, frameSize } from "../frame";
 import { fieldEntry, landed } from "../fx/fieldEntry";
-import { fxEnabled, fxStage } from "../fx/stage";
+import { fxEnabled } from "../fx/stage";
+import { warmFx } from "../fx/warm";
 import { ArbiterField } from "../game/ArbiterField";
 import { CardZoom } from "../game/CardZoom";
 import { type DarkCut, DarkCutscene } from "../game/DarkCutscene";
@@ -244,6 +245,8 @@ export function Play() {
 
 function DeckSelect() {
   const start = useGame((s) => s.start);
+  // デッキを選んでいる間（何も動いていないとき）に、演出の舞台を用意しておく
+  useEffect(() => warmFx(600), []);
   return (
     <>
       <header className="page-head">
@@ -893,10 +896,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     onCancel: () => select(null),
   });
 
-  // 演出の舞台（PixiJS）を先に用意しておく（最初の演出で読み込み待ちにならないように）
+  // 演出の舞台（PixiJS）を先に用意して温めておく（最初の演出で読み込み待ち・一瞬の停止にならないように）。
+  // 用意する間は画面が少し止まるので、対戦開始の VS の演出が終わってから、手が空いたときに行う（fx/warm.ts）
   useEffect(() => {
-    void fxStage();
-  }, []);
+    if (openingOn) return;
+    return warmFx();
+  }, [openingOn]);
 
   // 闇堕ちの字の書体を先に読み込んでおく（初めての闇堕ちで、別の書体のまま出ないように）
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { gsap } from "gsap";
-import type { Filter, Texture } from "pixi.js";
+import type { Container, Filter, Texture } from "pixi.js";
 import { type FxStage, fxEnabled, fxStage, type Pixi } from "./stage";
 
 type Rect = { left: number; top: number; width: number; height: number };
@@ -7,16 +7,18 @@ type Rect = { left: number; top: number; width: number; height: number };
 /**
  * 体力がなくなったアイコンが、黒く染まって溶けるように消える。
  * 1. カード（DOM の抜け殻）が一瞬で黒く沈む
- * 2. 同じ形の黒い板（PixiJS）に入れ替わり、上から下へ、まだらに溶けて消える。溶けるふちが灰色に淡く光る
+ * 2. 同じ形の黒い板（PixiJS）に入れ替わり、上から下へ、まだらに溶けて消える。溶けるふちは焦げたような黒
  * 3. 溶けたところから黒い煙と灰が立ちのぼる
- * 元のカードは React がすぐ消すので、呼ぶ側が抜け殻（ghost）を作って渡す。
+ * 色はすべて黒（盤面の地より暗い色）にそろえる（10月23日。オーナー：「消えるモーションが黒で統一されておらず、白色の変なエフェクトが残っている」。
+ * 前はふちが灰色に光り、煙が盤面より明るい紫灰、灰の粒が加算合成で白く光っていて、カードが消えたあとも白いもやが漂って見えた）。
+ * 属性で色は変えない。元のカードは React がすぐ消すので、呼ぶ側が抜け殻（ghost）を作って渡す。
  */
 export async function dissolve(ghost: HTMLElement): Promise<void> {
   const r = ghost.getBoundingClientRect();
   const sink = ghost.animate(
     [
       { filter: "brightness(1) grayscale(0)", transform: "none" },
-      { filter: "brightness(1.6) grayscale(0.4)", transform: "scale(1.04)", offset: 0.25 },
+      { filter: "brightness(0.55) grayscale(0.7)", transform: "scale(1.04)", offset: 0.25 },
       { filter: "brightness(0.06) grayscale(1)", transform: "scale(1.02)" },
     ],
     { duration: 260, easing: "cubic-bezier(.4,0,.6,1)", fill: "forwards" },
@@ -29,7 +31,8 @@ export async function dissolve(ghost: HTMLElement): Promise<void> {
   }
   const stage = await fxStage();
   await sink.finished.catch(() => {});
-  if (!stage) {
+  // 盤面の組み直しなどで大きさが 0 のときは、溶かすものがないので消すだけ
+  if (!stage || r.width < 1 || r.height < 1) {
     ghost.remove();
     return;
   }
@@ -42,19 +45,39 @@ export async function dissolve(ghost: HTMLElement): Promise<void> {
 }
 
 async function melt(stage: FxStage, r: Rect, swapped: () => void) {
-  const { pixi, root, tex } = stage;
-  const k = r.width / 80;
+  const { pixi, root } = stage;
   const fx = new pixi.Container();
   fx.position.set(r.left, r.top);
   root.addChild(fx);
   const release = stage.hold();
+  let mask: Texture | null = null;
+  const filter = dissolveFilter(pixi);
+  // 途中で失敗しても、必ず片付けて描画を止める（止めないと、画面いっぱいの舞台を毎フレーム描き続けて重くなる）
+  try {
+    mask = noiseTexture(pixi, r.width, r.height);
+    await run(stage, fx, r, mask, filter, swapped);
+  } finally {
+    fx.destroy({ children: true });
+    mask?.destroy(true);
+    filter.destroy();
+    release();
+  }
+}
 
+async function run(
+  stage: FxStage,
+  fx: Container,
+  r: Rect,
+  mask: Texture,
+  filter: Filter,
+  swapped: () => void,
+) {
+  const { pixi, tex } = stage;
+  const k = r.width / 80;
   // 溶け方の模様（R にまだらの値、A にカードの形）を焼いた板
-  const mask = noiseTexture(pixi, r.width, r.height);
   const slab = new pixi.Sprite(mask);
   slab.width = r.width;
   slab.height = r.height;
-  const filter = dissolveFilter(pixi);
   slab.filters = [filter];
   fx.addChild(slab);
   swapped();
@@ -68,13 +91,13 @@ async function melt(stage: FxStage, r: Rect, swapped: () => void) {
   // 溶けながら少しだけ下へ垂れる
   tl.to(slab, { y: r.height * 0.04, duration: 0.85, ease: "power1.in" }, 0);
 
-  // 煙：溶けているあたり（上から下へ進む）から、ゆっくり立ちのぼる
+  // 煙：溶けているあたり（上から下へ進む）から、ゆっくり立ちのぼる。黒（盤面の地より暗い）
   const puffs = 10;
   for (let i = 0; i < puffs; i++) {
     const at = (i / puffs) * 0.7;
     const p = new pixi.Sprite(tex.puff);
     p.anchor.set(0.5);
-    p.tint = i % 2 ? 0x2a2433 : 0x3d3549;
+    p.tint = i % 2 ? 0x000000 : 0x07050a;
     p.alpha = 0;
     const s = ((r.width * (0.5 + Math.random() * 0.4)) / tex.puff.width) * 1;
     p.scale.set(s * 0.5);
@@ -96,13 +119,12 @@ async function melt(stage: FxStage, r: Rect, swapped: () => void) {
       .to(p.scale, { x: s * 1.3, y: s * 1.3, duration: 0.9, ease: "power1.out" }, at)
       .to(p, { alpha: 0, duration: 0.5, ease: "power1.in" }, at + 0.4);
   }
-  // 灰：小さな粒が舞い上がる
+  // 灰：小さな黒い粒が舞い上がる（光らせない）
   for (let i = 0; i < 14; i++) {
     const at = Math.random() * 0.65;
     const a = new pixi.Sprite(tex.glow);
     a.anchor.set(0.5);
-    a.tint = i % 3 === 0 ? 0xb9adcf : 0x5d5470;
-    a.blendMode = i % 3 === 0 ? "add" : "normal";
+    a.tint = i % 3 === 0 ? 0x000000 : 0x0a070d;
     a.alpha = 0;
     a.scale.set(((2 + Math.random() * 2.5) * k) / (tex.glow.width / 4));
     a.position.set(r.width * Math.random(), r.height * (0.1 + at * 1.1));
@@ -122,17 +144,14 @@ async function melt(stage: FxStage, r: Rect, swapped: () => void) {
   }
 
   await tl.then();
-  fx.destroy({ children: true });
-  mask.destroy(true);
-  release();
 }
 
 /**
  * 溶ける模様のシェーダー。
  * 板の R＝まだらの値（小さいところから先に消える）、A＝カードの形。
- * uProgress より小さいところは消え、そのすぐ上の帯がふちとして灰色に光る。
+ * uProgress より小さいところは消え、そのすぐ上の帯がふちになる。ふちは焦げたような黒（光らせない）。
  */
-function dissolveFilter(pixi: Pixi): Filter {
+export function dissolveFilter(pixi: Pixi): Filter {
   const fragment = `
 in vec2 vTextureCoord;
 out vec4 finalColor;
@@ -145,8 +164,8 @@ void main(void) {
   float edge = 0.07;
   float d = n - uProgress;
   if (d < 0.0) { finalColor = vec4(0.0); return; }
-  vec3 body = vec3(0.035, 0.03, 0.05);
-  vec3 rim = vec3(0.62, 0.57, 0.72);
+  vec3 body = vec3(0.0, 0.0, 0.0);
+  vec3 rim = vec3(0.05, 0.035, 0.06);
   float t = smoothstep(edge, 0.0, d);
   vec3 col = mix(body, rim, t * t);
   float a = c.a * mix(1.0, 0.85, t);
