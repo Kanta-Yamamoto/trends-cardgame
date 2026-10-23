@@ -532,6 +532,20 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .g-stars { color: var(--gold); letter-spacing: -0.05em; }
 /* ★ごとに 3 列で並べる。縦にスクロールするだけで全部見られる（横スワイプはマウスで動かせず、見落としも出るのでやめた） */
 .g-row .gallery { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+/* 読み込み中：カードの形の光る板（スケルトン）。絵が届いたら、カードをふわっと出す */
+.g-item { position: relative; }
+.g-item > * { transition: opacity 0.3s ease-out; }
+.g-item.loading > * { opacity: 0; }
+.g-item.loading::before, .g-skel-card, .g-skel-line {
+  background: linear-gradient(100deg, #ffffff0d 30%, #ffffff24 50%, #ffffff0d 70%) 0 0 / 220% 100%;
+  animation: g-shimmer 1.25s linear infinite;
+}
+.g-item.loading::before { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: 4.2% / 3%; pointer-events: none; }
+.g-skel-card { aspect-ratio: 63 / 88; border-radius: 4.2% / 3%; }
+.g-item.loading .g-skel-card { opacity: 1; background: none; animation: none; }
+.g-skel-line { display: inline-block; height: 16px; border-radius: 6px; }
+@keyframes g-shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+@media (prefers-reduced-motion: reduce) { .g-item.loading::before, .g-skel-card, .g-skel-line { animation: none; } }
 .g-item { min-width: 0; }
 /* 拡大の「前へ・次へ」：画面の下に固定して、本文をスクロールしても押せるように */
 .zs-nav {
