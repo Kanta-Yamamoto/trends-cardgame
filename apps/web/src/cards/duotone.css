@@ -78,6 +78,10 @@
   /* 『フィクサー』は名前が長いので、名前と英語名を少し詰めて1行に収める */
   &.s-fixer .duo-name h3 { font-size: 2.12em; letter-spacing: 0.03em; }
   &.s-fixer .duo-en { letter-spacing: 0.38em; }
+  /* 『フィクサー』：ふだんは白い地だけ（黒の層と反転の文字は濃さで隠し、Fixer.tsx が滲ませる） */
+  &.s-fixer .duo-main, &.s-fixer .duo-ui.inv {
+    clip-path: none; mask-image: linear-gradient(transparent, transparent); -webkit-mask-image: linear-gradient(transparent, transparent);
+  }
 
   /* 一覧（文字を小さく） */
   .card.is-compact .duo-effect { font-size: 0.72em; line-height: 1.5; }

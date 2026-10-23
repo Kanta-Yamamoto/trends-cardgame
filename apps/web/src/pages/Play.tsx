@@ -470,9 +470,9 @@ type BuzzCut = {
   done: () => void;
 };
 
-/** エースで決まるデッキの色。運営サイドの二色のカード（『フィクサー』c15＝黒と白、『演出家』c17＝真紅と黒）は、カード面と同じ二色を斜線で分ける */
+/** エースで決まるデッキの色。『フィクサー』（c15）は白から黒へ滲む二色、『演出家』（c17）は真紅と黒を斜線で分ける */
 const ACE_GRADIENT: Record<string, string> = {
-  c15: "linear-gradient(160deg, #0e0d0c 0 46%, #f2f1ee 46%)",
+  c15: "linear-gradient(160deg, #f2f1ee 18%, #0e0d0c 82%)",
   // 『演出家』（c17）：真紅と黒の二色。斜線で分ける
   c17: "linear-gradient(160deg, #cf1b10 0 46%, #1c171c 46%)",
 };
@@ -1018,12 +1018,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             return;
           }
           if (does("judge")) {
-            // 『調停者』：場が青のフィールドになり、帯が止まりかけたところで、対象に刃を突き刺す
+            // 『調停者』：着地と同時に場が青のフィールドになり、0.1 秒後に引きの溜めから対象へ光線で突く
             await touch();
             const id = Date.now();
             setArbiter({ id, leaving: false });
-            await gwait(450);
-            await animateJudge(shown, events, next);
+            await animateJudge(shown, events, next, uid);
             setArbiter((x) => (x?.id === id ? { id, leaving: true } : x));
             return;
           }
@@ -1032,14 +1031,13 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           const from = uid !== undefined ? document.querySelector<HTMLElement>(`[data-uid="${uid}"]`) : null;
           await animateEffects(shown, events, next, { from, tint });
         } else if (a.type === "sacrifice") {
-          // 差し出しが決まった：選ばれたアイコンを糸で上へ引き抜いてから、幕を閉じる
+          // 差し出しが決まった：選ばれたアイコンを糸で上へ引き抜く（黒い場はターンが終わるまで残す）
           const uids = events.flatMap((e) =>
             e.type === "sacrificed" ? [shown.players[e.player].field[e.slot]?.uid ?? -1] : [],
           );
           if (uids.length === 0) return;
           const api = fixerApi.current;
           if (api) await api.pull(uids);
-          api?.close();
           // 引き抜いたアイコンは消し終えているので、残りのいなくなるアイコンだけをオワコンへ送る
           const left: GameState = api
             ? {
@@ -1139,6 +1137,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       // 効果の演出で見せ終わった数字は出さない
       if (fx && (e.type === "damaged" || e.type === "leaderDamaged" || e.type === "leaderHealed")) continue;
       if (e.type === "turnStarted") {
+        // 『フィクサー』の黒い場は、出したターンが終わったら滲んで戻る
+        fixerApi.current?.close();
         setBanner({ id, mine: e.player === ME, turn: e.turn });
         t += 950;
       } else if (e.type === "drew") {
@@ -1169,15 +1169,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       }
     }
   }, [log, openingOn]);
-
-  // 『フィクサー』の黒い場は、差し出しを選んでいる間だけ続く。選ぶ人がいない（誰も差し出せない）ときは、名前を見せてから閉じる。
-  // 差し出しが決まったときは、引き抜きの演出のあとに resolveEffects が閉じる
-  const sacPending = game?.pending?.kind === "sacrifice";
-  useEffect(() => {
-    if (!fixer || sacPending || animating) return;
-    const id = window.setTimeout(() => fixerApi.current?.close(), 1400);
-    return () => window.clearTimeout(id);
-  }, [fixer, sacPending, animating]);
 
   // バズが使えるようになったら（自分のターンの始め・4ターン目になったとき）、ボタンの枠を光らせる。
   // 演出中・CPU の思考中の出入りでは光らせ直さないよう、盤面の状態だけで見る
