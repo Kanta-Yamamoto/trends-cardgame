@@ -122,6 +122,8 @@ export type CardEffect = (
   | { do: "healGrow"; attack: number; hp: number }
   /** passive：自分が回復の効果を使うたび、相手のマスターに amount ダメージ */
   | { do: "healBurn"; amount: number }
+  /** passive：自分が回復の効果を使うたび、攻撃力がいちばん高い相手のアイコン1体に amount ダメージ（柴犬） */
+  | { do: "healStrike"; amount: number }
   /** hand：このゲームで自分が使った投稿1枚につきコスト-1 */
   | { do: "cheaperPerPost" }
   /** 相手のアイコンを倒す（体力に関係なく）。to が無ければ投稿の対象 */
