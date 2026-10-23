@@ -1503,7 +1503,7 @@
     "rarity": 1,
     "cost": 2,
     "attack": 1,
-    "hp": 1,
+    "hp": 2,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
     "keywords": [],
@@ -1536,11 +1536,11 @@
       {
         "on": "play",
         "do": "sweep",
-        "maxHp": 1
+        "maxHp": 2
       }
     ],
-    "effect": "場に出たとき、体力が1以下の相手のアイコンすべてをオワコンにする。",
-    "flavor": "それってあなたの感想ですよね、とは言わない。",
+    "effect": "場に出たとき、体力が2以下の相手のアイコンすべてをオワコンにする。",
+    "flavor": "",
     "art": "/assets/cards/g6-art.jpg",
     "original": "assets/original/g6.webp"
   },
@@ -2013,10 +2013,10 @@
         "on": "turnEnd",
         "do": "damage",
         "to": "strongestEnemy",
-        "amount": 1
+        "amount": 2
       }
     ],
-    "effect": "自分のターンの終わりに、攻撃力がいちばん高い相手のアイコン1体に1ダメージ。",
+    "effect": "自分のターンの終わりに、攻撃力がいちばん高い相手のアイコン1体に2ダメージ。",
     "flavor": "",
     "art": "/assets/cards/g13-art.jpg",
     "original": "assets/original/g13.webp"
@@ -2279,18 +2279,13 @@
     "keywords": [],
     "effects": [
       {
-        "do": "heal",
-        "to": "master",
-        "amount": 3
-      },
-      {
         "on": "passive",
         "do": "healBurn",
-        "amount": 2
+        "amount": 1
       }
     ],
-    "effect": "場に出たとき、自分のライフを3回復する。自分が回復の効果を使うたび、相手のマスターに2ダメージ。",
-    "flavor": "「ととのったら、あなたの番」",
+    "effect": "自分が回復の効果を使うたび、相手のマスターに1ダメージ。",
+    "flavor": "",
     "art": "/assets/cards/c10-art.jpg",
     "original": "assets/original/c10.webp"
   },
@@ -2592,7 +2587,7 @@
     "type": "icon",
     "rarity": 4,
     "cost": 6,
-    "attack": 3,
+    "attack": 4,
     "hp": 3,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
@@ -3045,7 +3040,7 @@
     "hp": 4,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": [],
+    "keywords": ["ガード"],
     "effects": [
       {
         "on": "play",
@@ -3054,7 +3049,7 @@
         "amount": 2
       }
     ],
-    "effect": "場に出たとき、相手のアイコンすべてに2ダメージ。",
+    "effect": "ガード。場に出たとき、相手のアイコンすべてに2ダメージ。",
     "flavor": "",
     "art": "/assets/cards/g19-art.jpg",
     "original": "assets/original/g19.webp"
