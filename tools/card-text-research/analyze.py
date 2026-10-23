@@ -17,6 +17,7 @@ import csv
 import json
 import os
 import re
+import subprocess
 import sys
 
 ZEN = str.maketrans("０１２３４５６７８９＋－", "0123456789+-")
@@ -320,6 +321,12 @@ def main():
             w.writerow([r["game"], r["name"], r["url"], r["kind"], r["length"], r["sentences"], "|".join(r["actions"]), "|".join(r["targets"]), "|".join(r["owners"]), "|".join(r["triggers"]), "|".join(r["conditions"]), "|".join(r["keywords"]), "" if r["keyword_first"] is None else int(r["keyword_first"]), " / ".join(r["phrases"])])
     json.dump(summary, open(os.path.join(dst, "summary.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     write_table(summary, os.path.join(dst, "table.md"))
+    # リポジトリの整形（Biome）に合わせる。CI の lint は summary.json の形も見る
+    biome = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../node_modules/.bin/biome")
+    if os.path.exists(biome):
+        subprocess.run([biome, "format", "--write", dst], check=False, capture_output=True)
+    else:
+        print("biome が無いので整形していない（pnpm install のあと pnpm exec biome format --write で整形する）", file=sys.stderr)
     print(json.dumps({g: s["cards"] for g, s in summary.items()}, ensure_ascii=False))
 
 
