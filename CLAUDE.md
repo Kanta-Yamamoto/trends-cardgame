@@ -2,7 +2,7 @@
 
 AIで描いたイラストを立体感のあるキラカードにして遊ぶ、オリジナルカードゲーム。Web とスマホアプリ（Capacitor）で出す予定。
 
-作業の前に [`docs/working-agreement.md`](docs/working-agreement.md)（オーナーからの指示・進め方）と [`docs/history.md`](docs/history.md)（経緯）を読む。公開前のあいだは、CI が通ったら Claude が自分でマージする（オーナーの許可は要らない。公開したら、オーナーの一言でマージする形に戻す）。オーナーや友人が対戦中と分かっているときは本番に出さない。
+作業の前に [`docs/working-agreement.md`](docs/working-agreement.md)（オーナーからの指示・進め方）と [`docs/history.md`](docs/history.md)（経緯）を読む。カード面・演出を触るときは [`docs/design-standard-director.md`](docs/design-standard-director.md)（カード面の基準）と [`docs/attack-motion-standard.md`](docs/attack-motion-standard.md)（攻撃モーションの基準）も読み、新しい演出は入れる前に動くモックで見せる。公開前のあいだは、CI が通ったら Claude が自分でマージする（オーナーの許可は要らない。公開したら、オーナーの一言でマージする形に戻す）。オーナーや友人が対戦中と分かっているときは本番に出さない。
 
 ## 構成（pnpm workspaces + Turborepo）
 

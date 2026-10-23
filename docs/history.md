@@ -585,3 +585,9 @@
 - 依存：公開から 3 日たっていない npm の版は入れない（`minimumReleaseAge: 4320`）。pnpm の `trustPolicy: no-downgrade` も試したが、正しい版（chokidar など）でも止まるので入れなかった。GitHub Actions はコミットで固定し、CI のトークンは読むだけ
 - 権限：GitHub から GCP の権限を借りられるのは main の実行だけ。デプロイ用のアカウントは `run.admin` → `run.developer`（公開範囲の IAM は Terraform だけが変える）
 - main のブランチ保護は、非公開リポジトリだと GitHub Pro が要る（GitHub Free では API が 403）ので入れていない。オーナーの GitHub の 2 段階認証（パスキー）が要
+
+## 10月23日：開発の場を Claude デスクトップの「Code」タブへ
+
+- オーナー：claude.ai のプロジェクトのチャットだと「一回の依頼で色々調べてその間返答を返さないので、何をやっていて何で詰まっていて進捗はどうで、が見えない」「並行してタスクの依頼がしにくい」。VS Code＋Claude Code への移行も考えたが、アーティファクト・Claude Design・Claude in Chrome を残したいので、同じデスクトップアプリの「Code」タブに移す
+- Code タブの Claude はプロジェクトのメモリーを読めないので、メモリーとプロジェクトのナレッジにだけあった決まりをリポジトリへ移した：演出は入れる前にモックで見せる・ほかのカードの動きを流用しない・決まったデザインは本番まで反映する・画像生成と保存は確認なしで進める（`working-agreement.md`「演出・カードデザインの決まり」）。カード面と攻撃モーションの基準（`design-standard-director.md`・`attack-motion-standard.md`）もリポジトリに置いた
+- 並行の進め方（セッションごとに worktree、ブラウザでの確認は 1 セッションに寄せる）は `working-agreement.md`「作業する場所」
