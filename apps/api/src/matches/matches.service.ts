@@ -15,7 +15,6 @@ import {
   type Clock,
   clockAction,
   createGame,
-  encodeCustomDeck,
   type GameEvent,
   type GameState,
   type PlayerId,
@@ -138,12 +137,9 @@ export class MatchesService {
 
   /** 待機している CPU と対戦を始める（CPU のデッキは CPU_DECKS から 1 つ。レーティングは動かない） */
   async createCpu(human: Pairing) {
-    const cpu = CPU_DECKS[randomInt(CPU_DECKS.length)];
-    if (!cpu) throw new Error("CPU のデッキがありません");
-    return this.createMatch("cpu", human, {
-      userId: await this.cpuUser(),
-      deck: encodeCustomDeck(cpu.cards),
-    });
+    const deck = CPU_DECKS[randomInt(CPU_DECKS.length)];
+    if (!deck) throw new Error("CPU のデッキがありません");
+    return this.createMatch("cpu", human, { userId: await this.cpuUser(), deck });
   }
 
   /** その部屋の CPU の席（CPU との対戦でなければ null） */

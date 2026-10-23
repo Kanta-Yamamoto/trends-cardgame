@@ -1,7 +1,7 @@
 import raw from "./cards.json";
 import type { CardDef } from "./types";
 
-export { CPU_DECKS, type CpuDeck } from "./cpuDecks";
+export { CPU_DECKS } from "./cpuDecks";
 export { DECKS, type DeckId } from "./decks";
 export * from "./types";
 

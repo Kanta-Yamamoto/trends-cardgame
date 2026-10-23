@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { randomUUID } from "node:crypto";
 import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { CPU_DECKS } from "@trends/cards";
 import type { GameState } from "@trends/game-core";
 import { io, type Socket } from "socket.io-client";
 import request from "supertest";
@@ -83,7 +84,7 @@ describe("ランダムマッチで待機している CPU", () => {
     const m = await first;
     expect(m.kind).toBe("cpu");
     expect(m.opponent?.name).toBe("CPU");
-    expect(m.opponent?.deck.startsWith("custom:")).toBe(true);
+    expect(CPU_DECKS).toContain(m.opponent?.deck);
 
     // CPU の番なら CPU がターンを終えるまで、自分の番ならターンを終えて CPU に回す
     const back = until(a, (u) => u.action.player === "p2" && u.action.type === "endTurn");
