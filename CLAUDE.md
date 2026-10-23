@@ -2,7 +2,7 @@
 
 AIで描いたイラストを立体感のあるキラカードにして遊ぶ、オリジナルカードゲーム。Web とスマホアプリ（Capacitor）で出す予定。
 
-作業の前に [`docs/working-agreement.md`](docs/working-agreement.md)（オーナーからの指示・進め方）と [`docs/history.md`](docs/history.md)（経緯）を読む。マージはオーナーの一言で行い、オーナーが対戦中は本番に出さない。
+作業の前に [`docs/working-agreement.md`](docs/working-agreement.md)（オーナーからの指示・進め方）と [`docs/history.md`](docs/history.md)（経緯）を読む。公開前のあいだは、CI が通ったら Claude が自分でマージする（オーナーの許可は要らない。公開したら、オーナーの一言でマージする形に戻す）。オーナーや友人が対戦中と分かっているときは本番に出さない。
 
 ## 構成（pnpm workspaces + Turborepo）
 
