@@ -1018,12 +1018,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             return;
           }
           if (does("judge")) {
-            // 『調停者』：場が青のフィールドになり、帯が止まりかけたところで、対象に刃を突き刺す
+            // 『調停者』：着地と同時に場が青のフィールドになり、0.1 秒後に引きの溜めから対象へ光線で突く
             await touch();
             const id = Date.now();
             setArbiter({ id, leaving: false });
-            await gwait(450);
-            await animateJudge(shown, events, next);
+            await animateJudge(shown, events, next, uid);
             setArbiter((x) => (x?.id === id ? { id, leaving: true } : x));
             return;
           }

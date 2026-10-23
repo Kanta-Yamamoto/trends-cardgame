@@ -1,10 +1,10 @@
 import type { AttackTarget, GameEvent, GameState, PlayerId, RuleCard, Unit } from "@trends/game-core";
 import { viewUnit, withRushBoost } from "@trends/game-core";
 import { gsap } from "gsap";
-import { pierce } from "../fx/blade";
 import { dissolve } from "../fx/dissolve";
 import { healMist } from "../fx/healMist";
 import { impact } from "../fx/impact";
+import { thrust } from "../fx/thrust";
 
 /**
  * 対戦画面の演出（DOM を直接アニメーションさせる）。
@@ -682,18 +682,38 @@ export function retireUnits(
 }
 
 /**
- * 『調停者』の裁き：damaged の対象に、青白い刃を1本ずつ重く突き刺す。刺さった瞬間に体力の数字を見せる。
- * 刃が抜けたら、いなくなるアイコンをオワコンへ送る
+ * 『調停者』の裁き：『調停者』から対象へ光線で突き、当たった瞬間に時が止まる（fx/thrust.ts）。
+ * 当たってから 0.5 秒後に、対象をふだんの消え方でオワコンへ送る。arbiterUid は出た『調停者』
  */
-export async function animateJudge(shown: GameState, events: GameEvent[], next: GameState): Promise<void> {
+export async function animateJudge(
+  shown: GameState,
+  events: GameEvent[],
+  next: GameState,
+  arbiterUid?: number,
+): Promise<void> {
   if (!canAnimate() || reduced()) return;
+  const board = q(".board");
   const targets = events.flatMap((e) => {
     if (e.type !== "damaged") return [];
     const u = shown.players[e.player].field[e.slot];
     const el = u ? q(`[data-uid="${u.uid}"]`) : null;
-    return el ? [{ el, amount: e.amount }] : [];
+    return u && el ? [{ el, uid: u.uid, owner: e.player }] : [];
   });
-  await Promise.all(targets.map((t, i) => pierce(t.el, i * 300, () => popNumber(t.el, `-${t.amount}`))));
-  retireUnits(shown, events, next);
-  await wait(targets.length > 0 ? 520 : 0);
+  if (!board || targets.length === 0) {
+    retireUnits(shown, events, next);
+    return;
+  }
+  const arbiter = arbiterUid !== undefined ? q(`[data-uid="${arbiterUid}"]`) : null;
+  const all = new Set(targets.map((t) => t.uid));
+  const alive = new Set(
+    (["p1", "p2"] as const).flatMap((p) => next.players[p].field.flatMap((u) => (u ? [u.uid] : []))),
+  );
+  await thrust(board, arbiter, targets, (uid) => {
+    // その対象を、いつもの消え方でオワコンへ（残る対象はそのまま）
+    const t = targets.find((x) => x.uid === uid);
+    if (t && !alive.has(uid)) toTrash(t.el, t.owner);
+  });
+  // 対象以外にいなくなるアイコンがいれば、まとめて送る
+  retireUnits(shown, events, next, all);
+  await wait(300);
 }
