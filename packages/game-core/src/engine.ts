@@ -1022,23 +1022,8 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         });
       }
       break;
-    case "conspire": {
-      // 山札が残り少なくなったら、その場で闇堕ち（専門家→陰謀論者）
-      const slot = ctx.selfSlot;
-      const u = slot === undefined ? null : me.field[slot];
-      if (!u || slot === undefined || u.dark || u.darkUsed || me.deck.length > (e.deckAtMost ?? 0)) break;
-      const card = must(catalog, u.cardId);
-      if (!card.dark) break;
-      const d = Object.assign(newUnit(state, u.cardId, catalog, false), { dark: true, darkUsed: true });
-      me.field[slot] = d;
-      emit({ type: "darkFall", player: ctx.player, slot, cardId: u.cardId });
-      for (const e of card.dark.effects ?? [])
-        if (triggerOf(e) === "play") runEffect(e, { ...ctx, selfSlot: slot });
-      break;
-    }
     case "attackPerAlly":
     case "attackPerLostToken":
-    case "noDeckOut":
     case "conspiracyWin":
     case "extraAttackOnKill":
     case "focusAura":
@@ -1124,7 +1109,7 @@ function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Co
       emit({ type: "status", player: pid, slot, cardId: u.cardId, status: "眠り" });
     }
   }
-  // 陰謀論者：山札が0枚で自分のターンを始めたら勝ち（ドローより先に見る）
+  // 陰謀論者：自分のターンの始めに山札が0枚なら勝ち（ドローより先に見る）
   const plotter = p.field.find((u) => u && hasPassive(u, "conspiracyWin", catalog));
   if (plotter && p.deck.length === 0) {
     emit({ type: "specialWin", player: pid, cardId: plotter.cardId });
@@ -1133,11 +1118,6 @@ function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Co
     return;
   }
   if (!draw(state, pid, emit)) {
-    // 専門家・陰謀論者が場にいれば、引けなくても負けない
-    const safe = p.field.some(
-      (u) => u && (hasPassive(u, "noDeckOut", catalog) || hasPassive(u, "conspiracyWin", catalog)),
-    );
-    if (safe) return;
     emit({ type: "deckOut", player: pid });
     state.winner = other;
     emit({ type: "won", player: other });

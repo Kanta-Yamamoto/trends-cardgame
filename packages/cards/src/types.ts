@@ -79,12 +79,8 @@ export type CardEffect = (
   | { do: "stageAces" }
   /** 相手のアイコンの数 × per のダメージを、相手のアイコンすべてに（ヒバナ） */
   | { do: "damagePerEnemy"; per: number }
-  /** passive：このアイコンが場にいる間、山札が無くて引けなくても負けない（専門家） */
-  | { do: "noDeckOut" }
-  /** passive：このアイコンが場にいる間、自分の山札が0枚で自分のターンを始めたら勝ち。引けなくても負けない（陰謀論者） */
+  /** passive：このアイコンが場にいる間、自分のターンの始めに自分の山札が0枚なら勝ち（陰謀論者。ドローより先に見る） */
   | { do: "conspiracyWin" }
-  /** turnEnd：自分の山札が deckAtMost 枚以下なら、このアイコンはその場で闇堕ちの姿になる（専門家→陰謀論者） */
-  | { do: "conspire"; deckAtMost?: number }
   /** passive：自分のトークン card（草など）がこのゲームでオワコンに行った数だけ攻撃力+1（クサハミ） */
   | { do: "attackPerLostToken"; card: string }
   /** to が無ければ投稿の対象を眠らせる */
