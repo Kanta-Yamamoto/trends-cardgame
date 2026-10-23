@@ -90,11 +90,9 @@ export function evaluate(state: GameState, player: PlayerId, catalog: Catalog): 
   score += (darkOmens(state, player).length - darkOmens(state, foeId).length) * 3 * WEIGHTS.hand;
   // バズは残しておくほど後で使える
   score += ((me.buzzLeft ?? 0) - (foe.buzzLeft ?? 0)) * WEIGHTS.buzz;
-  // 山札切れが近いと危ない（専門家・陰謀論者が場にいれば負けない）
+  // 山札切れが近いと危ない（陰謀論者が場にいれば、次のターンの始めに勝つ）
   const safe = (pid: PlayerId) =>
-    state.players[pid].field.some(
-      (u) => u && (hasPassive(u, "noDeckOut", catalog) || hasPassive(u, "conspiracyWin", catalog)),
-    );
+    state.players[pid].field.some((u) => u && hasPassive(u, "conspiracyWin", catalog));
   if (me.deck.length === 0 && !safe(player)) score -= 6;
   // 陰謀論者：山札が少ないほど特殊勝利に近い。相手の陰謀論者は早く倒したい
   const plot = (pid: PlayerId) =>

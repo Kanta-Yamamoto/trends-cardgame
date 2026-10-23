@@ -756,28 +756,19 @@
     "epithet": "",
     "type": "icon",
     "rarity": 5,
-    "cost": 6,
+    "cost": 5,
     "attack": 4,
-    "hp": 5,
+    "hp": 4,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
     "keywords": [],
     "effects": [
       {
         "do": "draw",
-        "count": 2
-      },
-      {
-        "on": "passive",
-        "do": "noDeckOut"
-      },
-      {
-        "on": "turnEnd",
-        "do": "conspire",
-        "deckAtMost": 5
+        "count": 1
       }
     ],
-    "effect": "場に出たとき、カードを2枚引く。このアイコンが場にいる間、山札が無くて引けなくても負けない。自分のターンの終わりに、自分の山札が5枚以下なら、その場で陰謀論者に闇堕ちする。",
+    "effect": "場に出たとき、カードを1枚引く。",
     "flavor": "それ、論文ありますか？",
     "art": "/assets/cards/g4-art.jpg",
     "subject": "/assets/cards/g4-subject.webp",
@@ -786,8 +777,8 @@
       "name": "陰謀論者",
       "attack": 4,
       "hp": 4,
-      "keywords": ["凸"],
-      "effect": "凸。このアイコンが場にいる間、自分の山札が0枚で自分のターンを始めたら勝ち（引けなくても負けない）。",
+      "keywords": [],
+      "effect": "自分のターンの始めに、自分の山札が0枚なら勝ち。",
       "art": "/assets/cards/g4-dark-art.jpg",
       "subject": "/assets/cards/g4-dark-subject.webp",
       "original": "assets/original/g4-dark.webp",

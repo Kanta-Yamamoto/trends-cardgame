@@ -97,23 +97,7 @@ const catalog: Record<string, RuleCard> = {
   }),
   hibana: icon("hibana", 7, 2, 3, { effects: [{ do: "damagePerEnemy", per: 2 }] }),
   hyper: icon("hyper", 6, 4, 3, { keywords: ["速攻"], effects: [{ do: "hype", attack: 3 }] }),
-  safeDeck: icon("safeDeck", 5, 3, 4, { effects: [{ on: "passive", do: "noDeckOut" }] }),
   plotter: icon("plotter", 1, 4, 4, { effects: [{ on: "passive", do: "conspiracyWin" }] }),
-  scholar5: icon("scholar5", 5, 3, 4, {
-    rarity: 5,
-    effects: [
-      { on: "passive", do: "noDeckOut" },
-      { on: "turnEnd", do: "conspire" },
-    ],
-    dark: {
-      name: "陰謀論者",
-      attack: 4,
-      hp: 4,
-      keywords: ["凸"],
-      effects: [{ on: "passive", do: "conspiracyWin" }],
-      effect: "",
-    },
-  }),
   burner: icon("burner", 1, 1, 1, { effects: [{ on: "death", do: "draw", count: 1 }] }),
   popper: icon("popper", 2, 1, 1, { effects: [{ on: "death", do: "damage", to: "allEnemies", amount: 1 }] }),
   eater: icon("eater", 3, 1, 3, { effects: [{ on: "passive", do: "attackPerLostToken", card: "kusa" }] }),
@@ -462,7 +446,7 @@ describe("炎上商法・TL浄化・剥がし", () => {
   });
 });
 
-describe("★5 の作り直し（ヒバナ・カグラ・専門家・陰謀論者・クサハミ）", () => {
+describe("★5 の作り直し（ヒバナ・カグラ・陰謀論者・クサハミ）", () => {
   it("ヒバナ：相手のアイコンの数×2 のダメージを、相手のアイコンすべてに", () => {
     let s = withFoe(["hibana"], ["wall"]);
     s = play(s, 0, 0);
@@ -479,15 +463,7 @@ describe("★5 の作り直し（ヒバナ・カグラ・専門家・陰謀論�
     const v = viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog);
     expect([v.attack, v.exposed]).toEqual([4, true]);
   });
-  it("専門家が場にいれば、山札が無くて引けなくても負けない", () => {
-    let s = game(["safeDeck"]);
-    s = play(s, 0, 0);
-    s.players.p1.deck = [];
-    s = end(end(s), "p2");
-    expect(s.winner).toBeNull();
-    expect(s.active).toBe("p1");
-  });
-  it("陰謀論者：場にいる間、山札が0枚で自分のターンを始めたら勝ち", () => {
+  it("陰謀論者：場にいる間、自分のターンの始めに山札が0枚なら勝ち", () => {
     let s = game(["plotter"]);
     s = play(s, 0, 0);
     s = end(s);
@@ -501,21 +477,6 @@ describe("★5 の作り直し（ヒバナ・カグラ・専門家・陰謀論�
     t = play(t, 0, 0);
     t = end(end(t), "p2");
     expect(t.winner).toBeNull();
-  });
-  it("専門家：山札を引き切ったら、自分のターンの終わりにその場で陰謀論者に闇堕ちし、次の自分のターンに勝つ", () => {
-    let s = game(["scholar5"]);
-    s = play(s, 0, 0);
-    s.players.p1.deck = [];
-    const r = run(s, { type: "endTurn", player: "p1" });
-    expect(r.events).toContainEqual(expect.objectContaining({ type: "darkFall", player: "p1", slot: 0 }));
-    expect(r.state.players.p1.field[0]?.dark).toBe(true);
-    const w = run(r.state, { type: "endTurn", player: "p2" });
-    expect(w.state.winner).toBe("p1");
-    // 山札が残っていれば闇堕ちしない
-    let t = game(["scholar5"]);
-    t = play(t, 0, 0);
-    t = end(t);
-    expect(t.players.p1.field[0]?.dark).toBe(false);
   });
   it("倒されたとき：倒れたアイコンの持ち主の効果として働く（連鎖も落ち着くまで）", () => {
     let s = withFoe(["burner"], ["popper", "popper"]);
