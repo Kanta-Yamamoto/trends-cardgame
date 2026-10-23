@@ -7,6 +7,7 @@ import { Decks } from "./pages/Decks";
 import { Gallery } from "./pages/Gallery";
 import { OnlineLobby, OnlineRoom } from "./pages/Online";
 import { Play } from "./pages/Play";
+import { Ranking } from "./pages/Ranking";
 
 export function App() {
   // ログインしているあいだは、自分で組んだデッキをアカウントとそろえる
@@ -21,6 +22,7 @@ export function App() {
         <NavLink to="/decks">デッキ構築</NavLink>
         <NavLink to="/play">CPU と対戦</NavLink>
         <NavLink to="/online">オンライン対戦</NavLink>
+        <NavLink to="/ranking">ランキング</NavLink>
         <span className="spacer" />
         <RefreshButton />
         <InstallButton />
@@ -32,6 +34,7 @@ export function App() {
           <Route path="/play" element={<Play />} />
           <Route path="/online" element={<OnlineLobby />} />
           <Route path="/online/:code" element={<OnlineRoom />} />
+          <Route path="/ranking" element={<Ranking />} />
         </Routes>
       </main>
       <HelpSheet />

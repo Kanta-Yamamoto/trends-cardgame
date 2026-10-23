@@ -1,10 +1,11 @@
-import type { Action, GameState } from "@trends/game-core";
+import type { Action, ClockView, GameState } from "@trends/game-core";
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { io, type Socket } from "socket.io-client";
 import { API_URL } from "../api/client";
 import { type DeckSel, deckFromRef } from "../game/decks";
 import { type RemoteLink, type RemoteUpdate, useGame } from "../game/store";
+import { formatClock, type RatingChange, useLive } from "../online/live";
 import { type AuthConfig, api, loadGoogle, useSession } from "../online/session";
 import { Board, DeckGrid } from "./Play";
 
@@ -41,6 +42,8 @@ interface Seat {
 interface MatchInfo {
   code: string;
   status: string;
+  /** friend（合言葉の部屋）/ random（ランダムマッチ） */
+  kind: string;
   players: { p1: Seat | null; p2: Seat | null };
 }
 interface MatchMsg {
@@ -49,6 +52,22 @@ interface MatchMsg {
   me: Seat | null;
   opponent: Seat | null;
   state: GameState | null;
+  kind: string;
+  clock: ClockView | null;
+  /** ランダムマッチで決着していれば、レーティングの動き */
+  rating: RatingChange | null;
+}
+/** 自分のレーティング */
+export interface MyRating {
+  rating: number;
+  games: number;
+  wins: number;
+}
+
+/** ソケットにつなぐ（API_URL が空なら、画面と同じサーバーにつなぐ） */
+function connect(token: string): Socket {
+  const opts = { auth: { token }, transports: ["websocket", "polling"] };
+  return API_URL ? io(API_URL, opts) : io(opts);
 }
 
 /* ---------- ログイン ---------- */
@@ -138,11 +157,118 @@ function Account() {
   );
 }
 
-/* ---------- ロビー（部屋を作る・合言葉で入る） ---------- */
+/* ---------- ランダムマッチ ---------- */
+
+/** 待ち始めてからの時間を 1 秒ごとに数える */
+function useElapsed(since: number | null) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (since === null) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [since]);
+  return since === null ? 0 : Math.max(0, now - since);
+}
+
+/** 自分のレーティング（レート・戦績） */
+function MyRatingLine({ token }: { token: string | null }) {
+  const [mine, setMine] = useState<MyRating | null>(null);
+  useEffect(() => {
+    api<MyRating>("/me/rating", {}, token)
+      .then(setMine)
+      .catch(() => {});
+  }, [token]);
+  return (
+    <p className="my-rating">
+      あなたのレート <b>{mine?.rating ?? "—"}</b>
+      {mine && mine.games > 0 && (
+        <small>
+          {mine.games}戦 {mine.wins}勝
+        </small>
+      )}
+      <Link to="/ranking" className="btn ghost small">
+        ランキング
+      </Link>
+    </p>
+  );
+}
+
+/** デッキを選ぶと待ち行列に入り、相手が見つかったらその部屋に入る */
+function RandomMatch() {
+  const { token, logout } = useSession();
+  const navigate = useNavigate();
+  /** 相手を探しているデッキ（null なら選ぶ前） */
+  const [deck, setDeck] = useState<DeckSel | null>(null);
+  const [since, setSince] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const waited = useElapsed(since);
+
+  useEffect(() => {
+    if (!deck || !token) return;
+    const socket = connect(token);
+    // つなぎ直したときも、もう一度並ぶ
+    socket.on("connect", () => {
+      socket.emit("queue", { deck: deck.ref }, (ack: { ok: boolean; error?: string }) => {
+        if (ack.ok) return;
+        setError(ack.error ?? "相手を探せませんでした");
+        setDeck(null);
+        setSince(null);
+      });
+    });
+    socket.on("matched", ({ code }: { code: string }) => navigate(`/online/${code}`));
+    socket.on("auth_error", () => logout());
+    return () => {
+      socket.emit("unqueue");
+      socket.disconnect();
+    };
+  }, [deck, token, navigate, logout]);
+
+  const cancel = () => {
+    setDeck(null);
+    setSince(null);
+  };
+
+  return (
+    <div className="online-card">
+      <h2>ランダムマッチ</h2>
+      <MyRatingLine token={token} />
+      {deck ? (
+        <div className="searching" role="status">
+          <span className="search-spin" aria-hidden="true" />
+          <p>
+            相手を探しています <b>{formatClock(waited)}</b>
+          </p>
+          <p className="muted">デッキ：{deck.name}</p>
+          <button type="button" className="btn ghost" onClick={cancel}>
+            やめる
+          </button>
+        </div>
+      ) : (
+        <>
+          <p className="muted">
+            レートの近い人と対戦します。勝つとレートが上がり、負けると下がります（はじめは 1500）。
+          </p>
+          {error && <p className="notice">{error}</p>}
+          <DeckGrid
+            onPick={(sel) => {
+              setError(null);
+              setDeck(sel);
+              setSince(Date.now());
+            }}
+            confirmLabel="このデッキで相手を探す"
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ---------- ロビー（ランダムマッチ／友だちと：部屋を作る・合言葉で入る） ---------- */
 
 export function OnlineLobby() {
   const { user, token } = useSession();
   const navigate = useNavigate();
+  const [tab, setTab] = useState<"random" | "friend">("random");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -173,7 +299,8 @@ export function OnlineLobby() {
       <header className="page-head">
         <h1>オンライン対戦</h1>
         <p className="muted">
-          友だちと対戦します。部屋を作って合言葉（招待リンク）を送るか、もらった合言葉で入ります。
+          ランダムマッチ（レート戦）か、友だちと合言葉で対戦します。持ち時間は毎ターン 30 秒と、1 試合で 5
+          分。どちらも使い切ると負けです。
         </p>
         <Account />
       </header>
@@ -181,27 +308,55 @@ export function OnlineLobby() {
         <Login />
       ) : (
         <>
-          <form className="online-card online-form" onSubmit={join}>
-            <h2>合言葉で入る</h2>
-            <input
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="例：K7QX2M"
-              maxLength={6}
-              aria-label="合言葉"
-            />
-            <button type="submit" className="btn" disabled={code.trim().length < 6}>
-              入る
+          <div className="online-tabs" role="tablist" aria-label="対戦のしかた">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "random"}
+              className={tab === "random" ? "on" : ""}
+              onClick={() => setTab("random")}
+            >
+              ランダムマッチ
             </button>
-          </form>
-          <div className="online-card">
-            <h2>部屋を作る</h2>
-            <p className="muted">使うデッキを選ぶと部屋ができます。</p>
-            {error && <p className="notice">{error}</p>}
-            <fieldset disabled={busy} className="plain">
-              <DeckGrid onPick={create} confirmLabel="このデッキで部屋を作る" />
-            </fieldset>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "friend"}
+              className={tab === "friend" ? "on" : ""}
+              onClick={() => setTab("friend")}
+            >
+              友だちと対戦
+            </button>
           </div>
+          {tab === "random" ? (
+            <RandomMatch />
+          ) : (
+            <>
+              <form className="online-card online-form" onSubmit={join}>
+                <h2>合言葉で入る</h2>
+                <input
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="例：K7QX2M"
+                  maxLength={6}
+                  aria-label="合言葉"
+                />
+                <button type="submit" className="btn" disabled={code.trim().length < 6}>
+                  入る
+                </button>
+              </form>
+              <div className="online-card">
+                <h2>部屋を作る</h2>
+                <p className="muted">
+                  使うデッキを選ぶと部屋ができます。友だちとの対戦では、レートは動きません。
+                </p>
+                {error && <p className="notice">{error}</p>}
+                <fieldset disabled={busy} className="plain">
+                  <DeckGrid onPick={create} confirmLabel="このデッキで部屋を作る" />
+                </fieldset>
+              </div>
+            </>
+          )}
         </>
       )}
     </section>
@@ -237,9 +392,7 @@ export function OnlineRoom() {
   // 接続して部屋に入る。切れても自動でつなぎ直し、入り直す
   useEffect(() => {
     if (!ready || !token) return;
-    const opts = { auth: { token }, transports: ["websocket", "polling"] };
-    // API_URL が空なら、画面と同じサーバーにつなぐ
-    const socket: Socket = API_URL ? io(API_URL, opts) : io(opts);
+    const socket = connect(token);
     const link: RemoteLink = {
       send: (action: Action) =>
         new Promise((resolve) => {
@@ -268,6 +421,8 @@ export function OnlineRoom() {
     socket.on("match", (m: MatchMsg) => {
       setMatch(m);
       setError(null);
+      useLive.getState().setClock(m.clock);
+      useLive.getState().setRating(m.rating);
       if (m.state && m.me && m.opponent) {
         const sel = deckFromRef(m.me.deck);
         if (sel)
@@ -280,10 +435,16 @@ export function OnlineRoom() {
           });
       }
     });
-    socket.on("update", (u: RemoteUpdate) => useGame.getState().receive(u));
+    socket.on("update", (u: RemoteUpdate & { clock?: ClockView | null }) => {
+      // 時計は届いたらすぐ（盤面は演出のあとで進む）
+      if (u.clock !== undefined) useLive.getState().setClock(u.clock);
+      useGame.getState().receive(u);
+    });
+    socket.on("rated", (r: RatingChange) => useLive.getState().setRating(r));
     return () => {
       socket.disconnect();
       useGame.getState().quit();
+      useLive.getState().reset();
     };
   }, [ready, token, code, deck, logout]);
 
