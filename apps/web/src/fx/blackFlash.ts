@@ -15,7 +15,8 @@ import { gsap } from "gsap";
  * 5. 動き出す：カードが白く飛んで震え、白い筋と粒が上と横へ跳ね、盤面が強く揺れ、まわりのアイコンも揺れる。
  *    閃光は 0.15 秒そのままで、0.25 秒で細くなって消える
  * 6. 貫いてから 0.3 秒後（止まっていた時間を除く）：onDeath で、ふだんオワコンになるときと同じ消え方を始める
- * 2 体（自分と相手）なら、0.9 秒（止まった分を足して）ずらして順に貫く。
+ * 2 体（自分と相手）でも、同じ瞬間に貫く（止まる 0.3 秒と盤面の揺れは 1 回だけ）。
+ * 順にずらすと、1 体目が消えている途中に 2 体目の溜めが始まり、壊れて見えやすかったため（オーナー：「処刑するタイミング敵味方同時にして」）
  *
  * 描くのは盤面（board）の中に置いたキャンバス。アイコンの動きは CSS の個別のプロパティ（translate・scale・rotate）で付け、
  * ほかの演出の transform とぶつからないようにする（『調停者』の突き fx/thrust.ts と同じ決まり）。
@@ -30,7 +31,6 @@ const GROW_AT = 600; // 閃光が伸び始める
 const GROW = 250; // 閃光が伸びる長さ（短い先がゆっくり出て、5 乗で一気に伸びる）
 const HIT = GROW_AT + GROW;
 const FREEZE = 300; // 白黒が入れ替わって止まる
-const GAP = 900; // 次の対象までの間（止まっていた時間を除く）
 const AFTER = 300; // 貫いてから消え始めるまで
 const HOLD = 150; // 閃光がそのまま残る
 const FADE = 250; // 閃光が細くなって消える
@@ -52,19 +52,11 @@ export interface FlashTarget {
   uid: number;
 }
 
-const startAt = (i: number) => i * GAP;
-const hitAt = (i: number) => startAt(i) + HIT;
-
-/** 実際の時刻 → 演出の時刻。止まっている間は、演出の時刻が進まない */
-function warp(real: number, n: number) {
-  let shift = 0;
-  for (let i = 0; i < n; i++) {
-    const f = hitAt(i) + shift;
-    if (real < f) break;
-    if (real < f + FREEZE) return { te: hitAt(i), frozen: true };
-    shift += FREEZE;
-  }
-  return { te: real - shift, frozen: false };
+/** 実際の時刻 → 演出の時刻。貫いてから 0.3 秒は止まっていて、演出の時刻が進まない */
+function warp(real: number) {
+  if (real < HIT) return { te: real, frozen: false };
+  if (real < HIT + FREEZE) return { te: HIT, frozen: true };
+  return { te: real - FREEZE, frozen: false };
 }
 
 /** 決まった乱数（対象ごとに同じ形にする） */
@@ -310,7 +302,7 @@ export function blackFlash(
     return Array.from({ length: 120 }, r);
   });
   const dead = new Set<number>();
-  const endReal = hitAt(n - 1) + SPARK + 100 + n * FREEZE;
+  const endReal = HIT + SPARK + 100 + FREEZE;
   let paused = false;
 
   return new Promise((resolve) => {
@@ -348,7 +340,7 @@ export function blackFlash(
     /** 1 コマ描く。続けるなら true */
     const frame = (now: number): boolean => {
       const real = now - t0;
-      const { te: t, frozen } = warp(real, n);
+      const { te: t, frozen } = warp(real);
       // 止まっている間は、GSAP の時計（ほかの演出）も止める
       if (frozen !== paused) {
         paused = frozen;
@@ -380,11 +372,10 @@ export function blackFlash(
         return { x, y, w, h, top: y - h / 2, bottom: y + h / 2 };
       };
 
-      let shake = 0;
       const push = new Map<HTMLElement, { x: number; y: number }>();
       targets.forEach((tg, i) => {
         const el = tg.el;
-        const a = t - startAt(i);
+        const a = t;
         if (a < 0) return;
         const p = at(el);
         const rnd = rnds[i] ?? [];
@@ -408,7 +399,6 @@ export function blackFlash(
         }
         if (after < 0 || frozen) return;
         splinters(ctx, p.x, p.y, after, rnd);
-        shake += shakeAt(after);
         // まわりのアイコンも揺れる（遠いほど遅れて弱く届く）
         for (const o of others) {
           const q = at(o);
@@ -442,6 +432,8 @@ export function blackFlash(
         const q = push.get(o);
         o.style.translate = q ? `${q.x.toFixed(2)}px ${q.y.toFixed(2)}px` : "";
       }
+      // 盤面の揺れは 1 回だけ（2 体を同時に貫いても倍にしない）
+      const shake = frozen ? 0 : shakeAt(t - HIT);
       board.style.translate = shake ? `${shake.toFixed(2)}px ${(shake * -0.5).toFixed(2)}px` : "";
       return real < endReal;
     };
