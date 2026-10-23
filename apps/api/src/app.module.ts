@@ -5,9 +5,10 @@ import { DbModule } from "./db/db.module";
 import { DecksModule } from "./decks/decks.module";
 import { HealthController } from "./health.controller";
 import { MatchesModule } from "./matches/matches.module";
+import { RankingModule } from "./ranking/ranking.module";
 
 @Module({
-  imports: [DbModule, CardsModule, AuthModule, MatchesModule, DecksModule],
+  imports: [DbModule, CardsModule, AuthModule, MatchesModule, DecksModule, RankingModule],
   controllers: [HealthController],
 })
 export class AppModule {}

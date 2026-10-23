@@ -7,7 +7,7 @@ AIで描いたイラストを立体感のあるキラカードにして遊ぶ、
 ## 構成（pnpm workspaces + Turborepo）
 
 - `apps/web` — React 19 + Vite + TypeScript。画面はスマホの縦の形1つだけで、アプリ全体を画面の枠（`src/frame.ts`。PC でも幅 480px まで・中の `position: fixed` は枠いっぱい）に入れてある。カード表示（`src/cards`）、CPU 対戦（`src/pages/Play.tsx`、CPU は `planTurnSearch`）、オンライン対戦（`src/pages/Online.tsx`）。`public/prototypes/cards` にキラカードの HTML 試作（参照用）。書体は Fontsource で同梱（画面の文字＝M PLUS 1、数字・ロゴ＝Lilita One、共通カードの名前＝Dela Gothic One、演出の中の文字（対戦開始の VS など）＝Zen Old Mincho。`src/main.tsx` で読み込む。★5 の専用デザインはカードごとの書体のまま）。PWA（`public/manifest.webmanifest`・`public/sw.js`・`src/pwa.ts`。サービスワーカーの中身を変えたら `sw.js` の `VERSION` を上げる。今ある絵を同じ名前で差し替えたときも上げる）
-- `apps/api` — NestJS 11 + Drizzle ORM + PostgreSQL。`GET /cards`、`GET /health`、Google ログイン（`/auth/*`）、自分で組んだデッキの保存（`GET`・`PUT /me/decks`。ログインしたアカウントごと）、オンライン対戦（`POST /matches` と Socket.IO。仕組みは `docs/online.md`）
+- `apps/api` — NestJS 11 + Drizzle ORM + PostgreSQL。`GET /cards`、`GET /health`、Google ログイン（`/auth/*`）、自分で組んだデッキの保存（`GET`・`PUT /me/decks`。ログインしたアカウントごと）、オンライン対戦（`POST /matches` と Socket.IO。ランダムマッチ・持ち時間・レーティング・ランキング `GET /rankings` も。仕組みは `docs/online.md`）
 - `packages/cards` — カードデータ（`src/cards.json`）と型。web・api・game-core の共通の元データ
 - `packages/game-core` — ゲームのルール。画面に依存しない純粋な関数（`applyAction(state, action, catalog)`）と CPU の思考（`planTurnSearch`：1ターン分をビームサーチで先読みし、相手の殴り返しまで試して盤面の点数で選ぶ。`planTurn` は採点ルールだけの貪欲法で、探索の候補と相手の読みに使う）。ルールの説明は `docs/rules.md`
 - `infra/terraform` — GCP（Cloud Run・Artifact Registry・Secret Manager・Workload Identity）。API が Web も配る1つの Cloud Run 構成。公開の手順は `docs/deploy.md`

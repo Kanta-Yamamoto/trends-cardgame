@@ -1,5 +1,15 @@
 export { autoSacrifice, planTurn } from "./ai";
 export {
+  CLOCK,
+  type Clock,
+  type ClockView,
+  clockAction,
+  clockDeadline,
+  clockFor,
+  startClock,
+  tickClock,
+} from "./clock";
+export {
   CUSTOM_DECK_PREFIX,
   deckAttributes,
   encodeCustomDeck,
@@ -30,6 +40,7 @@ export {
   viewUnit,
   withRushBoost,
 } from "./engine";
+export { expectedScore, RATING, rateGame } from "./rating";
 export { nextRandom } from "./rng";
 export { DEFAULT_SEARCH, evaluate, planTurnSearch, type SearchOptions } from "./search";
 export * from "./types";

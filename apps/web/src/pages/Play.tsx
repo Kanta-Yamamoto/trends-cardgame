@@ -73,6 +73,7 @@ import {
 import { MiniCard } from "../game/MiniCard";
 import { CATALOG, CPU, DECK_INFO, ME, openingMs, setPresenter, useGame } from "../game/store";
 import { useDragPlay } from "../game/useDragPlay";
+import { type ClockLeft, formatClock, useClockLeft, useLive } from "../online/live";
 import { lockZoom, resetZoom } from "../viewport";
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -152,6 +153,8 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}は、このあともう一度ターンを行う`;
     case "resigned":
       return `${who(e.player)}が降参した`;
+    case "timedOut":
+      return `${who(e.player)}の持ち時間が切れた`;
     case "won":
       return `${who(e.player)}の勝ち`;
   }
@@ -783,6 +786,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     resign,
   } = useGame();
   const online = mode === "online";
+  // オンライン対戦の持ち時間（CPU 戦では null）
+  const myClock = useClockLeft(ME, game?.active ?? ME);
+  const foeClock = useClockLeft(CPU, game?.active ?? ME);
   const quit = () => {
     quitGame();
     onQuit?.();
@@ -1297,6 +1303,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       preview={preview({ kind: "leader" })}
       onClick={() => !justDragged() && attack({ kind: "leader" })}
       piles={<Piles owner={CPU} deck={foe.deck.length} trash={foe.trash} onTrash={() => setTrashView(CPU)} />}
+      clock={online && foeClock && !game.winner ? <ClockChip left={foeClock} /> : null}
     />
   );
   const meBar = (
@@ -1312,6 +1319,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       shielded={isShielded(game, ME)}
       delayed={delayedDamageOn(game, ME)}
       piles={<Piles owner={ME} deck={me.deck.length} trash={me.trash} onTrash={() => setTrashView(ME)} />}
+      clock={online && myClock && !game.winner ? <ClockChip left={myClock} mine /> : null}
     />
   );
   const turnPill = !game.winner && (
@@ -1694,7 +1702,16 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       )}
 
       {game.winner && (
-        <Result game={game} onAgain={online ? undefined : () => start(deck)} onQuit={quit} online={online} />
+        <Result
+          game={game}
+          onAgain={online ? undefined : () => start(deck)}
+          onQuit={quit}
+          online={online}
+          endedBy={log
+            .map((l) => l.e.type)
+            .reverse()
+            .find((t) => t === "timedOut" || t === "resigned")}
+        />
       )}
     </div>
   );
@@ -1779,17 +1796,44 @@ function Result({
   onAgain,
   onQuit,
   online,
+  endedBy,
 }: {
   game: GameState;
   onAgain?: () => void;
   onQuit: () => void;
   online: boolean;
+  /** 降参・時間切れで決着したとき */
+  endedBy?: GameEvent["type"];
 }) {
+  // ランダムマッチなら、レーティングの動き
+  const rating = useLive((s) => s.rating);
+  const won = game.winner === ME;
+  const why =
+    endedBy === "timedOut"
+      ? won
+        ? "相手の時間切れ"
+        : "時間切れ"
+      : endedBy === "resigned"
+        ? won
+          ? "相手の降参"
+          : "降参"
+        : null;
   return (
     <div className="result" role="dialog" aria-modal="true" aria-label="対戦結果">
-      <div className={`result-card ${game.winner === ME ? "win" : "lose"}`}>
-        <strong>{game.winner === ME ? "勝利！" : "敗北…"}</strong>
-        <span>{game.turn} ターン目で決着</span>
+      <div className={`result-card ${won ? "win" : "lose"}`}>
+        <strong>{won ? "勝利！" : "敗北…"}</strong>
+        <span>
+          {game.turn} ターン目で決着{why && `（${why}）`}
+        </span>
+        {online && rating && (
+          <p className="result-rating">
+            レート {rating.before} → <b>{rating.after}</b>
+            <em className={rating.after >= rating.before ? "up" : "down"}>
+              {rating.after >= rating.before ? "+" : ""}
+              {rating.after - rating.before}
+            </em>
+          </p>
+        )}
         <div className="result-actions">
           {onAgain && (
             <button type="button" className="btn" onClick={onAgain}>
@@ -1881,7 +1925,41 @@ interface BarProps {
   piles: React.ReactNode;
   /** バズの残り回数 */
   buzz?: number;
+  /** オンライン対戦の持ち時間 */
+  clock?: React.ReactNode;
   children?: React.ReactNode;
+}
+
+/**
+ * 持ち時間の表示。手番の人は、まずターンの 30 秒が減り、使い切ると持ち時間が減る（赤くなる）。
+ * 手番でない人は、持ち時間の残りだけ。差し出しを選ぶ番なら、その残り
+ */
+function ClockChip({ left, mine }: { left: ClockLeft; mine?: boolean }) {
+  const who = mine ? "あなた" : "相手";
+  if (left.pick !== null)
+    return (
+      <span
+        className="pb-clock pick"
+        role="timer"
+        aria-label={`${who}が差し出しを選ぶ残り ${formatClock(left.pick)}`}
+      >
+        選ぶ <b>{formatClock(left.pick)}</b>
+      </span>
+    );
+  const inBank = left.running && left.turn <= 0;
+  const hurry = left.running && (inBank ? left.bank <= 30_000 : left.turn <= 10_000);
+  return (
+    <span
+      className={`pb-clock ${left.running ? "run" : ""} ${inBank ? "bank" : ""} ${hurry ? "hurry" : ""}`}
+      role="timer"
+      aria-label={`${who}の${left.running ? `ターンの残り ${formatClock(left.turn)}、` : ""}持ち時間 ${formatClock(left.bank)}`}
+    >
+      {left.running && !inBank && <b>{formatClock(left.turn)}</b>}
+      <small>
+        持ち時間 <i>{formatClock(left.bank)}</i>
+      </small>
+    </span>
+  );
 }
 
 function PlayerBar({
@@ -1902,6 +1980,7 @@ function PlayerBar({
   piles,
   children,
   buzz,
+  clock,
 }: BarProps) {
   const pct = Math.max(0, Math.min(100, (lp / 20) * 100));
   const pips = Array.from({ length: Math.max(maxMana, mana) }, (_, i) => i < mana);
@@ -1913,6 +1992,7 @@ function PlayerBar({
         {guarded && <span className="pb-guard">ガードで守られている</span>}
         {shielded && <span className="pb-shield">無敵（次の相手のターンまで）</span>}
         {delayed > 0 && <span className="pb-delayed">ターンの終わりに{delayed}ダメージ</span>}
+        {clock}
       </span>
       <span className="pb-lp">
         ライフ <b key={lp}>{lp}</b>

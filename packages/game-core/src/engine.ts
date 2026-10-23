@@ -1162,9 +1162,9 @@ export function applyAction(
   const emit: Emit = (e) => events.push(e);
 
   if (state.winner) throw new RuleError("game_over", "対戦は終了しています");
-  if (action.type === "resign") {
+  if (action.type === "resign" || action.type === "timeout") {
     state.winner = opponent(action.player);
-    emit({ type: "resigned", player: action.player });
+    emit({ type: action.type === "resign" ? "resigned" : "timedOut", player: action.player });
     emit({ type: "won", player: state.winner });
     return { state, events };
   }

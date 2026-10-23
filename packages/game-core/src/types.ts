@@ -147,7 +147,9 @@ export type Action =
   /** 差し出し（フィクサー）：自分のアイコンを1体選ぶ。相手の手番の途中でも、選ぶ番の人が行う */
   | { type: "sacrifice"; player: PlayerId; slot: number }
   /** 降参（相手の勝ちになる。自分のターンでなくてもできる） */
-  | { type: "resign"; player: PlayerId };
+  | { type: "resign"; player: PlayerId }
+  /** 時間切れ（オンライン対戦で、持ち時間を使い切った。サーバーだけが行う。相手の勝ちになる） */
+  | { type: "timeout"; player: PlayerId };
 
 /** 画面側が演出を付けるための出来事の記録 */
 export type GameEvent =
@@ -209,6 +211,7 @@ export type GameEvent =
   /** 手札が上限で、引いたカードがオワコンへ行った */
   | { type: "burned"; player: PlayerId; cardId: string }
   | { type: "resigned"; player: PlayerId }
+  | { type: "timedOut"; player: PlayerId }
   | { type: "turnStarted"; player: PlayerId; turn: number; mana: number }
   | { type: "won"; player: PlayerId };
 

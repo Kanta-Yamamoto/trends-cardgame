@@ -1,5 +1,5 @@
 import type { CardEffect, DarkSide } from "@trends/cards";
-import type { GameState } from "@trends/game-core";
+import type { Clock, GameState } from "@trends/game-core";
 import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 /** カードの定義。元データは packages/cards/src/cards.json で、seed で取り込む */
@@ -51,6 +51,11 @@ export const users = pgTable("users", {
   sub: text("sub").notNull().unique(),
   name: text("name").notNull(),
   picture: text("picture"),
+  /** レーティング（ランダムマッチの勝ち負けで上下する。1500 から） */
+  rating: integer("rating").notNull().default(1500),
+  /** レーティングが動いた対戦の数と、そのうちの勝ち数 */
+  ratedGames: integer("rated_games").notNull().default(0),
+  wins: integer("wins").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 export type UserRow = typeof users.$inferSelect;
@@ -61,6 +66,8 @@ export const matches = pgTable("matches", {
   code: text("code").notNull().unique(),
   /** waiting（相手待ち）/ playing / finished */
   status: text("status").notNull().default("waiting"),
+  /** friend（合言葉の部屋）/ random（ランダムマッチ。レーティングが動く） */
+  kind: text("kind").notNull().default("friend"),
   p1Id: uuid("p1_id")
     .notNull()
     .references(() => users.id),
@@ -70,6 +77,10 @@ export const matches = pgTable("matches", {
   /** game-core の GameState（隠す情報も含む本当の状態。クライアントには stateFor で変えて渡す） */
   state: jsonb("state").$type<GameState>(),
   winnerId: uuid("winner_id").references(() => users.id),
+  /** 持ち時間（game-core の Clock）。この仕組みより前に始まった対戦は null（時間の制限なし） */
+  clock: jsonb("clock").$type<Clock>(),
+  /** 決着でレーティングが動いたときの、両者の前後の値 */
+  ratings: jsonb("ratings").$type<MatchRatings>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
@@ -77,6 +88,9 @@ export const matches = pgTable("matches", {
     .$onUpdate(() => new Date()),
 });
 export type MatchRow = typeof matches.$inferSelect;
+
+/** 決着でのレーティングの動き（p1 / p2 の前後の値） */
+export type MatchRatings = Record<"p1" | "p2", { before: number; after: number }>;
 
 /** アプリが自分で作って持つ設定（ログインのトークンに署名する鍵など） */
 export const appSettings = pgTable("app_settings", {
