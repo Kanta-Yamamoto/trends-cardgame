@@ -175,7 +175,7 @@ export function HoloCard({
       aria-label={
         shown.type === "post"
           ? `${shown.name}（呪文・コスト${shown.cost}）`
-          : `${shown.epithet} ${shown.name}（コスト${shown.cost}・攻撃${shown.attack}・体力${shown.hp}）`
+          : `${shown.name}（コスト${shown.cost}・攻撃${shown.attack}・体力${shown.hp}）`
       }
       onPointerMove={onPointerMove}
     >

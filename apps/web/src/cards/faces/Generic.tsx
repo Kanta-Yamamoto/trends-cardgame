@@ -18,18 +18,12 @@ export function GenericFace({ card }: { card: CardDef }) {
       <div className="kg-rarity" title={`★${card.rarity}`}>
         {stars(card.rarity)}
       </div>
-      {!card.art && (
-        <div className="kg-mark" aria-hidden="true">
-          {card.name.slice(0, 1)}
-        </div>
-      )}
       <DarkTag card={card} className="kg-dark" />
       <div className="kg-plate">
         <span className="kg-type">{typeLabel(card)}</span>
-        {card.epithet && <span className="kg-epi">{card.epithet}</span>}
         <h3 className="kg-name">{card.name}</h3>
         <AttrChips card={card} />
-        <p className="kg-effect">{card.effect ? <EffectText text={card.effect} /> : <i>効果なし</i>}</p>
+        <p className="kg-effect">{card.effect && <EffectText text={card.effect} />}</p>
         {card.type === "icon" && (
           <span className="kg-power">
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />

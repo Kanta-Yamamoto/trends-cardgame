@@ -35,7 +35,6 @@ export function ExpertFace({ card }: { card: CardDef }) {
         </div>
         <div className="paper">
           <div className="head">
-            <span>所見</span>
             <AttrChips card={card} />
           </div>
           <p className="effect">
@@ -45,7 +44,6 @@ export function ExpertFace({ card }: { card: CardDef }) {
             <span className="seal" aria-hidden="true">
               ✦
             </span>
-            <span className="cite">※ 査読済み</span>
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />
           </div>
         </div>

@@ -28,12 +28,10 @@ export function MireiFace({ card }: { card: CardDef }) {
 
       <div className="plate">
         <div className="name">
-          <span className="epi">{card.epithet}</span>
           <h3>{card.name}</h3>
         </div>
         <div className="setlist">
           <div className="head">
-            <span className="label">SETLIST — ENCORE</span>
             <AttrChips card={card} />
           </div>
           <p className="effect">

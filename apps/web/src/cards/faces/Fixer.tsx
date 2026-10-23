@@ -19,5 +19,5 @@ const FIXER_MOTION: DuoMotion = {
 
 /** 『フィクサー』（★5・共通）：テーマの黒と、元の絵の背景の白の二色 */
 export function FixerFace({ card }: { card: CardDef }) {
-  return <DuotoneFace card={card} en="FIXER" motion={FIXER_MOTION} />;
+  return <DuotoneFace card={card} motion={FIXER_MOTION} />;
 }

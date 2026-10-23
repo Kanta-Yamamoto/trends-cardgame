@@ -176,15 +176,13 @@ export interface DarkSide {
 export interface CardDef {
   id: string;
   name: string;
-  /** 肩書き（名前の上に小さく出す）。無ければ空文字 */
-  epithet: string;
   type: CardType;
   rarity: Rarity;
   cost: number;
   /** キャラクターだけが持つ */
   attack?: number;
   hp?: number;
-  /** 0〜1個。0個は共通カード（どのデッキにも入れられる）。勝ち方とデッキの決まりを担う軸 */
+  /** 0〜1個。0個はニュートラルのカード（どのデッキにも入れられる）。勝ち方とデッキの決まりを担う軸 */
   attributes: Attribute[];
   /** 0〜2個。場で手を組む相手（仲間）を決める軸。2種族は★3以上の少数だけ */
   kaiwai: Kaiwai[];
@@ -196,16 +194,16 @@ export interface CardDef {
   targetKaiwai?: Kaiwai;
   /** 呪文の対象を絞る：ダメージを受けているキャラクターだけ／攻撃力が N 以下だけ */
   targetFilter?: { damaged?: boolean; maxAttack?: number };
-  /** カードに書く効果文 */
+  /**
+   * カードに書く効果文。カードに載せる文字は、名前・コスト・攻撃力・体力・属性・種族・★・種類・効果文・闇堕ちの札だけ
+   * （肩書き・フレーバー・通し番号・飾りの文字は載せない。10月24日、docs/card-text.md）
+   */
   effect: string;
-  flavor: string;
   dark?: DarkSide;
   /** 効果で生まれるだけのカード（デッキには入れられない） */
   token?: boolean;
   /** お蔵入り：カード一覧・デッキ構築に出さず、デッキにも入れられない（データと絵は残す） */
   retired?: boolean;
-  number?: string | null;
-  serial?: string;
   /** web の public からのパス。イラストがまだないカードは持たない */
   art?: string;
   subject?: string;

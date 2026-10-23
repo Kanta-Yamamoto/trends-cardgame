@@ -30,7 +30,6 @@ export function RenFace({ card }: { card: CardDef }) {
 
       <div className="plate">
         <div className="name">
-          <span className="epi">{card.epithet}</span>
           <h3 className="foil">{card.name}</h3>
         </div>
         <div className="box">
@@ -41,9 +40,6 @@ export function RenFace({ card }: { card: CardDef }) {
             <EffectText text={card.effect} />
           </p>
           <div className="foot">
-            <span className="serial">
-              SERIAL<b>{card.serial}</b>
-            </span>
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />
           </div>
         </div>

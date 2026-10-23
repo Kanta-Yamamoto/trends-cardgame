@@ -30,24 +30,15 @@ export function WaraFace({ card }: { card: CardDef }) {
       <div className="plate">
         <div className="name">
           <h3>{card.name}</h3>
-          <span className="www" aria-hidden="true">
-            www
-          </span>
-          <span className="epi">{card.epithet}</span>
         </div>
         <div className="bubble">
           <div className="head">
-            <span className="label">
-              <i aria-hidden="true" />
-              コメント
-            </span>
             <AttrChips card={card} />
           </div>
           <p className="effect">
             <EffectText text={card.effect} />
           </p>
           <div className="foot">
-            <span className="react">♥ 草 9,999+</span>
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />
           </div>
         </div>

@@ -36,7 +36,6 @@ export function IdolFace({ card }: { card: CardDef }) {
             <EffectText text={card.effect} />
           </p>
           <div className="foot">
-            <span className="stamp">♡ LIVE</span>
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />
           </div>
         </div>

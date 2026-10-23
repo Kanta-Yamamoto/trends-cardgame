@@ -118,7 +118,3 @@ export function DarkTag({ card, className = "dark-tag" }: { card: CardDef; class
     </span>
   );
 }
-
-export function cardNo(card: CardDef): string {
-  return `${(card.number ?? "").replace("/", " / ")} · TRENDS`;
-}

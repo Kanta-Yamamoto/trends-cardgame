@@ -29,24 +29,18 @@ export function AiriFace({ card }: { card: CardDef }) {
 
       <div className="plate">
         <div className="name">
-          <span className="epi">{card.epithet}</span>
           <h3>{card.name}</h3>
         </div>
         <div className="ticket">
-          <div className="stub" aria-hidden="true">
-            <span>ARENA</span>
-            <b>A-01</b>
-          </div>
+          <div className="stub" aria-hidden="true" />
           <div className="main">
             <div className="head">
-              <span className="label">LIVE TICKET</span>
               <AttrChips card={card} />
             </div>
             <p className="effect">
               <EffectText text={card.effect} />
             </p>
             <div className="foot">
-              <span className="admit">♛ 全公演 最前列</span>
               <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />
             </div>
           </div>

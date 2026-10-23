@@ -17,10 +17,11 @@ describe("HoloCard", () => {
     const ren = CARDS.find((c) => c.id === "c2");
     if (!ren) throw new Error("c2 not found");
     const { container } = render(<HoloCard card={ren} idle={false} />);
-    expect(screen.getByRole("img", { name: /炎上系配信者 レン/ })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /^レン（/ })).toBeInTheDocument();
     expect(container.querySelector(".stat-atk")).toHaveTextContent(String(ren.attack));
     expect(container.querySelector(".stat-hp")).toHaveTextContent(String(ren.hp));
-    expect(screen.getByText("No. 007 / 100")).toBeInTheDocument();
+    // カードに要らない文字（通し番号など）は出さない
+    expect(container.textContent).not.toMatch(/SERIAL|No\. 007/);
   });
 });
 

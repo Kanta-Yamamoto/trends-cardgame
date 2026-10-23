@@ -19,10 +19,6 @@ export function LalaFace({ card }: { card: CardDef }) {
       <div className="layer rim" />
       <div className="layer subject" />
       <div className="layer subject-shine" />
-      <div className="layer live" aria-hidden="true">
-        <i />
-        LIVE
-      </div>
 
       <div className="cost">
         <b>{card.cost}</b>
@@ -32,22 +28,16 @@ export function LalaFace({ card }: { card: CardDef }) {
 
       <div className="plate">
         <div className="name">
-          <span className="epi">{card.epithet}</span>
           <h3>{card.name}</h3>
         </div>
         <div className="reply">
           <div className="head">
-            <span className="label">
-              <i aria-hidden="true" />
-              リプ欄
-            </span>
             <AttrChips card={card} />
           </div>
           <p className="effect">
             <EffectText text={card.effect} />
           </p>
           <div className="foot">
-            <span className="react">wwwwwwww ↑ 99,999</span>
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />
           </div>
         </div>
