@@ -130,7 +130,7 @@ export function MiniCard({
       {!onField && (
         <span className="mini-top">
           <span className="mini-attrs" aria-hidden="true">
-            {card.attributes.length === 0 && <i style={{ background: "#d5dae3", color: "#2b3240" }}>共</i>}
+            {card.attributes.length === 0 && <i style={{ background: "#d5dae3", color: "#2b3240" }}>ニ</i>}
             {card.attributes.map((a) => (
               <i key={a} style={{ background: ATTR_META[a].color, color: ATTR_META[a].deep }}>
                 {ATTR_META[a].mark}
@@ -146,12 +146,7 @@ export function MiniCard({
       )}
       {!onField && <span className="mini-stars">{stars(card.rarity)}</span>}
       {!onField && card.dark && !dark && <span className="mini-darkmark">闇堕ち</span>}
-      {!onField && (
-        <span className="mini-name">
-          {card.epithet && !dark && <small>{card.epithet}</small>}
-          {name}
-        </span>
-      )}
+      {!onField && <span className="mini-name">{name}</span>}
       {(keywords.length > 0 || view) && (
         <span className="mini-kws">
           {/* 場では本当に要る札だけ：ガードと状態。ほかのキーワードは押して見る */}

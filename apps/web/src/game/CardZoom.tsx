@@ -72,7 +72,6 @@ export function CardZoom({
             {card.type === "icon" ? "キャラクター" : "呪文"}・{stars(card.rarity)}・コスト {card.cost}
           </p>
           <h2>
-            {!dark && card.epithet && <small>{card.epithet}</small>}
             {name}
             {dark && <small className="zs-dark">闇堕ちの姿</small>}
           </h2>

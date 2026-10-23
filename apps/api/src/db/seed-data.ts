@@ -6,7 +6,8 @@ export function cardRows(): (typeof cards.$inferInsert)[] {
   return CARDS.map((c) => ({
     id: c.id,
     name: c.name,
-    epithet: c.epithet,
+    // 肩書き・フレーバー・通し番号はカードに載せない（列は残して空にする）
+    epithet: "",
     type: c.type,
     rarity: c.rarity,
     cost: c.cost,
@@ -19,9 +20,9 @@ export function cardRows(): (typeof cards.$inferInsert)[] {
     target: c.target ?? null,
     targetKaiwai: c.targetKaiwai ?? null,
     effect: c.effect,
-    flavor: c.flavor,
-    number: c.number ?? null,
-    serial: c.serial ?? null,
+    flavor: "",
+    number: null,
+    serial: null,
     art: c.art ?? null,
     subject: c.subject ?? null,
     original: c.original ?? null,

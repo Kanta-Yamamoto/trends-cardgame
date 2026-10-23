@@ -372,7 +372,6 @@ function OpeningSide({ side, sel, who }: { side: "me" | "foe"; sel: DeckSel; who
                 className="op-attr"
                 style={{ background: ATTR_META[a].color, color: ATTR_META[a].deep }}
               >
-                <i aria-hidden="true">{ATTR_META[a].mark}</i>
                 {a}
               </span>
             ))
@@ -1758,10 +1757,7 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
         />
         <span className="ps-body">
           <span className="ps-head">
-            <b className="ps-name">
-              {name}
-              {card.epithet && <small>{card.epithet}</small>}
-            </b>
+            <b className="ps-name">{name}</b>
             <span className="ps-meta">
               <i className="ps-cost">{card.cost}</i>
               {card.type === "icon" ? (

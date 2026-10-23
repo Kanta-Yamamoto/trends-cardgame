@@ -50,7 +50,6 @@ export function RareFace({ card }: { card: CardDef }) {
       <div className="kr-plate">
         <div className="kr-name">
           <span className="kr-type">{typeLabel(card)}</span>
-          {card.epithet && <span className="kr-epi">{card.epithet}</span>}
           <h3>{card.name}</h3>
         </div>
         <div className="kr-box">

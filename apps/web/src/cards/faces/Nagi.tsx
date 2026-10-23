@@ -33,7 +33,6 @@ export function NagiFace({ card }: { card: CardDef }) {
 
       <div className="plate">
         <div className="name">
-          <span className="epi">{card.epithet}</span>
           <h3>{card.name}</h3>
         </div>
         <div className="player">
@@ -49,7 +48,6 @@ export function NagiFace({ card }: { card: CardDef }) {
           <div className="foot">
             <span className="seek" aria-hidden="true">
               <span className="bar" />
-              <span className="time">0:42 / ∞</span>
             </span>
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />
           </div>

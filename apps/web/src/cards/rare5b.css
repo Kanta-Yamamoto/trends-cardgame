@@ -252,14 +252,11 @@
     background: linear-gradient(180deg, var(--rose), var(--berry)); color: #fff; border-radius: 0.6em 0 0 0.6em;
     border-right: 0.14em dashed #fff;
   }
-  .stub span { font: 700 0.55em/1 var(--f-num); letter-spacing: 0.25em; }
-  .stub b { font: 700 0.8em/1 var(--f-num); letter-spacing: 0.1em; }
   .main { display: grid; gap: 0.3em; padding: 0.5em 0.7em 0.5em; }
   .label { font: 700 0.62em/1 var(--f-num); letter-spacing: 0.3em; color: var(--berry); }
   .chip.kaiwai { background: var(--rose-2); color: var(--berry); box-shadow: none; }
   .effect { font: 700 0.84em/1.55 var(--f-body); color: var(--ink); }
   .effect .kw { color: var(--berry); background: linear-gradient(transparent 60%, #e2d4ff 60%); }
-  .admit { font: 700 0.62em/1.2 var(--f-body); letter-spacing: 0.08em; color: var(--rosegold); }
   .glare {
     background: radial-gradient(farthest-corner circle at var(--mx) var(--my), #ffffffcc 0%, #e2d4ff30 25%, transparent 55%);
     mix-blend-mode: overlay; opacity: calc(0.3 + var(--g) * 0.6);

@@ -2,7 +2,6 @@
   {
     "id": "c2",
     "name": "レン",
-    "epithet": "炎上系配信者",
     "type": "icon",
     "rarity": 5,
     "cost": 6,
@@ -24,7 +23,6 @@
       }
     ],
     "effect": "連撃。場に出たとき、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。相手のキャラクターを破壊するたび、もう1回攻撃できる。",
-    "flavor": "「遅えよ。全部、俺がもらってく」",
     "dark": {
       "name": "闇堕ちレン",
       "attack": 6,
@@ -43,7 +41,6 @@
         }
       ]
     },
-    "serial": "No. 007 / 100",
     "art": "/assets/cards/c2-art.jpg",
     "subject": "/assets/cards/c2-subject.webp",
     "original": "assets/original/c2-ren.png"
@@ -51,7 +48,6 @@
   {
     "id": "f1",
     "name": "切り抜き職人",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 1,
@@ -62,14 +58,12 @@
     "keywords": ["速攻"],
     "effects": [],
     "effect": "速攻。",
-    "flavor": "15秒あれば十分だ。",
     "art": "/assets/cards/f1-art.jpg",
     "original": "assets/original/f1.webp"
   },
   {
     "id": "f2",
     "name": "突撃系配信者",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 4,
@@ -87,14 +81,12 @@
       }
     ],
     "effect": "突進。破壊されたとき、相手のプレイヤーに2ダメージ。",
-    "flavor": "",
     "art": "/assets/cards/f2-art.jpg",
     "original": "assets/original/f2.webp"
   },
   {
     "id": "f3",
     "name": "粘着アンチ",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 3,
@@ -105,14 +97,12 @@
     "keywords": ["突進", "連撃"],
     "effects": [],
     "effect": "突進。連撃。",
-    "flavor": "",
     "art": "/assets/cards/f3-art.jpg",
     "original": "assets/original/f3.webp"
   },
   {
     "id": "f4",
     "name": "晒し",
-    "epithet": "",
     "type": "post",
     "rarity": 1,
     "cost": 1,
@@ -129,7 +119,6 @@
       }
     ],
     "effect": "相手のキャラクター1体を晒し状態にする。カードを1枚引く。",
-    "flavor": "魚拓は取った。",
     "target": "enemyIcon",
     "art": "/assets/cards/f4-art.jpg",
     "original": "assets/original/f4.webp",
@@ -138,7 +127,6 @@
   {
     "id": "f5",
     "name": "大炎上",
-    "epithet": "",
     "type": "post",
     "rarity": 3,
     "cost": 3,
@@ -155,7 +143,6 @@
       }
     ],
     "effect": "相手のキャラクター1体に3ダメージ。そのキャラクターを晒し状態にする。",
-    "flavor": "トレンド1位、おめでとう。",
     "target": "enemyIcon",
     "art": "/assets/cards/f5-art.jpg",
     "original": "assets/original/f5.webp"
@@ -163,7 +150,6 @@
   {
     "id": "k1",
     "name": "猫ミーム",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 4,
@@ -187,14 +173,12 @@
       }
     ],
     "effect": "場に出たとき、草を2体出す。自分のライフを2回復する。",
-    "flavor": "",
     "art": "/assets/cards/k1-art.jpg",
     "original": "assets/original/k1.webp"
   },
   {
     "id": "k2",
     "name": "コピペ",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 5,
@@ -210,14 +194,12 @@
       }
     ],
     "effect": "ガード。場に出たとき、自分の空いている枠に、トークンとしてこのキャラクターのコピーを1体出す。",
-    "flavor": "",
     "art": "/assets/cards/k2-art.jpg",
     "original": "assets/original/k2.webp"
   },
   {
     "id": "k3",
     "name": "大喜利職人",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 3,
@@ -234,14 +216,12 @@
       }
     ],
     "effect": "コンボ。",
-    "flavor": "お題：こんなカードゲームは嫌だ。",
     "art": "/assets/cards/k3-art.jpg",
     "original": "assets/original/k3.webp"
   },
   {
     "id": "k4",
     "name": "大草原",
-    "epithet": "",
     "type": "post",
     "rarity": 3,
     "cost": 6,
@@ -260,14 +240,12 @@
       }
     ],
     "effect": "自分の空いている枠すべてに草を出し、自分のキャラクターすべてに攻撃力+1。",
-    "flavor": "",
     "art": "/assets/cards/k4-art.jpg",
     "original": "assets/original/k4.webp"
   },
   {
     "id": "k5",
     "name": "伝説のコラ画像",
-    "epithet": "",
     "type": "icon",
     "rarity": 5,
     "cost": 6,
@@ -292,7 +270,6 @@
       }
     ],
     "effect": "自分の場のほかのミーム種族1体につき攻撃力+1。場に出たとき、このターン自分のキャラクターすべてがすぐ攻撃でき、ガードを無視できる。",
-    "flavor": "作者不明。保存数は10万。",
     "art": "/assets/cards/k5-art.jpg",
     "subject": "/assets/cards/k5-subject.webp",
     "original": "assets/original/k5.webp",
@@ -317,7 +294,6 @@
   {
     "id": "t-kusa",
     "name": "草",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 0,
@@ -328,7 +304,6 @@
     "keywords": [],
     "effects": [],
     "effect": "",
-    "flavor": "w",
     "token": true,
     "art": "/assets/cards/t-kusa-art.jpg",
     "original": "assets/original/t-kusa.webp"
@@ -336,7 +311,6 @@
   {
     "id": "m1",
     "name": "トップアイドル",
-    "epithet": "",
     "type": "icon",
     "rarity": 5,
     "cost": 6,
@@ -356,7 +330,6 @@
       }
     ],
     "effect": "注目。場に出たとき、隣に親衛隊を1体出す。センターに出したときは、左右に2体出す。",
-    "flavor": "センターは、譲らない。",
     "dark": {
       "name": "闇深アイドル",
       "attack": 6,
@@ -381,7 +354,6 @@
   {
     "id": "m2",
     "name": "地下アイドル",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 2,
@@ -392,14 +364,12 @@
     "keywords": ["注目"],
     "effects": [],
     "effect": "注目。",
-    "flavor": "いつか、あのステージへ。",
     "art": "/assets/cards/m2-art.jpg",
     "original": "assets/original/m2.webp"
   },
   {
     "id": "m3",
     "name": "貢ぐファン",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 1,
@@ -417,14 +387,12 @@
       }
     ],
     "effect": "場に出たとき、ランダムな自分のほかのキャラクター1体に攻撃力+1・体力+1。",
-    "flavor": "推しは推せるときに推せ。",
     "art": "/assets/cards/m3-art.jpg",
     "original": "assets/original/m3.webp"
   },
   {
     "id": "m4",
     "name": "親衛隊",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 3,
@@ -435,14 +403,12 @@
     "keywords": ["ガード"],
     "effects": [],
     "effect": "ガード。",
-    "flavor": "",
     "art": "/assets/cards/m4-art.jpg",
     "original": "assets/original/m4.webp"
   },
   {
     "id": "m5",
     "name": "ファンサ",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 2,
@@ -457,7 +423,6 @@
       }
     ],
     "effect": "自分のキャラクター1体に攻撃力+2・体力+2。",
-    "flavor": "",
     "target": "allyIcon",
     "art": "/assets/cards/m5-art.jpg",
     "original": "assets/original/m5.webp"
@@ -465,7 +430,6 @@
   {
     "id": "c3",
     "name": "ミナモ",
-    "epithet": "癒し系VTuber",
     "type": "icon",
     "rarity": 5,
     "cost": 5,
@@ -489,8 +453,6 @@
       }
     ],
     "effect": "注目。場に出たとき、自分のキャラクターすべてと自分のライフを2回復する。自分のターンの終わりに、自分のキャラクターすべてと自分のライフを1回復する。",
-    "flavor": "「みんなー！ 今日も空から、こんにちはっ！」",
-    "number": "023/040",
     "art": "/assets/cards/c3-art.jpg",
     "subject": "/assets/cards/c3-subject.webp",
     "original": "assets/original/c3-minamo.png"
@@ -498,7 +460,6 @@
   {
     "id": "i1",
     "name": "カピバラ",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 3,
@@ -509,14 +470,12 @@
     "keywords": ["ガード"],
     "effects": [],
     "effect": "ガード。",
-    "flavor": "動じない。",
     "art": "/assets/cards/i1-art.jpg",
     "original": "assets/original/i1.webp"
   },
   {
     "id": "i2",
     "name": "おひるねねこ",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 4,
@@ -534,14 +493,12 @@
       }
     ],
     "effect": "自分のターンの終わりに、自分のライフを2回復する。",
-    "flavor": "すぴー。",
     "art": "/assets/cards/i2-art.jpg",
     "original": "assets/original/i2.webp"
   },
   {
     "id": "i3",
     "name": "柴犬",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 4,
@@ -558,14 +515,12 @@
       }
     ],
     "effect": "自分が回復の効果を使うたび、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。",
-    "flavor": "",
     "art": "/assets/cards/i3-art.jpg",
     "original": "assets/original/i3.webp"
   },
   {
     "id": "i4",
     "name": "寝落ち配信",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 2,
@@ -582,7 +537,6 @@
       }
     ],
     "effect": "相手のキャラクター1体を眠り状態にする。カードを1枚引く。",
-    "flavor": "おやすみ、また明日。",
     "target": "enemyIcon",
     "art": "/assets/cards/i4-art.jpg",
     "original": "assets/original/i4.webp"
@@ -590,7 +544,6 @@
   {
     "id": "i5",
     "name": "優しい世界",
-    "epithet": "",
     "type": "post",
     "rarity": 3,
     "cost": 8,
@@ -609,14 +562,12 @@
       }
     ],
     "effect": "相手のキャラクターすべてを眠り状態にし、自分のキャラクターすべてと自分のライフを5回復する。",
-    "flavor": "",
     "art": "/assets/cards/i5-art.jpg",
     "original": "assets/original/i5.webp"
   },
   {
     "id": "i6",
     "name": "TL浄化",
-    "epithet": "",
     "type": "post",
     "rarity": 4,
     "cost": 5,
@@ -630,14 +581,12 @@
       }
     ],
     "effect": "相手のキャラクターすべての強化と状態を消し、闇堕ちした相手のキャラクターを元の姿に戻す。",
-    "flavor": "殺伐としたTLに、一筋の光。",
     "art": "/assets/cards/i6-art.jpg",
     "original": "assets/original/i6.webp"
   },
   {
     "id": "c1",
     "name": "ミコト",
-    "epithet": "神降臨",
     "type": "icon",
     "rarity": 5,
     "cost": 6,
@@ -654,8 +603,6 @@
       }
     ],
     "effect": "場に出たとき、相手のプレイヤーに「次の自分のターンの終わりに10ダメージを受ける」効果を付与する。",
-    "flavor": "",
-    "number": "001/040",
     "art": "/assets/cards/c1-art.jpg",
     "subject": "/assets/cards/c1-subject.webp",
     "original": "assets/original/c1-shirogane.png"
@@ -663,7 +610,6 @@
   {
     "id": "g1",
     "name": "雑学博士",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 2,
@@ -681,14 +627,12 @@
       }
     ],
     "effect": "場に出たとき、手札が3枚以下ならカードを1枚引く。",
-    "flavor": "ちなみに、カピバラはネズミの仲間。",
     "art": "/assets/cards/g1-art.jpg",
     "original": "assets/original/g1.webp"
   },
   {
     "id": "g2",
     "name": "有識者ニキ",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 3,
@@ -699,14 +643,12 @@
     "keywords": ["ガード"],
     "effects": [],
     "effect": "ガード。",
-    "flavor": "",
     "art": "/assets/cards/g2-art.jpg",
     "original": "assets/original/g2.webp"
   },
   {
     "id": "g3",
     "name": "コミュニティノート",
-    "epithet": "",
     "type": "post",
     "rarity": 3,
     "cost": 3,
@@ -723,7 +665,6 @@
       }
     ],
     "effect": "相手のキャラクター1体を沈黙状態にし、攻撃力-2。",
-    "flavor": "読者が背景情報を追加しました。",
     "target": "enemyIcon",
     "art": "/assets/cards/g3-art.jpg",
     "original": "assets/original/g3.webp"
@@ -731,7 +672,6 @@
   {
     "id": "g4",
     "name": "専門家",
-    "epithet": "",
     "type": "icon",
     "rarity": 5,
     "cost": 5,
@@ -747,7 +687,6 @@
       }
     ],
     "effect": "場に出たとき、カードを1枚引く。",
-    "flavor": "それ、論文ありますか？",
     "art": "/assets/cards/g4-art.jpg",
     "subject": "/assets/cards/g4-subject.webp",
     "original": "assets/original/g4.webp",
@@ -771,7 +710,6 @@
   {
     "id": "n1",
     "name": "通りすがりの一般人",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 1,
@@ -782,7 +720,6 @@
     "keywords": [],
     "effects": [],
     "effect": "",
-    "flavor": "たまたま見かけただけ。",
     "art": "/assets/cards/n1-art.jpg",
     "original": "assets/original/n1.webp",
     "retired": true
@@ -790,7 +727,6 @@
   {
     "id": "n2",
     "name": "ROM専",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 5,
@@ -801,14 +737,12 @@
     "keywords": [],
     "effects": [],
     "effect": "",
-    "flavor": "書き込まないけど、ずっといる。",
     "art": "/assets/cards/n2-art.jpg",
     "original": "assets/original/n2.webp"
   },
   {
     "id": "n3",
     "name": "鍵垢",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 4,
@@ -819,14 +753,12 @@
     "keywords": ["ガード"],
     "effects": [],
     "effect": "ガード。",
-    "flavor": "フォロー許可制。",
     "art": "/assets/cards/n3-art.jpg",
     "original": "assets/original/n3.webp"
   },
   {
     "id": "n4",
     "name": "新規アカウント",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 2,
@@ -837,7 +769,6 @@
     "keywords": [],
     "effects": [],
     "effect": "",
-    "flavor": "はじめまして。",
     "art": "/assets/cards/n4-art.jpg",
     "original": "assets/original/n4.webp",
     "retired": true
@@ -845,7 +776,6 @@
   {
     "id": "n5",
     "name": "古参",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 6,
@@ -856,14 +786,12 @@
     "keywords": [],
     "effects": [],
     "effect": "",
-    "flavor": "昔から知ってた。",
     "art": "/assets/cards/n5-art.jpg",
     "original": "assets/original/n5.webp"
   },
   {
     "id": "n6",
     "name": "インフルエンサー",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 3,
@@ -880,14 +808,12 @@
       }
     ],
     "effect": "場に出たとき、カードを1枚引く。",
-    "flavor": "案件のご相談はDMまで。",
     "art": "/assets/cards/n6-art.jpg",
     "original": "assets/original/n6.webp"
   },
   {
     "id": "n7",
     "name": "拡散希望",
-    "epithet": "",
     "type": "post",
     "rarity": 1,
     "cost": 1,
@@ -901,7 +827,6 @@
       }
     ],
     "effect": "カードを1枚引く。",
-    "flavor": "RTで応援お願いします。",
     "art": "/assets/cards/n7-art.jpg",
     "original": "assets/original/n7.webp",
     "retired": true
@@ -909,7 +834,6 @@
   {
     "id": "n8",
     "name": "いいね",
-    "epithet": "",
     "type": "post",
     "rarity": 1,
     "cost": 1,
@@ -924,7 +848,6 @@
       }
     ],
     "effect": "自分のキャラクター1体に攻撃力+1・体力+1。",
-    "flavor": "♡",
     "target": "allyIcon",
     "art": "/assets/cards/n8-art.jpg",
     "original": "assets/original/n8.webp"
@@ -932,7 +855,6 @@
   {
     "id": "n9",
     "name": "スクショ",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 2,
@@ -950,7 +872,6 @@
       }
     ],
     "effect": "相手のキャラクター1体に1ダメージ。カードを1枚引く。",
-    "flavor": "消しても無駄。",
     "target": "enemyIcon",
     "art": "/assets/cards/n9-art.jpg",
     "original": "assets/original/n9.webp"
@@ -958,7 +879,6 @@
   {
     "id": "n10",
     "name": "トレンド入り",
-    "epithet": "",
     "type": "post",
     "rarity": 3,
     "cost": 3,
@@ -972,7 +892,6 @@
       }
     ],
     "effect": "相手のキャラクター1体に3ダメージ。",
-    "flavor": "なんで？",
     "target": "enemyIcon",
     "art": "/assets/cards/n10-art.jpg",
     "original": "assets/original/n10.webp"
@@ -980,7 +899,6 @@
   {
     "id": "f6",
     "name": "野次馬",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 2,
@@ -997,14 +915,12 @@
       }
     ],
     "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を晒し状態にする。",
-    "flavor": "なになに、燃えてるの？",
     "art": "/assets/cards/f6-art.jpg",
     "original": "assets/original/f6.webp"
   },
   {
     "id": "f7",
     "name": "便乗アカウント",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 1,
@@ -1026,7 +942,6 @@
       }
     ],
     "effect": "速攻。場に出たとき、自分の場に炎属性が3体以上いれば攻撃力+1。",
-    "flavor": "この流れに乗るしかない。",
     "art": "/assets/cards/f7-art.jpg",
     "original": "assets/original/f7.webp",
     "retired": true
@@ -1034,7 +949,6 @@
   {
     "id": "f8",
     "name": "炎上商法",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 2,
@@ -1049,14 +963,12 @@
       }
     ],
     "effect": "自分のキャラクター1体に、このターン攻撃力+3。自分のターンの終わりに、そのキャラクターを晒し状態にする。",
-    "flavor": "燃えれば勝ち。",
     "art": "/assets/cards/f8-art.jpg",
     "original": "assets/original/f8.webp"
   },
   {
     "id": "f9",
     "name": "まとめサイト管理人",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 6,
@@ -1074,14 +986,12 @@
       }
     ],
     "effect": "場に出たとき、相手のキャラクターすべてに1ダメージ。",
-    "flavor": "",
     "art": "/assets/cards/f9-art.jpg",
     "original": "assets/original/f9.webp"
   },
   {
     "id": "f10",
     "name": "暴露系配信者",
-    "epithet": "",
     "type": "icon",
     "rarity": 4,
     "cost": 7,
@@ -1098,14 +1008,12 @@
       }
     ],
     "effect": "速攻。場に出たとき、相手のキャラクターすべてを晒し状態にする。",
-    "flavor": "",
     "art": "/assets/cards/f10-art.jpg",
     "original": "assets/original/f10.webp"
   },
   {
     "id": "c4",
     "name": "ヒバナ",
-    "epithet": "炎上女王",
     "type": "icon",
     "rarity": 5,
     "cost": 7,
@@ -1121,14 +1029,12 @@
       }
     ],
     "effect": "場に出たとき、相手のキャラクターすべてに、相手のキャラクターの数×2ダメージ。",
-    "flavor": "「燃えるなら、派手にいこうよ」",
     "art": "/assets/cards/c4-art.jpg",
     "original": "assets/original/c4.webp"
   },
   {
     "id": "m6",
     "name": "ガチ恋勢",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 5,
@@ -1150,14 +1056,12 @@
       }
     ],
     "effect": "場に出たとき、自分の場に推し属性が3体以上いれば、攻撃力+2・体力+2。",
-    "flavor": "",
     "art": "/assets/cards/m6-art.jpg",
     "original": "assets/original/m6.webp"
   },
   {
     "id": "m7",
     "name": "歌い手",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 4,
@@ -1168,14 +1072,12 @@
     "keywords": ["速攻"],
     "effects": [],
     "effect": "速攻。",
-    "flavor": "",
     "art": "/assets/cards/m7-art.jpg",
     "original": "assets/original/m7.webp"
   },
   {
     "id": "m8",
     "name": "握手会",
-    "epithet": "",
     "type": "post",
     "rarity": 1,
     "cost": 1,
@@ -1190,7 +1092,6 @@
       }
     ],
     "effect": "自分のキャラクター1体に攻撃力+1・体力+1。",
-    "flavor": "この手、一生洗わない。",
     "target": "allyIcon",
     "art": "/assets/cards/m8-art.jpg",
     "original": "assets/original/m8.webp",
@@ -1199,7 +1100,6 @@
   {
     "id": "m9",
     "name": "ホスト系配信者",
-    "epithet": "",
     "type": "icon",
     "rarity": 4,
     "cost": 8,
@@ -1216,14 +1116,12 @@
       }
     ],
     "effect": "注目。場に出たとき、攻撃力が4以下の相手のキャラクターのうち、攻撃力がいちばん高い1体を奪う。",
-    "flavor": "",
     "art": "/assets/cards/m9-art.jpg",
     "original": "assets/original/m9.webp"
   },
   {
     "id": "m10",
     "name": "ペンライトの海",
-    "epithet": "",
     "type": "post",
     "rarity": 3,
     "cost": 3,
@@ -1238,7 +1136,6 @@
       }
     ],
     "effect": "自分のキャラクターすべてに攻撃力+1・体力+1。",
-    "flavor": "会場が、ひとつの色になる。",
     "art": "/assets/cards/m10-art.jpg",
     "original": "assets/original/m10.webp",
     "retired": true
@@ -1246,7 +1143,6 @@
   {
     "id": "i7",
     "name": "ハムスター",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 2,
@@ -1264,14 +1160,12 @@
       }
     ],
     "effect": "破壊されたとき、自分のライフを3回復する。",
-    "flavor": "",
     "art": "/assets/cards/i7-art.jpg",
     "original": "assets/original/i7.webp"
   },
   {
     "id": "i8",
     "name": "ASMR配信者",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 6,
@@ -1288,14 +1182,12 @@
       }
     ],
     "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を眠り状態にする。",
-    "flavor": "",
     "art": "/assets/cards/i8-art.jpg",
     "original": "assets/original/i8.webp"
   },
   {
     "id": "i9",
     "name": "アニマルセラピー",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 2,
@@ -1310,7 +1202,6 @@
       }
     ],
     "effect": "自分のキャラクターすべてと自分のライフを3回復する。",
-    "flavor": "もふもふは、正義。",
     "art": "/assets/cards/i9-art.jpg",
     "original": "assets/original/i9.webp",
     "retired": true
@@ -1318,7 +1209,6 @@
   {
     "id": "c5",
     "name": "ナギ",
-    "epithet": "癒しボイス",
     "type": "icon",
     "rarity": 5,
     "cost": 6,
@@ -1339,7 +1229,6 @@
       }
     ],
     "effect": "ガード。場に出たとき、相手のキャラクターすべてを眠り状態にする。相手のターンの始めに、攻撃力がいちばん高い相手のキャラクター1体を眠り状態にする。",
-    "flavor": "「大丈夫。今日はもう、休んでいいよ」",
     "dark": {
       "name": "病みボイス ナギ",
       "attack": 4,
@@ -1363,7 +1252,6 @@
   {
     "id": "k6",
     "name": "リプ欄の民",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 1,
@@ -1381,14 +1269,12 @@
       }
     ],
     "effect": "場に出たとき、草を1体出す。",
-    "flavor": "ｗｗｗ",
     "art": "/assets/cards/k6-art.jpg",
     "original": "assets/original/k6.webp"
   },
   {
     "id": "k7",
     "name": "ネタ投稿者",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 6,
@@ -1410,14 +1296,12 @@
       }
     ],
     "effect": "場に出たとき、自分の場に自然属性が2体以上いれば、自分のほかのキャラクターすべてに攻撃力+1。",
-    "flavor": "",
     "art": "/assets/cards/k7-art.jpg",
     "original": "assets/original/k7.webp"
   },
   {
     "id": "k8",
     "name": "バズり動画",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 2,
@@ -1432,14 +1316,12 @@
       }
     ],
     "effect": "草を2体出す。",
-    "flavor": "なぜか伸びた。",
     "art": "/assets/cards/k8-art.jpg",
     "original": "assets/original/k8.webp"
   },
   {
     "id": "k9",
     "name": "量産型アイコン",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 4,
@@ -1459,7 +1341,6 @@
       }
     ],
     "effect": "場に出たとき、自分の空いている枠に、トークンとしてこのキャラクターのコピーを2体出す。",
-    "flavor": "どれが本物？",
     "art": "/assets/cards/k9-art.jpg",
     "original": "assets/original/k9.webp",
     "retired": true
@@ -1467,7 +1348,6 @@
   {
     "id": "k10",
     "name": "ミーム女王",
-    "epithet": "",
     "type": "icon",
     "rarity": 4,
     "cost": 5,
@@ -1490,7 +1370,6 @@
       }
     ],
     "effect": "場に出たとき、自分の空いている枠すべてに草を出し、自分のキャラクターすべてに突進を付ける。",
-    "flavor": "流行らせたのは、だいたい私。",
     "art": "/assets/cards/k10-art.jpg",
     "original": "assets/original/k10.webp",
     "retired": true
@@ -1498,7 +1377,6 @@
   {
     "id": "g5",
     "name": "検索ニキ",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 2,
@@ -1516,14 +1394,12 @@
       }
     ],
     "effect": "場に出たとき、山札から有識者種族のカードを1枚探して手札に加える。なければカードを1枚引く。",
-    "flavor": "",
     "art": "/assets/cards/g5-art.jpg",
     "original": "assets/original/g5.webp"
   },
   {
     "id": "g6",
     "name": "論破王",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 4,
@@ -1540,14 +1416,12 @@
       }
     ],
     "effect": "場に出たとき、体力が2以下の相手のキャラクターすべてを破壊する。",
-    "flavor": "",
     "art": "/assets/cards/g6-art.jpg",
     "original": "assets/original/g6.webp"
   },
   {
     "id": "g7",
     "name": "解説動画",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 4,
@@ -1561,14 +1435,12 @@
       }
     ],
     "effect": "カードを2枚引く。",
-    "flavor": "10分でわかる。",
     "art": "/assets/cards/g7-art.jpg",
     "original": "assets/original/g7.webp"
   },
   {
     "id": "g8",
     "name": "大学教授",
-    "epithet": "",
     "type": "icon",
     "rarity": 4,
     "cost": 8,
@@ -1591,14 +1463,12 @@
       }
     ],
     "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を破壊する。自分のライフを3回復する。",
-    "flavor": "",
     "art": "/assets/cards/g8-art.jpg",
     "original": "assets/original/g8.webp"
   },
   {
     "id": "g9",
     "name": "訂正リプ",
-    "epithet": "",
     "type": "post",
     "rarity": 1,
     "cost": 2,
@@ -1616,7 +1486,6 @@
       }
     ],
     "effect": "相手のキャラクター1体に2ダメージ。カードを1枚引く。",
-    "flavor": "",
     "target": "enemyIcon",
     "art": "/assets/cards/g9-art.jpg",
     "original": "assets/original/g9.webp"
@@ -1624,7 +1493,6 @@
   {
     "id": "x1",
     "name": "論破系配信者",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 3,
@@ -1642,14 +1510,12 @@
       }
     ],
     "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体に2ダメージ。",
-    "flavor": "",
     "art": "/assets/cards/x1-art.jpg",
     "original": "assets/original/x1.webp"
   },
   {
     "id": "x2",
     "name": "踊ってみた",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 3,
@@ -1667,14 +1533,12 @@
       }
     ],
     "effect": "注目。場に出たとき、草を1体出す。",
-    "flavor": "振り付け、覚えた？",
     "art": "/assets/cards/x2-art.jpg",
     "original": "assets/original/x2.webp"
   },
   {
     "id": "f11",
     "name": "炎上ウォッチャー",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 1,
@@ -1685,7 +1549,6 @@
     "keywords": ["突進"],
     "effects": [],
     "effect": "突進。",
-    "flavor": "今日も燃えてるねえ。",
     "art": "/assets/cards/f11-art.jpg",
     "original": "assets/original/f11.webp",
     "retired": true
@@ -1693,7 +1556,6 @@
   {
     "id": "f12",
     "name": "燃料投下",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 1,
@@ -1710,7 +1572,6 @@
       }
     ],
     "effect": "相手のキャラクター1体に1ダメージ。そのキャラクターを晒し状態にする。",
-    "flavor": "そこ、もっと燃えますよ。",
     "target": "enemyIcon",
     "art": "/assets/cards/f12-art.jpg",
     "original": "assets/original/f12.webp"
@@ -1718,7 +1579,6 @@
   {
     "id": "f13",
     "name": "凸待ち配信者",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 2,
@@ -1736,14 +1596,12 @@
       }
     ],
     "effect": "自分のターンの終わりに、相手のプレイヤーに1ダメージ。",
-    "flavor": "",
     "art": "/assets/cards/f13-art.jpg",
     "original": "assets/original/f13.webp"
   },
   {
     "id": "f14",
     "name": "デジタルタトゥー",
-    "epithet": "",
     "type": "post",
     "rarity": 4,
     "cost": 8,
@@ -1758,14 +1616,12 @@
       }
     ],
     "effect": "相手のキャラクターすべてに5ダメージ。",
-    "flavor": "",
     "art": "/assets/cards/f14-art.jpg",
     "original": "assets/original/f14.webp"
   },
   {
     "id": "c9",
     "name": "カグラ",
-    "epithet": "炎上請負人",
     "type": "icon",
     "rarity": 5,
     "cost": 6,
@@ -1787,7 +1643,6 @@
       }
     ],
     "effect": "速攻。場に出たとき、このターン攻撃力+3し、このターンの終わりにこのキャラクターを晒し状態にする。自分のターンの終わりに、相手のプレイヤーに1ダメージ。",
-    "flavor": "「火種はね、どこにでも落ちてるの」",
     "art": "/assets/cards/c9-art.jpg",
     "original": "assets/original/c9.webp",
     "dark": {
@@ -1811,7 +1666,6 @@
   {
     "id": "m11",
     "name": "推し活ノート",
-    "epithet": "",
     "type": "post",
     "rarity": 1,
     "cost": 1,
@@ -1826,7 +1680,6 @@
       }
     ],
     "effect": "自分のキャラクター1体に攻撃力+1・体力+2。",
-    "flavor": "今日の推し、尊かった。",
     "target": "allyIcon",
     "art": "/assets/cards/m11-art.jpg",
     "original": "assets/original/m11.webp"
@@ -1834,7 +1687,6 @@
   {
     "id": "m12",
     "name": "最前列のオタク",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 2,
@@ -1852,14 +1704,12 @@
       }
     ],
     "effect": "破壊されたとき、ランダムな自分のキャラクター1体に攻撃力+2・体力+2。",
-    "flavor": "",
     "art": "/assets/cards/m12-art.jpg",
     "original": "assets/original/m12.webp"
   },
   {
     "id": "m13",
     "name": "バーチャルアイドル",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 6,
@@ -1877,14 +1727,12 @@
       }
     ],
     "effect": "注目。場に出たとき、自分のキャラクターすべてと自分のライフを2回復する。",
-    "flavor": "",
     "art": "/assets/cards/m13-art.jpg",
     "original": "assets/original/m13.webp"
   },
   {
     "id": "m14",
     "name": "生誕祭",
-    "epithet": "",
     "type": "post",
     "rarity": 4,
     "cost": 6,
@@ -1899,14 +1747,12 @@
       }
     ],
     "effect": "自分のキャラクターすべてに攻撃力+2・体力+2。",
-    "flavor": "今日は、世界でいちばん特別な日。",
     "art": "/assets/cards/m14-art.jpg",
     "original": "assets/original/m14.webp"
   },
   {
     "id": "c6",
     "name": "アイリ",
-    "epithet": "国民的推し",
     "type": "icon",
     "rarity": 5,
     "cost": 5,
@@ -1922,14 +1768,12 @@
       }
     ],
     "effect": "注目。場に出たとき、攻撃力が3以下の相手のキャラクターのうち、攻撃力がいちばん高い1体を奪う。",
-    "flavor": "「みんなの声、ちゃんと届いてるよ」",
     "art": "/assets/cards/c6-art.jpg",
     "original": "assets/original/c6.webp"
   },
   {
     "id": "g10",
     "name": "ファクトチェッカー",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 1,
@@ -1946,14 +1790,12 @@
       }
     ],
     "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。",
-    "flavor": "それ、一次ソースどこですか？",
     "art": "/assets/cards/g10-art.jpg",
     "original": "assets/original/g10.webp"
   },
   {
     "id": "g11",
     "name": "ソース貼れ",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 1,
@@ -1967,7 +1809,6 @@
       }
     ],
     "effect": "相手のキャラクター1体の攻撃力-2。",
-    "flavor": "",
     "target": "enemyIcon",
     "art": "/assets/cards/g11-art.jpg",
     "original": "assets/original/g11.webp"
@@ -1975,7 +1816,6 @@
   {
     "id": "g12",
     "name": "Wiki編集者",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 3,
@@ -1992,14 +1832,12 @@
       }
     ],
     "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を沈黙状態にする。",
-    "flavor": "",
     "art": "/assets/cards/g12-art.jpg",
     "original": "assets/original/g12.webp"
   },
   {
     "id": "g13",
     "name": "ベテラン解説者",
-    "epithet": "",
     "type": "icon",
     "rarity": 4,
     "cost": 4,
@@ -2017,14 +1855,12 @@
       }
     ],
     "effect": "自分のターンの終わりに、攻撃力がいちばん高い相手のキャラクター1体に2ダメージ。",
-    "flavor": "",
     "art": "/assets/cards/g13-art.jpg",
     "original": "assets/original/g13.webp"
   },
   {
     "id": "c7",
     "name": "ヨミ",
-    "epithet": "知の番人",
     "type": "icon",
     "rarity": 5,
     "cost": 6,
@@ -2047,14 +1883,12 @@
       }
     ],
     "effect": "ガード。突進。場に出たとき、体力が2以下の相手のキャラクターすべてを破壊する。自分のターンの終わりに、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。",
-    "flavor": "「知らないことは、まだ調べていないことだけ」",
     "art": "/assets/cards/c7-art.jpg",
     "original": "assets/original/c7.webp"
   },
   {
     "id": "k11",
     "name": "www連打勢",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 2,
@@ -2065,14 +1899,12 @@
     "keywords": ["速攻"],
     "effects": [],
     "effect": "速攻。",
-    "flavor": "wwwwwwwwww",
     "art": "/assets/cards/k11-art.jpg",
     "original": "assets/original/k11.webp"
   },
   {
     "id": "k12",
     "name": "草不可避",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 3,
@@ -2087,14 +1919,12 @@
       }
     ],
     "effect": "自分のキャラクターすべてに攻撃力+1。",
-    "flavor": "これは笑う。",
     "art": "/assets/cards/k12-art.jpg",
     "original": "assets/original/k12.webp"
   },
   {
     "id": "k13",
     "name": "ミーム動画編集者",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 4,
@@ -2111,7 +1941,6 @@
       }
     ],
     "effect": "場に出たとき、自分の場のミーム種族1体につき、相手のプレイヤーに1ダメージ。",
-    "flavor": "素材は、みんなの悪ノリ。",
     "art": "/assets/cards/k13-art.jpg",
     "original": "assets/original/k13.webp",
     "retired": true
@@ -2119,7 +1948,6 @@
   {
     "id": "k14",
     "name": "トレンドメーカー",
-    "epithet": "",
     "type": "icon",
     "rarity": 4,
     "cost": 8,
@@ -2136,14 +1964,12 @@
       }
     ],
     "effect": "場に出たとき、自分の場のキャラクター1体につき、相手のプレイヤーに1ダメージ。",
-    "flavor": "",
     "art": "/assets/cards/k14-art.jpg",
     "original": "assets/original/k14.webp"
   },
   {
     "id": "c8",
     "name": "ワラ",
-    "epithet": "大草原の主",
     "type": "icon",
     "rarity": 5,
     "cost": 4,
@@ -2164,14 +1990,12 @@
       }
     ],
     "effect": "自分の場のほかのキャラクター1体につき攻撃力+1。場に出たとき、草を2体出す。",
-    "flavor": "「笑ったら、もう仲間だよ」",
     "art": "/assets/cards/c8-art.jpg",
     "original": "assets/original/c8.webp"
   },
   {
     "id": "i10",
     "name": "#癒し動画",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 3,
@@ -2190,14 +2014,12 @@
       }
     ],
     "effect": "自分のキャラクターすべてと自分のライフを2回復する。カードを1枚引く。",
-    "flavor": "寝る前に、あと1本だけ。",
     "art": "/assets/cards/i10-art.jpg",
     "original": "assets/original/i10.webp"
   },
   {
     "id": "i11",
     "name": "看板猫",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 2,
@@ -2208,14 +2030,12 @@
     "keywords": ["速攻"],
     "effects": [],
     "effect": "速攻。",
-    "flavor": "",
     "art": "/assets/cards/i11-art.jpg",
     "original": "assets/original/i11.webp"
   },
   {
     "id": "i12",
     "name": "深夜ラジオのDJ",
-    "epithet": "",
     "type": "icon",
     "rarity": 4,
     "cost": 5,
@@ -2233,14 +2053,12 @@
       }
     ],
     "effect": "自分が回復の効果を使うたび、このキャラクターに攻撃力+1・体力+1。",
-    "flavor": "",
     "art": "/assets/cards/i12-art.jpg",
     "original": "assets/original/i12.webp"
   },
   {
     "id": "i13",
     "name": "ゆるキャラ",
-    "epithet": "",
     "type": "icon",
     "rarity": 4,
     "cost": 8,
@@ -2261,14 +2079,12 @@
       }
     ],
     "effect": "ガード。手札にある間、このゲームで自分が回復の効果を使った回数だけコスト-1。場に出たとき、自分のキャラクターすべてと自分のライフを2回復する。",
-    "flavor": "中の人などいない。",
     "art": "/assets/cards/i13-art.jpg",
     "original": "assets/original/i13.webp"
   },
   {
     "id": "c10",
     "name": "ユズハ",
-    "epithet": "ととのい師",
     "type": "icon",
     "rarity": 5,
     "cost": 4,
@@ -2285,14 +2101,12 @@
       }
     ],
     "effect": "自分が回復の効果を使うたび、相手のプレイヤーに1ダメージ。",
-    "flavor": "",
     "art": "/assets/cards/c10-art.jpg",
     "original": "assets/original/c10.webp"
   },
   {
     "id": "n11",
     "name": "切り抜き動画",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 4,
@@ -2311,14 +2125,12 @@
       }
     ],
     "effect": "カードを1枚引く。手札が3枚以下なら、さらにカードを1枚引く。",
-    "flavor": "切り抜きから本編へ。",
     "art": "/assets/cards/n11-art.jpg",
     "original": "assets/original/n11.webp"
   },
   {
     "id": "f15",
     "name": "コラボ配信",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 8,
@@ -2335,14 +2147,12 @@
       }
     ],
     "effect": "速攻。自分の場のほかの配信者種族1体につき攻撃力+1。",
-    "flavor": "同接、合算で。",
     "art": "/assets/cards/f15-art.jpg",
     "original": "assets/original/f15.webp"
   },
   {
     "id": "i14",
     "name": "同接感謝",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 2,
@@ -2363,7 +2173,6 @@
       }
     ],
     "effect": "自分の配信者種族すべてに体力+2。自分のライフを2回復する。",
-    "flavor": "今日もありがとう、また明日。",
     "art": "/assets/cards/i14-art.jpg",
     "original": "assets/original/i14.webp",
     "retired": true
@@ -2371,7 +2180,6 @@
   {
     "id": "m15",
     "name": "推しへのファンレター",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 2,
@@ -2388,7 +2196,6 @@
       }
     ],
     "effect": "自分のアイドル種族1体に攻撃力+2・体力+2。",
-    "flavor": "便箋3枚、全部本気。",
     "art": "/assets/cards/m15-art.jpg",
     "original": "assets/original/m15.webp",
     "retired": true
@@ -2396,7 +2203,6 @@
   {
     "id": "f16",
     "name": "炎上中のアイドル",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 4,
@@ -2414,14 +2220,12 @@
       }
     ],
     "effect": "ガード。破壊されたとき、相手のキャラクターすべてに1ダメージ。",
-    "flavor": "",
     "art": "/assets/cards/f16-art.jpg",
     "original": "assets/original/f16.webp"
   },
   {
     "id": "k15",
     "name": "ネタ枠アイドル",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 2,
@@ -2439,14 +2243,12 @@
       }
     ],
     "effect": "破壊されたとき、草を2体出す。",
-    "flavor": "",
     "art": "/assets/cards/k15-art.jpg",
     "original": "assets/original/k15.webp"
   },
   {
     "id": "m16",
     "name": "敏腕プロデューサー",
-    "epithet": "",
     "type": "icon",
     "rarity": 4,
     "cost": 7,
@@ -2465,14 +2267,12 @@
       }
     ],
     "effect": "場に出たとき、自分のほかのアイドル種族すべてに攻撃力+2・体力+2。",
-    "flavor": "",
     "art": "/assets/cards/m16-art.jpg",
     "original": "assets/original/m16.webp"
   },
   {
     "id": "g14",
     "name": "引用リツイート",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 2,
@@ -2495,7 +2295,6 @@
       }
     ],
     "effect": "山札から有識者種族のカードを1枚探して手札に加える。なければカードを1枚引く。自分の場に有識者種族がいれば、さらにカードを1枚引く。",
-    "flavor": "ソースはこちら。",
     "art": "/assets/cards/g14-art.jpg",
     "original": "assets/original/g14.webp",
     "retired": true
@@ -2503,7 +2302,6 @@
   {
     "id": "g15",
     "name": "ミーム考古学者",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 3,
@@ -2522,7 +2320,6 @@
       }
     ],
     "effect": "場に出たとき、自分のほかのミーム種族すべてに攻撃力+1・体力+1。",
-    "flavor": "このネタ、起源は10年前。",
     "art": "/assets/cards/g15-art.jpg",
     "original": "assets/original/g15.webp",
     "retired": true
@@ -2530,7 +2327,6 @@
   {
     "id": "m17",
     "name": "アイドル評論家",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 3,
@@ -2551,14 +2347,12 @@
       }
     ],
     "effect": "場に出たとき、自分の場にアイドル種族がいれば、カードを1枚引く。",
-    "flavor": "",
     "art": "/assets/cards/m17-art.jpg",
     "original": "assets/original/m17.webp"
   },
   {
     "id": "i15",
     "name": "お悩み相談のお姉さん",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 3,
@@ -2576,14 +2370,12 @@
       }
     ],
     "effect": "場に出たとき、自分のキャラクターすべてと自分のライフを1回復する。",
-    "flavor": "",
     "art": "/assets/cards/i15-art.jpg",
     "original": "assets/original/i15.webp"
   },
   {
     "id": "g16",
     "name": "学会の重鎮",
-    "epithet": "",
     "type": "icon",
     "rarity": 4,
     "cost": 6,
@@ -2600,14 +2392,12 @@
       }
     ],
     "effect": "場に出たとき、カードを2枚引く。",
-    "flavor": "",
     "art": "/assets/cards/g16-art.jpg",
     "original": "assets/original/g16.webp"
   },
   {
     "id": "k16",
     "name": "踊るワンコ",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 4,
@@ -2625,14 +2415,12 @@
       }
     ],
     "effect": "突進。突進で攻撃したとき、草を1体出す。",
-    "flavor": "",
     "art": "/assets/cards/k16-art.jpg",
     "original": "assets/original/k16.webp"
   },
   {
     "id": "i16",
     "name": "もふもふタイム",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 2,
@@ -2653,7 +2441,6 @@
       }
     ],
     "effect": "自分の動物種族すべてに攻撃力+1・体力+2。自分のライフを2回復する。",
-    "flavor": "なでる手が止まらない。",
     "art": "/assets/cards/i16-art.jpg",
     "original": "assets/original/i16.webp",
     "retired": true
@@ -2661,7 +2448,6 @@
   {
     "id": "f18",
     "name": "クソリプ職人",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 2,
@@ -2672,7 +2458,6 @@
     "keywords": ["突進"],
     "effects": [],
     "effect": "突進。",
-    "flavor": "一言多いのが芸風。",
     "art": "/assets/cards/f18-art.jpg",
     "original": "assets/original/f18.webp",
     "retired": true
@@ -2680,7 +2465,6 @@
   {
     "id": "f19",
     "name": "煽りスタンプ",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 1,
@@ -2691,7 +2475,6 @@
     "keywords": ["速攻"],
     "effects": [],
     "effect": "速攻。",
-    "flavor": "既読、無視、スタンプ。",
     "art": "/assets/cards/f19-art.jpg",
     "original": "assets/original/f19.webp",
     "retired": true
@@ -2699,7 +2482,6 @@
   {
     "id": "g17",
     "name": "完全論破",
-    "epithet": "",
     "type": "post",
     "rarity": 3,
     "cost": 5,
@@ -2713,14 +2495,12 @@
       }
     ],
     "effect": "相手のキャラクター1体を破壊する。",
-    "flavor": "はい、論破。",
     "art": "/assets/cards/g17-art.jpg",
     "original": "assets/original/g17.webp"
   },
   {
     "id": "f20",
     "name": "追い炎上",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 4,
@@ -2737,14 +2517,12 @@
       }
     ],
     "effect": "ダメージを受けている相手のキャラクター1体を破壊する。",
-    "flavor": "火に油、燃料に薪。",
     "art": "/assets/cards/f20-art.jpg",
     "original": "assets/original/f20.webp"
   },
   {
     "id": "i17",
     "name": "ブロック",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 4,
@@ -2758,14 +2536,12 @@
       }
     ],
     "effect": "相手のキャラクター1体を持ち主の手札に戻す。",
-    "flavor": "見なければ、平和。",
     "art": "/assets/cards/i17-art.jpg",
     "original": "assets/original/i17.webp"
   },
   {
     "id": "m18",
     "name": "引き抜き",
-    "epithet": "",
     "type": "post",
     "rarity": 3,
     "cost": 5,
@@ -2783,14 +2559,12 @@
       }
     ],
     "effect": "攻撃力が3以下の相手のキャラクター1体を奪う。",
-    "flavor": "うちの方が、待遇いいよ。",
     "art": "/assets/cards/m18-art.jpg",
     "original": "assets/original/m18.webp"
   },
   {
     "id": "m20",
     "name": "剥がし",
-    "epithet": "",
     "type": "post",
     "rarity": 3,
     "cost": 3,
@@ -2814,14 +2588,12 @@
       }
     ],
     "effect": "相手のキャラクターすべてに1ダメージ。自分の場にアイドル種族がいれば、さらに1ダメージ。",
-    "flavor": "はい、お時間でーす。",
     "art": "/assets/cards/m20-art.jpg",
     "original": "assets/original/m20.webp"
   },
   {
     "id": "c11",
     "name": "ルリ",
-    "epithet": "おやすみナース",
     "type": "icon",
     "rarity": 5,
     "cost": 6,
@@ -2838,7 +2610,6 @@
       }
     ],
     "effect": "場に出たとき、コストがいちばん高い相手のキャラクター1体を持ち主の手札に戻す。",
-    "flavor": "「しーっ。今日はもう、おやすみ」",
     "art": "/assets/cards/c11-art.jpg",
     "subject": "/assets/cards/c11-subject.webp",
     "original": "assets/original/c11.webp",
@@ -2863,7 +2634,6 @@
   {
     "id": "f21",
     "name": "荒らし",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 2,
@@ -2874,7 +2644,6 @@
     "keywords": ["速攻"],
     "effects": [],
     "effect": "速攻。",
-    "flavor": "「構ってほしいだけなんだよ」",
     "art": "/assets/cards/f21-art.jpg",
     "original": "assets/original/f21.webp",
     "retired": true
@@ -2882,7 +2651,6 @@
   {
     "id": "f22",
     "name": "プロ炎上家",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 5,
@@ -2906,14 +2674,12 @@
       }
     ],
     "effect": "突進。場に出たとき、相手のプレイヤーに2ダメージ。自分のライフを2回復する。",
-    "flavor": "",
     "art": "/assets/cards/f22-art.jpg",
     "original": "assets/original/f22.webp"
   },
   {
     "id": "f23",
     "name": "炎上まとめ",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 2,
@@ -2932,7 +2698,6 @@
       }
     ],
     "effect": "カードを1枚引く。相手のプレイヤーに1ダメージ。",
-    "flavor": "【悲報】まとめられました",
     "art": "/assets/cards/f23-art.jpg",
     "original": "assets/original/f23.webp",
     "retired": true
@@ -2940,7 +2705,6 @@
   {
     "id": "m19",
     "name": "ダンスリーダー",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 4,
@@ -2958,14 +2722,12 @@
       }
     ],
     "effect": "自分のターンの終わりに、ランダムな自分のほかのキャラクター1体に攻撃力+1。",
-    "flavor": "",
     "art": "/assets/cards/m19-art.jpg",
     "original": "assets/original/m19.webp"
   },
   {
     "id": "c13",
     "name": "ミレイ",
-    "epithet": "ドームの歌姫",
     "type": "icon",
     "rarity": 5,
     "cost": 6,
@@ -2988,7 +2750,6 @@
       }
     ],
     "effect": "注目。場に出たとき、自分のほかのキャラクターすべてに攻撃力+2・体力+1し、自分のキャラクターすべてがすぐ攻撃できるようになる。",
-    "flavor": "「ラスサビ、全員で跳んで！」",
     "dark": {
       "name": "病み期のミレイ",
       "attack": 5,
@@ -3014,7 +2775,6 @@
   {
     "id": "g18",
     "name": "大御所コメンテーター",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 5,
@@ -3025,14 +2785,12 @@
     "keywords": ["速攻"],
     "effects": [],
     "effect": "速攻。",
-    "flavor": "",
     "art": "/assets/cards/g18-art.jpg",
     "original": "assets/original/g18.webp"
   },
   {
     "id": "g19",
     "name": "学長",
-    "epithet": "",
     "type": "icon",
     "rarity": 4,
     "cost": 7,
@@ -3050,14 +2808,12 @@
       }
     ],
     "effect": "ガード。場に出たとき、相手のキャラクターすべてに2ダメージ。",
-    "flavor": "",
     "art": "/assets/cards/g19-art.jpg",
     "original": "assets/original/g19.webp"
   },
   {
     "id": "k17",
     "name": "伸びるリプ欄",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 4,
@@ -3072,14 +2828,12 @@
       }
     ],
     "effect": "自分の場のキャラクター2体につき、カードを1枚引く。引くのは3枚まで。",
-    "flavor": "リプが止まらない",
     "art": "/assets/cards/k17-art.jpg",
     "original": "assets/original/k17.webp"
   },
   {
     "id": "k18",
     "name": "ネタにされる",
-    "epithet": "",
     "type": "post",
     "rarity": 3,
     "cost": 5,
@@ -3094,14 +2848,12 @@
       }
     ],
     "effect": "相手のキャラクター1体を草にする。",
-    "flavor": "もう元には戻れない",
     "art": "/assets/cards/k18-art.jpg",
     "original": "assets/original/k18.webp"
   },
   {
     "id": "c12",
     "name": "ララ",
-    "epithet": "バズの申し子",
     "type": "icon",
     "rarity": 5,
     "cost": 6,
@@ -3124,7 +2876,6 @@
       }
     ],
     "effect": "場に出たとき、自分の空いている枠すべてに草を出す。自分のターンの終わりに、草を2体出す。",
-    "flavor": "「はい、全部ネタにしまーす」",
     "dark": {
       "name": "黒歴史のララ",
       "attack": 4,
@@ -3156,7 +2907,6 @@
   {
     "id": "c14",
     "name": "クサハミ",
-    "epithet": "大食いの",
     "type": "icon",
     "rarity": 5,
     "cost": 4,
@@ -3173,7 +2923,6 @@
       }
     ],
     "effect": "自分の草が、このゲームで破壊された数だけ攻撃力+1。",
-    "flavor": "オワコンになった草も、残さずいただきます。",
     "art": "/assets/cards/c14-art.jpg",
     "original": "assets/original/c14.webp",
     "subject": "/assets/cards/c14-subject.webp",
@@ -3204,7 +2953,6 @@
   {
     "id": "c15",
     "name": "『フィクサー』",
-    "epithet": "",
     "type": "icon",
     "rarity": 5,
     "cost": 3,
@@ -3219,7 +2967,6 @@
       }
     ],
     "effect": "場に出たとき、自分と相手は、それぞれ自分のキャラクターを1体選ぶ。選ばれたキャラクターは破壊される。",
-    "flavor": "その闇堕ち、仕込みです。",
     "art": "/assets/cards/c15-art.jpg",
     "subject": "/assets/cards/c15-subject.webp",
     "original": "assets/original/c15.webp"
@@ -3227,7 +2974,6 @@
   {
     "id": "c16",
     "name": "『調停者』",
-    "epithet": "",
     "type": "icon",
     "rarity": 5,
     "cost": 5,
@@ -3242,7 +2988,6 @@
       }
     ],
     "effect": "場に出たとき、このキャラクターを除いて、自分と相手の場で攻撃力がいちばん高いキャラクターすべてを破壊する。",
-    "flavor": "",
     "art": "/assets/cards/c16-art.jpg",
     "subject": "/assets/cards/c16-subject.webp",
     "original": "assets/original/c16.webp"
@@ -3250,7 +2995,6 @@
   {
     "id": "c17",
     "name": "『演出家』",
-    "epithet": "",
     "type": "icon",
     "rarity": 5,
     "cost": 5,
@@ -3265,7 +3009,6 @@
       }
     ],
     "effect": "場に出たとき、自分と相手の両方に空いている枠があれば、自分と相手は、それぞれ自分の山札から闇堕ちを持つカードを1枚出し、そのキャラクターに突進を付ける。そのキャラクターの場に出たときの効果は働かない。",
-    "flavor": "",
     "art": "/assets/cards/c17-art.jpg",
     "subject": "/assets/cards/c17-subject.webp",
     "original": "assets/original/c17.webp"
@@ -3273,7 +3016,6 @@
   {
     "id": "i18",
     "name": "子猫",
-    "epithet": "",
     "type": "icon",
     "rarity": 1,
     "cost": 1,
@@ -3291,14 +3033,12 @@
       }
     ],
     "effect": "場に出たとき、自分のライフを2回復する。",
-    "flavor": "ちいさな前足で、そっと",
     "art": "/assets/cards/i18-art.jpg",
     "original": "assets/original/i18.webp"
   },
   {
     "id": "i19",
     "name": "保健室の先生",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 7,
@@ -3316,14 +3056,12 @@
       }
     ],
     "effect": "場に出たとき、自分のキャラクターすべてと自分のライフを3回復する。",
-    "flavor": "",
     "art": "/assets/cards/i19-art.jpg",
     "original": "assets/original/i19.webp"
   },
   {
     "id": "i20",
     "name": "温泉宿の女将",
-    "epithet": "",
     "type": "icon",
     "rarity": 4,
     "cost": 6,
@@ -3347,7 +3085,6 @@
       }
     ],
     "effect": "ガード。場に出たとき、自分のキャラクターすべてと自分のライフを3回復する。自分のターンの終わりに、自分のライフを1回復する。",
-    "flavor": "「今日も湯けむり配信中」",
     "art": "/assets/cards/i20-art.jpg",
     "original": "assets/original/i20.webp",
     "retired": true
@@ -3355,7 +3092,6 @@
   {
     "id": "n12",
     "name": "有名人",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 7,
@@ -3366,14 +3102,12 @@
     "keywords": [],
     "effects": [],
     "effect": "",
-    "flavor": "名前は知ってる。何の人かは知らない",
     "art": "/assets/cards/n12-art.jpg",
     "original": "assets/original/n12.webp"
   },
   {
     "id": "n13",
     "name": "レジェンド",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 8,
@@ -3384,14 +3118,12 @@
     "keywords": [],
     "effects": [],
     "effect": "",
-    "flavor": "殿堂入り。説明不要",
     "art": "/assets/cards/n13-art.jpg",
     "original": "assets/original/n13.webp"
   },
   {
     "id": "n14",
     "name": "万バズ",
-    "epithet": "",
     "type": "post",
     "rarity": 2,
     "cost": 5,
@@ -3410,14 +3142,12 @@
       }
     ],
     "effect": "カードを2枚引く。相手のプレイヤーに2ダメージ。",
-    "flavor": "通知が止まらない",
     "art": "/assets/cards/n14-art.jpg",
     "original": "assets/original/n14.webp"
   },
   {
     "id": "n15",
     "name": "捨て垢",
-    "epithet": "",
     "type": "icon",
     "rarity": 2,
     "cost": 1,
@@ -3434,14 +3164,12 @@
       }
     ],
     "effect": "破壊されたとき、カードを1枚引く。",
-    "flavor": "使い捨てです。",
     "art": "/assets/cards/n15-art.jpg",
     "original": "assets/original/n15.webp"
   },
   {
     "id": "n16",
     "name": "工作員",
-    "epithet": "",
     "type": "icon",
     "rarity": 3,
     "cost": 2,
@@ -3459,14 +3187,12 @@
       }
     ],
     "effect": "破壊されたとき、攻撃力がいちばん高い相手のキャラクター1体に2ダメージ。",
-    "flavor": "依頼は、もう済んでいる。",
     "art": "/assets/cards/n16-art.jpg",
     "original": "assets/original/n16.webp"
   },
   {
     "id": "k19",
     "name": "草の女王",
-    "epithet": "闇に咲く",
     "type": "icon",
     "rarity": 4,
     "cost": 7,
@@ -3488,7 +3214,6 @@
       }
     ],
     "effect": "場に出たとき、草を2体出す。自分の草が、このゲームで破壊された数だけ攻撃力+1。",
-    "flavor": "枯れた草ほど、よく燃える。",
     "art": "/assets/cards/k19-art.jpg",
     "original": "assets/original/kusa-queen.webp"
   }

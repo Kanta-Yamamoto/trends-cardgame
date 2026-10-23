@@ -7,7 +7,7 @@ import { stars } from "../meta";
 import "../duotone.css";
 
 /** 名前・効果・数値。二色の境目で文字の色を反転させるため、同じものを 2 枚重ねる */
-function Ui({ card, en, inverse }: { card: CardDef; en: string; inverse?: boolean }) {
+function Ui({ card, inverse }: { card: CardDef; inverse?: boolean }) {
   return (
     <div className={`layer duo-ui ${inverse ? "inv" : ""}`} aria-hidden={inverse || undefined}>
       <div className="duo-cost">{card.cost}</div>
@@ -15,11 +15,10 @@ function Ui({ card, en, inverse }: { card: CardDef; en: string; inverse?: boolea
       <div className="duo-plate">
         <div className="duo-name">
           <h3>{card.name}</h3>
-          <span className="duo-en">{en}</span>
         </div>
         <p className="duo-effect">{inverse ? card.effect : <EffectText text={card.effect} />}</p>
         <div className="duo-foot">
-          <span className="duo-kind">CHARACTER · NEUTRAL</span>
+          <span className="duo-kind">キャラクター・ニュートラル</span>
           <span className="duo-stats">
             <i className="a" title="攻撃力">
               {card.attack ?? 0}
@@ -71,7 +70,7 @@ export const DIRECTOR_MOTION: DuoMotion = {
  * 色と絵はカードごとの CSS（duotone.css の .s-director・.s-fixer）、境目の動きは motion で決める。
  * 動くのは触れるカード（拡大表示）だけ。一覧などでは止まった姿のまま。
  */
-export function DuotoneFace({ card, en, motion }: { card: CardDef; en: string; motion: DuoMotion }) {
+export function DuotoneFace({ card, motion }: { card: CardDef; motion: DuoMotion }) {
   const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -112,8 +111,8 @@ export function DuotoneFace({ card, en, motion }: { card: CardDef; en: string; m
     <div className="card-inner" ref={root}>
       <div className="layer duo-main" />
       <div className="layer duo-sub" />
-      <Ui card={card} en={en} />
-      <Ui card={card} en={en} inverse />
+      <Ui card={card} />
+      <Ui card={card} inverse />
     </div>
   );
 }

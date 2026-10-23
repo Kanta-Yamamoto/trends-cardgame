@@ -1,12 +1,12 @@
 import type { Attribute, CardDef, Kaiwai } from "@trends/cards";
 
-/** 属性ごとの色とマーク（色だけで区別しないよう、必ずマークも出す） */
+/** 属性ごとの色とマーク（色だけで区別しないよう、小さいカードでは属性名の頭の字を出す。種族の印と同じ形） */
 export const ATTR_META: Record<Attribute, { slug: string; color: string; deep: string; mark: string }> = {
   炎: { slug: "flame", color: "#ff5a1f", deep: "#7a1d05", mark: "炎" },
-  推し: { slug: "mero", color: "#ff4fa3", deep: "#7a0f45", mark: "♥" },
-  水: { slug: "iyashi", color: "#3ec8f0", deep: "#0b4f66", mark: "◎" },
-  自然: { slug: "kusa", color: "#6bcb3b", deep: "#25520c", mark: "w" },
-  神: { slug: "kami", color: "#f2c14e", deep: "#6b4c06", mark: "✦" },
+  推し: { slug: "mero", color: "#ff4fa3", deep: "#7a0f45", mark: "推" },
+  水: { slug: "iyashi", color: "#3ec8f0", deep: "#0b4f66", mark: "水" },
+  自然: { slug: "kusa", color: "#6bcb3b", deep: "#25520c", mark: "自" },
+  神: { slug: "kami", color: "#f2c14e", deep: "#6b4c06", mark: "神" },
 };
 
 /** 種族のマーク（対戦中の小さいカードで、ひと目で分かるように名前の頭の字） */

@@ -1,5 +1,5 @@
 import type { CardDef } from "@trends/cards";
-import { cardNo, DarkTag, EffectText } from "../EffectText";
+import { DarkTag, EffectText } from "../EffectText";
 import { stars } from "../meta";
 import { Stats } from "../Stats";
 
@@ -23,7 +23,6 @@ export function ShiroganeFace({ card }: { card: CardDef }) {
 
       <div className="plate">
         <div className="name">
-          <span className="epi">{card.epithet}</span>
           <h3>{card.name}</h3>
         </div>
         <div className="box">
@@ -34,7 +33,6 @@ export function ShiroganeFace({ card }: { card: CardDef }) {
             <EffectText text={card.effect} />
           </p>
           <div className="foot">
-            <span className="no">{cardNo(card)}</span>
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />
           </div>
         </div>

@@ -28,12 +28,10 @@ export function RuriFace({ card }: { card: CardDef }) {
 
       <div className="plate">
         <div className="name">
-          <span className="epi">{card.epithet}</span>
           <h3>{card.name}</h3>
         </div>
         <div className="chart">
           <div className="head">
-            <span className="label">夜勤カルテ</span>
             <AttrChips card={card} />
           </div>
           <p className="effect">

@@ -27,19 +27,16 @@ export function HibanaFace({ card }: { card: CardDef }) {
 
       <div className="plate">
         <div className="name">
-          <span className="epi">{card.epithet}</span>
           <h3>{card.name}</h3>
         </div>
         <div className="ticker">
           <div className="ticker-head">
-            <span className="flash">速報</span>
             <AttrChips card={card} />
           </div>
           <p className="effect">
             <EffectText text={card.effect} />
           </p>
           <div className="foot">
-            <span className="live">● LIVE</span>
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />
           </div>
         </div>

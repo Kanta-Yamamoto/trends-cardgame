@@ -39,7 +39,9 @@ describe("cards API", () => {
     const def = CARDS.find((c) => c.id === "c2");
     expect(ren).toMatchObject({
       name: "レン",
-      epithet: "炎上系配信者",
+      // 肩書き・フレーバーはカードに載せない（列は空）
+      epithet: "",
+      flavor: "",
       type: "icon",
       rarity: 5,
       cost: def?.cost,

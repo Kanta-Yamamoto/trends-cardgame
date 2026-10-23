@@ -481,3 +481,6 @@
 /* 効果文の中の押せる語（キーワード・状態・闇堕ち）：下線を引き、押すと解説 */
 .kw-help { text-decoration: underline dotted; text-decoration-thickness: 0.08em; text-underline-offset: 0.18em; cursor: pointer; }
 .kw-help:focus-visible { outline: 2px solid #8fd8ff; outline-offset: 2px; border-radius: 3px; }
+
+/* カード面の下の段：飾りの文字を置かないので、攻撃力・体力は常に右端に寄せる */
+.card-inner .foot > .stats{margin-left:auto}

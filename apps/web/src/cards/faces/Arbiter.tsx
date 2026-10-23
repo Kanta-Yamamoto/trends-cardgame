@@ -16,7 +16,6 @@ function Plate({ card }: { card: CardDef }) {
       <div className="plate">
         <div className="name">
           <h3>{card.name}</h3>
-          <span className="en">ARBITER</span>
         </div>
         <div className="box">
           <p className="effect">
