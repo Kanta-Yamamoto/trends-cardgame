@@ -11,14 +11,6 @@ const LISTED = new Set(CARDS.map((c) => c.id));
 
 type Filter = Attribute | "ニュートラル" | null;
 
-const RARITY_LABEL: Record<number, string> = {
-  5: "切り札",
-  4: "キラ",
-  3: "レア",
-  2: "アンコモン",
-  1: "コモン",
-};
-
 /**
  * カード一覧。★5 から順に、★ごとのまとまりで 3 列に並べる（縦にスクロールするだけで全部見られる）。
  * 押すと拡大し、拡大したまま「前へ・次へ」で、絞り込んだ並びの前後のカードを順に見られる
@@ -161,7 +153,6 @@ export function Gallery() {
           <section key={row.rarity} className="g-row" aria-label={`★${row.rarity}`}>
             <h2 className="g-row-head">
               <span className="g-stars">{"★".repeat(row.rarity)}</span>
-              {RARITY_LABEL[row.rarity]}
               <small>{row.cards.length}枚</small>
             </h2>
             <div className="gallery">
