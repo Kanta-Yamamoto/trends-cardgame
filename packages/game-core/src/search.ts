@@ -6,9 +6,9 @@ import {
   canUnitAttack,
   castTargets,
   darkOmens,
+  delayedDamageOn,
   effectiveCost,
   hasPassive,
-  incomingProphecy,
   opponent,
   sacrificeCandidates,
   viewUnit,
@@ -83,10 +83,9 @@ export function evaluate(state: GameState, player: PlayerId, catalog: Catalog): 
   const foeId = opponent(player);
   const me = state.players[player];
   const foe = state.players[foeId];
-  // お告げ（次の相手のターンの終わりに落ちるダメージ）は、もう減ったライフとして見る
+  // マスターに付いた「次の自分のターンの終わりにダメージを受ける」効果は、もう減ったライフとして見る
   let score =
-    (lifeValue(me.lp - incomingProphecy(state, player)) -
-      lifeValue(foe.lp - incomingProphecy(state, foeId))) *
+    (lifeValue(me.lp - delayedDamageOn(state, player)) - lifeValue(foe.lp - delayedDamageOn(state, foeId))) *
     WEIGHTS.life;
   for (let s = 0; s < me.field.length; s++) score += unitValue(state, player, s, catalog);
   for (let s = 0; s < foe.field.length; s++) score -= unitValue(state, foeId, s, catalog);

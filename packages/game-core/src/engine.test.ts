@@ -10,8 +10,8 @@ import {
   castTargets,
   createGame,
   darkOmens,
+  delayedDamageOn,
   effectiveCost,
-  incomingProphecy,
   isShielded,
   legalTargets,
   previewAttack,
@@ -207,7 +207,7 @@ const catalog: Record<string, RuleCard> = {
   barrier: post("barrier", 2, { effects: [{ do: "shieldMaster" }] }),
   oracle: icon("oracle", 6, 3, 5, {
     attributes: ["神"],
-    effects: [{ on: "play", do: "prophecy", amount: 7 }],
+    effects: [{ on: "play", do: "delayedDamage", amount: 7 }],
   }),
   again: post("again", 1, { effects: [{ do: "extraTurn" }] }),
   therapy: post("therapy", 2, { effects: [{ do: "heal", to: "allAlliesAndMaster", amount: 2 }] }),
@@ -1273,41 +1273,41 @@ describe("闇堕ちの姿の効果（確定除去・手札に戻す・マスタ�
   });
 });
 
-describe("お告げ（ミコト）", () => {
-  it("出したときに予告し、そのターンには落ちない。次の相手のターンの終わりに相手のマスターに落ちる", () => {
+describe("相手のマスターに付与する時間差のダメージ（ミコト）", () => {
+  it("場に出たとき相手のマスターに付き、そのターンには働かない。相手の次のターンの終わりにダメージを受ける", () => {
     const r = run(game(["oracle"]), { type: "play", player: "p1", handIndex: 0, slot: 0 });
-    expect(r.events.map((e) => e.type)).toContain("prophecy");
-    expect(incomingProphecy(r.state, "p2")).toBe(7);
-    expect(incomingProphecy(r.state, "p1")).toBe(0);
+    expect(r.events.map((e) => e.type)).toContain("delayedDamageSet");
+    expect(delayedDamageOn(r.state, "p2")).toBe(7);
+    expect(delayedDamageOn(r.state, "p1")).toBe(0);
     let s = end(r.state);
     expect(s.players.p2.lp).toBe(20);
     const e = run(s, { type: "endTurn", player: "p2" });
     expect(e.events.map((x) => x.type)).toEqual(
-      expect.arrayContaining(["prophecyFulfilled", "leaderDamaged"]),
+      expect.arrayContaining(["delayedDamageFired", "leaderDamaged"]),
     );
     s = e.state;
     expect(s.players.p2.lp).toBe(13);
-    expect(incomingProphecy(s, "p2")).toBe(0);
-    // 1回きり：次の相手のターンの終わりには、もう落ちない
+    expect(delayedDamageOn(s, "p2")).toBe(0);
+    // 1回きり：働いたら消える
     s = end(end(s), "p2");
     expect(s.players.p2.lp).toBe(13);
   });
-  it("出したアイコンがオワコンになっても止まらない", () => {
+  it("付与したアイコンがオワコンになっても、付いた効果は残る", () => {
     let s = end(play(game(["oracle"]), 0, 0));
     s.players.p1.field[0] = null;
     s = end(s, "p2");
     expect(s.players.p2.lp).toBe(13);
   });
-  it("相手のマスターがダメージを受けない状態なら防がれる", () => {
+  it("マスターがダメージを受けない状態なら防がれ、効果は消える", () => {
     let s = end(play(game(["oracle"]), 0, 0));
     s.players.p2.mana = 30;
     s.players.p2.hand = ["barrier", ...s.players.p2.hand];
     s = run(s, { type: "cast", player: "p2", handIndex: 0 }).state;
     s = end(s, "p2");
     expect(s.players.p2.lp).toBe(20);
-    expect(incomingProphecy(s, "p2")).toBe(0);
+    expect(delayedDamageOn(s, "p2")).toBe(0);
   });
-  it("自分の追加のターンでは落ちず、相手のターンの終わりまで待つ", () => {
+  it("付与した側の追加のターンでは働かず、付けられた側のターンの終わりまで待つ", () => {
     let s = game(["oracle", "again"]);
     s = play(s, 0, 0);
     s = cast(s, 0);
@@ -1318,7 +1318,7 @@ describe("お告げ（ミコト）", () => {
     s = end(s, "p2");
     expect(s.players.p2.lp).toBe(13);
   });
-  it("ライフが尽きたら、お告げを出した側の勝ち。相手のターンは始まらない", () => {
+  it("ライフが尽きたら付与した側の勝ち。次のターンは始まらない", () => {
     const s = end(play(game(["oracle"]), 0, 0));
     s.players.p2.lp = 7;
     const r = run(s, { type: "endTurn", player: "p2" });

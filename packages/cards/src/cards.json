@@ -638,11 +638,11 @@
     "effects": [
       {
         "on": "play",
-        "do": "prophecy",
+        "do": "delayedDamage",
         "amount": 10
       }
     ],
-    "effect": "場に出たとき、お告げ：次の相手のターンの終わりに、相手のマスターに10ダメージ。",
+    "effect": "場に出たとき、相手のマスターに「次の自分のターンの終わりに10ダメージを受ける」効果を付与する。",
     "flavor": "",
     "number": "001/040",
     "art": "/assets/cards/c1-art.jpg",

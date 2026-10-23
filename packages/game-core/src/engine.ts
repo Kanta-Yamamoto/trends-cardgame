@@ -368,9 +368,9 @@ function draw(state: GameState, player: PlayerId, emit: Emit): boolean {
   return true;
 }
 
-/** このプレイヤーのマスターに、次の自分のターンの終わりに来るお告げのダメージの合計（相手が出したお告げ） */
-export function incomingProphecy(state: GameState, player: PlayerId): number {
-  return (state.players[opponent(player)].prophecies ?? []).reduce((n, p) => n + p.amount, 0);
+/** このマスターに付いている「次の自分のターンの終わりにダメージを受ける」効果の合計 */
+export function delayedDamageOn(state: GameState, player: PlayerId): number {
+  return (state.players[player].delayedDamage ?? []).reduce((n, d) => n + d.amount, 0);
 }
 
 /** マスターが守られていて、ダメージを受けないか */
@@ -951,10 +951,11 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       emit({ type: "bounced", player: foeId, slot, cardId: u.cardId });
       break;
     }
-    case "prophecy": {
+    case "delayedDamage": {
       const cardId = self?.cardId ?? "";
-      me.prophecies = [...(me.prophecies ?? []), { cardId, amount: e.amount, turn: state.turn }];
-      emit({ type: "prophecy", player, cardId, amount: e.amount });
+      const foe = state.players[foeId];
+      foe.delayedDamage = [...(foe.delayedDamage ?? []), { cardId, amount: e.amount, turn: state.turn }];
+      emit({ type: "delayedDamageSet", player: foeId, cardId, amount: e.amount });
       break;
     }
     case "shieldMaster":
@@ -1353,13 +1354,13 @@ export function applyAction(
         }
       });
       resolveDeaths(state, catalog, emit, config);
-      // お告げ：相手が前のターンまでに出したお告げが、このターンの終わりに自分のマスターに落ちる
-      const due = (foe.prophecies ?? []).filter((p) => p.turn < state.turn);
+      // マスターに付いた「次の自分のターンの終わりにダメージを受ける」効果（前のターンまでに付いたもの）が働く
+      const due = (me.delayedDamage ?? []).filter((d) => d.turn < state.turn);
       if (due.length > 0) {
-        foe.prophecies = (foe.prophecies ?? []).filter((p) => p.turn >= state.turn);
-        for (const p of due) {
-          emit({ type: "prophecyFulfilled", player: foeId, cardId: p.cardId, amount: p.amount });
-          damageLeader(state, player, p.amount, emit);
+        me.delayedDamage = (me.delayedDamage ?? []).filter((d) => d.turn >= state.turn);
+        for (const d of due) {
+          emit({ type: "delayedDamageFired", player, cardId: d.cardId, amount: d.amount });
+          damageLeader(state, player, d.amount, emit);
         }
         checkWinner(state, player, emit);
         if (state.winner) break;
