@@ -22,30 +22,22 @@ export function YuzuhaFace({ card }: { card: CardDef }) {
 
       <div className="cost">
         <b>{card.cost}</b>
-        <small>℃</small>
       </div>
       <div className="rarity">{stars(card.rarity)}</div>
       <DarkTag card={card} />
 
       <div className="plate">
         <div className="name">
-          <span className="epi">{card.epithet}</span>
           <h3>{card.name}</h3>
         </div>
         <div className="board">
           <div className="head">
-            <span className="label">ととのい札</span>
             <AttrChips card={card} />
           </div>
           <p className="effect">
             <EffectText text={card.effect} />
           </p>
           <div className="foot">
-            <span className="timer" aria-hidden="true">
-              <i />
-              12:00
-            </span>
-            <span className="temps">サ室 100℃ ／ 水風呂 16℃</span>
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />
           </div>
         </div>

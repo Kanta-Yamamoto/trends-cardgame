@@ -29,22 +29,16 @@ export function KaguraFace({ card }: { card: CardDef }) {
 
       <div className="plate">
         <div className="name">
-          <span className="epi">{card.epithet}</span>
           <h3>{card.name}</h3>
         </div>
         <div className="contract">
           <div className="head">
-            <span className="label">依頼状</span>
             <AttrChips card={card} />
           </div>
           <p className="effect">
             <EffectText text={card.effect} />
           </p>
           <div className="foot">
-            <span className="hanko" aria-hidden="true">
-              請
-            </span>
-            <span className="memo">報酬：話題ひとつ</span>
             <Stats attack={card.attack ?? 0} hp={card.hp ?? 0} />
           </div>
         </div>

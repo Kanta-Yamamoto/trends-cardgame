@@ -342,7 +342,6 @@ function DeckEditor({
               </span>
               <button type="button" className="db-card" onClick={() => setZoom(c)}>
                 <span className="db-title">
-                  {c.epithet && <small>{c.epithet} </small>}
                   <b>{c.name}</b>
                   <span className="db-stars">{"★".repeat(c.rarity)}</span>
                   {c.type === "icon" && (

@@ -12,7 +12,6 @@ export function AttrChips({ card, kaiwai = true }: { card: CardDef; kaiwai?: boo
           className="chip attr"
           style={{ background: ATTR_META[a].color, color: ATTR_META[a].deep }}
         >
-          <i aria-hidden="true">{ATTR_META[a].mark}</i>
           {a}
         </span>
       ))}
