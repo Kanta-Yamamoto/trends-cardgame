@@ -32,12 +32,16 @@ type Client = Socket & { data: { user?: PublicUser } };
 const corsOrigin = () => process.env.CORS_ORIGIN?.split(",") ?? true;
 /** ランダムマッチの待ち行列を見直す間隔（待つほど組める幅が広がるので、定期的に見る） */
 const QUEUE_SWEEP_MS = 2000;
+/** CPU が 1 手ごとに置く間（画面が相手の手の演出を見せる分）。ターンの最初の 1 手は長めに */
+const CPU_STEP_MS = 1200;
+const CPU_TURN_START_MS = 2200;
 
 /**
  * オンライン対戦の通信。
  * - join：部屋に入る（再接続も同じ）。2人そろうと対戦が始まり、両者に "match" を送る
  * - action / resign：操作をサーバーで判定し、両者に "update" を送る
- * - queue / unqueue：ランダムマッチの待ち行列に入る・出る。組めたら "matched"（合言葉）を送り、画面はその部屋に入る
+ * - queue / unqueue：ランダムマッチの待ち行列に入る・出る。組めたら "matched"（合言葉）を送り、画面はその部屋に入る。
+ *   しばらく待っても人と組めなければ、待機している CPU と組む（CPU は待ち行列に並ばないので、CPU どうしでは組まない）
  * 持ち時間はサーバーが持ち、時間が過ぎたらサーバーが代わりに操作する（自動の差し出し・時間切れ負け）。
  * どちらの人にも、その人から見た形（自分が p1、相手の手札は隠す）で送る。
  */
@@ -51,6 +55,10 @@ export class MatchesGateway
   /** 持ち時間が切れる時刻に動くタイマー（部屋ごと） */
   private timers = new Map<string, NodeJS.Timeout>();
   private queue = new MatchQueue();
+  /** CPU の次の 1 手を打つタイマー（CPU との対戦の部屋ごと） */
+  private cpuTimers = new Map<string, NodeJS.Timeout>();
+  /** CPU が最後に手を打った通算ターン（ターンの最初の 1 手だけ間を長くする） */
+  private cpuTurn = new Map<string, number>();
   private sweep: NodeJS.Timeout | null = null;
 
   constructor(
@@ -69,15 +77,19 @@ export class MatchesGateway
     void this.matches
       .playing()
       .then((rows) => {
-        for (const row of rows) this.schedule(row);
+        for (const row of rows) {
+          this.schedule(row);
+          void this.driveCpu(row);
+        }
       })
       .catch((e) => console.error(e));
   }
 
   onModuleDestroy() {
     if (this.sweep) clearInterval(this.sweep);
-    for (const t of this.timers.values()) clearTimeout(t);
+    for (const t of [...this.timers.values(), ...this.cpuTimers.values()]) clearTimeout(t);
     this.timers.clear();
+    this.cpuTimers.clear();
   }
 
   /** いま人がつないでいる、決着していない対戦の数（デプロイで対戦を切らないように、/health で出す） */
@@ -122,6 +134,7 @@ export class MatchesGateway
       await this.sendMatch(row);
       // 入り直したときに時間が過ぎていれば、ここで進める
       this.schedule(row);
+      void this.driveCpu(row);
     });
   }
 
@@ -166,10 +179,11 @@ export class MatchesGateway
     return { ok: true };
   }
 
-  /** 組める 2 人がいれば対戦を作り、2 人に合言葉を知らせる */
+  /** 組める 2 人がいれば対戦を作り、2 人に合言葉を知らせる。長く待っても組めない人は CPU と組む */
   private async pairQueue() {
-    if (this.queue.size < 2) return;
-    for (const [a, b] of this.queue.take(Date.now())) {
+    if (this.queue.size === 0) return;
+    const now = Date.now();
+    for (const [a, b] of this.queue.take(now)) {
       try {
         const row = await this.matches.createRandom(a, b);
         for (const s of [a, b]) this.server.to(s.socketId).emit("matched", { code: row.code });
@@ -180,6 +194,43 @@ export class MatchesGateway
         this.queue.putBack(b);
       }
     }
+    for (const a of this.queue.takeLonely(now)) {
+      try {
+        const row = await this.matches.createCpu(a);
+        this.server.to(a.socketId).emit("matched", { code: row.code });
+        this.schedule(row);
+        void this.driveCpu(row);
+      } catch (e) {
+        console.error(e);
+        this.queue.putBack(a);
+      }
+    }
+  }
+
+  /** CPU との対戦で CPU の番なら、間を置いて 1 手打つ（打った手は broadcast から、また driveCpu に戻る） */
+  private async driveCpu(row: MatchRow) {
+    if (row.kind !== "cpu" || this.cpuTimers.has(row.code)) return;
+    const state = row.state;
+    const seat = await this.matches.cpuSeat(row);
+    if (!seat || !state || state.winner || row.status !== "playing") return;
+    const mine = state.pending ? state.pending.waiting.includes(seat) : state.active === seat;
+    if (!mine) return;
+    // 対戦の始めは、時計が動き出す（オープニングが終わる）まで待つ
+    const hold = row.clock?.since ? Math.max(0, row.clock.since - Date.now()) : 0;
+    const first = this.cpuTurn.get(row.code) !== state.turn;
+    const t = setTimeout(
+      () => {
+        this.cpuTimers.delete(row.code);
+        this.cpuTurn.set(row.code, state.turn);
+        this.matches
+          .cpuStep(row.code)
+          .then((steps) => this.broadcast(steps))
+          .catch((e) => console.error(e));
+      },
+      hold + (first && !state.pending ? CPU_TURN_START_MS : CPU_STEP_MS),
+    );
+    t.unref();
+    this.cpuTimers.set(row.code, t);
   }
 
   private async apply(code: string, user: PublicUser, action: Action) {
@@ -209,6 +260,8 @@ export class MatchesGateway
         if (r.row.ratings && r.state.winner) s.emit("rated", r.row.ratings[pid]);
       }
     this.schedule(last.row);
+    if (last.state.winner) this.cpuTurn.delete(last.row.code);
+    void this.driveCpu(last.row);
   }
 
   /** 次に時間が切れる時刻にタイマーを掛ける（決着していたら外す） */

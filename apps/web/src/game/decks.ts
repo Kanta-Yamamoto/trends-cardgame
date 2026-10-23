@@ -1,4 +1,4 @@
-import { type Attribute, type CardDef, DECKS, type DeckId } from "@trends/cards";
+import { type Attribute, type CardDef, CPU_DECKS, DECKS, type DeckId } from "@trends/cards";
 import {
   deckAttributes,
   encodeCustomDeck,
@@ -84,7 +84,9 @@ export function deckFromRef(ref: string): DeckSel | null {
   const cards = resolveDeckRef(ref, DECKS);
   if (!cards || !isCustomDeckRef(ref)) return null;
   const saved = loadCustomDecks().find((d) => encodeCustomDeck(d.cards) === ref);
-  return customDeckSel(saved ?? { id: "", name: CUSTOM_NAME, cards, updated: 0 });
+  // ランダムマッチで待機している CPU のデッキは、その名前で見せる
+  const cpu = CPU_DECKS.find((d) => encodeCustomDeck(d.cards) === ref);
+  return customDeckSel(saved ?? { id: "", name: cpu?.name ?? CUSTOM_NAME, cards, updated: 0 });
 }
 
 export function loadCustomDecks(): CustomDeck[] {

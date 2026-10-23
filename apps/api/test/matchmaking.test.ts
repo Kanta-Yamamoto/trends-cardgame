@@ -42,6 +42,14 @@ describe("ランダムマッチの組み方", () => {
     q.removeSocket("s-a");
     expect(q.size).toBe(0);
   });
+
+  it("長く待っても組めなかった人だけを、CPU と組むために外す", () => {
+    const q = new MatchQueue();
+    q.add(seeker("a", 1500, 20));
+    q.add(seeker("b", 1500, 3));
+    expect(q.takeLonely(T, 15_000).map((s) => s.userId)).toEqual(["a"]);
+    expect(q.size).toBe(1);
+  });
 });
 
 describe("ランキングの並べ方", () => {

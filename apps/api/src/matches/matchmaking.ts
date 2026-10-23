@@ -14,6 +14,9 @@ export interface Seeker {
   since: number;
 }
 
+/** これだけ待っても人と組めなければ、待機している CPU と組む（テストでは CPU_WAIT_MS で短くする） */
+export const cpuWaitMs = () => Number(process.env.CPU_WAIT_MS ?? 15_000);
+
 /** 組んでよいレーティングの差：はじめは 200、1 秒待つごとに 20 広がる（30 秒で 800） */
 export function ratingWindow(s: Seeker, now: number): number {
   return 200 + 20 * Math.max(0, (now - s.since) / 1000);
@@ -64,6 +67,13 @@ export class MatchQueue {
     const out = new Set(pairs.flat());
     this.list = this.list.filter((x) => !out.has(x));
     return pairs;
+  }
+
+  /** 長く待っても人と組めなかった人を行列から外して返す（CPU と組む） */
+  takeLonely(now: number, waitMs = cpuWaitMs()): Seeker[] {
+    const lonely = this.list.filter((x) => now - x.since >= waitMs);
+    this.list = this.list.filter((x) => !lonely.includes(x));
+    return lonely;
   }
 
   /** 組めなかったときに、待ち始めた時刻のまま戻す */

@@ -42,7 +42,7 @@ interface Seat {
 interface MatchInfo {
   code: string;
   status: string;
-  /** friend（合言葉の部屋）/ random（ランダムマッチ） */
+  /** friend（合言葉の部屋）/ random（ランダムマッチ）/ cpu（ランダムマッチで待機している CPU と） */
   kind: string;
   players: { p1: Seat | null; p2: Seat | null };
 }
@@ -239,6 +239,7 @@ function RandomMatch() {
             相手を探しています <b>{formatClock(waited)}</b>
           </p>
           <p className="muted">デッキ：{deck.name}</p>
+          <p className="muted">15 秒たっても相手がいなければ、CPU と対戦します（レートは動きません）。</p>
           <button type="button" className="btn ghost" onClick={cancel}>
             やめる
           </button>
