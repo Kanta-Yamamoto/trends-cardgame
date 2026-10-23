@@ -65,6 +65,10 @@ export function MiniCard({
   const attack = view?.attack ?? card.attack ?? 0;
   const hp = view?.hp ?? card.hp ?? 0;
   const hurt = view ? view.hp < view.maxHp : false;
+  // 強化中（カードの元の値より上がっている）かどうか。数字を淡い金にする
+  const base = dark && card.dark ? card.dark : { attack: card.attack ?? 0, hp: card.hp ?? 1 };
+  const atkUp = view ? view.attack > base.attack : false;
+  const hpUp = view ? view.maxHp > base.hp : false;
   const isPost = card.type === "post";
   return (
     <button
@@ -173,10 +177,10 @@ export function MiniCard({
       {isPost && <span className="mini-postmark">投稿</span>}
       {!isPost && (
         <span className="mini-stats">
-          <span className="mini-atk" title="攻撃力">
+          <span className={`mini-atk ${atkUp ? "up" : ""}`} title="攻撃力">
             {attack}
           </span>
-          <span key={hp} className={`mini-hp ${hurt ? "hurt" : ""}`} title="体力">
+          <span key={hp} className={`mini-hp ${hurt ? "hurt" : ""} ${hpUp ? "up" : ""}`} title="体力">
             {hp}
           </span>
         </span>

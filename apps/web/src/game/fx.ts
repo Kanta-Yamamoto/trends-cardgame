@@ -2,6 +2,7 @@ import type { AttackTarget, GameEvent, GameState, PlayerId, RuleCard, Unit } fro
 import { viewUnit, withRushBoost } from "@trends/game-core";
 import { gsap } from "gsap";
 import { frameRect } from "../frame";
+import { buzzPower } from "../fx/buzzPower";
 import { dissolve } from "../fx/dissolve";
 import { healMist } from "../fx/healMist";
 import { impact } from "../fx/impact";
@@ -273,18 +274,18 @@ export async function animateAttack(
   await wait(60);
 }
 
-/** バズの対象：光の枠と「バズ」の札を付け、+2/+2 を出す（盤面でどのアイコンがバズったか分かるように） */
-export function markBuzzed(uid: number, attack: number, hp: number) {
+/** バズの演出（絵の帯 → 赤い光の筋 → 「+2」）。数字を変える瞬間に resolve する。中身は fx/buzzPower.ts */
+export function animateBuzz(uid: number, opts: { art?: string; attack: number; hp: number }): Promise<void> {
+  return buzzPower(layer(), q(`[data-uid="${uid}"]`), opts);
+}
+
+/** バズで数字が変わった瞬間：攻撃力・体力の丸を軽く弾ませる（光らせない） */
+export function markBuzzed(uid: number) {
   const el = q(`[data-uid="${uid}"]`);
-  if (!el) return;
-  el.classList.remove("fx-buzzed");
-  void el.offsetWidth; // アニメーションをやり直す
-  el.classList.add("fx-buzzed");
-  if (canAnimate() && !reduced()) {
-    glow(el, "#9d7bff");
-    popLabel(el, `バズ +${attack}/+${hp}`, "#5ef2ff");
+  if (!el || !canAnimate() || reduced()) return;
+  for (const s of el.querySelectorAll<HTMLElement>(".mini-atk, .mini-hp")) {
+    s.animate([{ scale: 1.28 }, { scale: 1 }], { duration: 240, easing: "cubic-bezier(.3,1.5,.5,1)" });
   }
-  setTimeout(() => el.classList.remove("fx-buzzed"), 2200);
 }
 
 /** 凸の強化：攻撃するアイコンを光らせて「+1/+1」を出し、攻撃力の数字を先に上げる。見せ終わってから突進する */
