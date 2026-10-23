@@ -25,6 +25,19 @@ import { isStandalone, registerPwa } from "./pwa";
 import { lockZoom } from "./viewport";
 
 registerPwa();
+// 本番を入れ替えたあと、開いたままの古い画面が、消えたファイル（あとから読む部品）を読みに行くと失敗する。
+// そのときは画面を読み直して、新しい版に切り替える（読み直しを繰り返さないよう、30 秒に 1 回まで）
+window.addEventListener("vite:preloadError", (e) => {
+  try {
+    const last = Number(sessionStorage.getItem("trends-reloaded-at") ?? 0);
+    if (Date.now() - last < 30_000) return;
+    sessionStorage.setItem("trends-reloaded-at", String(Date.now()));
+  } catch {
+    // 保存できない環境でも読み直す
+  }
+  e.preventDefault();
+  window.location.reload();
+});
 // ホーム画面のアプリとして開いているときは、どの画面でも拡大縮小しない（アプリらしく）
 if (isStandalone()) lockZoom();
 

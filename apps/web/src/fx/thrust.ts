@@ -247,7 +247,43 @@ export function thrust(
 
   return new Promise((resolve) => {
     const t0 = performance.now();
+    let finished = false;
+    /** 後片付け（途中で失敗しても必ず呼ぶ。GSAP の時計を止めたままにしない） */
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      for (const o of others) {
+        o.style.translate = "";
+        o.style.rotate = "";
+      }
+      if (arbiter) arbiter.style.translate = "";
+      board.style.translate = "";
+      board.style.filter = "";
+      if (paused || gsap.globalTimeline.paused()) gsap.globalTimeline.resume();
+      for (const tg of targets) {
+        tg.el.style.scale = "";
+        tg.el.style.rotate = "";
+        tg.el.style.filter = "";
+        tg.el.classList.remove("fx-judged");
+        if (!dead.has(tg.uid)) {
+          dead.add(tg.uid);
+          onDeath(tg.uid);
+        }
+      }
+      cv.remove();
+      resolve();
+    };
     const step = (now: number) => {
+      try {
+        if (frame(now)) requestAnimationFrame(step);
+        else finish();
+      } catch (e) {
+        console.warn("[fx] 『調停者』の突きの演出が途中で失敗しました", e);
+        finish();
+      }
+    };
+    /** 1 コマ描く。続けるなら true */
+    const frame = (now: number): boolean => {
       const real = now - t0;
       const { te: t, frozen } = warp(real, n);
       // 時が止まっている間は、GSAP の時計（ほかの演出）も止める
@@ -387,22 +423,7 @@ export function thrust(
         : "";
       board.style.filter = frozen ? "invert(1) hue-rotate(180deg) brightness(1.4)" : "";
 
-      if (real < endReal) {
-        requestAnimationFrame(step);
-        return;
-      }
-      // 後片付け
-      for (const o of others) {
-        o.style.translate = "";
-        o.style.rotate = "";
-      }
-      if (arbiter) arbiter.style.translate = "";
-      board.style.translate = "";
-      board.style.filter = "";
-      if (paused) gsap.globalTimeline.resume();
-      for (const tg of targets) if (!dead.has(tg.uid)) onDeath(tg.uid);
-      cv.remove();
-      resolve();
+      return real < endReal;
     };
     requestAnimationFrame(step);
   });
