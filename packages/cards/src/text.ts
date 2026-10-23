@@ -7,6 +7,9 @@ import type { CardDef, CardEffect, DarkSide, Kaiwai } from "./types";
  * 呼び名は用語集（glossary.ts）のものだけを使う。cards.json の effect は、この関数の結果と同じにする（テストで確かめる）
  */
 
+/** 1 枚の効果文の長さの上限（字。10月24日にオーナーが決めた） */
+export const MAX_EFFECT_LENGTH = 100;
+
 /** カード ID から名前を引く（トークンの名前を書くため） */
 export type NameOf = (id: string) => string;
 
@@ -34,19 +37,30 @@ const SECTION_ORDER: readonly Section[] = [
   "death",
 ];
 
-/** きっかけの書き出し。闇堕ちの姿の「場に出たとき」は「闇堕ちしたとき」 */
+/**
+ * きっかけの書き出し。名前の付いたきっかけは【】のラベルにする（Shadowverse の【ファンファーレ】【ラストワード】【攻撃時】の型）。
+ * 時の指定（自分のターンの終わりに、など）は、Shadowverse の「自分のターン終了時、」と同じく文で書く。
+ * 闇堕ちの姿の【場に出たとき】は【闇堕ちしたとき】
+ */
+export const TRIGGER_LABELS = [
+  "【場に出たとき】",
+  "【闇堕ちしたとき】",
+  "【突進で攻撃したとき】",
+  "【破壊されたとき】",
+] as const;
+
 function lead(section: Section, dark: boolean): string {
   switch (section) {
     case "hand":
       return "手札にある間、";
     case "play":
-      return dark ? "闇堕ちしたとき、" : "場に出たとき、";
+      return dark ? "【闇堕ちしたとき】" : "【場に出たとき】";
     case "rush":
-      return "突進で攻撃したとき、";
+      return "【突進で攻撃したとき】";
     case "turnEnd":
       return "自分のターンの終わりに、";
     case "death":
-      return "破壊されたとき、";
+      return "【破壊されたとき】";
     default:
       // 場にいる間ずっと・〜するたび・ターンの始め は、文の中に書く
       return "";
@@ -247,7 +261,7 @@ function sentence(e: CardEffect, ctx: Ctx, prev: CardEffect | undefined): string
       case "copySelf":
         return "自分の空いている枠に、トークンとしてこのキャラクターのコピーを1体出す";
       case "revive":
-        return `墓地のコストが${e.maxCost}以下の自分のキャラクターのうち、コストがいちばん高い1体を場に戻す。場に出たときの効果も働く`;
+        return `墓地のコストが${e.maxCost}以下の自分のキャラクターのうち、コストがいちばん高い1体を場に戻す。【場に出たとき】も働く`;
       case "attackPerAlly":
         return `自分の場のほかの${kaiwaiOr(e.kaiwai, "キャラクター")}1体につき攻撃力+1`;
       case "attackPerLostToken":
@@ -281,7 +295,7 @@ function sentence(e: CardEffect, ctx: Ctx, prev: CardEffect | undefined): string
       case "judge":
         return "このキャラクターを除いて、自分と相手の場で攻撃力がいちばん高いキャラクターすべてを破壊する";
       case "stageAces":
-        return "自分と相手の両方に空いている枠があれば、自分と相手は、それぞれ自分の山札から闇堕ちを持つカードを1枚出し、そのキャラクターに突進を付ける。そのキャラクターの場に出たときの効果は働かない";
+        return "自分と相手の両方に空いている枠があれば、自分と相手は、それぞれ自分の山札から闇堕ちを持つカードを1枚出し、そのキャラクターに突進を付ける。そのキャラクターの【場に出たとき】は働かない";
       case "buffSelfPerPlayed":
         // キーワード「コンボ」として先頭に書く
         return "";
