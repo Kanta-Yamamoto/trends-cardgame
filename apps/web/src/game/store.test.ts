@@ -18,12 +18,12 @@ describe("対戦ストア", () => {
   it("反則の操作はエラー文を出して状態を変えない", () => {
     const s = useGame.getState();
     const hand = s.game?.players[ME].hand ?? [];
-    // 話題力1では出せないアイコン（デッキの中身が変わっても同じことを確かめる）
+    // コスト1では出せないキャラクター（デッキの中身が変わっても同じことを確かめる）
     const heavy = hand.findIndex((id) => CATALOG[id]?.type === "icon" && (CATALOG[id]?.cost ?? 0) > 1);
     expect(heavy).toBeGreaterThanOrEqual(0);
     s.select({ kind: "hand", index: heavy });
     s.play(0);
-    expect(useGame.getState().error).toMatch(/話題力が足りません/);
+    expect(useGame.getState().error).toMatch(/コストが足りません/);
     expect(useGame.getState().game?.players[ME].field[0]).toBeNull();
   });
 
@@ -46,7 +46,7 @@ describe("対戦ストア", () => {
     for (let i = 0; i < 40 && !useGame.getState().game?.winner; i++) useGame.getState().endTurn();
     expect(useGame.getState().game?.winner).toBe(CPU);
   });
-  it("『フィクサー』：CPU はすぐ差し出し、自分が選ぶと両方が倒される", () => {
+  it("『フィクサー』：CPU はすぐ差し出し、自分が選ぶと両方が破壊される", () => {
     const g = structuredClone(useGame.getState().game);
     if (!g) throw new Error("no game");
     g.players[ME].mana = 30;

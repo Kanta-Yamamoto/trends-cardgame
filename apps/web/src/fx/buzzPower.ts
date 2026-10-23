@@ -5,7 +5,7 @@ import { frameRect } from "../frame";
  * バズの演出（10月23日に決定。モック：claude.ai の Artifact「バズの演出 案」）。
  * 言葉（「バズ」の文字）は出さず、動きで見せる：
  *   1. 画面のまん中に横長の帯が開き、バズったキャラの絵を大きく見せる → 帯が細い線に閉じる
- *   2. 帯から赤い光の筋がアイコンへ飛び込む
+ *   2. 帯から赤い光の筋がキャラクターへ飛び込む
  *   3. カードの中だけで、赤い光の筋が下から上へゆっくり3回のぼる
  *   4. 攻撃力・体力の上に「+2」を見せてから、数字を変える（ここで resolve する。呼び手が state を進める）
  * 演出はカードのまわり（外へ 6px まで）だけ。広く散る紙吹雪・数字のまわりを回る輪は付けない（オーナーの指示）。
@@ -93,7 +93,7 @@ async function showArt(layer: HTMLElement, art: string | undefined) {
   return { x: f.left + f.width / 2, y: f.top + f.height / 2 };
 }
 
-/** 2. 帯からアイコンへ、赤い光の筋が飛び込む（加速して 0.2 秒） */
+/** 2. 帯からキャラクターへ、赤い光の筋が飛び込む（加速して 0.2 秒） */
 async function beamTo(layer: HTMLElement, from: { x: number; y: number }, to: { x: number; y: number }) {
   const f = frameRect();
   const { cv, g } = canvasAt(layer, f);

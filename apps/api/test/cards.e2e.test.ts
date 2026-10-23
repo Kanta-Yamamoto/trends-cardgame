@@ -45,11 +45,11 @@ describe("cards API", () => {
       cost: def?.cost,
       attack: def?.attack,
       hp: def?.hp,
-      attributes: ["炎上"],
+      attributes: ["炎"],
       keywords: ["連撃"],
     });
     expect(ren.dark).toMatchObject({ name: "闇堕ちレン", attack: def?.dark?.attack, hp: def?.dark?.hp });
-    // 投稿は攻撃力・体力を持たない
+    // 呪文は攻撃力・体力を持たない
     expect(res.body.find((c: { id: string }) => c.id === "f5")).toMatchObject({
       type: "post",
       attack: null,

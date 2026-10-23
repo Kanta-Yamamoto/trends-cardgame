@@ -92,7 +92,7 @@ export function createGame(input: NewGameInput): GameState {
   return { turn: 1, active: first, players: { p1, p2 }, winner: null, seed, nextUid: 1 };
 }
 
-/* ---------- アイコンの今の姿 ---------- */
+/* ---------- キャラクターの今の姿 ---------- */
 
 function keywordsOf(u: Unit, catalog: Catalog): Keyword[] {
   if (u.silenced) return [];
@@ -119,12 +119,12 @@ export function hasKeyword(u: Unit, k: Keyword, catalog: Catalog): boolean {
   return keywordsOf(u, catalog).includes(k);
 }
 
-/** その界隈に入っているか（闇堕ちの姿でも元のカードの界隈のまま） */
+/** その種族に入っているか（闇堕ちの姿でも元のカードの種族のまま） */
 export function inKaiwai(u: Unit, k: Kaiwai, catalog: Catalog): boolean {
   return must(catalog, u.cardId).kaiwai.includes(k);
 }
 
-/** 自分の場のアイコンの数（界隈で絞れる。except を渡すとそのアイコンは数えない） */
+/** 自分の場のキャラクターの数（種族で絞れる。except を渡すとそのキャラクターは数えない） */
 function countAllies(
   state: GameState,
   owner: PlayerId,
@@ -137,7 +137,7 @@ function countAllies(
   ).length;
 }
 
-/** アイコンの攻撃力・体力・キーワードなど、効果を反映した今の値 */
+/** キャラクターの攻撃力・体力・キーワードなど、効果を反映した今の値 */
 export function viewUnit(state: GameState, owner: PlayerId, unit: Unit, catalog: Catalog): UnitView {
   const card = must(catalog, unit.cardId);
   const base = unit.dark && card.dark ? card.dark : { attack: card.attack ?? 0, hp: card.hp ?? 1 };
@@ -164,7 +164,7 @@ export function viewUnit(state: GameState, owner: PlayerId, unit: Unit, catalog:
   };
 }
 
-/** 支払うコスト。手札にある間の補正（場のアイコンの数・使った投稿の数で安くなる）を反映する */
+/** 支払うコスト。手札にある間の補正（場のキャラクターの数・使った呪文の数で安くなる）を反映する */
 export function effectiveCost(state: GameState, player: PlayerId, cardId: string, catalog: Catalog): number {
   const card = must(catalog, cardId);
   const me = state.players[player];
@@ -178,7 +178,7 @@ export function effectiveCost(state: GameState, player: PlayerId, cardId: string
   return Math.max(0, cost);
 }
 
-/** 闇の気配（倒されて、次の自分のターンの始めに闇堕ちして戻ってくるカード） */
+/** 闇の気配（破壊されて、次の自分のターンの始めに闇堕ちして戻ってくるカード） */
 export function darkOmens(state: GameState, player: PlayerId): { cardId: string; slot: number }[] {
   return state.players[player].darkOmens ?? [];
 }
@@ -200,14 +200,14 @@ export function buzzBlock(state: GameState, player: PlayerId): string | null {
   if (me.buzzTurn === state.turn) return "バズは1ターンに1回までです";
   const from = me.buzzFrom ?? 1;
   if ((me.turnsTaken ?? 0) < from) return `バズは自分の${from}ターン目から使えます`;
-  if (!me.field.some((u) => u)) return "バズさせる自分のアイコンがいません";
+  if (!me.field.some((u) => u)) return "バズさせる自分のキャラクターがいません";
   return null;
 }
 
 /**
- * 今攻撃できる相手。相手の場にガードがいる間は、ガードしか攻撃できない（マスターも不可）。
- * 晒し者はガードを失うので、ガードとしては数えない。
- * ガードがいなければ、マスターと相手のアイコンすべて。
+ * 今攻撃できる相手。相手の場にガードがいる間は、ガードしか攻撃できない（プレイヤーも不可）。
+ * 晒し状態はガードを失うので、ガードとしては数えない。
+ * ガードがいなければ、プレイヤーと相手のキャラクターすべて。
  */
 export function legalTargets(state: GameState, player: PlayerId, catalog: Catalog): AttackTarget[] {
   const foeId = opponent(player);
@@ -221,7 +221,7 @@ export function legalTargets(state: GameState, player: PlayerId, catalog: Catalo
   return [{ kind: "leader" as const }, ...units.map((x) => ({ kind: "unit" as const, slot: x.slot }))];
 }
 
-/** そのアイコンが攻撃できる相手。凸（出たターン・闇堕ちした直後）のアイコンは、相手のアイコンにだけ攻撃できる */
+/** そのキャラクターが攻撃できる相手。突進（出たターン・闇堕ちした直後）のキャラクターは、相手のキャラクターにだけ攻撃できる */
 export function attackTargets(
   state: GameState,
   player: PlayerId,
@@ -237,9 +237,9 @@ export function attackTargets(
 export interface AttackPreview {
   /** 攻撃先に与えるダメージ */
   toDefender: number;
-  /** 反撃で受けるダメージ（マスターへの攻撃は 0） */
+  /** 反撃で受けるダメージ（プレイヤーへの攻撃は 0） */
   toAttacker: number;
-  /** 攻撃先を倒せる（闇堕ちするアイコンは裏返る） */
+  /** 攻撃先を破壊できる（闇堕ちするキャラクターは裏返る） */
   kills: boolean;
   /** 反撃で攻撃した側が倒れる */
   dies: boolean;
@@ -252,12 +252,12 @@ export function previewAttack(
   target: AttackTarget,
   catalog: Catalog,
 ): AttackPreview | null {
-  // 凸で攻撃したときの強化は殴る前に働くので、上がった攻撃力で見積もる
+  // 突進で攻撃したときの強化は殴る前に働くので、上がった攻撃力で見積もる
   return previewRaw(withRushBoost(state, player, from, target, catalog).state, player, from, target, catalog);
 }
 
 /**
- * 凸で攻撃したとき（出たターンに相手のアイコンへ）の効果を、殴る前に働かせた姿と、その出来事。
+ * 突進で攻撃したとき（出たターンに相手のキャラクターへ）の効果を、殴る前に働かせた姿と、その出来事。
  * 働く効果がなければ、元の state をそのまま返す（画面の演出：強化を見せてから殴る）
  */
 export function withRushBoost(
@@ -294,7 +294,7 @@ function runRushEffects(
   }
 }
 
-/** 今の姿のまま殴ったときの見積もり（凸の強化はもう働いた前提） */
+/** 今の姿のまま殴ったときの見積もり（突進の強化はもう働いた前提） */
 function previewRaw(
   state: GameState,
   player: PlayerId,
@@ -324,7 +324,7 @@ function previewRaw(
   };
 }
 
-/** 投稿を使える対象（対象を取らない投稿なら空） */
+/** 呪文を使える対象（対象を取らない呪文なら空） */
 export function castTargets(
   state: GameState,
   player: PlayerId,
@@ -346,7 +346,7 @@ export function castTargets(
   });
 }
 
-/** そのアイコンが今攻撃できるか */
+/** そのキャラクターが今攻撃できるか */
 export function canUnitAttack(state: GameState, u: Unit): boolean {
   return u.canAttack && u.attacksLeft > 0 && state.turn > u.boundUntil;
 }
@@ -357,7 +357,7 @@ function draw(state: GameState, player: PlayerId, emit: Emit): boolean {
   const me = state.players[player];
   const cardId = me.deck.shift();
   if (!cardId) return false;
-  // 手札が上限なら、引いたカードはそのままオワコンへ
+  // 手札が上限なら、引いたカードはそのまま墓地へ
   if (me.hand.length >= MAX_HAND) {
     me.trash.push(cardId);
     emit({ type: "burned", player, cardId });
@@ -368,12 +368,12 @@ function draw(state: GameState, player: PlayerId, emit: Emit): boolean {
   return true;
 }
 
-/** このマスターに付いている「次の自分のターンの終わりにダメージを受ける」効果の合計 */
+/** このプレイヤーに付いている「次の自分のターンの終わりにダメージを受ける」効果の合計 */
 export function delayedDamageOn(state: GameState, player: PlayerId): number {
   return (state.players[player].delayedDamage ?? []).reduce((n, d) => n + d.amount, 0);
 }
 
-/** マスターが守られていて、ダメージを受けないか */
+/** プレイヤーが守られていて、ダメージを受けないか */
 export function isShielded(state: GameState, player: PlayerId): boolean {
   return state.turn <= (state.players[player].shieldUntil ?? 0);
 }
@@ -397,7 +397,7 @@ function healLeader(state: GameState, player: PlayerId, amount: number, config: 
 }
 
 /**
- * 晒し者にする：ガードを失い、それまでの強化（プラスの分）がすべて消える。ずっと続く（TL浄化で消える）。
+ * 晒し状態にする：ガードを失い、それまでの強化（プラスの分）がすべて消える。ずっと続く（TL浄化で消える）。
  * 晒されたあとに受けた強化は消えない
  */
 function exposeUnit(owner: PlayerId, slot: number, u: Unit, emit: Emit) {
@@ -410,7 +410,7 @@ function exposeUnit(owner: PlayerId, slot: number, u: Unit, emit: Emit) {
   emit({ type: "status", player: owner, slot, cardId: u.cardId, status: "晒し" });
 }
 
-/** 差し出し待ちのとき、その人が選べる自分のアイコンの枠（効果を出したアイコンは選べない） */
+/** 差し出し待ちのとき、その人が選べる自分のキャラクターの枠（効果を出したキャラクターは選べない） */
 export function sacrificeCandidates(state: GameState, player: PlayerId): number[] {
   const p = state.pending;
   if (p?.kind !== "sacrifice") return [];
@@ -436,8 +436,8 @@ export function fieldOf(
 function newUnit(state: GameState, cardId: string, catalog: Catalog, token: boolean): Unit {
   const card = must(catalog, cardId);
   const rush = card.keywords.includes("速攻");
-  // 凸：出たターンは相手のアイコンにだけ攻撃できる（速攻があれば速攻が優先）
-  const totsu = !rush && card.keywords.includes("凸");
+  // 突進：出たターンは相手のキャラクターにだけ攻撃できる（速攻があれば速攻が優先）
+  const totsu = !rush && card.keywords.includes("突進");
   return {
     uid: state.nextUid++,
     cardId,
@@ -484,8 +484,8 @@ function damageUnit(state: GameState, owner: PlayerId, slot: number, amount: num
 }
 
 /**
- * 体力が 0 以下のアイコンを片付ける。倒されたカードの ID を返す。
- * 闇堕ちを使い終えたカード（闇堕ちの姿・TL浄化で戻った姿）は、オワコンに戻っても、もう闇堕ちできない。
+ * 体力が 0 以下のキャラクターを片付ける。破壊されたカードの ID を返す。
+ * 闇堕ちを使い終えたカード（闇堕ちの姿・TL浄化で戻った姿）は、墓地に戻っても、もう闇堕ちできない。
  */
 function resolveDeaths(
   state: GameState,
@@ -494,7 +494,7 @@ function resolveDeaths(
   config: Config = DEFAULT_CONFIG,
 ): string[] {
   const destroyed: string[] = [];
-  // 「倒されたとき」の効果で、さらに倒れることがある。落ち着くまで繰り返す
+  // 「破壊されたとき」の効果で、さらに倒れることがある。落ち着くまで繰り返す
   for (let round = 0; round < 10; round++) {
     const deaths: { owner: PlayerId; effects: CardEffect[] }[] = [];
     for (const owner of ["p1", "p2"] as const) {
@@ -504,7 +504,7 @@ function resolveDeaths(
         if (viewUnit(state, owner, u, catalog).hp > 0) return;
         const onDeath = effectsOf(u, catalog).filter((e) => triggerOf(e) === "death");
         p.field[slot] = null;
-        // 闇堕ちの姿が倒されたら、そのカードは消える（オワコンにも行かない）
+        // 闇堕ちの姿が破壊されたら、そのカードは消える（墓地にも行かない）
         const vanished = u.dark && !u.token;
         if (!u.token && !vanished) p.trash.push(u.cardId);
         if (u.token) p.tokensLost = { ...p.tokensLost, [u.cardId]: (p.tokensLost?.[u.cardId] ?? 0) + 1 };
@@ -514,7 +514,7 @@ function resolveDeaths(
             ? { type: "destroyed", player: owner, cardId: u.cardId, vanished: true }
             : { type: "destroyed", player: owner, cardId: u.cardId },
         );
-        // 闇堕ちを持つカードが元の姿で倒されたら、闇の気配（次の自分のターンの始めに闇堕ちして戻る）
+        // 闇堕ちを持つカードが元の姿で破壊されたら、闇の気配（次の自分のターンの始めに闇堕ちして戻る）
         if (!u.token && !u.dark && catalog[u.cardId]?.dark) {
           const spent = (p.darkSpent ?? []).indexOf(u.cardId);
           if (u.darkUsed || spent >= 0) {
@@ -557,9 +557,9 @@ interface Ctx {
   catalog: Catalog;
   config: Config;
   emit: Emit;
-  /** 効果を出したアイコンの枠（アイコンの効果のとき） */
+  /** 効果を出したキャラクターの枠（キャラクターの効果のとき） */
   selfSlot?: number;
-  /** 投稿の対象 */
+  /** 呪文の対象 */
   target?: CastTarget;
   /** このカードより前に、このターン出したカードの枚数 */
   playedBefore: number;
@@ -568,7 +568,7 @@ interface Ctx {
 /** 効果を1つ実行する */
 /**
  * 回復の効果を使ったあと（回復した量が0でも数える）：回数を数え、場の「回復するたびに」の効果を起こす。
- * 回復の効果を1つ使うごとに1回（アイコンが何体回復しても1回）
+ * 回復の効果を1つ使うごとに1回（キャラクターが何体回復しても1回）
  */
 function afterHeal(ctx: Ctx) {
   const { state, player, catalog, emit } = ctx;
@@ -599,7 +599,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
   const self = ctx.selfSlot !== undefined ? me.field[ctx.selfSlot] : null;
   const tgtOwner = ctx.target ? (ctx.target.side === "enemy" ? foeId : player) : null;
   const tgt = ctx.target && tgtOwner ? state.players[tgtOwner].field[ctx.target.slot] : null;
-  const status = (owner: PlayerId, slot: number, u: Unit, s: "晒し" | "眠り" | "訂正" | "ガード消滅") =>
+  const status = (owner: PlayerId, slot: number, u: Unit, s: "晒し" | "眠り" | "沈黙" | "ガード消滅") =>
     emit({ type: "status", player: owner, slot, cardId: u.cardId, status: s });
 
   const cond = e.if;
@@ -729,7 +729,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       else if (tgt && tgtOwner && ctx.target) damageUnit(state, tgtOwner, ctx.target.slot, e.amount, emit);
       break;
     case "hype": {
-      // 炎上商法：投稿なら対象の自分のアイコン、アイコンの効果なら自分
+      // 炎上商法：呪文なら対象の自分のキャラクター、キャラクターの効果なら自分
       const slot = ctx.target ? ctx.target.slot : ctx.selfSlot;
       const u = ctx.target ? tgt : self;
       if (u && slot !== undefined) {
@@ -740,7 +740,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       break;
     }
     case "sacrifice": {
-      // 差し出し：選べるアイコンがいる側だけ、選ぶ番になる（自分はこのアイコン以外から）
+      // 差し出し：選べるキャラクターがいる側だけ、選ぶ番になる（自分はこのキャラクター以外から）
       if (!self) break;
       const pend = {
         kind: "sacrifice" as const,
@@ -760,8 +760,8 @@ function runEffect(e: CardEffect, ctx: Ctx) {
     case "stageAces": {
       // 演出：両方に空き枠があるときだけ（公平に）、それぞれの山札から闇堕ちを持つカードを1枚ずつ出す。
       // デッキの決まりで闇堕ち持ちは1種類だが、決まりが変わってもいいように山札の中からランダムに選ぶ。
-      // 舞台に上げるだけなので、場に出たときの効果は働かない。出したアイコンには凸を付ける
-      // （相手側にも付くが、攻撃は自分のターンにしかできず、相手のターンの始めに凸は外れるので、相手が得をすることはない）
+      // 舞台に上げるだけなので、場に出たときの効果は働かない。出したキャラクターには突進を付ける
+      // （相手側にも付くが、攻撃は自分のターンにしかできず、相手のターンの始めに突進は外れるので、相手が得をすることはない）
       const sides = [player, foeId] as const;
       if (sides.some((pid) => !state.players[pid].field.some((u) => !u))) break;
       for (const pid of sides) {
@@ -784,7 +784,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       break;
     }
     case "judge": {
-      // 調停：敵味方を区別せず、攻撃力がいちばん高いアイコンすべてをオワコンにする（このアイコンは除く）
+      // 調停：敵味方を区別せず、攻撃力がいちばん高いキャラクターすべてを破壊する（このキャラクターは除く）
       const sides = [player, foeId] as const;
       let top = -1;
       for (const pid of sides)
@@ -846,11 +846,11 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         const u = slot >= 0 ? state.players[foeId].field[slot] : null;
         if (u) {
           u.silenced = true;
-          status(foeId, slot, u, "訂正");
+          status(foeId, slot, u, "沈黙");
         }
       } else if (tgt && tgtOwner && ctx.target) {
         tgt.silenced = true;
-        status(tgtOwner, ctx.target.slot, tgt, "訂正");
+        status(tgtOwner, ctx.target.slot, tgt, "沈黙");
       }
       break;
     case "steal": {
@@ -882,7 +882,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
     case "revive": {
       const slot = me.field.findIndex((u) => !u);
       if (slot < 0) break;
-      // オワコンの中で、コストが maxCost 以下のアイコンのうち、いちばんコストが高いもの（同じなら、あとにオワコンになったもの）
+      // 墓地の中で、コストが maxCost 以下のキャラクターのうち、いちばんコストが高いもの（同じなら、あとに破壊されたもの）
       let at = -1;
       let best = -1;
       me.trash.forEach((id, i) => {
@@ -919,7 +919,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       });
       break;
     case "destroy": {
-      // to が無ければ投稿の対象（相手のアイコン）
+      // to が無ければ呪文の対象（相手のキャラクター）
       const slot =
         e.to === "strongestEnemy"
           ? strongestEnemy(state, player, catalog)
@@ -975,7 +975,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         if (!u.canAttack) {
           u.canAttack = true;
           u.attacksLeft = hasKeyword(u, "連撃", catalog) ? 2 : 1;
-          // 凸を付ける版：まだ動けなかったアイコンは、相手のアイコンにだけ攻撃できる
+          // 突進を付ける版：まだ動けなかったキャラクターは、相手のキャラクターにだけ攻撃できる
           u.rushOnly = !!e.totsu;
         } else if (!e.totsu) u.rushOnly = false;
         if (slot !== ctx.selfSlot && e.attack) {
@@ -1007,7 +1007,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       else if (ctx.target?.side === "enemy") slot = ctx.target.slot;
       const u = slot >= 0 ? foe.field[slot] : null;
       if (!u) break;
-      // 元のカードは消える（オワコンに行かないので、闇の気配も出ない）
+      // 元のカードは消える（墓地に行かないので、闇の気配も出ない）
       const into = newUnit(state, e.card, catalog, true);
       Object.assign(into, { canAttack: false, attacksLeft: 0, rushOnly: false });
       foe.field[slot] = into;
@@ -1030,7 +1030,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
             noGuard: false,
           });
           if (wasDark) {
-            // 元の姿に戻る（もう一度は闇堕ちしない。倒されたらオワコンへ）
+            // 元の姿に戻る（もう一度は闇堕ちしない。破壊されたら墓地へ）
             Object.assign(u, { dark: false, damage: 0 });
             emit({ type: "restored", player: owner, slot, cardId: u.cardId });
           }
@@ -1049,7 +1049,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
   }
 }
 
-/** 闇堕ちの姿で場に出す。出たターンから相手のアイコンに攻撃できる（凸。速攻を持つ姿ならマスターも） */
+/** 闇堕ちの姿で場に出す。出たターンから相手のキャラクターに攻撃できる（突進。速攻を持つ姿ならプレイヤーも） */
 function darkRise(
   state: GameState,
   player: PlayerId,
@@ -1075,7 +1075,7 @@ function darkRise(
   resolveDeaths(state, catalog, emit, config);
 }
 
-/** ターンの始め：話題力の回復、攻撃の準備、注目、子守唄、ドロー */
+/** ターンの始め：コストの回復、攻撃の準備、注目、子守唄、ドロー */
 function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Config, emit: Emit) {
   const p = state.players[pid];
   const other = opponent(pid);
@@ -1083,7 +1083,7 @@ function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Co
   state.turn += 1;
   p.turnsTaken = (p.turnsTaken ?? 0) + 1;
   p.maxMana = Math.min(config.maxMana, p.maxMana + 1);
-  // 後攻の最初のターンだけ話題力を足す（先攻有利を和らげる）
+  // 後攻の最初のターンだけコストを足す（先攻有利を和らげる）
   p.mana = p.maxMana + (state.turn === 2 ? config.secondBonusMana : 0);
   p.playedThisTurn = 0;
   emit({ type: "turnStarted", player: pid, turn: state.turn, mana: p.mana });
@@ -1101,12 +1101,12 @@ function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Co
       emit({ type: "buffed", player: pid, slot, cardId: u.cardId, attack: n, hp: 0 });
     }
   });
-  // 闇の気配：倒された闇堕ちを持つカードが、闇堕ちの姿で戻ってくる（倒された枠。埋まっていればほかの空き枠。なければ待つ）
+  // 闇の気配：破壊された闇堕ちを持つカードが、闇堕ちの姿で戻ってくる（破壊された枠。埋まっていればほかの空き枠。なければ待つ）
   const waiting: { cardId: string; slot: number }[] = [];
   for (const omen of p.darkOmens ?? []) {
     const slot = p.field[omen.slot] ? p.field.findIndex((u) => !u) : omen.slot;
     const at = p.trash.lastIndexOf(omen.cardId);
-    if (at < 0) continue; // オワコンから無くなっていたら（蘇生などで）、闇の気配も消える
+    if (at < 0) continue; // 墓地から無くなっていたら（蘇生などで）、闇の気配も消える
     if (slot < 0) {
       waiting.push(omen);
       continue;
@@ -1115,7 +1115,7 @@ function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Co
     darkRise(state, pid, omen.cardId, slot, catalog, config, emit);
   }
   p.darkOmens = waiting;
-  // 子守唄：相手の場にいれば、攻撃力がいちばん高いアイコンがこのターン眠る
+  // 子守唄：相手の場にいれば、攻撃力がいちばん高いキャラクターがこのターン眠る
   if (state.players[other].field.some((u) => u && hasPassive(u, "lullaby", catalog))) {
     const slot = strongestEnemy(state, other, catalog);
     const u = slot >= 0 ? p.field[slot] : null;
@@ -1174,18 +1174,18 @@ export function applyAction(
       throw new RuleError(
         "pending",
         state.pending.waiting.includes(action.player)
-          ? "差し出す自分のアイコンを1体選んでください"
-          : "相手が差し出すアイコンを選ぶまで待ってください",
+          ? "差し出す自分のキャラクターを1体選んでください"
+          : "相手が差し出すキャラクターを選ぶまで待ってください",
       );
     if (!state.pending.waiting.includes(action.player))
       throw new RuleError("not_waiting", "あなたはもう選んでいます");
     if (!sacrificeCandidates(state, action.player).includes(action.slot))
-      throw new RuleError("bad_slot", "そのアイコンは選べません");
+      throw new RuleError("bad_slot", "そのキャラクターは選べません");
     const pend = state.pending;
     pend.picks[action.player] = action.slot;
     pend.waiting = pend.waiting.filter((p) => p !== action.player);
     if (pend.waiting.length === 0) {
-      // 全員が選び終えたら、一度に倒す
+      // 全員が選び終えたら、一度に破壊する
       for (const [pid, slot] of Object.entries(pend.picks) as [PlayerId, number][]) {
         const u = state.players[pid].field[slot];
         if (!u) continue;
@@ -1210,12 +1210,12 @@ export function applyAction(
       const cardId = me.hand[action.handIndex];
       if (cardId === undefined) throw new RuleError("no_card", "そのカードは手札にありません");
       const card = must(catalog, cardId);
-      if (card.type !== "icon") throw new RuleError("not_icon", "投稿は場に出せません");
+      if (card.type !== "icon") throw new RuleError("not_icon", "呪文は場に出せません");
       if (action.slot < 0 || action.slot >= SLOTS) throw new RuleError("bad_slot", "その場所には出せません");
-      if (me.field[action.slot]) throw new RuleError("slot_taken", "その場所にはすでにアイコンがいます");
+      if (me.field[action.slot]) throw new RuleError("slot_taken", "その場所にはすでにキャラクターがいます");
       const cost = effectiveCost(state, player, cardId, catalog);
       if (cost > me.mana)
-        throw new RuleError("no_mana", `話題力が足りません（必要 ${cost}・残り ${me.mana}）`);
+        throw new RuleError("no_mana", `コストが足りません（必要 ${cost}・残り ${me.mana}）`);
       me.mana -= cost;
       me.hand.splice(action.handIndex, 1);
       me.field[action.slot] = newUnit(state, cardId, catalog, false);
@@ -1230,12 +1230,12 @@ export function applyAction(
       const why = buzzBlock(state, player);
       if (why) throw new RuleError("no_buzz", why);
       const u = me.field[action.slot];
-      if (!u) throw new RuleError("bad_slot", "バズさせる自分のアイコンを選んでください");
+      if (!u) throw new RuleError("bad_slot", "バズさせる自分のキャラクターを選んでください");
       me.buzzLeft = (me.buzzLeft ?? 0) - 1;
       me.buzzTurn = state.turn;
       u.atkBuff += config.buzzAttack;
       u.hpBuff += config.buzzHp;
-      // 凸：まだ攻撃できないアイコン（出したばかり）も、このターン相手のアイコンに攻撃できる
+      // 突進：まだ攻撃できないキャラクター（出したばかり）も、このターン相手のキャラクターに攻撃できる
       if (!u.canAttack) {
         u.canAttack = true;
         u.attacksLeft = hasKeyword(u, "連撃", catalog) ? 2 : 1;
@@ -1256,10 +1256,10 @@ export function applyAction(
       const cardId = me.hand[action.handIndex];
       if (cardId === undefined) throw new RuleError("no_card", "そのカードは手札にありません");
       const card = must(catalog, cardId);
-      if (card.type !== "post") throw new RuleError("not_post", "アイコンは場に出して使います");
+      if (card.type !== "post") throw new RuleError("not_post", "キャラクターは場に出して使います");
       const cost = effectiveCost(state, player, cardId, catalog);
       if (cost > me.mana)
-        throw new RuleError("no_mana", `話題力が足りません（必要 ${cost}・残り ${me.mana}）`);
+        throw new RuleError("no_mana", `コストが足りません（必要 ${cost}・残り ${me.mana}）`);
       if (card.target) {
         const ok = castTargets(state, player, cardId, catalog).some(
           (t) => t.side === action.target?.side && t.slot === action.target?.slot,
@@ -1279,11 +1279,11 @@ export function applyAction(
     }
     case "attack": {
       const atk = me.field[action.from];
-      if (!atk) throw new RuleError("no_unit", "攻撃するアイコンがいません");
+      if (!atk) throw new RuleError("no_unit", "攻撃するキャラクターがいません");
       if (state.turn <= atk.boundUntil)
-        throw new RuleError("asleep", "このアイコンは眠っていて攻撃できません");
+        throw new RuleError("asleep", "このキャラクターは眠っていて攻撃できません");
       if (!canUnitAttack(state, atk))
-        throw new RuleError("cannot_attack", "このアイコンは今は攻撃できません");
+        throw new RuleError("cannot_attack", "このキャラクターは今は攻撃できません");
       const legal = attackTargets(state, player, action.from, catalog);
       const t = action.target;
       if (
@@ -1294,12 +1294,12 @@ export function applyAction(
         throw new RuleError(
           "guarded",
           t.kind === "unit" && !foe.field[t.slot]
-            ? "攻撃先のアイコンがいません"
+            ? "攻撃先のキャラクターがいません"
             : "相手の場にガードがいる間は、ガードしか攻撃できません",
         );
       }
       atk.attacksLeft -= 1;
-      // 凸で攻撃したとき（出たターンに相手のアイコンへ）の効果は、ダメージの前に働く（上がった攻撃力で殴る）
+      // 突進で攻撃したとき（出たターンに相手のキャラクターへ）の効果は、ダメージの前に働く（上がった攻撃力で殴る）
       runRushEffects(state, player, action.from, t, catalog, config, emit);
       const av = viewUnit(state, player, atk, catalog);
       if (t.kind === "leader") {
@@ -1321,7 +1321,7 @@ export function applyAction(
         // 闇堕ちや破壊の出来事は battle の後に出す
         const after: GameEvent[] = [];
         const destroyed = resolveDeaths(state, catalog, (e) => after.push(e), config);
-        // 相手を倒したら、もう1回攻撃できる（倒した側が残っていれば）
+        // 相手を破壊したら、もう1回攻撃できる（破壊した側が残っていれば）
         const left = foe.field[t.slot];
         const killed = !left || left.uid !== def.uid;
         const alive = me.field[action.from];
@@ -1344,7 +1344,7 @@ export function applyAction(
       // このターンだけの強化を消す（両者の場）
       for (const owner of ["p1", "p2"] as const)
         for (const u of state.players[owner].field) if (u) u.tempAtk = 0;
-      // 炎上商法：ターンの終わりに晒し者になる
+      // 炎上商法：ターンの終わりに晒し状態になる
       me.field.forEach((u, slot) => {
         if (u?.exposeAtTurnEnd) exposeUnit(player, slot, u, emit);
       });
@@ -1357,7 +1357,7 @@ export function applyAction(
         }
       });
       resolveDeaths(state, catalog, emit, config);
-      // マスターに付いた「次の自分のターンの終わりにダメージを受ける」効果（前のターンまでに付いたもの）が働く
+      // プレイヤーに付いた「次の自分のターンの終わりにダメージを受ける」効果（前のターンまでに付いたもの）が働く
       const due = (me.delayedDamage ?? []).filter((d) => d.turn < state.turn);
       if (due.length > 0) {
         me.delayedDamage = (me.delayedDamage ?? []).filter((d) => d.turn >= state.turn);

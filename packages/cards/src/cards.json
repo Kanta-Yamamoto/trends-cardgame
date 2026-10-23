@@ -8,7 +8,7 @@
     "cost": 6,
     "attack": 5,
     "hp": 4,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["配信者"],
     "keywords": ["連撃"],
     "effects": [
@@ -23,14 +23,14 @@
         "do": "extraAttackOnKill"
       }
     ],
-    "effect": "連撃。場に出たとき、攻撃力がいちばん高い相手のアイコン1体に1ダメージ。相手のアイコンをオワコンにするたび、もう1回攻撃できる。",
+    "effect": "連撃。場に出たとき、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。相手のキャラクターを破壊するたび、もう1回攻撃できる。",
     "flavor": "「遅えよ。全部、俺がもらってく」",
     "dark": {
       "name": "闇堕ちレン",
       "attack": 6,
       "hp": 3,
-      "keywords": ["凸", "連撃"],
-      "effect": "凸。連撃。闇堕ちしたとき、相手のアイコンすべてに1ダメージ。",
+      "keywords": ["突進", "連撃"],
+      "effect": "突進。連撃。闇堕ちしたとき、相手のキャラクターすべてに1ダメージ。",
       "art": "/assets/cards/c2-dark-art.jpg",
       "subject": "/assets/cards/c2-dark-subject.webp",
       "original": "assets/original/c2-dark.webp",
@@ -57,11 +57,11 @@
     "cost": 1,
     "attack": 1,
     "hp": 1,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["配信者"],
     "keywords": ["速攻"],
     "effects": [],
-    "effect": "速攻",
+    "effect": "速攻。",
     "flavor": "15秒あれば十分だ。",
     "art": "/assets/cards/f1-art.jpg",
     "original": "assets/original/f1.webp"
@@ -75,9 +75,9 @@
     "cost": 4,
     "attack": 3,
     "hp": 2,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["配信者"],
-    "keywords": ["凸"],
+    "keywords": ["突進"],
     "effects": [
       {
         "on": "death",
@@ -86,7 +86,7 @@
         "amount": 2
       }
     ],
-    "effect": "凸。オワコンになったとき、相手のマスターに2ダメージ。",
+    "effect": "突進。破壊されたとき、相手のプレイヤーに2ダメージ。",
     "flavor": "",
     "art": "/assets/cards/f2-art.jpg",
     "original": "assets/original/f2.webp"
@@ -100,11 +100,11 @@
     "cost": 3,
     "attack": 2,
     "hp": 2,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": [],
-    "keywords": ["凸", "連撃"],
+    "keywords": ["突進", "連撃"],
     "effects": [],
-    "effect": "凸。連撃。",
+    "effect": "突進。連撃。",
     "flavor": "",
     "art": "/assets/cards/f3-art.jpg",
     "original": "assets/original/f3.webp"
@@ -116,7 +116,7 @@
     "type": "post",
     "rarity": 1,
     "cost": 1,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -128,7 +128,7 @@
         "count": 1
       }
     ],
-    "effect": "相手のアイコン1体を晒し者にする（ガードと強化が消える）。カードを1枚引く。",
+    "effect": "相手のキャラクター1体を晒し状態にする。カードを1枚引く。",
     "flavor": "魚拓は取った。",
     "target": "enemyIcon",
     "art": "/assets/cards/f4-art.jpg",
@@ -142,7 +142,7 @@
     "type": "post",
     "rarity": 3,
     "cost": 3,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -154,7 +154,7 @@
         "do": "expose"
       }
     ],
-    "effect": "相手のアイコン1体に3ダメージ。そのアイコンを晒し者にする（ガードと強化が消える）。",
+    "effect": "相手のキャラクター1体に3ダメージ。そのキャラクターを晒し状態にする。",
     "flavor": "トレンド1位、おめでとう。",
     "target": "enemyIcon",
     "art": "/assets/cards/f5-art.jpg",
@@ -169,7 +169,7 @@
     "cost": 4,
     "attack": 1,
     "hp": 1,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム", "動物"],
     "keywords": [],
     "effects": [
@@ -200,7 +200,7 @@
     "cost": 5,
     "attack": 1,
     "hp": 2,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム"],
     "keywords": ["ガード"],
     "effects": [
@@ -209,7 +209,7 @@
         "do": "copySelf"
       }
     ],
-    "effect": "ガード。場に出たとき、空いている枠にこのアイコンのコピーを1体出す（コピーはオワコンになると消える）。",
+    "effect": "ガード。場に出たとき、自分の空いている枠に、トークンとしてこのキャラクターのコピーを1体出す。",
     "flavor": "",
     "art": "/assets/cards/k2-art.jpg",
     "original": "assets/original/k2.webp"
@@ -223,7 +223,7 @@
     "cost": 3,
     "attack": 2,
     "hp": 2,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム"],
     "keywords": [],
     "effects": [
@@ -233,7 +233,7 @@
         "attack": 1
       }
     ],
-    "effect": "ノリ：場に出たとき、このターンに出したほかのカード1枚につき攻撃力+1。",
+    "effect": "コンボ。",
     "flavor": "お題：こんなカードゲームは嫌だ。",
     "art": "/assets/cards/k3-art.jpg",
     "original": "assets/original/k3.webp"
@@ -245,7 +245,7 @@
     "type": "post",
     "rarity": 3,
     "cost": 6,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -259,7 +259,7 @@
         "hp": 0
       }
     ],
-    "effect": "自分の空いている枠すべてに草を出し、自分のアイコンすべてに攻撃力+1。",
+    "effect": "自分の空いている枠すべてに草を出し、自分のキャラクターすべてに攻撃力+1。",
     "flavor": "",
     "art": "/assets/cards/k4-art.jpg",
     "original": "assets/original/k4.webp"
@@ -273,7 +273,7 @@
     "cost": 6,
     "attack": 3,
     "hp": 6,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム"],
     "keywords": [],
     "effects": [
@@ -291,7 +291,7 @@
         "do": "breakthrough"
       }
     ],
-    "effect": "自分の場のほかのミーム界隈1体につき攻撃力+1。場に出たとき、このターン自分のアイコンすべてがすぐ攻撃でき、ガードを無視できる。",
+    "effect": "自分の場のほかのミーム種族1体につき攻撃力+1。場に出たとき、このターン自分のキャラクターすべてがすぐ攻撃でき、ガードを無視できる。",
     "flavor": "作者不明。保存数は10万。",
     "art": "/assets/cards/k5-art.jpg",
     "subject": "/assets/cards/k5-subject.webp",
@@ -300,8 +300,8 @@
       "name": "呪いのコラ画像",
       "attack": 5,
       "hp": 4,
-      "keywords": ["凸"],
-      "effect": "凸。闇堕ちしたとき、自分の空いている枠すべてに草を出す。",
+      "keywords": ["突進"],
+      "effect": "突進。闇堕ちしたとき、自分の空いている枠すべてに草を出す。",
       "art": "/assets/cards/k5-dark-art.jpg",
       "subject": "/assets/cards/k5-dark-subject.webp",
       "original": "assets/original/k5-dark.webp",
@@ -323,7 +323,7 @@
     "cost": 0,
     "attack": 1,
     "hp": 1,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム"],
     "keywords": [],
     "effects": [],
@@ -342,7 +342,7 @@
     "cost": 6,
     "attack": 4,
     "hp": 5,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": ["アイドル"],
     "keywords": ["注目"],
     "effects": [
@@ -355,14 +355,14 @@
         "flank": true
       }
     ],
-    "effect": "注目。場に出たとき、隣に親衛隊を1体出す（センターに出したときは左右に2体）。",
+    "effect": "注目。場に出たとき、隣に親衛隊を1体出す。センターに出したときは、左右に2体出す。",
     "flavor": "センターは、譲らない。",
     "dark": {
       "name": "闇深アイドル",
       "attack": 6,
       "hp": 4,
-      "keywords": ["凸", "連撃"],
-      "effect": "凸。連撃。闇堕ちしたとき、攻撃力4以下の相手のアイコン1体（いちばん強いもの）を自分の場に奪う。",
+      "keywords": ["突進", "連撃"],
+      "effect": "突進。連撃。闇堕ちしたとき、攻撃力が4以下の相手のキャラクターのうち、攻撃力がいちばん高い1体を奪う。",
       "art": "/assets/cards/m1-dark-art.jpg",
       "subject": "/assets/cards/m1-dark-subject.webp",
       "original": "assets/original/m1-dark.webp",
@@ -387,11 +387,11 @@
     "cost": 2,
     "attack": 1,
     "hp": 2,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": ["アイドル"],
     "keywords": ["注目"],
     "effects": [],
-    "effect": "注目",
+    "effect": "注目。",
     "flavor": "いつか、あのステージへ。",
     "art": "/assets/cards/m2-art.jpg",
     "original": "assets/original/m2.webp"
@@ -405,7 +405,7 @@
     "cost": 1,
     "attack": 1,
     "hp": 1,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -416,7 +416,7 @@
         "hp": 1
       }
     ],
-    "effect": "場に出たとき、自分のほかのアイコン1体（ランダム）に攻撃力+1・体力+1。",
+    "effect": "場に出たとき、ランダムな自分のほかのキャラクター1体に攻撃力+1・体力+1。",
     "flavor": "推しは推せるときに推せ。",
     "art": "/assets/cards/m3-art.jpg",
     "original": "assets/original/m3.webp"
@@ -430,7 +430,7 @@
     "cost": 3,
     "attack": 1,
     "hp": 3,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": ["アイドル"],
     "keywords": ["ガード"],
     "effects": [],
@@ -446,7 +446,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 2,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -456,7 +456,7 @@
         "hp": 2
       }
     ],
-    "effect": "自分のアイコン1体に攻撃力+2・体力+2。",
+    "effect": "自分のキャラクター1体に攻撃力+2・体力+2。",
     "flavor": "",
     "target": "allyIcon",
     "art": "/assets/cards/m5-art.jpg",
@@ -471,7 +471,7 @@
     "cost": 5,
     "attack": 3,
     "hp": 5,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["配信者", "アイドル"],
     "keywords": ["注目"],
     "effects": [
@@ -488,7 +488,7 @@
         "amount": 1
       }
     ],
-    "effect": "注目。場に出たとき、自分のアイコンすべてと自分のライフを2回復する。自分のターンの終わりに、自分のアイコンすべてと自分のライフを1回復する。",
+    "effect": "注目。場に出たとき、自分のキャラクターすべてと自分のライフを2回復する。自分のターンの終わりに、自分のキャラクターすべてと自分のライフを1回復する。",
     "flavor": "「みんなー！ 今日も空から、こんにちはっ！」",
     "number": "023/040",
     "art": "/assets/cards/c3-art.jpg",
@@ -504,11 +504,11 @@
     "cost": 3,
     "attack": 1,
     "hp": 3,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["動物"],
     "keywords": ["ガード"],
     "effects": [],
-    "effect": "ガード",
+    "effect": "ガード。",
     "flavor": "動じない。",
     "art": "/assets/cards/i1-art.jpg",
     "original": "assets/original/i1.webp"
@@ -522,7 +522,7 @@
     "cost": 4,
     "attack": 2,
     "hp": 3,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["動物"],
     "keywords": [],
     "effects": [
@@ -547,7 +547,7 @@
     "cost": 4,
     "attack": 2,
     "hp": 3,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["動物"],
     "keywords": [],
     "effects": [
@@ -557,7 +557,7 @@
         "amount": 1
       }
     ],
-    "effect": "自分が回復の効果を使うたび、攻撃力がいちばん高い相手のアイコン1体に1ダメージ。",
+    "effect": "自分が回復の効果を使うたび、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。",
     "flavor": "",
     "art": "/assets/cards/i3-art.jpg",
     "original": "assets/original/i3.webp"
@@ -569,7 +569,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 2,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -581,7 +581,7 @@
         "count": 1
       }
     ],
-    "effect": "相手のアイコン1体を眠らせる（次のターン攻撃できない）。カードを1枚引く。",
+    "effect": "相手のキャラクター1体を眠り状態にする。カードを1枚引く。",
     "flavor": "おやすみ、また明日。",
     "target": "enemyIcon",
     "art": "/assets/cards/i4-art.jpg",
@@ -594,7 +594,7 @@
     "type": "post",
     "rarity": 3,
     "cost": 8,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -608,7 +608,7 @@
         "amount": 5
       }
     ],
-    "effect": "相手のアイコンすべてを眠らせ（次の相手のターン、攻撃できない）、自分のアイコンすべてと自分のライフを5回復する。",
+    "effect": "相手のキャラクターすべてを眠り状態にし、自分のキャラクターすべてと自分のライフを5回復する。",
     "flavor": "",
     "art": "/assets/cards/i5-art.jpg",
     "original": "assets/original/i5.webp"
@@ -620,7 +620,7 @@
     "type": "post",
     "rarity": 4,
     "cost": 5,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -629,7 +629,7 @@
         "to": "allEnemies"
       }
     ],
-    "effect": "相手のアイコンすべての強化と状態を消し、闇堕ちした相手のアイコンを元の姿に戻す。",
+    "effect": "相手のキャラクターすべての強化と状態を消し、闇堕ちした相手のキャラクターを元の姿に戻す。",
     "flavor": "殺伐としたTLに、一筋の光。",
     "art": "/assets/cards/i6-art.jpg",
     "original": "assets/original/i6.webp"
@@ -653,7 +653,7 @@
         "amount": 10
       }
     ],
-    "effect": "場に出たとき、相手のマスターに「次の自分のターンの終わりに10ダメージを受ける」効果を付与する。",
+    "effect": "場に出たとき、相手のプレイヤーに「次の自分のターンの終わりに10ダメージを受ける」効果を付与する。",
     "flavor": "",
     "number": "001/040",
     "art": "/assets/cards/c1-art.jpg",
@@ -722,7 +722,7 @@
         "attack": 2
       }
     ],
-    "effect": "相手のアイコン1体のキーワードと効果を消し、攻撃力-2。",
+    "effect": "相手のキャラクター1体を沈黙状態にし、攻撃力-2。",
     "flavor": "読者が背景情報を追加しました。",
     "target": "enemyIcon",
     "art": "/assets/cards/g3-art.jpg",
@@ -755,8 +755,8 @@
       "name": "陰謀論者",
       "attack": 4,
       "hp": 4,
-      "keywords": ["凸"],
-      "effect": "凸。自分のターンの始めに、自分の山札が0枚なら勝ち。",
+      "keywords": ["突進"],
+      "effect": "突進。自分のターンの始めに、自分の山札が0枚なら勝ち。",
       "art": "/assets/cards/g4-dark-art.jpg",
       "subject": "/assets/cards/g4-dark-subject.webp",
       "original": "assets/original/g4-dark.webp",
@@ -818,7 +818,7 @@
     "kaiwai": [],
     "keywords": ["ガード"],
     "effects": [],
-    "effect": "ガード",
+    "effect": "ガード。",
     "flavor": "フォロー許可制。",
     "art": "/assets/cards/n3-art.jpg",
     "original": "assets/original/n3.webp"
@@ -923,7 +923,7 @@
         "hp": 1
       }
     ],
-    "effect": "自分のアイコン1体に攻撃力+1・体力+1。",
+    "effect": "自分のキャラクター1体に攻撃力+1・体力+1。",
     "flavor": "♡",
     "target": "allyIcon",
     "art": "/assets/cards/n8-art.jpg",
@@ -949,7 +949,7 @@
         "count": 1
       }
     ],
-    "effect": "相手のアイコン1体に1ダメージ。カードを1枚引く。",
+    "effect": "相手のキャラクター1体に1ダメージ。カードを1枚引く。",
     "flavor": "消しても無駄。",
     "target": "enemyIcon",
     "art": "/assets/cards/n9-art.jpg",
@@ -971,7 +971,7 @@
         "amount": 3
       }
     ],
-    "effect": "相手のアイコン1体に3ダメージ。",
+    "effect": "相手のキャラクター1体に3ダメージ。",
     "flavor": "なんで？",
     "target": "enemyIcon",
     "art": "/assets/cards/n10-art.jpg",
@@ -986,7 +986,7 @@
     "cost": 2,
     "attack": 2,
     "hp": 1,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -996,7 +996,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコン1体を晒し者にする（ガードと強化が消える）。",
+    "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を晒し状態にする。",
     "flavor": "なになに、燃えてるの？",
     "art": "/assets/cards/f6-art.jpg",
     "original": "assets/original/f6.webp"
@@ -1010,7 +1010,7 @@
     "cost": 1,
     "attack": 1,
     "hp": 1,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["ミーム"],
     "keywords": ["速攻"],
     "effects": [
@@ -1020,12 +1020,12 @@
         "attack": 1,
         "hp": 0,
         "if": {
-          "allies": "炎上",
+          "allies": "炎",
           "atLeast": 3
         }
       }
     ],
-    "effect": "速攻。場に出たとき、自分の場に炎上属性が3体以上いれば攻撃力+1。",
+    "effect": "速攻。場に出たとき、自分の場に炎属性が3体以上いれば攻撃力+1。",
     "flavor": "この流れに乗るしかない。",
     "art": "/assets/cards/f7-art.jpg",
     "original": "assets/original/f7.webp",
@@ -1038,7 +1038,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 2,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": [],
     "keywords": [],
     "target": "allyIcon",
@@ -1048,7 +1048,7 @@
         "attack": 3
       }
     ],
-    "effect": "自分のアイコン1体に、このターン攻撃力+3。自分のターンの終わりに、そのアイコンを晒し者にする（ガードと強化が消える）。",
+    "effect": "自分のキャラクター1体に、このターン攻撃力+3。自分のターンの終わりに、そのキャラクターを晒し状態にする。",
     "flavor": "燃えれば勝ち。",
     "art": "/assets/cards/f8-art.jpg",
     "original": "assets/original/f8.webp"
@@ -1062,7 +1062,7 @@
     "cost": 6,
     "attack": 4,
     "hp": 3,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["有識者"],
     "keywords": [],
     "effects": [
@@ -1073,7 +1073,7 @@
         "amount": 1
       }
     ],
-    "effect": "場に出たとき、相手のアイコンすべてに1ダメージ。",
+    "effect": "場に出たとき、相手のキャラクターすべてに1ダメージ。",
     "flavor": "",
     "art": "/assets/cards/f9-art.jpg",
     "original": "assets/original/f9.webp"
@@ -1087,7 +1087,7 @@
     "cost": 7,
     "attack": 4,
     "hp": 4,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["配信者"],
     "keywords": ["速攻"],
     "effects": [
@@ -1097,7 +1097,7 @@
         "to": "allEnemies"
       }
     ],
-    "effect": "速攻。場に出たとき、相手のアイコンすべてを晒し者にする（ガードと強化が消える）。",
+    "effect": "速攻。場に出たとき、相手のキャラクターすべてを晒し状態にする。",
     "flavor": "",
     "art": "/assets/cards/f10-art.jpg",
     "original": "assets/original/f10.webp"
@@ -1111,7 +1111,7 @@
     "cost": 7,
     "attack": 2,
     "hp": 3,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["配信者"],
     "keywords": [],
     "effects": [
@@ -1120,7 +1120,7 @@
         "per": 2
       }
     ],
-    "effect": "場に出たとき、相手のアイコンの数×2のダメージを、相手のアイコンすべてに与える。",
+    "effect": "場に出たとき、相手のキャラクターすべてに、相手のキャラクターの数×2ダメージ。",
     "flavor": "「燃えるなら、派手にいこうよ」",
     "art": "/assets/cards/c4-art.jpg",
     "original": "assets/original/c4.webp"
@@ -1134,7 +1134,7 @@
     "cost": 5,
     "attack": 3,
     "hp": 3,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -1144,12 +1144,12 @@
         "attack": 2,
         "hp": 2,
         "if": {
-          "allies": "メロい",
+          "allies": "推し",
           "atLeast": 3
         }
       }
     ],
-    "effect": "場に出たとき、自分の場にメロい属性が3体以上いれば攻撃力+2・体力+2。",
+    "effect": "場に出たとき、自分の場に推し属性が3体以上いれば、攻撃力+2・体力+2。",
     "flavor": "",
     "art": "/assets/cards/m6-art.jpg",
     "original": "assets/original/m6.webp"
@@ -1163,7 +1163,7 @@
     "cost": 4,
     "attack": 3,
     "hp": 2,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": ["配信者"],
     "keywords": ["速攻"],
     "effects": [],
@@ -1179,7 +1179,7 @@
     "type": "post",
     "rarity": 1,
     "cost": 1,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -1189,7 +1189,7 @@
         "hp": 1
       }
     ],
-    "effect": "自分のアイコン1体に攻撃力+1・体力+1。",
+    "effect": "自分のキャラクター1体に攻撃力+1・体力+1。",
     "flavor": "この手、一生洗わない。",
     "target": "allyIcon",
     "art": "/assets/cards/m8-art.jpg",
@@ -1205,7 +1205,7 @@
     "cost": 8,
     "attack": 5,
     "hp": 4,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": ["配信者"],
     "keywords": ["注目"],
     "effects": [
@@ -1215,7 +1215,7 @@
         "maxAttack": 4
       }
     ],
-    "effect": "注目。場に出たとき、攻撃力が4以下の相手のアイコン1体（いちばん強いもの）を自分の場に奪う。",
+    "effect": "注目。場に出たとき、攻撃力が4以下の相手のキャラクターのうち、攻撃力がいちばん高い1体を奪う。",
     "flavor": "",
     "art": "/assets/cards/m9-art.jpg",
     "original": "assets/original/m9.webp"
@@ -1227,7 +1227,7 @@
     "type": "post",
     "rarity": 3,
     "cost": 3,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -1237,7 +1237,7 @@
         "hp": 1
       }
     ],
-    "effect": "自分のアイコンすべてに攻撃力+1・体力+1。",
+    "effect": "自分のキャラクターすべてに攻撃力+1・体力+1。",
     "flavor": "会場が、ひとつの色になる。",
     "art": "/assets/cards/m10-art.jpg",
     "original": "assets/original/m10.webp",
@@ -1252,7 +1252,7 @@
     "cost": 2,
     "attack": 1,
     "hp": 2,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["動物"],
     "keywords": [],
     "effects": [
@@ -1263,7 +1263,7 @@
         "amount": 3
       }
     ],
-    "effect": "オワコンになったとき、自分のライフを3回復する。",
+    "effect": "破壊されたとき、自分のライフを3回復する。",
     "flavor": "",
     "art": "/assets/cards/i7-art.jpg",
     "original": "assets/original/i7.webp"
@@ -1277,7 +1277,7 @@
     "cost": 6,
     "attack": 4,
     "hp": 3,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["配信者"],
     "keywords": [],
     "effects": [
@@ -1287,7 +1287,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコン1体を眠らせる（次の相手のターン、攻撃できない）。",
+    "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を眠り状態にする。",
     "flavor": "",
     "art": "/assets/cards/i8-art.jpg",
     "original": "assets/original/i8.webp"
@@ -1299,7 +1299,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 2,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -1309,7 +1309,7 @@
         "amount": 3
       }
     ],
-    "effect": "自分のアイコンすべてと自分のライフを3回復する。",
+    "effect": "自分のキャラクターすべてと自分のライフを3回復する。",
     "flavor": "もふもふは、正義。",
     "art": "/assets/cards/i9-art.jpg",
     "original": "assets/original/i9.webp",
@@ -1324,7 +1324,7 @@
     "cost": 6,
     "attack": 2,
     "hp": 6,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["配信者"],
     "keywords": ["ガード"],
     "effects": [
@@ -1338,14 +1338,14 @@
         "do": "lullaby"
       }
     ],
-    "effect": "ガード。場に出たとき、相手のアイコンすべてを眠らせる（次の相手のターン、攻撃できない）。相手のターンの始めに、相手の攻撃力がいちばん高いアイコンを眠らせる。",
+    "effect": "ガード。場に出たとき、相手のキャラクターすべてを眠り状態にする。相手のターンの始めに、攻撃力がいちばん高い相手のキャラクター1体を眠り状態にする。",
     "flavor": "「大丈夫。今日はもう、休んでいいよ」",
     "dark": {
       "name": "病みボイス ナギ",
       "attack": 4,
       "hp": 4,
-      "keywords": ["凸", "連撃"],
-      "effect": "凸。連撃。闇堕ちしたとき、相手のアイコンすべてを眠らせる（次の相手のターン、攻撃できない）。",
+      "keywords": ["突進", "連撃"],
+      "effect": "突進。連撃。闇堕ちしたとき、相手のキャラクターすべてを眠り状態にする。",
       "art": "/assets/cards/c5-dark-art.jpg",
       "subject": "/assets/cards/c5-dark-subject.webp",
       "original": "assets/original/c5-dark.webp",
@@ -1369,7 +1369,7 @@
     "cost": 1,
     "attack": 0,
     "hp": 1,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム"],
     "keywords": [],
     "effects": [
@@ -1394,7 +1394,7 @@
     "cost": 6,
     "attack": 3,
     "hp": 3,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム"],
     "keywords": [],
     "effects": [
@@ -1404,12 +1404,12 @@
         "attack": 1,
         "hp": 0,
         "if": {
-          "allies": "草",
+          "allies": "自然",
           "atLeast": 2
         }
       }
     ],
-    "effect": "場に出たとき、自分の場に草属性が2体以上いれば、自分のほかのアイコンすべてに攻撃力+1。",
+    "effect": "場に出たとき、自分の場に自然属性が2体以上いれば、自分のほかのキャラクターすべてに攻撃力+1。",
     "flavor": "",
     "art": "/assets/cards/k7-art.jpg",
     "original": "assets/original/k7.webp"
@@ -1421,7 +1421,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 2,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -1445,7 +1445,7 @@
     "cost": 4,
     "attack": 1,
     "hp": 1,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム"],
     "keywords": [],
     "effects": [
@@ -1458,7 +1458,7 @@
         "do": "copySelf"
       }
     ],
-    "effect": "場に出たとき、空いている枠にこのアイコンのコピーを2体出す（コピーはオワコンになると消える）。",
+    "effect": "場に出たとき、自分の空いている枠に、トークンとしてこのキャラクターのコピーを2体出す。",
     "flavor": "どれが本物？",
     "art": "/assets/cards/k9-art.jpg",
     "original": "assets/original/k9.webp",
@@ -1473,7 +1473,7 @@
     "cost": 5,
     "attack": 2,
     "hp": 3,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム"],
     "keywords": [],
     "effects": [
@@ -1489,7 +1489,7 @@
         "totsu": true
       }
     ],
-    "effect": "場に出たとき、自分の空いている枠すべてに草を出し、自分のアイコンすべてに凸を付ける。",
+    "effect": "場に出たとき、自分の空いている枠すべてに草を出し、自分のキャラクターすべてに突進を付ける。",
     "flavor": "流行らせたのは、だいたい私。",
     "art": "/assets/cards/k10-art.jpg",
     "original": "assets/original/k10.webp",
@@ -1515,7 +1515,7 @@
         "count": 1
       }
     ],
-    "effect": "場に出たとき、山札から有識者界隈を1枚探して手札に加える（なければカードを1枚引く）。",
+    "effect": "場に出たとき、山札から有識者種族のカードを1枚探して手札に加える。なければカードを1枚引く。",
     "flavor": "",
     "art": "/assets/cards/g5-art.jpg",
     "original": "assets/original/g5.webp"
@@ -1539,7 +1539,7 @@
         "maxHp": 2
       }
     ],
-    "effect": "場に出たとき、体力が2以下の相手のアイコンすべてをオワコンにする。",
+    "effect": "場に出たとき、体力が2以下の相手のキャラクターすべてを破壊する。",
     "flavor": "",
     "art": "/assets/cards/g6-art.jpg",
     "original": "assets/original/g6.webp"
@@ -1590,7 +1590,7 @@
         "amount": 3
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコン1体をオワコンにする。自分のライフを3回復する。",
+    "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を破壊する。自分のライフを3回復する。",
     "flavor": "",
     "art": "/assets/cards/g8-art.jpg",
     "original": "assets/original/g8.webp"
@@ -1615,7 +1615,7 @@
         "count": 1
       }
     ],
-    "effect": "相手のアイコン1体に2ダメージ。カードを1枚引く。",
+    "effect": "相手のキャラクター1体に2ダメージ。カードを1枚引く。",
     "flavor": "",
     "target": "enemyIcon",
     "art": "/assets/cards/g9-art.jpg",
@@ -1630,7 +1630,7 @@
     "cost": 3,
     "attack": 2,
     "hp": 2,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["配信者", "有識者"],
     "keywords": [],
     "effects": [
@@ -1641,7 +1641,7 @@
         "amount": 2
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコン1体に2ダメージ。",
+    "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体に2ダメージ。",
     "flavor": "",
     "art": "/assets/cards/x1-art.jpg",
     "original": "assets/original/x1.webp"
@@ -1655,7 +1655,7 @@
     "cost": 3,
     "attack": 1,
     "hp": 2,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["配信者", "アイドル"],
     "keywords": ["注目"],
     "effects": [
@@ -1680,11 +1680,11 @@
     "cost": 1,
     "attack": 1,
     "hp": 1,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": [],
-    "keywords": ["凸"],
+    "keywords": ["突進"],
     "effects": [],
-    "effect": "凸。",
+    "effect": "突進。",
     "flavor": "今日も燃えてるねえ。",
     "art": "/assets/cards/f11-art.jpg",
     "original": "assets/original/f11.webp",
@@ -1697,7 +1697,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 1,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -1709,7 +1709,7 @@
         "do": "expose"
       }
     ],
-    "effect": "相手のアイコン1体に1ダメージ。そのアイコンを晒し者にする（ガードと強化が消える）。",
+    "effect": "相手のキャラクター1体に1ダメージ。そのキャラクターを晒し状態にする。",
     "flavor": "そこ、もっと燃えますよ。",
     "target": "enemyIcon",
     "art": "/assets/cards/f12-art.jpg",
@@ -1724,7 +1724,7 @@
     "cost": 2,
     "attack": 2,
     "hp": 1,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["配信者"],
     "keywords": [],
     "effects": [
@@ -1735,7 +1735,7 @@
         "amount": 1
       }
     ],
-    "effect": "自分のターンの終わりに、相手のマスターに1ダメージ。",
+    "effect": "自分のターンの終わりに、相手のプレイヤーに1ダメージ。",
     "flavor": "",
     "art": "/assets/cards/f13-art.jpg",
     "original": "assets/original/f13.webp"
@@ -1747,7 +1747,7 @@
     "type": "post",
     "rarity": 4,
     "cost": 8,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -1757,7 +1757,7 @@
         "amount": 5
       }
     ],
-    "effect": "相手のアイコンすべてに5ダメージ。",
+    "effect": "相手のキャラクターすべてに5ダメージ。",
     "flavor": "",
     "art": "/assets/cards/f14-art.jpg",
     "original": "assets/original/f14.webp"
@@ -1771,7 +1771,7 @@
     "cost": 6,
     "attack": 4,
     "hp": 3,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["配信者"],
     "keywords": ["速攻"],
     "effects": [
@@ -1786,7 +1786,7 @@
         "amount": 1
       }
     ],
-    "effect": "速攻。場に出たとき、炎上商法（このターン攻撃力+3。自分のターンの終わりに晒し者になる）。自分のターンの終わりに、相手のマスターに1ダメージ。",
+    "effect": "速攻。場に出たとき、このターン攻撃力+3し、このターンの終わりにこのキャラクターを晒し状態にする。自分のターンの終わりに、相手のプレイヤーに1ダメージ。",
     "flavor": "「火種はね、どこにでも落ちてるの」",
     "art": "/assets/cards/c9-art.jpg",
     "original": "assets/original/c9.webp",
@@ -1794,7 +1794,7 @@
       "name": "業火のカグラ",
       "attack": 6,
       "hp": 3,
-      "keywords": ["凸"],
+      "keywords": ["突進"],
       "effects": [
         {
           "on": "play",
@@ -1803,7 +1803,7 @@
           "amount": 2
         }
       ],
-      "effect": "凸。闇堕ちしたとき、相手のアイコンすべてに2ダメージ。",
+      "effect": "突進。闇堕ちしたとき、相手のキャラクターすべてに2ダメージ。",
       "art": "/assets/cards/c9-dark-art.jpg",
       "subject": "/assets/cards/c9-dark-subject.webp"
     }
@@ -1815,7 +1815,7 @@
     "type": "post",
     "rarity": 1,
     "cost": 1,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -1825,7 +1825,7 @@
         "hp": 2
       }
     ],
-    "effect": "自分のアイコン1体に攻撃力+1・体力+2。",
+    "effect": "自分のキャラクター1体に攻撃力+1・体力+2。",
     "flavor": "今日の推し、尊かった。",
     "target": "allyIcon",
     "art": "/assets/cards/m11-art.jpg",
@@ -1840,7 +1840,7 @@
     "cost": 2,
     "attack": 2,
     "hp": 1,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": ["アイドル"],
     "keywords": [],
     "effects": [
@@ -1851,7 +1851,7 @@
         "hp": 2
       }
     ],
-    "effect": "オワコンになったとき、自分のアイコン1体（ランダム）に攻撃力+2・体力+2。",
+    "effect": "破壊されたとき、ランダムな自分のキャラクター1体に攻撃力+2・体力+2。",
     "flavor": "",
     "art": "/assets/cards/m12-art.jpg",
     "original": "assets/original/m12.webp"
@@ -1865,7 +1865,7 @@
     "cost": 6,
     "attack": 4,
     "hp": 3,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": ["配信者", "アイドル"],
     "keywords": ["注目"],
     "effects": [
@@ -1876,7 +1876,7 @@
         "amount": 2
       }
     ],
-    "effect": "注目。場に出たとき、自分のアイコンすべてと自分のライフを2回復する。",
+    "effect": "注目。場に出たとき、自分のキャラクターすべてと自分のライフを2回復する。",
     "flavor": "",
     "art": "/assets/cards/m13-art.jpg",
     "original": "assets/original/m13.webp"
@@ -1888,7 +1888,7 @@
     "type": "post",
     "rarity": 4,
     "cost": 6,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -1898,7 +1898,7 @@
         "hp": 2
       }
     ],
-    "effect": "自分のアイコンすべてに攻撃力+2・体力+2。",
+    "effect": "自分のキャラクターすべてに攻撃力+2・体力+2。",
     "flavor": "今日は、世界でいちばん特別な日。",
     "art": "/assets/cards/m14-art.jpg",
     "original": "assets/original/m14.webp"
@@ -1912,7 +1912,7 @@
     "cost": 5,
     "attack": 2,
     "hp": 5,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": ["アイドル"],
     "keywords": ["注目"],
     "effects": [
@@ -1921,7 +1921,7 @@
         "maxAttack": 3
       }
     ],
-    "effect": "注目。場に出たとき、攻撃力が3以下の相手のアイコン1体（いちばん強いもの）を自分の場に奪う。",
+    "effect": "注目。場に出たとき、攻撃力が3以下の相手のキャラクターのうち、攻撃力がいちばん高い1体を奪う。",
     "flavor": "「みんなの声、ちゃんと届いてるよ」",
     "art": "/assets/cards/c6-art.jpg",
     "original": "assets/original/c6.webp"
@@ -1945,7 +1945,7 @@
         "amount": 1
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコン1体に1ダメージ。",
+    "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。",
     "flavor": "それ、一次ソースどこですか？",
     "art": "/assets/cards/g10-art.jpg",
     "original": "assets/original/g10.webp"
@@ -1966,7 +1966,7 @@
         "attack": 2
       }
     ],
-    "effect": "相手のアイコン1体の攻撃力-2。",
+    "effect": "相手のキャラクター1体の攻撃力-2。",
     "flavor": "",
     "target": "enemyIcon",
     "art": "/assets/cards/g11-art.jpg",
@@ -1991,7 +1991,7 @@
         "to": "strongestEnemy"
       }
     ],
-    "effect": "場に出たとき、攻撃力がいちばん高い相手のアイコン1体のキーワードと効果を消す。",
+    "effect": "場に出たとき、攻撃力がいちばん高い相手のキャラクター1体を沈黙状態にする。",
     "flavor": "",
     "art": "/assets/cards/g12-art.jpg",
     "original": "assets/original/g12.webp"
@@ -2016,7 +2016,7 @@
         "amount": 2
       }
     ],
-    "effect": "自分のターンの終わりに、攻撃力がいちばん高い相手のアイコン1体に2ダメージ。",
+    "effect": "自分のターンの終わりに、攻撃力がいちばん高い相手のキャラクター1体に2ダメージ。",
     "flavor": "",
     "art": "/assets/cards/g13-art.jpg",
     "original": "assets/original/g13.webp"
@@ -2032,7 +2032,7 @@
     "hp": 6,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": ["ガード", "凸"],
+    "keywords": ["ガード", "突進"],
     "effects": [
       {
         "on": "play",
@@ -2046,7 +2046,7 @@
         "amount": 1
       }
     ],
-    "effect": "ガード。凸。場に出たとき、体力が2以下の相手のアイコンすべてをオワコンにする。自分のターンの終わりに、攻撃力がいちばん高い相手のアイコン1体に1ダメージ。",
+    "effect": "ガード。突進。場に出たとき、体力が2以下の相手のキャラクターすべてを破壊する。自分のターンの終わりに、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。",
     "flavor": "「知らないことは、まだ調べていないことだけ」",
     "art": "/assets/cards/c7-art.jpg",
     "original": "assets/original/c7.webp"
@@ -2060,11 +2060,11 @@
     "cost": 2,
     "attack": 2,
     "hp": 1,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム"],
     "keywords": ["速攻"],
     "effects": [],
-    "effect": "速攻",
+    "effect": "速攻。",
     "flavor": "wwwwwwwwww",
     "art": "/assets/cards/k11-art.jpg",
     "original": "assets/original/k11.webp"
@@ -2076,7 +2076,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 3,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -2086,7 +2086,7 @@
         "hp": 0
       }
     ],
-    "effect": "自分のアイコンすべてに攻撃力+1。",
+    "effect": "自分のキャラクターすべてに攻撃力+1。",
     "flavor": "これは笑う。",
     "art": "/assets/cards/k12-art.jpg",
     "original": "assets/original/k12.webp"
@@ -2100,7 +2100,7 @@
     "cost": 4,
     "attack": 2,
     "hp": 3,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["配信者"],
     "keywords": [],
     "effects": [
@@ -2110,7 +2110,7 @@
         "kaiwai": "ミーム"
       }
     ],
-    "effect": "場に出たとき、自分の場のミーム界隈1体につき、相手のマスターに1ダメージ。",
+    "effect": "場に出たとき、自分の場のミーム種族1体につき、相手のプレイヤーに1ダメージ。",
     "flavor": "素材は、みんなの悪ノリ。",
     "art": "/assets/cards/k13-art.jpg",
     "original": "assets/original/k13.webp",
@@ -2125,7 +2125,7 @@
     "cost": 8,
     "attack": 4,
     "hp": 4,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム", "配信者"],
     "keywords": [],
     "effects": [
@@ -2135,7 +2135,7 @@
         "amount": 1
       }
     ],
-    "effect": "場に出たとき、自分の場のアイコン1体につき、相手のマスターに1ダメージ。",
+    "effect": "場に出たとき、自分の場のキャラクター1体につき、相手のプレイヤーに1ダメージ。",
     "flavor": "",
     "art": "/assets/cards/k14-art.jpg",
     "original": "assets/original/k14.webp"
@@ -2149,7 +2149,7 @@
     "cost": 4,
     "attack": 2,
     "hp": 3,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム"],
     "keywords": [],
     "effects": [
@@ -2163,7 +2163,7 @@
         "count": 2
       }
     ],
-    "effect": "自分の場のほかのアイコン1体につき攻撃力+1。場に出たとき、草を2体出す。",
+    "effect": "自分の場のほかのキャラクター1体につき攻撃力+1。場に出たとき、草を2体出す。",
     "flavor": "「笑ったら、もう仲間だよ」",
     "art": "/assets/cards/c8-art.jpg",
     "original": "assets/original/c8.webp"
@@ -2175,7 +2175,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 3,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -2189,7 +2189,7 @@
         "count": 1
       }
     ],
-    "effect": "自分のアイコンすべてと自分のライフを2回復する。カードを1枚引く。",
+    "effect": "自分のキャラクターすべてと自分のライフを2回復する。カードを1枚引く。",
     "flavor": "寝る前に、あと1本だけ。",
     "art": "/assets/cards/i10-art.jpg",
     "original": "assets/original/i10.webp"
@@ -2203,7 +2203,7 @@
     "cost": 2,
     "attack": 2,
     "hp": 1,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["動物"],
     "keywords": ["速攻"],
     "effects": [],
@@ -2221,7 +2221,7 @@
     "cost": 5,
     "attack": 3,
     "hp": 3,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["配信者"],
     "keywords": [],
     "effects": [
@@ -2232,7 +2232,7 @@
         "hp": 1
       }
     ],
-    "effect": "自分が回復の効果を使うたび、このアイコンに攻撃力+1・体力+1。",
+    "effect": "自分が回復の効果を使うたび、このキャラクターに攻撃力+1・体力+1。",
     "flavor": "",
     "art": "/assets/cards/i12-art.jpg",
     "original": "assets/original/i12.webp"
@@ -2246,7 +2246,7 @@
     "cost": 8,
     "attack": 4,
     "hp": 5,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["動物", "ミーム"],
     "keywords": ["ガード"],
     "effects": [
@@ -2260,7 +2260,7 @@
         "amount": 2
       }
     ],
-    "effect": "このゲームで自分が回復の効果を使った回数だけ、コスト-1。ガード。場に出たとき、自分のアイコンすべてと自分のライフを2回復する。",
+    "effect": "ガード。手札にある間、このゲームで自分が回復の効果を使った回数だけコスト-1。場に出たとき、自分のキャラクターすべてと自分のライフを2回復する。",
     "flavor": "中の人などいない。",
     "art": "/assets/cards/i13-art.jpg",
     "original": "assets/original/i13.webp"
@@ -2274,7 +2274,7 @@
     "cost": 4,
     "attack": 3,
     "hp": 4,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["配信者"],
     "keywords": [],
     "effects": [
@@ -2284,7 +2284,7 @@
         "amount": 1
       }
     ],
-    "effect": "自分が回復の効果を使うたび、相手のマスターに1ダメージ。",
+    "effect": "自分が回復の効果を使うたび、相手のプレイヤーに1ダメージ。",
     "flavor": "",
     "art": "/assets/cards/c10-art.jpg",
     "original": "assets/original/c10.webp"
@@ -2324,7 +2324,7 @@
     "cost": 8,
     "attack": 5,
     "hp": 4,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["配信者"],
     "keywords": ["速攻"],
     "effects": [
@@ -2334,7 +2334,7 @@
         "kaiwai": "配信者"
       }
     ],
-    "effect": "速攻。自分の場のほかの配信者界隈1体につき攻撃力+1。",
+    "effect": "速攻。自分の場のほかの配信者種族1体につき攻撃力+1。",
     "flavor": "同接、合算で。",
     "art": "/assets/cards/f15-art.jpg",
     "original": "assets/original/f15.webp"
@@ -2346,7 +2346,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 2,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -2362,7 +2362,7 @@
         "amount": 2
       }
     ],
-    "effect": "自分の配信者界隈すべてに体力+2。自分のライフを2回復する。",
+    "effect": "自分の配信者種族すべてに体力+2。自分のライフを2回復する。",
     "flavor": "今日もありがとう、また明日。",
     "art": "/assets/cards/i14-art.jpg",
     "original": "assets/original/i14.webp",
@@ -2375,7 +2375,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 2,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": [],
     "keywords": [],
     "target": "allyIcon",
@@ -2387,7 +2387,7 @@
         "hp": 2
       }
     ],
-    "effect": "自分のアイドル界隈1体に攻撃力+2・体力+2。",
+    "effect": "自分のアイドル種族1体に攻撃力+2・体力+2。",
     "flavor": "便箋3枚、全部本気。",
     "art": "/assets/cards/m15-art.jpg",
     "original": "assets/original/m15.webp",
@@ -2402,7 +2402,7 @@
     "cost": 4,
     "attack": 2,
     "hp": 3,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["アイドル"],
     "keywords": ["ガード"],
     "effects": [
@@ -2413,7 +2413,7 @@
         "amount": 1
       }
     ],
-    "effect": "ガード。オワコンになったとき、相手のアイコンすべてに1ダメージ。",
+    "effect": "ガード。破壊されたとき、相手のキャラクターすべてに1ダメージ。",
     "flavor": "",
     "art": "/assets/cards/f16-art.jpg",
     "original": "assets/original/f16.webp"
@@ -2427,7 +2427,7 @@
     "cost": 2,
     "attack": 1,
     "hp": 1,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["アイドル"],
     "keywords": [],
     "effects": [
@@ -2438,7 +2438,7 @@
         "count": 2
       }
     ],
-    "effect": "オワコンになったとき、草を2体出す。",
+    "effect": "破壊されたとき、草を2体出す。",
     "flavor": "",
     "art": "/assets/cards/k15-art.jpg",
     "original": "assets/original/k15.webp"
@@ -2452,7 +2452,7 @@
     "cost": 7,
     "attack": 3,
     "hp": 5,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -2464,7 +2464,7 @@
         "kaiwai": "アイドル"
       }
     ],
-    "effect": "場に出たとき、自分のほかのアイドル界隈すべてに攻撃力+2・体力+2。",
+    "effect": "場に出たとき、自分のほかのアイドル種族すべてに攻撃力+2・体力+2。",
     "flavor": "",
     "art": "/assets/cards/m16-art.jpg",
     "original": "assets/original/m16.webp"
@@ -2494,7 +2494,7 @@
         }
       }
     ],
-    "effect": "山札から有識者界隈を1枚探して手札に加える（なければカードを1枚引く）。自分の場に有識者界隈がいれば、さらにカードを1枚引く。",
+    "effect": "山札から有識者種族のカードを1枚探して手札に加える。なければカードを1枚引く。自分の場に有識者種族がいれば、さらにカードを1枚引く。",
     "flavor": "ソースはこちら。",
     "art": "/assets/cards/g14-art.jpg",
     "original": "assets/original/g14.webp",
@@ -2509,7 +2509,7 @@
     "cost": 3,
     "attack": 1,
     "hp": 3,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["有識者"],
     "keywords": [],
     "effects": [
@@ -2521,7 +2521,7 @@
         "kaiwai": "ミーム"
       }
     ],
-    "effect": "場に出たとき、自分のほかのミーム界隈すべてに攻撃力+1・体力+1。",
+    "effect": "場に出たとき、自分のほかのミーム種族すべてに攻撃力+1・体力+1。",
     "flavor": "このネタ、起源は10年前。",
     "art": "/assets/cards/g15-art.jpg",
     "original": "assets/original/g15.webp",
@@ -2536,7 +2536,7 @@
     "cost": 3,
     "attack": 2,
     "hp": 2,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": ["有識者"],
     "keywords": [],
     "effects": [
@@ -2550,7 +2550,7 @@
         }
       }
     ],
-    "effect": "場に出たとき、自分の場にアイドル界隈がいれば、カードを1枚引く。",
+    "effect": "場に出たとき、自分の場にアイドル種族がいれば、カードを1枚引く。",
     "flavor": "",
     "art": "/assets/cards/m17-art.jpg",
     "original": "assets/original/m17.webp"
@@ -2564,7 +2564,7 @@
     "cost": 3,
     "attack": 2,
     "hp": 2,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["有識者"],
     "keywords": [],
     "effects": [
@@ -2575,7 +2575,7 @@
         "amount": 1
       }
     ],
-    "effect": "場に出たとき、自分のアイコンすべてと自分のライフを1回復する。",
+    "effect": "場に出たとき、自分のキャラクターすべてと自分のライフを1回復する。",
     "flavor": "",
     "art": "/assets/cards/i15-art.jpg",
     "original": "assets/original/i15.webp"
@@ -2613,9 +2613,9 @@
     "cost": 4,
     "attack": 2,
     "hp": 2,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["動物"],
-    "keywords": ["凸"],
+    "keywords": ["突進"],
     "effects": [
       {
         "on": "rush",
@@ -2624,7 +2624,7 @@
         "count": 1
       }
     ],
-    "effect": "凸。凸で攻撃したとき、草を1体出す。",
+    "effect": "突進。突進で攻撃したとき、草を1体出す。",
     "flavor": "",
     "art": "/assets/cards/k16-art.jpg",
     "original": "assets/original/k16.webp"
@@ -2636,7 +2636,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 2,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -2652,7 +2652,7 @@
         "amount": 2
       }
     ],
-    "effect": "自分の動物界隈すべてに攻撃力+1・体力+2。自分のライフを2回復する。",
+    "effect": "自分の動物種族すべてに攻撃力+1・体力+2。自分のライフを2回復する。",
     "flavor": "なでる手が止まらない。",
     "art": "/assets/cards/i16-art.jpg",
     "original": "assets/original/i16.webp",
@@ -2667,11 +2667,11 @@
     "cost": 2,
     "attack": 2,
     "hp": 1,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["ミーム"],
-    "keywords": ["凸"],
+    "keywords": ["突進"],
     "effects": [],
-    "effect": "凸。",
+    "effect": "突進。",
     "flavor": "一言多いのが芸風。",
     "art": "/assets/cards/f18-art.jpg",
     "original": "assets/original/f18.webp",
@@ -2686,11 +2686,11 @@
     "cost": 1,
     "attack": 1,
     "hp": 1,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["ミーム"],
     "keywords": ["速攻"],
     "effects": [],
-    "effect": "速攻",
+    "effect": "速攻。",
     "flavor": "既読、無視、スタンプ。",
     "art": "/assets/cards/f19-art.jpg",
     "original": "assets/original/f19.webp",
@@ -2712,7 +2712,7 @@
         "do": "destroy"
       }
     ],
-    "effect": "相手のアイコン1体をオワコンにする。",
+    "effect": "相手のキャラクター1体を破壊する。",
     "flavor": "はい、論破。",
     "art": "/assets/cards/g17-art.jpg",
     "original": "assets/original/g17.webp"
@@ -2724,7 +2724,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 4,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": [],
     "keywords": [],
     "target": "enemyIcon",
@@ -2736,7 +2736,7 @@
         "do": "destroy"
       }
     ],
-    "effect": "ダメージを受けている相手のアイコン1体をオワコンにする。",
+    "effect": "ダメージを受けている相手のキャラクター1体を破壊する。",
     "flavor": "火に油、燃料に薪。",
     "art": "/assets/cards/f20-art.jpg",
     "original": "assets/original/f20.webp"
@@ -2748,7 +2748,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 4,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": [],
     "keywords": [],
     "target": "enemyIcon",
@@ -2757,7 +2757,7 @@
         "do": "bounce"
       }
     ],
-    "effect": "相手のアイコン1体を持ち主の手札に戻す（トークンは消える）。",
+    "effect": "相手のキャラクター1体を持ち主の手札に戻す。",
     "flavor": "見なければ、平和。",
     "art": "/assets/cards/i17-art.jpg",
     "original": "assets/original/i17.webp"
@@ -2769,7 +2769,7 @@
     "type": "post",
     "rarity": 3,
     "cost": 5,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": [],
     "keywords": [],
     "target": "enemyIcon",
@@ -2782,7 +2782,7 @@
         "maxAttack": 3
       }
     ],
-    "effect": "攻撃力が3以下の相手のアイコン1体を自分の場に奪う（奪ったターンは攻撃できない）。",
+    "effect": "攻撃力が3以下の相手のキャラクター1体を奪う。",
     "flavor": "うちの方が、待遇いいよ。",
     "art": "/assets/cards/m18-art.jpg",
     "original": "assets/original/m18.webp"
@@ -2794,7 +2794,7 @@
     "type": "post",
     "rarity": 3,
     "cost": 3,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -2813,7 +2813,7 @@
         }
       }
     ],
-    "effect": "相手のアイコンすべてに1ダメージ。自分の場にアイドル界隈がいれば、さらに1ダメージ。",
+    "effect": "相手のキャラクターすべてに1ダメージ。自分の場にアイドル種族がいれば、さらに1ダメージ。",
     "flavor": "はい、お時間でーす。",
     "art": "/assets/cards/m20-art.jpg",
     "original": "assets/original/m20.webp"
@@ -2827,7 +2827,7 @@
     "cost": 6,
     "attack": 4,
     "hp": 6,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["配信者", "有識者"],
     "keywords": [],
     "effects": [
@@ -2837,7 +2837,7 @@
         "to": "costliestEnemy"
       }
     ],
-    "effect": "場に出たとき、コストがいちばん高い相手のアイコン1体を持ち主の手札に戻す（トークンは消える）。",
+    "effect": "場に出たとき、コストがいちばん高い相手のキャラクター1体を持ち主の手札に戻す。",
     "flavor": "「しーっ。今日はもう、おやすみ」",
     "art": "/assets/cards/c11-art.jpg",
     "subject": "/assets/cards/c11-subject.webp",
@@ -2846,7 +2846,7 @@
       "name": "不眠のルリ",
       "attack": 4,
       "hp": 4,
-      "keywords": ["凸"],
+      "keywords": ["突進"],
       "effects": [
         {
           "on": "play",
@@ -2854,7 +2854,7 @@
           "maxCost": 3
         }
       ],
-      "effect": "凸。闇堕ちしたとき、オワコンからコスト3以下の自分のアイコン1体を場に戻す（いちばんコストが高いもの。場に出たときの効果も働く）。",
+      "effect": "突進。闇堕ちしたとき、墓地のコストが3以下の自分のキャラクターのうち、コストがいちばん高い1体を場に戻す。場に出たときの効果も働く。",
       "art": "/assets/cards/c11-dark-art.jpg",
       "subject": "/assets/cards/c11-dark-subject.webp",
       "original": "assets/original/c11-dark.webp"
@@ -2869,11 +2869,11 @@
     "cost": 2,
     "attack": 2,
     "hp": 1,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["ミーム"],
     "keywords": ["速攻"],
     "effects": [],
-    "effect": "速攻",
+    "effect": "速攻。",
     "flavor": "「構ってほしいだけなんだよ」",
     "art": "/assets/cards/f21-art.jpg",
     "original": "assets/original/f21.webp",
@@ -2888,9 +2888,9 @@
     "cost": 5,
     "attack": 3,
     "hp": 3,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": ["配信者"],
-    "keywords": ["凸"],
+    "keywords": ["突進"],
     "effects": [
       {
         "on": "play",
@@ -2905,7 +2905,7 @@
         "amount": 2
       }
     ],
-    "effect": "凸。場に出たとき、相手のマスターに2ダメージ。自分のライフを2回復する。",
+    "effect": "突進。場に出たとき、相手のプレイヤーに2ダメージ。自分のライフを2回復する。",
     "flavor": "",
     "art": "/assets/cards/f22-art.jpg",
     "original": "assets/original/f22.webp"
@@ -2917,7 +2917,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 2,
-    "attributes": ["炎上"],
+    "attributes": ["炎"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -2931,7 +2931,7 @@
         "amount": 1
       }
     ],
-    "effect": "カードを1枚引く。相手のマスターに1ダメージ。",
+    "effect": "カードを1枚引く。相手のプレイヤーに1ダメージ。",
     "flavor": "【悲報】まとめられました",
     "art": "/assets/cards/f23-art.jpg",
     "original": "assets/original/f23.webp",
@@ -2946,7 +2946,7 @@
     "cost": 4,
     "attack": 2,
     "hp": 3,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": ["アイドル"],
     "keywords": [],
     "effects": [
@@ -2957,7 +2957,7 @@
         "hp": 0
       }
     ],
-    "effect": "自分のターンの終わりに、自分のほかのアイコン1体（ランダム）に攻撃力+1。",
+    "effect": "自分のターンの終わりに、ランダムな自分のほかのキャラクター1体に攻撃力+1。",
     "flavor": "",
     "art": "/assets/cards/m19-art.jpg",
     "original": "assets/original/m19.webp"
@@ -2971,7 +2971,7 @@
     "cost": 6,
     "attack": 3,
     "hp": 5,
-    "attributes": ["メロい"],
+    "attributes": ["推し"],
     "kaiwai": ["アイドル"],
     "keywords": ["注目"],
     "effects": [
@@ -2987,13 +2987,13 @@
         "attack": 0
       }
     ],
-    "effect": "注目。場に出たとき、自分のほかのアイコンすべてに攻撃力+2・体力+1し、自分のアイコンすべてがすぐ攻撃できるようになる。",
+    "effect": "注目。場に出たとき、自分のほかのキャラクターすべてに攻撃力+2・体力+1し、自分のキャラクターすべてがすぐ攻撃できるようになる。",
     "flavor": "「ラスサビ、全員で跳んで！」",
     "dark": {
       "name": "病み期のミレイ",
       "attack": 5,
       "hp": 5,
-      "keywords": ["凸", "注目"],
+      "keywords": ["突進", "注目"],
       "effects": [
         {
           "on": "play",
@@ -3002,7 +3002,7 @@
           "attack": 2
         }
       ],
-      "effect": "凸。注目。闇堕ちしたとき、相手のアイコンすべての攻撃力-2。",
+      "effect": "突進。注目。闇堕ちしたとき、相手のキャラクターすべての攻撃力-2。",
       "art": "/assets/cards/c13-dark-art.jpg",
       "original": "assets/original/c13-dark.webp",
       "subject": "/assets/cards/c13-dark-subject.webp"
@@ -3049,7 +3049,7 @@
         "amount": 2
       }
     ],
-    "effect": "ガード。場に出たとき、相手のアイコンすべてに2ダメージ。",
+    "effect": "ガード。場に出たとき、相手のキャラクターすべてに2ダメージ。",
     "flavor": "",
     "art": "/assets/cards/g19-art.jpg",
     "original": "assets/original/g19.webp"
@@ -3061,7 +3061,7 @@
     "type": "post",
     "rarity": 2,
     "cost": 4,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": [],
     "keywords": [],
     "effects": [
@@ -3071,7 +3071,7 @@
         "max": 3
       }
     ],
-    "effect": "自分の場のアイコン2体につき、カードを1枚引く（最大3枚）。",
+    "effect": "自分の場のキャラクター2体につき、カードを1枚引く。引くのは3枚まで。",
     "flavor": "リプが止まらない",
     "art": "/assets/cards/k17-art.jpg",
     "original": "assets/original/k17.webp"
@@ -3083,7 +3083,7 @@
     "type": "post",
     "rarity": 3,
     "cost": 5,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": [],
     "keywords": [],
     "target": "enemyIcon",
@@ -3093,7 +3093,7 @@
         "card": "t-kusa"
       }
     ],
-    "effect": "相手のアイコン1体を草（1/1）にする。",
+    "effect": "相手のキャラクター1体を草にする。",
     "flavor": "もう元には戻れない",
     "art": "/assets/cards/k18-art.jpg",
     "original": "assets/original/k18.webp"
@@ -3107,7 +3107,7 @@
     "cost": 6,
     "attack": 3,
     "hp": 5,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム", "配信者"],
     "keywords": [],
     "effects": [
@@ -3129,7 +3129,7 @@
       "name": "黒歴史のララ",
       "attack": 4,
       "hp": 4,
-      "keywords": ["凸"],
+      "keywords": ["突進"],
       "effects": [
         {
           "on": "play",
@@ -3143,7 +3143,7 @@
           "card": "t-kusa"
         }
       ],
-      "effect": "凸。闇堕ちしたとき、攻撃力がいちばん高い相手のアイコン1体を草（1/1）にし、自分の空いている枠すべてに草を出す。",
+      "effect": "突進。闇堕ちしたとき、攻撃力がいちばん高い相手のキャラクター1体を草にし、自分の空いている枠すべてに草を出す。",
       "art": "/assets/cards/c12-dark-art.jpg",
       "original": "assets/original/c12-dark.webp",
       "subject": "/assets/cards/c12-dark-subject.webp"
@@ -3162,7 +3162,7 @@
     "cost": 4,
     "attack": 2,
     "hp": 3,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["動物"],
     "keywords": [],
     "effects": [
@@ -3172,7 +3172,7 @@
         "card": "t-kusa"
       }
     ],
-    "effect": "自分の草が、このゲームでオワコンになった数だけ攻撃力+1。",
+    "effect": "自分の草が、このゲームで破壊された数だけ攻撃力+1。",
     "flavor": "オワコンになった草も、残さずいただきます。",
     "art": "/assets/cards/c14-art.jpg",
     "original": "assets/original/c14.webp",
@@ -3198,7 +3198,7 @@
           "count": 2
         }
       ],
-      "effect": "速攻。自分の草が、このゲームでオワコンになった数だけ攻撃力+1。闇堕ちしたとき、草を2体出す。"
+      "effect": "速攻。自分の草が、このゲームで破壊された数だけ攻撃力+1。闇堕ちしたとき、草を2体出す。"
     }
   },
   {
@@ -3218,7 +3218,7 @@
         "do": "sacrifice"
       }
     ],
-    "effect": "場に出たとき、自分と相手は、それぞれ自分のアイコンを1体選ぶ。選ばれたアイコンはオワコンになる。",
+    "effect": "場に出たとき、自分と相手は、それぞれ自分のキャラクターを1体選ぶ。選ばれたキャラクターは破壊される。",
     "flavor": "その闇堕ち、仕込みです。",
     "art": "/assets/cards/c15-art.jpg",
     "subject": "/assets/cards/c15-subject.webp",
@@ -3241,7 +3241,7 @@
         "do": "judge"
       }
     ],
-    "effect": "場に出たとき、自分と相手の場で攻撃力がいちばん高いアイコンすべてをオワコンにする（このアイコンは除く）。",
+    "effect": "場に出たとき、このキャラクターを除いて、自分と相手の場で攻撃力がいちばん高いキャラクターすべてを破壊する。",
     "flavor": "",
     "art": "/assets/cards/c16-art.jpg",
     "subject": "/assets/cards/c16-subject.webp",
@@ -3264,7 +3264,7 @@
         "do": "stageAces"
       }
     ],
-    "effect": "場に出たとき、自分と相手の両方に空いている枠があれば、自分と相手は、それぞれ自分の山札から闇堕ちを持つカードを1枚出し、そのアイコンに凸を付ける（場に出たときの効果は働かない）。",
+    "effect": "場に出たとき、自分と相手の両方に空いている枠があれば、自分と相手は、それぞれ自分の山札から闇堕ちを持つカードを1枚出し、そのキャラクターに突進を付ける。そのキャラクターの場に出たときの効果は働かない。",
     "flavor": "",
     "art": "/assets/cards/c17-art.jpg",
     "subject": "/assets/cards/c17-subject.webp",
@@ -3279,7 +3279,7 @@
     "cost": 1,
     "attack": 1,
     "hp": 1,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["動物"],
     "keywords": [],
     "effects": [
@@ -3304,7 +3304,7 @@
     "cost": 7,
     "attack": 4,
     "hp": 4,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["有識者"],
     "keywords": [],
     "effects": [
@@ -3315,7 +3315,7 @@
         "amount": 3
       }
     ],
-    "effect": "場に出たとき、自分のアイコンすべてと自分のライフを3回復する。",
+    "effect": "場に出たとき、自分のキャラクターすべてと自分のライフを3回復する。",
     "flavor": "",
     "art": "/assets/cards/i19-art.jpg",
     "original": "assets/original/i19.webp"
@@ -3329,7 +3329,7 @@
     "cost": 6,
     "attack": 3,
     "hp": 6,
-    "attributes": ["癒し"],
+    "attributes": ["水"],
     "kaiwai": ["配信者"],
     "keywords": ["ガード"],
     "effects": [
@@ -3346,7 +3346,7 @@
         "amount": 1
       }
     ],
-    "effect": "ガード。場に出たとき、自分のアイコンすべてと自分のライフを3回復する。自分のターンの終わりに、自分のライフを1回復する。",
+    "effect": "ガード。場に出たとき、自分のキャラクターすべてと自分のライフを3回復する。自分のターンの終わりに、自分のライフを1回復する。",
     "flavor": "「今日も湯けむり配信中」",
     "art": "/assets/cards/i20-art.jpg",
     "original": "assets/original/i20.webp",
@@ -3409,7 +3409,7 @@
         "amount": 2
       }
     ],
-    "effect": "カードを2枚引く。相手のマスターに2ダメージ。",
+    "effect": "カードを2枚引く。相手のプレイヤーに2ダメージ。",
     "flavor": "通知が止まらない",
     "art": "/assets/cards/n14-art.jpg",
     "original": "assets/original/n14.webp"
@@ -3433,7 +3433,7 @@
         "count": 1
       }
     ],
-    "effect": "オワコンになったとき、カードを1枚引く。",
+    "effect": "破壊されたとき、カードを1枚引く。",
     "flavor": "使い捨てです。",
     "art": "/assets/cards/n15-art.jpg",
     "original": "assets/original/n15.webp"
@@ -3458,7 +3458,7 @@
         "amount": 2
       }
     ],
-    "effect": "オワコンになったとき、攻撃力がいちばん高い相手のアイコン1体に2ダメージ。",
+    "effect": "破壊されたとき、攻撃力がいちばん高い相手のキャラクター1体に2ダメージ。",
     "flavor": "依頼は、もう済んでいる。",
     "art": "/assets/cards/n16-art.jpg",
     "original": "assets/original/n16.webp"
@@ -3472,7 +3472,7 @@
     "cost": 7,
     "attack": 3,
     "hp": 3,
-    "attributes": ["草"],
+    "attributes": ["自然"],
     "kaiwai": ["ミーム"],
     "keywords": [],
     "effects": [
@@ -3487,7 +3487,7 @@
         "card": "t-kusa"
       }
     ],
-    "effect": "場に出たとき、草を2体出す。自分の草が、このゲームでオワコンになった数だけ攻撃力+1。",
+    "effect": "場に出たとき、草を2体出す。自分の草が、このゲームで破壊された数だけ攻撃力+1。",
     "flavor": "枯れた草ほど、よく燃える。",
     "art": "/assets/cards/k19-art.jpg",
     "original": "assets/original/kusa-queen.webp"

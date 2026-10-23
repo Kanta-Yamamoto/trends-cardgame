@@ -6,14 +6,14 @@ import { ATTR_META, attrBackground, KAIWAI_META, stars } from "../cards/meta";
 
 interface Props {
   card: CardDef;
-  /** 場のアイコンの今の姿（効果・ダメージ・闇堕ちを反映したもの） */
+  /** 場のキャラクターの今の姿（効果・ダメージ・闇堕ちを反映したもの） */
   view?: UnitView;
   /** 表示するコスト。省略すると出さない */
   cost?: number;
   /** 演出で要素を探すための目印 */
   uid?: number;
   inHand?: boolean;
-  /** 場のアイコン：絵と数値だけの簡素な見た目（名前・属性・★・闇堕ちの印は出さない。ガードと状態だけ） */
+  /** 場のキャラクター：絵と数値だけの簡素な見た目（名前・属性・★・闇堕ちの印は出さない。ガードと状態だけ） */
   onField?: boolean;
   className?: string;
   /** 追加のスタイル（手札の扇の並びなど） */
@@ -82,8 +82,8 @@ export function MiniCard({
       aria-label={
         label ??
         (isPost
-          ? `${name}（投稿・コスト${cost ?? card.cost}）`
-          : `${name}（${[...card.attributes, ...card.kaiwai.map((k) => `${k}界隈`)].join("・") || "共通"}・コスト${cost ?? card.cost}・攻撃${attack}・体力${hp}）`)
+          ? `${name}（呪文・コスト${cost ?? card.cost}）`
+          : `${name}（${[...card.attributes, ...card.kaiwai.map((k) => `${k}種族`)].join("・") || "ニュートラル"}・コスト${cost ?? card.cost}・攻撃${attack}・体力${hp}）`)
       }
       onClick={() => {
         // 長押しで拡大したあとの指を離した操作は、選択として扱わない
@@ -137,7 +137,7 @@ export function MiniCard({
               </i>
             ))}
             {card.kaiwai.map((k) => (
-              <b key={k} className="mini-kaiwai" title={`${k}界隈`}>
+              <b key={k} className="mini-kaiwai" title={`${k}種族`}>
                 {KAIWAI_META[k].mark}
               </b>
             ))}
@@ -170,11 +170,11 @@ export function MiniCard({
           {view?.exposed && <span className="mini-kw st">晒し</span>}
           {view?.unit.exposeAtTurnEnd && <span className="mini-kw st">晒し予告</span>}
           {view?.asleep && <span className="mini-kw st">眠り</span>}
-          {view?.unit.silenced && <span className="mini-kw st">訂正</span>}
+          {view?.unit.silenced && <span className="mini-kw st">沈黙</span>}
         </span>
       )}
-      {/* 投稿は攻撃力・体力の代わりに、吹き出しの「投稿」札を出す（アイコンと見分けやすく） */}
-      {isPost && <span className="mini-postmark">投稿</span>}
+      {/* 呪文は攻撃力・体力の代わりに、吹き出しの「呪文」札を出す（キャラクターと見分けやすく） */}
+      {isPost && <span className="mini-postmark">呪文</span>}
       {!isPost && (
         <span className="mini-stats">
           <span className={`mini-atk ${atkUp ? "up" : ""}`} title="攻撃力">

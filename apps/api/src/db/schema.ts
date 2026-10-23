@@ -7,12 +7,12 @@ export const cards = pgTable("cards", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   epithet: text("epithet").notNull(),
-  /** icon（アイコン）か post（投稿） */
+  /** icon（キャラクター）か post（呪文） */
   type: text("type").notNull().default("icon"),
   /** ★の数（1〜5） */
   rarity: integer("rarity").notNull().default(1),
   cost: integer("cost").notNull(),
-  // 投稿は攻撃力・体力を持たない
+  // 呪文は攻撃力・体力を持たない
   attack: integer("attack"),
   hp: integer("hp"),
   attributes: text("attributes").array().notNull().default([]),
@@ -20,9 +20,9 @@ export const cards = pgTable("cards", {
   keywords: text("keywords").array().notNull().default([]),
   /** ルールで使う効果（packages/cards の CardEffect） */
   effects: jsonb("effects").$type<CardEffect[]>().notNull().default([]),
-  /** 投稿の対象 */
+  /** 呪文の対象 */
   target: text("target"),
-  /** 投稿の対象を、自分のその界隈だけに限る */
+  /** 呪文の対象を、自分のその種族だけに限る */
   targetKaiwai: text("target_kaiwai"),
   effect: text("effect").notNull(),
   flavor: text("flavor").notNull(),

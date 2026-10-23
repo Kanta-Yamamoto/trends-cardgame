@@ -12,7 +12,7 @@ import { thrust } from "../fx/thrust";
 /**
  * 対戦画面の演出（DOM を直接アニメーションさせる）。
  * ルールの結果は game-core が決め、ここは「見せ方」だけを担当する。
- * 要素は data 属性で探す：data-uid（場のアイコン）／data-master（マスター）／data-pile（山札・トラッシュ）／data-hand（手札）
+ * 要素は data 属性で探す：data-uid（場のキャラクター）／data-master（プレイヤー）／data-pile（山札・トラッシュ）／data-hand（手札）
  */
 
 const reduced = () =>
@@ -36,7 +36,7 @@ function layer(): HTMLElement {
 const center = (r: DOMRect) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 
 /**
- * 画面のふちのアイコンに出す札や数字が、画面の外に見切れないようにずらす。
+ * 画面のふちのキャラクターに出す札や数字が、画面の外に見切れないようにずらす。
  * 札は横の中心（translate(-50%)）で置くので、幅の半分＋余白より内側に収める。
  */
 function keepInside(n: HTMLElement, x: number) {
@@ -87,7 +87,7 @@ function shake(el: HTMLElement | null, power = 1) {
   );
 }
 
-/** 画面全体を軽く揺らす（マスターへの攻撃） */
+/** 画面全体を軽く揺らす（プレイヤーへの攻撃） */
 function quake(power = 1) {
   const board = q(".board");
   if (!board || reduced()) return;
@@ -121,7 +121,7 @@ function burst(at: { x: number; y: number }, color: string) {
   ).onfinish = () => b.remove();
 }
 
-/** 倒されたアイコンの抜け殻を作り、トラッシュへ飛ばす（本体は React がすぐ消すため） */
+/** 破壊されたキャラクターの抜け殻を作り、トラッシュへ飛ばす（本体は React がすぐ消すため） */
 function toTrash(el: HTMLElement | null, owner: PlayerId, to: "trash" | "hand" = "trash") {
   if (!el) return;
   const from = el.getBoundingClientRect();
@@ -140,7 +140,7 @@ function toTrash(el: HTMLElement | null, owner: PlayerId, to: "trash" | "hand" =
     height: `${from.height}px`,
   });
   layer().appendChild(ghost);
-  // オワコンへ行くアイコンは、黒く染まって溶けるように消える
+  // 墓地へ行くキャラクターは、黒く染まって溶けるように消える
   if (to === "trash") {
     void dissolve(ghost);
     return;
@@ -169,7 +169,7 @@ function toTrash(el: HTMLElement | null, owner: PlayerId, to: "trash" | "hand" =
 
 /**
  * 攻撃の演出：溜め → 突進 → 衝撃（ダメージ表示・揺れ）→ 戻る。
- * 倒れる予定のアイコンはトラッシュへ飛ばす。resolve したら state を更新してよい。
+ * 倒れる予定のキャラクターはトラッシュへ飛ばす。resolve したら state を更新してよい。
  */
 export async function animateAttack(
   before: GameState,
@@ -177,7 +177,7 @@ export async function animateAttack(
   from: number,
   target: AttackTarget,
   catalog: Record<string, RuleCard>,
-  /** onImpact：当たった瞬間に呼ぶ（マスターのライフの表示を、当たったのと同時に減らすため） */
+  /** onImpact：当たった瞬間に呼ぶ（プレイヤーのライフの表示を、当たったのと同時に減らすため） */
   opts: { onImpact?: () => void } = {},
 ): Promise<void> {
   if (!canAnimate() || reduced()) {
@@ -185,7 +185,7 @@ export async function animateAttack(
     return;
   }
   const foeId: PlayerId = player === "p1" ? "p2" : "p1";
-  // 凸で攻撃したときの強化は、先に見せてから殴る（強化と攻撃を同時に動かさない）
+  // 突進で攻撃したときの強化は、先に見せてから殴る（強化と攻撃を同時に動かさない）
   const boost = withRushBoost(before, player, from, target, catalog);
   if (boost.state !== before) {
     const boosted = boost.state.players[player].field[from];
@@ -212,7 +212,7 @@ export async function animateAttack(
   const dv = def ? viewUnit(game, foeId, def, catalog) : null;
   const dmg = av.attack;
   const counter = dv?.attack ?? 0;
-  /** 倒れたらオワコンへ行く（闇堕ちは、あとでマスターが選んだときだけ） */
+  /** 倒れたら墓地へ行く（闇堕ちは、あとでプレイヤーが選んだときだけ） */
   const goesToTrash = (_u: Unit) => true;
 
   const a = atkEl.getBoundingClientRect();
@@ -289,7 +289,7 @@ export function markBuzzed(uid: number) {
   }
 }
 
-/** 凸の強化：攻撃するアイコンを光らせて「+1/+1」を出し、攻撃力の数字を先に上げる。見せ終わってから突進する */
+/** 突進の強化：攻撃するキャラクターを光らせて「+1/+1」を出し、攻撃力の数字を先に上げる。見せ終わってから突進する */
 async function showRushBoost(
   atk: HTMLElement | null,
   events: GameEvent[],
@@ -306,7 +306,7 @@ async function showRushBoost(
   const h = ups.reduce((n, e) => n + e.hp, 0);
   if (a === 0 && h === 0) return;
   glow(atk, "#ffd76a");
-  popLabel(atk, `凸 ${a >= 0 ? "+" : ""}${a}/${h >= 0 ? "+" : ""}${h}`, "#ffd76a");
+  popLabel(atk, `突進 ${a >= 0 ? "+" : ""}${a}/${h >= 0 ? "+" : ""}${h}`, "#ffd76a");
   atk
     .animate(
       [
@@ -377,7 +377,7 @@ export async function animateDraw(player: PlayerId, delay = 0): Promise<void> {
   }
 }
 
-/** マスターのライフが増減したときの数字（攻撃以外：炎上・祝福） */
+/** プレイヤーのライフが増減したときの数字（攻撃以外：炎上・祝福） */
 export function popMaster(player: PlayerId, text: string, kind: "dmg" | "heal") {
   const el = q(`[data-master="${player}"]`);
   popNumber(el, text, kind);
@@ -411,14 +411,14 @@ export function flipCard(uid: number, kind: "dark" | "restore") {
   burst(center(r), glow);
 }
 
-/** 効果ダメージ（投稿など）の数字 */
+/** 効果ダメージ（呪文など）の数字 */
 export function popDamage(uid: number, amount: number) {
   const el = q(`[data-uid="${uid}"]`);
   popNumber(el, `-${amount}`);
   shake(el, 0.7);
 }
 
-/* ---------- 投稿・登場時の効果の演出 ---------- */
+/* ---------- 呪文・登場時の効果の演出 ---------- */
 
 type Point = { x: number; y: number };
 
@@ -477,7 +477,7 @@ function popLabel(target: HTMLElement | null, text: string, color: string) {
   ).onfinish = () => n.remove();
 }
 
-/** 光る（回復・強化のとき、そのアイコンが内側から光る） */
+/** 光る（回復・強化のとき、そのキャラクターが内側から光る） */
 function glow(el: HTMLElement | null, color: string) {
   if (!el) return;
   el.animate(
@@ -493,7 +493,7 @@ function glow(el: HTMLElement | null, color: string) {
 const STATUS_COLOR: Record<string, string> = {
   晒し: "#ff4f9a",
   眠り: "#8fb7ff",
-  訂正: "#f4f4f4",
+  沈黙: "#f4f4f4",
   ガード消滅: "#f4f4f4",
 };
 
@@ -516,9 +516,9 @@ export function hasVisibleEffects(events: GameEvent[]) {
 }
 
 /**
- * 投稿・登場時・ターンの始めと終わりの効果を見せる。
+ * 呪文・登場時・ターンの始めと終わりの効果を見せる。
  * shown は今画面に出ている state（効果を受ける前の姿）。next はすべて終わったあとの state。
- * from は効果の出どころ（投稿なら画面の真ん中、登場なら出たアイコン）。null なら飛ばさずに当たるだけ。
+ * from は効果の出どころ（呪文なら画面の真ん中、登場なら出たキャラクター）。null なら飛ばさずに当たるだけ。
  */
 export async function animateEffects(
   shown: GameState,
@@ -657,8 +657,8 @@ export async function animateEffects(
 }
 
 /**
- * 場からいなくなるアイコン（次の state にいないもの）を、オワコンへ（手札に戻ったものは手札へ）飛ばす。
- * skip のアイコンは、別の演出で消し終えているので飛ばさない
+ * 場からいなくなるキャラクター（次の state にいないもの）を、墓地へ（手札に戻ったものは手札へ）飛ばす。
+ * skip のキャラクターは、別の演出で消し終えているので飛ばさない
  */
 export function retireUnits(
   shown: GameState,
@@ -667,14 +667,14 @@ export function retireUnits(
   skip?: ReadonlySet<number>,
 ) {
   if (!canAnimate() || reduced()) return;
-  // 手札に戻ったアイコンは手札へ
+  // 手札に戻ったキャラクターは手札へ
   const bounced = new Set(
     events.flatMap((e) => {
       const u = e.type === "bounced" ? shown.players[e.player].field[e.slot] : null;
       return u ? [u.uid] : [];
     }),
   );
-  // 倒れたアイコン（次の state にいないもの）はオワコンへ
+  // 倒れたキャラクター（次の state にいないもの）は墓地へ
   const alive = new Set(
     (["p1", "p2"] as const).flatMap((p) => next.players[p].field.flatMap((u) => (u ? [u.uid] : []))),
   );
@@ -688,7 +688,7 @@ export function retireUnits(
 
 /**
  * 『調停者』の裁き：『調停者』から対象へ光線で突き、当たった瞬間に時が止まる（fx/thrust.ts）。
- * 当たってから 0.5 秒後に、対象をふだんの消え方でオワコンへ送る。arbiterUid は出た『調停者』
+ * 当たってから 0.5 秒後に、対象をふだんの消え方で墓地へ送る。arbiterUid は出た『調停者』
  */
 export async function animateJudge(
   shown: GameState,
@@ -714,18 +714,18 @@ export async function animateJudge(
     (["p1", "p2"] as const).flatMap((p) => next.players[p].field.flatMap((u) => (u ? [u.uid] : []))),
   );
   await thrust(board, arbiter, targets, (uid) => {
-    // その対象を、いつもの消え方でオワコンへ（残る対象はそのまま）
+    // その対象を、いつもの消え方で墓地へ（残る対象はそのまま）
     const t = targets.find((x) => x.uid === uid);
     if (t && !alive.has(uid)) toTrash(t.el, t.owner);
   });
-  // 対象以外にいなくなるアイコンがいれば、まとめて送る
+  // 対象以外にいなくなるキャラクターがいれば、まとめて送る
   retireUnits(shown, events, next, all);
   await wait(300);
 }
 
 /**
- * 『フィクサー』の差し出し：差し出されたアイコンを、真上で溜めた黒い閃光で順に貫く（fx/blackFlash.ts）。
- * 先に自分（me）のアイコン、次に相手。貫いたアイコンは、いつもの消え方でオワコンへ。演出を見せたら true
+ * 『フィクサー』の差し出し：差し出されたキャラクターを、真上で溜めた黒い閃光で順に貫く（fx/blackFlash.ts）。
+ * 先に自分（me）のキャラクター、次に相手。貫いたキャラクターは、いつもの消え方で墓地へ。演出を見せたら true
  */
 export async function animateSacrifice(
   shown: GameState,

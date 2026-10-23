@@ -29,7 +29,7 @@ const icon = (id: string, cost: number, attack: number, hp: number, extra: Extra
   hp,
   keywords: [],
   effects: [],
-  attributes: ["草"],
+  attributes: ["自然"],
   kaiwai: [],
   rarity: 1,
   ...extra,
@@ -53,9 +53,9 @@ const catalog: Record<string, RuleCard> = {
   rush: icon("rush", 1, 1, 1, { keywords: ["速攻"] }),
   twin: icon("twin", 2, 2, 3, { keywords: ["速攻", "連撃"] }),
   basher: icon("basher", 2, 2, 5, { keywords: ["速攻"] }),
-  totsu: icon("totsu", 2, 2, 2, { keywords: ["凸"] }),
+  totsu: icon("totsu", 2, 2, 2, { keywords: ["突進"] }),
   charger: icon("charger", 3, 2, 3, {
-    keywords: ["凸"],
+    keywords: ["突進"],
     effects: [{ on: "rush", do: "buffSelf", attack: 2, hp: 2 }],
   }),
   idol: icon("idol", 2, 1, 3, { keywords: ["注目"] }),
@@ -112,10 +112,10 @@ const catalog: Record<string, RuleCard> = {
       { do: "damage", to: "allEnemies", amount: 1, if: { kaiwai: "アイドル", atLeast: 1 } },
     ],
   }),
-  flamer: icon("flamer", 1, 1, 1, { attributes: ["炎上"] }),
+  flamer: icon("flamer", 1, 1, 1, { attributes: ["炎"] }),
   rider: icon("rider", 2, 2, 2, {
-    attributes: ["炎上"],
-    effects: [{ on: "play", do: "buffSelf", attack: 1, hp: 0, if: { allies: "炎上", atLeast: 2 } }],
+    attributes: ["炎"],
+    effects: [{ on: "play", do: "buffSelf", attack: 1, hp: 0, if: { allies: "炎", atLeast: 2 } }],
   }),
   host: icon("host", 5, 3, 5, { effects: [{ on: "play", do: "buffAllies", attack: 1, hp: 0 }] }),
   queen: icon("queen", 7, 5, 5, {
@@ -164,16 +164,16 @@ const catalog: Record<string, RuleCard> = {
   }),
   yuru: icon("yuru", 8, 5, 8, { effects: [{ on: "hand", do: "cheaperPerHeal" }] }),
   shiba: icon("shiba", 4, 2, 3, { effects: [{ on: "passive", do: "healStrike", amount: 1 }] }),
-  // オワコンになったとき・ターンの終わり・凸で攻撃したときの組み合わせ（10月23日のコスト 1〜8 の見直し）
+  // 破壊されたとき・ターンの終わり・突進で攻撃したときの組み合わせ（10月23日のコスト 1〜8 の見直し）
   hamster: icon("hamster", 2, 1, 2, { effects: [{ on: "death", do: "heal", to: "master", amount: 3 }] }),
   sprout: icon("sprout", 2, 1, 1, { effects: [{ on: "death", do: "summon", card: "kusa", count: 2 }] }),
   flare: icon("flare", 4, 2, 3, { effects: [{ on: "death", do: "damage", to: "allEnemies", amount: 1 }] }),
   leader: icon("leader", 4, 2, 3, { effects: [{ on: "turnEnd", do: "buffRandomAlly", attack: 1, hp: 0 }] }),
   pup: icon("pup", 4, 2, 2, {
-    keywords: ["凸"],
+    keywords: ["突進"],
     effects: [{ on: "rush", do: "summon", card: "kusa", count: 1 }],
   }),
-  // 界隈を読む効果のテスト用（配信者 s1/s2、アイドル idl、無所属 f）
+  // 種族を読む効果のテスト用（配信者 s1/s2、アイドル idl、無所属 f）
   s1: icon("s1", 1, 1, 1, { kaiwai: ["配信者"] }),
   s2: icon("s2", 1, 1, 1, { kaiwai: ["配信者", "アイドル"] }),
   idl: icon("idl", 1, 1, 1, { kaiwai: ["アイドル"] }),
@@ -224,7 +224,7 @@ const catalog: Record<string, RuleCard> = {
 };
 const F = (n: number) => Array.from({ length: n }, () => "f");
 
-/** 山札を並び替えずに作る。話題力は十分に持たせる */
+/** 山札を並び替えずに作る。コストは十分に持たせる */
 function game(p1: string[], p2: string[] = F(12), mana = 10): GameState {
   const s = createGame({
     decks: { p1: [...p1, ...F(10)], p2: [...p2, ...F(10)] },
@@ -247,7 +247,7 @@ const hit = (s: GameState, from: number, slot: number) =>
 const face = (s: GameState, from: number) =>
   run(s, { type: "attack", player: "p1", from, target: { kind: "leader" } });
 
-/** 相手（p2）の場に、手札の先頭から順にアイコンを並べて p1 のターンに戻す */
+/** 相手（p2）の場に、手札の先頭から順にキャラクターを並べて p1 のターンに戻す */
 function withFoe(p1: string[], p2: string[]): GameState {
   let s = game(p1, p2);
   s = end(s);
@@ -261,7 +261,7 @@ function withFoe(p1: string[], p2: string[]): GameState {
 }
 
 describe("準備とターン", () => {
-  it("場は5枠。先攻は手札3枚・話題力1、後攻は手札4枚で最初のターンだけ話題力+1", () => {
+  it("場は5枠。先攻は手札3枚・コスト1、後攻は手札4枚で最初のターンだけコスト+1", () => {
     const s = createGame({ decks: { p1: F(25), p2: F(25) }, seed: 1 });
     expect(s.players.p1.field).toHaveLength(5);
     expect(s.players.p1.hand).toHaveLength(3);
@@ -270,7 +270,7 @@ describe("準備とターン", () => {
     expect(t2.players.p2.mana).toBe(2);
     expect(end(end(t2, "p2")).players.p2.mana).toBe(2);
   });
-  it("手札は9枚まで。いっぱいのときに引いたカードはオワコンへ", () => {
+  it("手札は9枚まで。いっぱいのときに引いたカードは墓地へ", () => {
     const s = createGame({ decks: { p1: F(25), p2: F(25) }, seed: 1 });
     s.players.p2.hand = Array(9).fill("f");
     const r = run(s, { type: "endTurn", player: "p1" });
@@ -291,15 +291,15 @@ describe("準備とターン", () => {
   });
 });
 
-describe("場に出す・投稿を使う", () => {
-  it("アイコンは話題力を払って空いた枠に出る。投稿は場に出せない", () => {
+describe("場に出す・呪文を使う", () => {
+  it("キャラクターはコストを払って空いた枠に出る。呪文は場に出せない", () => {
     const s = play(game(["big"]), 0, 4);
     expect(s.players.p1.field[4]?.cardId).toBe("big");
     expect(s.players.p1.mana).toBe(6);
-    expect(() => play(game(["fansa"]), 0, 0)).toThrow(/投稿/);
+    expect(() => play(game(["fansa"]), 0, 0)).toThrow(/呪文/);
     expect(() => play(game(["big"], undefined, 3), 0, 0)).toThrow(RuleError);
   });
-  it("対象が必要な投稿は、正しい対象がないと使えない。使った投稿はオワコンへ", () => {
+  it("対象が必要な呪文は、正しい対象がないと使えない。使った呪文は墓地へ", () => {
     const s = withFoe(["fire"], ["wall"]);
     expect(() => cast(s, 0)).toThrow(/その相手/);
     const r = cast(s, 0, { side: "enemy", slot: 0 });
@@ -316,7 +316,7 @@ describe("キーワード", () => {
     expect(s.players.p2.lp).toBe(16);
     expect(() => face(s, 0)).toThrow(/攻撃できません/);
   });
-  it("凸：場に出たターンに相手のアイコンにだけ攻撃できる（マスターは不可）。次のターンからは普通", () => {
+  it("突進：場に出たターンに相手のキャラクターにだけ攻撃できる（プレイヤーは不可）。次のターンからは普通", () => {
     let s = withFoe(["totsu"], ["wall"]);
     s = play(s, 0, 0);
     expect(attackTargets(s, "p1", 0, catalog)).toEqual([{ kind: "unit", slot: 0 }]);
@@ -326,7 +326,7 @@ describe("キーワード", () => {
     s = end(end(s), "p2");
     expect(attackTargets(s, "p1", 0, catalog)).toContainEqual({ kind: "leader" });
   });
-  it("凸で攻撃したとき：上がった攻撃力で殴り、強化は残る。次のターン以降や、マスターへの攻撃では働かない", () => {
+  it("突進で攻撃したとき：上がった攻撃力で殴り、強化は残る。次のターン以降や、プレイヤーへの攻撃では働かない", () => {
     let s = withFoe(["charger"], ["wall"]);
     s = play(s, 0, 0);
     const r = hit(s, 0, 0);
@@ -334,12 +334,12 @@ describe("キーワード", () => {
     expect(r.events[1]).toMatchObject({ type: "battle", toDefender: 4, toAttacker: 1 });
     s = r.state;
     expect(viewUnit(s, "p1", s.players.p1.field[0] as never, catalog)).toMatchObject({ attack: 4, hp: 4 });
-    // 次のターンは普通の攻撃（凸の効果は出たターンだけ）
+    // 次のターンは普通の攻撃（突進の効果は出たターンだけ）
     s = end(end(s), "p2");
     const r2 = hit(s, 0, 0);
     expect(r2.events.map((e) => e.type)).not.toContain("buffed");
   });
-  it("凸の強化は先に取り出せる（画面で強化を見せてから殴る）。見込みも上がった攻撃力で出す", () => {
+  it("突進の強化は先に取り出せる（画面で強化を見せてから殴る）。見込みも上がった攻撃力で出す", () => {
     let s = withFoe(["charger"], ["wall"]);
     s = play(s, 0, 0);
     const t = { kind: "unit" as const, slot: 0 };
@@ -352,10 +352,10 @@ describe("キーワード", () => {
     expect(previewAttack(s, "p1", 0, t, catalog)).toMatchObject({ toDefender: 4 });
     // 攻撃そのものの結果と同じ
     expect(hit(s, 0, 0).events[1]).toMatchObject({ type: "battle", toDefender: 4 });
-    // マスターへの攻撃や、凸のないアイコンでは何もしない
+    // プレイヤーへの攻撃や、突進のないキャラクターでは何もしない
     expect(withRushBoost(s, "p1", 0, { kind: "leader" }, catalog).state).toBe(s);
   });
-  it("攻撃の見込み：与える・受けるダメージと、倒せるか・倒されるか", () => {
+  it("攻撃の見込み：与える・受けるダメージと、破壊できるか・破壊されるか", () => {
     let s = withFoe(["basher"], ["wall"]);
     s = play(s, 0, 0);
     const before = viewUnit(s, "p2", s.players.p2.field[0] as never, catalog);
@@ -380,18 +380,18 @@ describe("キーワード", () => {
     expect(at(0)).toBe(2);
     expect(at(2)).toBe(3);
   });
-  it("ガード：いる間は、ガードしか攻撃できない（ほかのアイコンもマスターも不可）", () => {
+  it("ガード：いる間は、ガードしか攻撃できない（ほかのキャラクターもプレイヤーも不可）", () => {
     let s = withFoe(["rush"], ["guard", "wall"]);
     s = play(s, 0, 0);
     expect(legalTargets(s, "p1", catalog)).toEqual([{ kind: "unit", slot: 0 }]);
     expect(() => face(s, 0)).toThrow(/ガード/);
     expect(() => hit(s, 0, 1)).toThrow(/ガード/);
   });
-  it("晒し者はガードを失い、それまでの強化が消える。ずっと続く", () => {
+  it("晒し状態はガードを失い、それまでの強化が消える。ずっと続く", () => {
     let s = withFoe(["expose", "rush"], ["guard", "wall"]);
     (s.players.p2.field[0] as Unit).atkBuff = 2;
     (s.players.p2.field[0] as Unit).hpBuff = 2;
-    // ガードの裏のアイコンは、晒しても殴れない（例外のルールは無い）
+    // ガードの裏のキャラクターは、晒しても殴れない（例外のルールは無い）
     expect(legalTargets(s, "p1", catalog)).toEqual([{ kind: "unit", slot: 0 }]);
     s = cast(s, 0, { side: "enemy", slot: 0 });
     s = play(s, 0, 0);
@@ -414,7 +414,7 @@ describe("キーワード", () => {
 });
 
 describe("炎上商法・TL浄化・剥がし", () => {
-  it("炎上商法：このターン攻撃力+3。自分のターンの終わりに、そのアイコンが晒し者になる", () => {
+  it("炎上商法：このターン攻撃力+3。自分のターンの終わりに、そのキャラクターが晒し状態になる", () => {
     let s = game(["guard", "hype"]);
     s = play(s, 0, 0);
     (s.players.p1.field[0] as Unit).atkBuff = 1;
@@ -432,7 +432,7 @@ describe("炎上商法・TL浄化・剥がし", () => {
     expect(v.guard).toBe(false);
     expect(v.attack).toBe(1);
   });
-  it("炎上商法のアイコンがそのターンに倒されたら、何も起きない", () => {
+  it("炎上商法のキャラクターがそのターンに破壊されたら、何も起きない", () => {
     let s = game(["rush", "hype"]);
     s = play(s, 0, 0);
     s = cast(s, 0, { side: "ally", slot: 0 });
@@ -463,7 +463,7 @@ describe("炎上商法・TL浄化・剥がし", () => {
 });
 
 describe("★5 の作り直し（ヒバナ・カグラ・陰謀論者・クサハミ）", () => {
-  it("ヒバナ：相手のアイコンの数×2 のダメージを、相手のアイコンすべてに", () => {
+  it("ヒバナ：相手のキャラクターの数×2 のダメージを、相手のキャラクターすべてに", () => {
     let s = withFoe(["hibana"], ["wall"]);
     s = play(s, 0, 0);
     expect(s.players.p2.field[0]?.damage).toBe(2);
@@ -471,7 +471,7 @@ describe("★5 の作り直し（ヒバナ・カグラ・陰謀論者・クサ�
     t = play(t, 0, 0);
     expect(t.players.p2.field.filter((u) => u)).toHaveLength(0);
   });
-  it("場に出たときの炎上商法（カグラ）：自分がこのターン攻撃力+3、ターンの終わりに晒し者", () => {
+  it("場に出たときの炎上商法（カグラ）：自分がこのターン攻撃力+3、ターンの終わりに晒し状態", () => {
     let s = game(["hyper"]);
     s = play(s, 0, 0);
     expect(viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog).attack).toBe(7);
@@ -494,11 +494,11 @@ describe("★5 の作り直し（ヒバナ・カグラ・陰謀論者・クサ�
     t = end(end(t), "p2");
     expect(t.winner).toBeNull();
   });
-  it("倒されたとき：倒れたアイコンの持ち主の効果として働く（連鎖も落ち着くまで）", () => {
+  it("破壊されたとき：倒れたキャラクターの持ち主の効果として働く（連鎖も落ち着くまで）", () => {
     let s = withFoe(["burner"], ["popper", "popper"]);
     s = play(s, 0, 0);
     const hand = s.players.p1.hand.length;
-    // 相手の popper 2体を倒すと、それぞれ p1 のアイコンすべてに1ダメージ → burner が倒れて p1 が1枚引く
+    // 相手の popper 2体を破壊すると、それぞれ p1 のキャラクターすべてに1ダメージ → burner が倒れて p1 が1枚引く
     for (const u of s.players.p2.field) if (u) u.damage = 1;
     s = end(s);
     expect(s.players.p2.field.every((u) => u === null)).toBe(true);
@@ -506,7 +506,7 @@ describe("★5 の作り直し（ヒバナ・カグラ・陰謀論者・クサ�
     expect(s.players.p1.trash).toContain("burner");
     expect(s.players.p1.hand.length).toBeGreaterThan(hand);
   });
-  it("クサハミ：自分の草がオワコンに行った数だけ攻撃力+1", () => {
+  it("クサハミ：自分の草が破壊された数だけ攻撃力+1", () => {
     let s = game(["eater", "cat"]);
     s = play(s, 0, 0);
     s = play(s, 0, 1);
@@ -521,7 +521,7 @@ describe("★5 の作り直し（ヒバナ・カグラ・陰謀論者・クサ�
 });
 
 describe("差し出し（フィクサー）", () => {
-  it("自分と相手がそれぞれ自分のアイコンを1体選び、両方そろったら一度に倒される。選ぶまでほかの操作はできない", () => {
+  it("自分と相手がそれぞれ自分のキャラクターを1体選び、両方そろったら一度に破壊される。選ぶまでほかの操作はできない", () => {
     let s = withFoe(["wall", "fixer", "rush"], ["big", "guard"]);
     s = play(s, 0, 0);
     const r = run(s, { type: "play", player: "p1", handIndex: 0, slot: 1 });
@@ -545,7 +545,7 @@ describe("差し出し（フィクサー）", () => {
     s = play(s, 0, 2);
     expect(s.players.p1.field[2]?.cardId).toBe("rush");
   });
-  it("選べるアイコンが無い側は選ばない。どちらにも無ければ何も起きない", () => {
+  it("選べるキャラクターが無い側は選ばない。どちらにも無ければ何も起きない", () => {
     let s = withFoe(["fixer"], ["big"]);
     s = play(s, 0, 0);
     expect(s.pending?.waiting).toEqual(["p2"]);
@@ -565,7 +565,7 @@ describe("差し出し（フィクサー）", () => {
 });
 
 describe("調停（『調停者』）", () => {
-  it("場に出たとき、敵味方の場で攻撃力がいちばん高いアイコンをオワコンにする", () => {
+  it("場に出たとき、敵味方の場で攻撃力がいちばん高いキャラクターを破壊する", () => {
     let s = withFoe(["basher", "judge"], ["big", "wall"]);
     s = play(s, 0, 0);
     s = play(s, 0, 1);
@@ -574,7 +574,7 @@ describe("調停（『調停者』）", () => {
     expect(s.players.p1.field[0]?.cardId).toBe("basher");
     expect(s.players.p1.field[1]?.cardId).toBe("judge");
   });
-  it("いちばん高いのが自分のアイコンでもオワコンにする。同じ攻撃力なら両方", () => {
+  it("いちばん高いのが自分のキャラクターでも破壊する。同じ攻撃力なら両方", () => {
     let s = withFoe(["big", "judge"], ["big", "wall"]);
     s = play(s, 0, 0);
     s = play(s, 0, 1);
@@ -582,7 +582,7 @@ describe("調停（『調停者』）", () => {
     expect(s.players.p2.field[0]).toBeNull();
     expect(s.players.p2.field[1]?.cardId).toBe("wall");
   });
-  it("このアイコン自身は除く（自身がいちばん高くても、その次を斬る）", () => {
+  it("このキャラクター自身は除く（自身がいちばん高くても、その次を斬る）", () => {
     let s = withFoe(["judge"], ["f"]);
     s = play(s, 0, 0);
     expect(s.players.p1.field[0]?.cardId).toBe("judge");
@@ -609,7 +609,7 @@ describe("演出（『演出家』）", () => {
     // 場に出たときの効果（played の後の効果のイベント）は、出たエースからは起きない
     expect(r.events.filter((e) => e.type === "played")).toHaveLength(1);
   });
-  it("出したアイコンには凸が付く（相手のアイコンにだけすぐ攻撃できる）。相手側のアイコンは自分のターンには攻撃できず、相手のターンの始めに凸が外れる", () => {
+  it("出したキャラクターには突進が付く（相手のキャラクターにだけすぐ攻撃できる）。相手側のキャラクターは自分のターンには攻撃できず、相手のターンの始めに突進が外れる", () => {
     let s = withFoe(["director"], ["f"]);
     s.players.p1.deck.unshift(ace);
     s.players.p2.deck.unshift(ace);
@@ -663,7 +663,7 @@ describe("属性の効果", () => {
     expect(v.guard).toBe(false);
     expect(v.attack).toBe(0);
   });
-  it("草を生やす・空き枠を埋める。トークンはオワコンに残らない", () => {
+  it("草を生やす・空き枠を埋める。トークンは墓地に残らない", () => {
     let s = play(game(["cat", "meadow"]), 0, 0);
     expect(s.players.p1.field.filter((u) => u?.cardId === "kusa")).toHaveLength(2);
     s = cast(s, 0);
@@ -676,16 +676,16 @@ describe("属性の効果", () => {
     expect(s.players.p1.field[1]).toBeNull();
     expect(s.players.p1.trash).not.toContain("kusa");
   });
-  it("コピー：同じアイコンがもう1体出て、オワコンには残らない", () => {
+  it("コピー：同じキャラクターがもう1体出て、墓地には残らない", () => {
     const s = play(game(["copy"]), 0, 0);
     expect(s.players.p1.field.filter((u) => u?.cardId === "copy")).toHaveLength(2);
     expect(s.players.p1.field[1]?.token).toBe(true);
   });
-  it("ノリ：このターンに出したほかのカード1枚につき攻撃力+1", () => {
+  it("コンボ：このターンに出したほかのカード1枚につき攻撃力+1", () => {
     const s = play(play(play(game(["f", "f", "nori"]), 0, 0), 0, 1), 0, 2);
     expect(viewUnit(s, "p1", s.players.p1.field[2] as never, catalog).attack).toBe(4);
   });
-  it("コラ画像：自分の場のほかのアイコン1体につき攻撃力+1", () => {
+  it("コラ画像：自分の場のほかのキャラクター1体につき攻撃力+1", () => {
     const s = play(play(play(game(["f", "f", "kora"]), 0, 0), 0, 1), 0, 2);
     expect(viewUnit(s, "p1", s.players.p1.field[2] as never, catalog).attack).toBe(4);
   });
@@ -697,7 +697,7 @@ describe("属性の効果", () => {
     s = play(s, 0, 1);
     expect(s.players.p2.field[1]?.damage).toBe(3);
   });
-  it("癒し：アイコンとライフを回復する（ライフは20まで）", () => {
+  it("癒し：キャラクターとライフを回復する（ライフは20まで）", () => {
     let s = play(game(["wall", "healer"]), 0, 0);
     const wall = s.players.p1.field[0];
     if (wall) wall.damage = 5;
@@ -706,7 +706,7 @@ describe("属性の効果", () => {
     expect(s.players.p1.field[0]?.damage).toBe(3);
     expect(s.players.p1.lp).toBe(20);
   });
-  it("ファンサ：自分のアイコン1体に攻撃力+2・体力+2", () => {
+  it("ファンサ：自分のキャラクター1体に攻撃力+2・体力+2", () => {
     let s = play(game(["f", "fansa"]), 0, 0);
     s = cast(s, 0, { side: "ally", slot: 0 });
     const v = viewUnit(s, "p1", s.players.p1.field[0] as never, catalog);
@@ -723,7 +723,7 @@ describe("バトルと闇堕ち", () => {
     s = end(end(r.state), "p2");
     expect(s.players.p2.field[0]?.damage).toBe(2);
   });
-  it("闇堕ちを持つカードは、倒されたらいったんオワコンへ行き、闇の気配が残る（すぐには戻らない）", () => {
+  it("闇堕ちを持つカードは、破壊されたらいったん墓地へ行き、闇の気配が残る（すぐには戻らない）", () => {
     let s = withFoe(["big"], ["ren"]);
     s = play(s, 0, 0);
     s = end(end(s), "p2");
@@ -784,7 +784,7 @@ describe("CPU", () => {
 
 describe("デッキの決まり", () => {
   const real = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string, RuleCard>;
-  it("構築済みデッキはすべて決まりを守っている（属性1つ＋共通）", () => {
+  it("構築済みデッキはすべて決まりを守っている（属性1つ＋ニュートラル）", () => {
     for (const [id, deck] of Object.entries(DECKS)) {
       expect({ id, errors: validateDeck(deck, real) }).toEqual({ id, errors: [] });
       expect(deckAttributes(deck, real)).toHaveLength(1);
@@ -808,10 +808,10 @@ describe("デッキの決まり", () => {
     expect(resolveDeckRef("custom:f1,../x", DECKS)).toBeNull();
     expect(resolveDeckRef(42, DECKS)).toBeNull();
   });
-  it("共通カードは属性に数えない", () => {
-    expect(deckAttributes(["n1", "n2", "f6"], real)).toEqual(["炎上"]);
+  it("ニュートラルのカードは属性に数えない", () => {
+    expect(deckAttributes(["n1", "n2", "f6"], real)).toEqual(["炎"]);
   });
-  it("1つの属性＋共通カードの20枚は組める（共通カードだけでもよい）。闇堕ちを持つカードは1種類まで、★5は何種類でも", () => {
+  it("1つの属性＋ニュートラルのカードの20枚は組める（ニュートラルのカードだけでもよい）。闇堕ちを持つカードは1種類まで、★5は何種類でも", () => {
     const flame = DECKS.solo_flame;
     expect(validateDeck(flame, real)).toEqual([]);
     // 闇堕ちを持つカード（レン・カグラ）を2種類は反則
@@ -830,12 +830,12 @@ describe("デッキの決まり", () => {
     const solo = Object.entries(DECKS).filter(([id]) => id.startsWith("solo_"));
     const attrs = solo.map(([, d]) => deckAttributes(d, real).join("×"));
     expect([...attrs].sort()).toEqual([...ATTRIBUTES].sort());
-    expect(deckAttributes(DECKS.fixer_meme, real)).toEqual(["草"]);
+    expect(deckAttributes(DECKS.fixer_meme, real)).toEqual(["自然"]);
     expect(DECKS.fixer_meme.filter((c) => c === "c15")).toHaveLength(2);
-    expect(deckAttributes(DECKS.unei_idol, real)).toEqual(["メロい"]);
+    expect(deckAttributes(DECKS.unei_idol, real)).toEqual(["推し"]);
     for (const id of ["c15", "c16", "c17"]) expect(DECKS.unei_idol.filter((c) => c === id)).toHaveLength(2);
   });
-  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、共通カードを4枚入れる（運営デッキは共通で固める）", () => {
+  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、ニュートラルのカードを4枚入れる（運営デッキは共通で固める）", () => {
     // 運営デッキ（unei_）は、共通で固めるのがコンセプト（オーナー）なので、共通の枚数の決まりから外す
     expect(DECKS.unei_idol.filter((c) => real[c]?.attributes.length === 0)).toHaveLength(14);
     for (const [id, deck] of Object.entries(DECKS)) {
@@ -859,23 +859,23 @@ describe("第2弾の効果", () => {
     s = play(play(game(["flamer", "rider"]), 0, 0), 0, 1);
     expect(viewUnit(s, "p1", s.players.p1.field[1] as never, catalog).attack).toBe(3);
   });
-  it("ほかのアイコンすべてを強化する（自分は含まない）", () => {
+  it("ほかのキャラクターすべてを強化する（自分は含まない）", () => {
     const s = play(play(game(["f", "host"]), 0, 0), 0, 1);
     expect(viewUnit(s, "p1", s.players.p1.field[0] as never, catalog).attack).toBe(2);
     expect(viewUnit(s, "p1", s.players.p1.field[1] as never, catalog).attack).toBe(3);
   });
-  it("相手のアイコンすべてと相手のマスターにダメージ", () => {
+  it("相手のキャラクターすべてと相手のプレイヤーにダメージ", () => {
     let s = withFoe(["queen"], ["f", "wall"]);
     s = play(s, 0, 0);
     expect(s.players.p2.field[0]).toBeNull();
     expect(s.players.p2.field[1]?.damage).toBe(2);
     expect(s.players.p2.lp).toBe(18);
   });
-  it("投稿で相手のマスターにダメージ", () => {
+  it("呪文で相手のプレイヤーにダメージ", () => {
     const s = cast(game(["burn"]), 0);
     expect(s.players.p2.lp).toBe(17);
   });
-  it("相手のアイコンすべて／いちばん強い1体を眠らせる", () => {
+  it("相手のキャラクターすべて／いちばん強い1体を眠り状態にする", () => {
     let s = withFoe(["voice"], ["f", "big"]);
     s = end(play(s, 0, 0));
     expect(() => run(s, { type: "attack", player: "p2", from: 1, target: { kind: "leader" } })).toThrow(
@@ -903,29 +903,29 @@ describe("切り札の効果（★4〜5）", () => {
     s = cast(s, 0, { side: "enemy", slot: 1 });
     expect(s.players.p2.field[1]).toBeNull();
   });
-  it("相手のアイコンを倒すたび、もう1回攻撃できる", () => {
+  it("相手のキャラクターを破壊するたび、もう1回攻撃できる", () => {
     let s = play(withFoe(["chain"], ["f", "f"]), 0, 0);
     s = hit(s, 0, 0).state;
     s = hit(s, 0, 1).state;
     expect(s.players.p2.field.every((u) => !u)).toBe(true);
-    // 2体目を倒した分の攻撃も残っている。マスターへの攻撃では増えない
+    // 2体目を破壊した分の攻撃も残っている。プレイヤーへの攻撃では増えない
     s = face(s, 0).state;
     expect(s.players.p2.lp).toBe(18);
     expect(() => face(s, 0)).toThrow(RuleError);
   });
-  it("センターのトップアイドル：自分のほかのアイコンもターンの始めに伸びる", () => {
+  it("センターのトップアイドル：自分のほかのキャラクターもターンの始めに伸びる", () => {
     let s = play(play(game(["aura", "f"]), 0, 2), 0, 0);
     s = end(end(s), "p2");
     expect(s.players.p1.field[2]?.atkBuff).toBe(2);
     expect(s.players.p1.field[0]?.atkBuff).toBe(1);
   });
-  it("推し変：攻撃力が条件以下の相手のアイコンを奪う。奪ったターンは攻撃できない", () => {
+  it("推し変：攻撃力が条件以下の相手のキャラクターを奪う。奪ったターンは攻撃できない", () => {
     const s = play(withFoe(["thief"], ["big", "f"]), 0, 0);
     expect(s.players.p2.field[1]).toBeNull();
     expect(s.players.p1.field[1]?.cardId).toBe("f");
     expect(() => face(s, 1)).toThrow(RuleError);
   });
-  it("子守唄：相手のターンの始めに、相手の攻撃力がいちばん高いアイコンが眠る", () => {
+  it("子守唄：相手のターンの始めに、相手の攻撃力がいちばん高いキャラクターが眠る", () => {
     let s = play(withFoe(["lull"], ["f", "big"]), 0, 0);
     s = end(s);
     expect(() => run(s, { type: "attack", player: "p2", from: 1, target: { kind: "leader" } })).toThrow(
@@ -940,7 +940,7 @@ describe("切り札の効果（★4〜5）", () => {
     const before = s.players.p1.hand.length;
     expect(end(s).players.p1.hand.length).toBe(before + 1);
   });
-  it("場のアイコンの数だけ安くなり、出たときに全員すぐ攻撃でき、ガードを無視できる", () => {
+  it("場のキャラクターの数だけ安くなり、出たときに全員すぐ攻撃でき、ガードを無視できる", () => {
     let s = withFoe(["f", "f", "f", "swarm"], ["guard"]);
     s = play(play(play(s, 0, 0), 0, 1), 0, 2);
     expect(effectiveCost(s, "p1", "swarm", catalog)).toBe(6);
@@ -949,7 +949,7 @@ describe("切り札の効果（★4〜5）", () => {
     s = face(s, 0).state;
     expect(s.players.p2.lp).toBe(20 - 3);
   });
-  it("使った投稿の数だけ安くなり、出したあとにもう一度自分のターン", () => {
+  it("使った呪文の数だけ安くなり、出したあとにもう一度自分のターン", () => {
     let s = game(["scholar"]);
     s.players.p1.postsUsed = 9;
     expect(effectiveCost(s, "p1", "scholar", catalog)).toBe(3);
@@ -960,7 +960,7 @@ describe("切り札の効果（★4〜5）", () => {
     expect(s.turn).toBe(turn + 1);
     expect(end(s).active).toBe("p2");
   });
-  it("回復の効果を使うたび：数を数え、healGrow は強くなり、healBurn は相手のマスターにダメージ", () => {
+  it("回復の効果を使うたび：数を数え、healGrow は強くなり、healBurn は相手のプレイヤーにダメージ", () => {
     let s = play(game(["dj", "sauna", "therapy", "yuru"], F(12), 20), 0, 0);
     // ととのい師：自分の登場の回復で、もう2ダメージ
     s = play(s, 0, 1);
@@ -977,14 +977,14 @@ describe("切り札の効果（★4〜5）", () => {
     // ゆるキャラは回復の回数だけ安くなる
     expect(effectiveCost(s, "p1", "yuru", catalog)).toBe(8 - 2);
   });
-  it("回復の効果を使うたび：healStrike は攻撃力がいちばん高い相手のアイコン1体にダメージ", () => {
+  it("回復の効果を使うたび：healStrike は攻撃力がいちばん高い相手のキャラクター1体にダメージ", () => {
     let s = play(withFoe(["shiba", "pet"], ["f", "big"]), 0, 0);
     s = play(s, 0, 1);
     const big = s.players.p2.field[1];
     expect(big?.damage).toBe(1);
     expect(s.players.p2.field[0]?.damage).toBe(0);
   });
-  it("オワコンになったとき：ライフの回復（回復の回数にも数える）・草を出す", () => {
+  it("破壊されたとき：ライフの回復（回復の回数にも数える）・草を出す", () => {
     let s = game(["hamster", "sprout", "f"]);
     s.players.p1.lp = 10;
     s = play(s, 0, 0);
@@ -1000,7 +1000,7 @@ describe("切り札の効果（★4〜5）", () => {
     s = play(s, 0, 4);
     expect(s.players.p1.field.filter((u) => u?.cardId === "kusa").length).toBe(2);
   });
-  it("オワコンになったとき、相手のアイコンすべてにダメージ", () => {
+  it("破壊されたとき、相手のキャラクターすべてにダメージ", () => {
     let s = play(withFoe(["flare"], ["f", "wall"]), 0, 0);
     s = end(s);
     const atk = s.players.p2.field[1];
@@ -1010,22 +1010,22 @@ describe("切り札の効果（★4〜5）", () => {
     expect(s.players.p2.field[0]).toBeNull();
     expect(s.players.p2.field[1]?.damage).toBe(2 + 1);
   });
-  it("自分のターンの終わりに、自分のほかのアイコン1体（ランダム）に攻撃力+1", () => {
+  it("自分のターンの終わりに、自分のほかのキャラクター1体（ランダム）に攻撃力+1", () => {
     let s = play(play(game(["leader", "wall"]), 0, 0), 0, 1);
     s = end(s);
     expect(s.players.p1.field[1]?.atkBuff).toBe(1);
     expect(s.players.p1.field[0]?.atkBuff).toBe(0);
   });
-  it("凸で攻撃したとき、草を出す", () => {
+  it("突進で攻撃したとき、草を出す", () => {
     let s = play(withFoe(["pup"], ["wall"]), 0, 2);
     s = run(s, { type: "attack", player: "p1", from: 2, target: { kind: "unit", slot: 0 } }).state;
     expect(s.players.p1.field.filter((u) => u?.cardId === "kusa").length).toBe(1);
   });
-  it("体力が1以下の相手のアイコンをすべて倒す", () => {
+  it("体力が1以下の相手のキャラクターをすべて破壊する", () => {
     const s = play(withFoe(["sweeper"], ["f", "wall", "f"]), 0, 0);
     expect(s.players.p2.field.map((u) => u?.cardId ?? null)).toEqual([null, "wall", null, null, null]);
   });
-  it("蘇生：オワコンのコスト以下のアイコンのうち、いちばんコストが高いものが場に戻る（投稿・高いものは選ばない）", () => {
+  it("蘇生：墓地のコスト以下のキャラクターのうち、いちばんコストが高いものが場に戻る（呪文・高いものは選ばない）", () => {
     const s = game(["nurse"]);
     s.players.p1.trash = ["big", "wall", "block", "pet"];
     const r = run(s, { type: "play", player: "p1", handIndex: 0, slot: 2 });
@@ -1035,7 +1035,7 @@ describe("切り札の効果（★4〜5）", () => {
     // 戻ったターンは攻撃できない
     expect(() => face(r.state, 0)).toThrow(RuleError);
   });
-  it("変身：相手のアイコンが草（トークン）になる。元のカードはオワコンにも手札にも行かない", () => {
+  it("変身：相手のキャラクターが草（トークン）になる。元のカードは墓地にも手札にも行かない", () => {
     const s = cast(withFoe(["meme"], ["big", "f"]), 0, { side: "enemy", slot: 0 });
     const u = s.players.p2.field[0];
     expect(u?.cardId).toBe("kusa");
@@ -1044,7 +1044,7 @@ describe("切り札の効果（★4〜5）", () => {
     expect(s.players.p2.hand).not.toContain("big");
     expect(s.players.p2.field[1]?.cardId).toBe("f");
   });
-  it("場のアイコン2体につき1枚引く（最大3枚）。トークンも数える", () => {
+  it("場のキャラクター2体につき1枚引く（最大3枚）。トークンも数える", () => {
     let s = play(play(game(["cat", "f", "replies", "replies"]), 0, 0), 0, 3);
     // cat ＋ 草2体 ＋ f ＝ 4体 → 2枚
     expect(s.players.p1.field.filter((u) => u).length).toBe(4);
@@ -1052,7 +1052,7 @@ describe("切り札の効果（★4〜5）", () => {
     s = cast(s, 0);
     expect(s.players.p1.hand.length).toBe(before - 1 + 2);
   });
-  it("相手のアイコンすべての攻撃力を下げる（0より下にはならない）", () => {
+  it("相手のキャラクターすべての攻撃力を下げる（0より下にはならない）", () => {
     const s = play(withFoe(["gloom"], ["big", "f"]), 0, 0);
     const foe = s.players.p2;
     expect(viewUnit(s, "p2", foe.field[0] as Unit, catalog).attack).toBe(4);
@@ -1072,8 +1072,8 @@ describe("切り札の効果（★4〜5）", () => {
   });
 });
 
-describe("闇堕ち（倒された次の自分のターンの始めに、自動で）", () => {
-  /** p1 の場の slot のアイコンを、p2 の big で倒す（p2 の番）。倒したあと p2 の番のまま返す */
+describe("闇堕ち（破壊された次の自分のターンの始めに、自動で）", () => {
+  /** p1 の場の slot のキャラクターを、p2 の big で破壊する（p2 の番）。破壊したあと p2 の番のまま返す */
   function killOnFoeTurn(s: GameState, slot = 0): GameState {
     s = end(s);
     s.players.p2.mana = 30;
@@ -1095,7 +1095,7 @@ describe("闇堕ち（倒された次の自分のターンの始めに、自動�
     expect(darkOmens(s, "p1")).toEqual([]);
   });
 
-  it("倒されたら闇の気配。次の自分のターンの始めに、コストなしで闇堕ちの姿で出て、闇堕ちしたときの効果が働く", () => {
+  it("破壊されたら闇の気配。次の自分のターンの始めに、コストなしで闇堕ちの姿で出て、闇堕ちしたときの効果が働く", () => {
     let s = play(game(["ren"]), 0, 3);
     s = killOnFoeTurn(s, 3);
     expect(s.players.p1.field[3]).toBeNull();
@@ -1110,11 +1110,11 @@ describe("闇堕ち（倒された次の自分のターンの始めに、自動�
     expect(darkOmens(s, "p1")).toEqual([]);
     const u = s.players.p1.field[3];
     expect(viewUnit(s, "p1", u as never, catalog)).toMatchObject({ attack: 7, hp: 3, name: "闇堕ちレン" });
-    // 闇堕ちしたとき：相手のアイコンすべてに1ダメージ
+    // 闇堕ちしたとき：相手のキャラクターすべてに1ダメージ
     expect(s.players.p2.field.filter((x) => x).every((x) => (x?.damage ?? 0) >= 1)).toBe(true);
   });
 
-  it("闇堕ちの姿は、出たターンから相手のアイコンに攻撃できる（凸。マスターは次のターンから）", () => {
+  it("闇堕ちの姿は、出たターンから相手のキャラクターに攻撃できる（突進。プレイヤーは次のターンから）", () => {
     let s = withFoe(["ren"], ["wall"]);
     s = play(s, 0, 0);
     s = end(killOnFoeTurn(s), "p2");
@@ -1130,7 +1130,7 @@ describe("闇堕ち（倒された次の自分のターンの始めに、自動�
     expect(attackTargets(s, "p1", 0, catalog)).toContainEqual({ kind: "leader" });
   });
 
-  it("自分のターンに倒されても、そのターンには戻らず、次の自分のターンの始めに戻る", () => {
+  it("自分のターンに破壊されても、そのターンには戻らず、次の自分のターンの始めに戻る", () => {
     let s = withFoe(["ren"], ["big"]);
     s = play(s, 0, 0);
     const mine = s.players.p1.field[0] as Unit;
@@ -1144,7 +1144,7 @@ describe("闇堕ち（倒された次の自分のターンの始めに、自動�
     expect(s.players.p1.field[0]?.dark).toBe(true);
   });
 
-  it("闇堕ちの姿が倒されたら消える（オワコンにも行かず、もう戻らない）", () => {
+  it("闇堕ちの姿が破壊されたら消える（墓地にも行かず、もう戻らない）", () => {
     let s = play(game(["ren"]), 0, 0);
     s = end(killOnFoeTurn(s), "p2");
     expect(s.players.p1.field[0]?.dark).toBe(true);
@@ -1154,7 +1154,7 @@ describe("闇堕ち（倒された次の自分のターンの始めに、自動�
     expect(darkOmens(r.state, "p1")).toEqual([]);
   });
 
-  it("闇堕ちの姿が倒されたときの出来事は「消えた」", () => {
+  it("闇堕ちの姿が破壊されたときの出来事は「消えた」", () => {
     let s = play(game(["ren"]), 0, 0);
     s = end(killOnFoeTurn(s), "p2");
     s = end(s);
@@ -1164,7 +1164,7 @@ describe("闇堕ち（倒された次の自分のターンの始めに、自動�
     expect(r.events).toContainEqual({ type: "destroyed", player: "p1", cardId: "ren", vanished: true });
   });
 
-  it("TL浄化で元の姿に戻ったカードは、倒されたらオワコンへ行くが、もう闇堕ちしない", () => {
+  it("TL浄化で元の姿に戻ったカードは、破壊されたら墓地へ行くが、もう闇堕ちしない", () => {
     let s = play(game(["ren", "cleanse"]), 0, 0);
     s = end(killOnFoeTurn(s), "p2");
     s.players.p1.mana = 10;
@@ -1187,7 +1187,7 @@ describe("闇堕ち（倒された次の自分のターンの始めに、自動�
     expect(s.players.p1.trash).toEqual([]);
   });
 
-  it("倒された枠が埋まっていれば、ほかの空き枠へ。空きが無ければ空くまで待つ", () => {
+  it("破壊された枠が埋まっていれば、ほかの空き枠へ。空きが無ければ空くまで待つ", () => {
     const filler = play(game(["f"]), 0, 0).players.p1.field[0] as Unit;
     const s = game([]);
     s.players.p1.trash = ["ren"];
@@ -1202,7 +1202,7 @@ describe("闇堕ち（倒された次の自分のターンの始めに、自動�
   });
 });
 
-describe("バズ（1試合2回・自分のアイコン1体に+2/+2と凸）", () => {
+describe("バズ（1試合2回・自分のキャラクター1体に+2/+2と突進）", () => {
   /** 自分の n ターン目まで進めた盤面（p1 が先攻） */
   function atTurn(n: number, hand: string[], foe: string[] = []): GameState {
     let s = withFoe(hand, foe);
@@ -1228,7 +1228,7 @@ describe("バズ（1試合2回・自分のアイコン1体に+2/+2と凸）", ()
     expect(buzzBlock(t, "p2")).toBeNull();
   });
 
-  it("+2/+2 と凸。出したばかりのアイコンも、相手のアイコンに攻撃できる", () => {
+  it("+2/+2 と突進。出したばかりのキャラクターも、相手のキャラクターに攻撃できる", () => {
     let s = atTurn(4, ["f"], ["wall"]);
     s = play(s, 0, 0);
     expect(s.players.p1.field[0]?.canAttack).toBe(false);
@@ -1271,7 +1271,7 @@ describe("バズ（1試合2回・自分のアイコン1体に+2/+2と凸）", ()
     expect(u.hpBuff).toBe(2);
   });
 
-  it("自分の場にアイコンがいなければ使えない。回数は設定で変えられる", () => {
+  it("自分の場にキャラクターがいなければ使えない。回数は設定で変えられる", () => {
     const s = atTurn(4, []);
     expect(buzzBlock(s, "p1")).toMatch(/いません/);
     const g = createGame({ decks: { p1: F(12), p2: F(12) }, config: { buzzCount: 3 } });
@@ -1279,13 +1279,13 @@ describe("バズ（1試合2回・自分のアイコン1体に+2/+2と凸）", ()
   });
 });
 
-describe("闇堕ちの姿の効果（確定除去・手札に戻す・マスターを守る）", () => {
-  it("攻撃力がいちばん高い相手のアイコンを、体力に関係なく倒す", () => {
+describe("闇堕ちの姿の効果（確定除去・手札に戻す・プレイヤーを守る）", () => {
+  it("攻撃力がいちばん高い相手のキャラクターを、体力に関係なく破壊する", () => {
     const s = cast(withFoe(["kill"], ["wall", "big", "f"]), 0);
     expect(s.players.p2.field.map((u) => u?.cardId ?? null)).toEqual(["wall", null, "f", null, null]);
     expect(s.players.p2.trash).toContain("big");
   });
-  it("コストがいちばん高い相手のアイコンを手札に戻す（トークンは消える）", () => {
+  it("コストがいちばん高い相手のキャラクターを手札に戻す（トークンは消える）", () => {
     let s = withFoe(["back", "back"], ["wall", "big"]);
     const hand = s.players.p2.hand.length;
     s = cast(s, 0);
@@ -1302,7 +1302,7 @@ describe("闇堕ちの姿の効果（確定除去・手札に戻す・マスタ�
     expect(r.state.players.p2.field[0]).toBeNull();
     expect(r.state.players.p2.hand).toHaveLength(hand + 1);
   });
-  it("闇堕ちの姿が手札に戻されたら、そのカードの闇堕ちは使い終わり（次に倒されても闇堕ちしない）", () => {
+  it("闇堕ちの姿が手札に戻されたら、そのカードの闇堕ちは使い終わり（次に破壊されても闇堕ちしない）", () => {
     // p2 の闇堕ちは p2 のターンの始めに出る
     let s = game(["back", "big"]);
     s.players.p2.trash = ["ren"];
@@ -1315,7 +1315,7 @@ describe("闇堕ちの姿の効果（確定除去・手札に戻す・マスタ�
     expect(s.players.p2.hand).toContain("ren");
     expect(s.players.p2.darkSpent).toEqual(["ren"]);
   });
-  it("マスターを守ると、次の相手のターンが終わるまでダメージを受けない", () => {
+  it("プレイヤーを守ると、次の相手のターンが終わるまでダメージを受けない", () => {
     let s = cast(game(["barrier"]), 0);
     expect(isShielded(s, "p1")).toBe(true);
     s = end(s);
@@ -1330,8 +1330,8 @@ describe("闇堕ちの姿の効果（確定除去・手札に戻す・マスタ�
   });
 });
 
-describe("相手のマスターに付与する時間差のダメージ（ミコト）", () => {
-  it("場に出たとき相手のマスターに付き、そのターンには働かない。相手の次のターンの終わりにダメージを受ける", () => {
+describe("相手のプレイヤーに付与する時間差のダメージ（ミコト）", () => {
+  it("場に出たとき相手のプレイヤーに付き、そのターンには働かない。相手の次のターンの終わりにダメージを受ける", () => {
     const r = run(game(["oracle"]), { type: "play", player: "p1", handIndex: 0, slot: 0 });
     expect(r.events.map((e) => e.type)).toContain("delayedDamageSet");
     expect(delayedDamageOn(r.state, "p2")).toBe(7);
@@ -1349,13 +1349,13 @@ describe("相手のマスターに付与する時間差のダメージ（ミコ�
     s = end(end(s), "p2");
     expect(s.players.p2.lp).toBe(13);
   });
-  it("付与したアイコンがオワコンになっても、付いた効果は残る", () => {
+  it("付与したキャラクターが墓地になっても、付いた効果は残る", () => {
     let s = end(play(game(["oracle"]), 0, 0));
     s.players.p1.field[0] = null;
     s = end(s, "p2");
     expect(s.players.p2.lp).toBe(13);
   });
-  it("マスターがダメージを受けない状態なら防がれ、効果は消える", () => {
+  it("プレイヤーがダメージを受けない状態なら防がれ、効果は消える", () => {
     let s = end(play(game(["oracle"]), 0, 0));
     s.players.p2.mana = 30;
     s.players.p2.hand = ["barrier", ...s.players.p2.hand];
@@ -1384,8 +1384,8 @@ describe("相手のマスターに付与する時間差のダメージ（ミコ�
   });
 });
 
-describe("界隈を読む効果（自分の側だけ）", () => {
-  it("自分の場のほかの配信者1体につき攻撃力+1。2界隈のカードは両方に数える", () => {
+describe("種族を読む効果（自分の側だけ）", () => {
+  it("自分の場のほかの配信者1体につき攻撃力+1。2種族のカードは両方に数える", () => {
     let s = game(["collab"]);
     s.players.p1.hand = ["collab", "s1", "s2", "idl", "f"];
     s = play(s, 0, 0);
@@ -1432,7 +1432,7 @@ describe("界隈を読む効果（自分の側だけ）", () => {
     expect(blocked.players.p1.field.map((u) => u?.cardId ?? null)).toEqual(["f", "f", "top", "f", "f"]);
   });
 
-  it("凸を付ける（ミーム女王）：出たばかりのアイコンは相手のアイコンにだけ攻撃できる", () => {
+  it("突進を付ける（ミーム女王）：出たばかりのキャラクターは相手のキャラクターにだけ攻撃できる", () => {
     const local = {
       ...catalog,
       queen: icon("queen", 1, 2, 4, { effects: [{ on: "play", do: "rally", attack: 0, totsu: true }] }),
@@ -1520,7 +1520,7 @@ describe("界隈を読む効果（自分の側だけ）", () => {
     expect(s.players.p1.deck).toEqual(["f", "f"]);
   });
 
-  it("自分のアイドルだけを対象にできる投稿", () => {
+  it("自分のアイドルだけを対象にできる呪文", () => {
     let s = play(play(game(["s1", "s2", "letter"]), 0, 0), 0, 1);
     expect(castTargets(s, "p1", "letter", catalog)).toEqual([{ side: "ally", slot: 1 }]);
     expect(() => cast(s, 0, { side: "ally", slot: 0 })).toThrow(/使えません/);
@@ -1536,8 +1536,8 @@ describe("界隈を読む効果（自分の側だけ）", () => {
   });
 });
 
-describe("対象を選ぶ除去の投稿（確定除去・手札に戻す・奪う）", () => {
-  it("完全論破：選んだ相手のアイコンを体力に関係なく倒す", () => {
+describe("対象を選ぶ除去の呪文（確定除去・手札に戻す・奪う）", () => {
+  it("完全論破：選んだ相手のキャラクターを体力に関係なく破壊する", () => {
     const s = cast(withFoe(["ronpa"], ["wall", "big"]), 0, { side: "enemy", slot: 1 });
     expect(s.players.p2.field.map((u) => u?.cardId ?? null)).toEqual(["wall", null, null, null, null]);
     expect(s.players.p2.trash).toContain("big");
@@ -1551,7 +1551,7 @@ describe("対象を選ぶ除去の投稿（確定除去・手札に戻す・奪�
     s = cast(s, 0, { side: "enemy", slot: 1 });
     expect(s.players.p2.field[1]).toBeNull();
   });
-  it("ブロック：選んだ相手のアイコンを手札に戻す（トークンは消える）", () => {
+  it("ブロック：選んだ相手のキャラクターを手札に戻す（トークンは消える）", () => {
     let s = withFoe(["block", "block"], ["big", "cat"]);
     const hand = s.players.p2.hand.length;
     s = cast(s, 0, { side: "enemy", slot: 0 });

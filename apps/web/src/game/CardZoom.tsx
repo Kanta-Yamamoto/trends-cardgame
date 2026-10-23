@@ -9,7 +9,7 @@ import { HELP } from "../help/help";
 
 /**
  * カードを画面いっぱいに大きく見せる（スマホで効果を読むため）。
- * 場のアイコンなら、今の攻撃力・体力・状態も添える。カードを押すと文字を隠して絵だけを見られる。
+ * 場のキャラクターなら、今の攻撃力・体力・状態も添える。カードを押すと文字を隠して絵だけを見られる。
  * darkPreview のときは、闇堕ちを持つカードの「闇堕ちすると」の姿と効果を添え、絵も切り替えられる
  * （対戦中もカード一覧でも）。initialDark で最初から闇堕ちの姿で開く。
  * nav を渡すと、下に「前へ・次へ」を出して、拡大したまま前後のカードへ移れる（← → キーでも）。
@@ -69,7 +69,7 @@ export function CardZoom({
         </div>
         <div className="zoom-sheet-text">
           <p className="zs-meta">
-            {card.type === "icon" ? "アイコン" : "投稿"}・{stars(card.rarity)}・コスト {card.cost}
+            {card.type === "icon" ? "キャラクター" : "呪文"}・{stars(card.rarity)}・コスト {card.cost}
           </p>
           <h2>
             {!dark && card.epithet && <small>{card.epithet}</small>}
@@ -102,10 +102,10 @@ export function CardZoom({
           )}
           {live && (live.exposed || live.unit.exposeAtTurnEnd || live.asleep || live.unit.silenced) && (
             <ul className="zs-states">
-              {live.exposed && <li>晒し者：ガードを失い、それまでの強化が消えた</li>}
-              {live.unit.exposeAtTurnEnd && <li>炎上商法：このターンの終わりに晒し者になる</li>}
+              {live.exposed && <li>晒し状態：ガードを失い、それまでの強化が消えた</li>}
+              {live.unit.exposeAtTurnEnd && <li>炎上商法：このターンの終わりに晒し状態になる</li>}
               {live.asleep && <li>眠っている：このターンは攻撃できない</li>}
-              {live.unit.silenced && <li>訂正済み：キーワードと効果が消えている</li>}
+              {live.unit.silenced && <li>沈黙状態：キーワードと効果が消えている</li>}
             </ul>
           )}
           {canPreview && card.dark && !previewing && (
@@ -120,7 +120,7 @@ export function CardZoom({
                 <EffectText text={card.dark.effect} />
               </p>
               <p className="zs-note">
-                オワコンになったら、次の自分のターンの始めに、コストなしでこの姿で自動で戻ってくる（出たターンは相手のアイコンにだけ攻撃できる）。この姿がオワコンになったら消える
+                破壊されたら、次の自分のターンの始めに、コストなしでこの姿で自動で戻ってくる（出たターンは相手のキャラクターにだけ攻撃できる）。この姿が破壊されたら消える
               </p>
             </div>
           )}

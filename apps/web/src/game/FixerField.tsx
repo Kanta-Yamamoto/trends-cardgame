@@ -5,7 +5,7 @@ import { type Bleed, bleedMask, makeBleed, paintMask } from "../cards/inkBleed";
  * 『フィクサー』が場に出たとき：バトル場が黒に滲む（見た目だけ。ルールは game-core）。
  * カード面と同じ「白が滲んで黒になる」動き（cards/inkBleed.ts）で、テーマの色は黒。糸や名前の帯は出さない（言葉ではなく動きで見せる）。
  * 1. 紙に墨が染みこむように、盤面のふちから黒がゆっくり滲んで、全面が黒になる
- * 2. 黒のまま差し出しを選ぶ。決まったら、差し出されたアイコンを黒い閃光で貫く（fx/blackFlash.ts。ここではない）
+ * 2. 黒のまま差し出しを選ぶ。決まったら、差し出されたキャラクターを黒い閃光で貫く（fx/blackFlash.ts。ここではない）
  * 3. 黒のまま残り、ターンが終わったら、黒が滲んで引いていき、元の盤面に戻る（close）
  */
 export interface FixerHandle {

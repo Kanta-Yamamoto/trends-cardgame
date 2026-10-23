@@ -5,7 +5,7 @@ import { type FxStage, fxEnabled, fxStage, type Pixi } from "./stage";
 type Rect = { left: number; top: number; width: number; height: number };
 
 /**
- * 体力がなくなったアイコンが、黒く染まって溶けるように消える。
+ * 体力がなくなったキャラクターが、黒く染まって溶けるように消える。
  * 1. カード（DOM の抜け殻）が一瞬で黒く沈む
  * 2. 同じ形の黒い板（PixiJS）に入れ替わり、上から下へ、まだらに溶けて消える。溶けるふちは焦げたような黒
  * 3. 溶けたところから黒い煙と灰が立ちのぼる

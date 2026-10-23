@@ -24,7 +24,7 @@ export interface DeckSel {
 
 /**
  * デッキのエース：入っている★5のうち、枚数が多く、コストが高いもの（絵のあるものだけ）。
- * ★5が無ければ、いちばん★とコストが高いアイコン
+ * ★5が無ければ、いちばん★とコストが高いキャラクター
  */
 export function aceOf(cards: readonly string[]): string | undefined {
   const counts = new Map<string, number>();
@@ -71,7 +71,7 @@ export function customDeckSel(d: CustomDeck): DeckSel {
   return {
     ref: encodeCustomDeck(cards),
     name: d.name || CUSTOM_NAME,
-    text: `${attrs.length > 0 ? attrs.join("×") : "共通"}。自分で組んだデッキ`,
+    text: `${attrs.length > 0 ? attrs.join("×") : "ニュートラル"}。自分で組んだデッキ`,
     cards,
     attrs,
     ace: aceOf(cards),
@@ -119,7 +119,7 @@ export function newDeckId() {
   return `d${Date.now().toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`;
 }
 
-/** デッキの決まりを確かめる（20枚・2枚まで・属性1つ＋共通・闇堕ちを持つカードは1種類・トークン不可） */
+/** デッキの決まりを確かめる（20枚・2枚まで・属性1つ＋ニュートラル・闇堕ちを持つカードは1種類・トークン不可） */
 export const deckErrors = (cards: readonly string[]) => validateDeck(cards, CATALOG);
 
 /** コストごとの枚数（1〜6 と 7 以上） */

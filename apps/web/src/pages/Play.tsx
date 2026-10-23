@@ -86,31 +86,31 @@ const who = (p: string) => (p === ME ? "あなた" : useGame.getState().foeName)
 function describe(e: GameEvent): string {
   switch (e.type) {
     case "played":
-      return `${who(e.player)}：${nameOf(e.cardId)} を出した（話題力 ${e.cost}）`;
+      return `${who(e.player)}：${nameOf(e.cardId)} を出した（コスト ${e.cost}）`;
     case "cast":
-      return `${who(e.player)}：${nameOf(e.cardId)} を投稿（話題力 ${e.cost}）`;
+      return `${who(e.player)}：${nameOf(e.cardId)} を使った（コスト ${e.cost}）`;
     case "summoned":
       return `${who(e.player)}の場に ${nameOf(e.cardId)} が出た`;
     case "revived":
-      return `${who(e.player)}の ${nameOf(e.cardId)} が、オワコンから場に戻った（蘇生）`;
+      return `${who(e.player)}の ${nameOf(e.cardId)} が、墓地から場に戻った（蘇生）`;
     case "transformed":
       return `${who(e.player)}の ${nameOf(e.cardId)} が ${nameOf(e.into)} になった（ネタにされた）`;
     case "battle": {
       const lost = e.destroyed.map(nameOf).join("・");
-      return `${nameOf(e.attacker)} → ${nameOf(e.defender)}：${e.toDefender} ダメージ、反撃 ${e.toAttacker}${lost ? `（オワコン：${lost}）` : ""}`;
+      return `${nameOf(e.attacker)} → ${nameOf(e.defender)}：${e.toDefender} ダメージ、反撃 ${e.toAttacker}${lost ? `（墓地：${lost}）` : ""}`;
     }
     case "damaged":
       return `${nameOf(e.cardId)} に ${e.amount} ダメージ`;
     case "destroyed":
       return e.vanished
         ? `${who(e.player)}の ${nameOf(e.cardId)}（闇堕ちの姿）が消えた`
-        : `${who(e.player)}の ${nameOf(e.cardId)} がオワコンになった`;
+        : `${who(e.player)}の ${nameOf(e.cardId)} が破壊された`;
     case "darkOmen":
-      return `${who(e.player)}の ${nameOf(e.cardId)} がオワコンになった……闇の気配。次の${who(e.player)}のターンの始めに闇堕ちして戻ってくる`;
+      return `${who(e.player)}の ${nameOf(e.cardId)} が破壊された……闇の気配。次の${who(e.player)}のターンの始めに闇堕ちして戻ってくる`;
     case "darkFall":
       return `${who(e.player)}の ${nameOf(e.cardId)} が、闇堕ちして戻ってきた！`;
     case "buzz":
-      return `${who(e.player)}：${nameOf(e.cardId)} がバズった！ 攻撃力+${e.attack}・体力+${e.hp}・凸（バズ 残り${e.left}）`;
+      return `${who(e.player)}：${nameOf(e.cardId)} がバズった！ 攻撃力+${e.attack}・体力+${e.hp}・突進（バズ 残り${e.left}）`;
     case "restored":
       return `${who(e.player)}の ${nameOf(e.cardId)} が表に戻った`;
     case "status":
@@ -120,35 +120,35 @@ function describe(e: GameEvent): string {
     case "healed":
       return `${nameOf(e.cardId)} の体力が ${e.amount} 回復`;
     case "leaderDamaged":
-      return `${who(e.player)}のマスターに ${e.amount} ダメージ（ライフ ${e.lp}）`;
+      return `${who(e.player)}のプレイヤーに ${e.amount} ダメージ（ライフ ${e.lp}）`;
     case "leaderHealed":
       return `${who(e.player)}のライフが ${e.amount} 回復（ライフ ${e.lp}）`;
     case "drew":
       return `${who(e.player)}が1枚引いた`;
     case "burned":
-      return `${who(e.player)}の手札がいっぱいで、引いた ${nameOf(e.cardId)} はオワコンへ`;
+      return `${who(e.player)}の手札がいっぱいで、引いた ${nameOf(e.cardId)} は墓地へ`;
     case "deckOut":
       return `${who(e.player)}の山札が切れた`;
     case "sacrificeAsk":
-      return "『フィクサー』：自分と相手は、それぞれ自分のアイコンを1体差し出す";
+      return "『フィクサー』：自分と相手は、それぞれ自分のキャラクターを1体差し出す";
     case "sacrificed":
       return `${who(e.player)}の ${nameOf(e.cardId)} が差し出された`;
     case "specialWin":
       return `${who(e.player)}の山札が切れた。陰謀論者「これは世界のせいだ」──特殊勝利`;
     case "turnStarted":
-      return `―― ${e.turn}ターン目：${who(e.player)}（話題力 ${e.mana}）――`;
+      return `―― ${e.turn}ターン目：${who(e.player)}（コスト ${e.mana}）――`;
     case "stolen":
       return `${who(e.player)}が ${nameOf(e.cardId)} を奪った（推し変）`;
     case "bounced":
       return `${who(e.player)}の ${nameOf(e.cardId)} が手札に戻された`;
     case "shield":
       return e.kind === "shielded"
-        ? `${who(e.player)}のマスターは、次の相手のターンが終わるまでダメージを受けない`
-        : `${who(e.player)}のマスターへの ${e.amount} ダメージを防いだ`;
+        ? `${who(e.player)}のプレイヤーは、次の相手のターンが終わるまでダメージを受けない`
+        : `${who(e.player)}のプレイヤーへの ${e.amount} ダメージを防いだ`;
     case "delayedDamageSet":
-      return `${who(e.player)}のマスターに、${nameOf(e.cardId)} の「次の自分のターンの終わりに${e.amount}ダメージを受ける」効果が付いた`;
+      return `${who(e.player)}のプレイヤーに、${nameOf(e.cardId)} の「次の自分のターンの終わりに${e.amount}ダメージを受ける」効果が付いた`;
     case "delayedDamageFired":
-      return `${who(e.player)}のマスターに付いていた ${nameOf(e.cardId)} の効果が働いた`;
+      return `${who(e.player)}のプレイヤーに付いていた ${nameOf(e.cardId)} の効果が働いた`;
     case "extraTurn":
       return `${who(e.player)}は、このあともう一度ターンを行う`;
     case "resigned":
@@ -174,7 +174,7 @@ const PORTRAIT_H_MAX = 860;
 const PORTRAIT_PAD = 6;
 const PORTRAIT_GAP = 5;
 const fitPortraitSlot = (width: number) => Math.floor((width - PORTRAIT_PAD * 2 - PORTRAIT_GAP * 4) / 5);
-/** 縦の舞台の手札の幅：舞台が高いほど大きく持つ（場2段・マスター2つ・説明の帯を引いた残りから） */
+/** 縦の舞台の手札の幅：舞台が高いほど大きく持つ（場2段・プレイヤー2つ・説明の帯を引いた残りから） */
 const fitHand = (height: number) => Math.max(84, Math.min(124, Math.floor((height - 600) * 0.6)));
 
 export interface Stage {
@@ -263,25 +263,25 @@ function DeckSelect() {
       <details className="rules">
         <summary>ルール（かんたん版）</summary>
         <ul>
-          <li>相手のマスターのライフ（20）を 0 にすれば勝ち。山札が引けなくなっても負け</li>
+          <li>相手のプレイヤーのライフ（20）を 0 にすれば勝ち。山札が引けなくなっても負け</li>
           <li>
-            話題力は毎ターン 1 ずつ増え（最大 10）、ターンの始めに全回復。手札は先攻 3 枚・後攻 4 枚で始め、9
-            枚まで（いっぱいのときに引いたカードはオワコンへ）。後攻は最初のターンだけ話題力 +1
+            コストは毎ターン 1 ずつ増え（最大 10）、ターンの始めに全回復。手札は先攻 3 枚・後攻 4 枚で始め、9
+            枚まで（いっぱいのときに引いたカードは墓地へ）。後攻は最初のターンだけコスト +1
           </li>
           <li>
-            アイコンは場に 5 体まで出せる。出したターンは攻撃できない（速攻を除く）。投稿は使い切りの効果
+            キャラクターは場に 5 体まで出せる。出したターンは攻撃できない（速攻を除く）。呪文は使い切りの効果
           </li>
           <li>
-            アイコン同士で戦うと、お互いの<b className="t-atk">攻撃力</b>の分だけ相手の
+            キャラクター同士で戦うと、お互いの<b className="t-atk">攻撃力</b>の分だけ相手の
             <b className="t-hp">体力</b>
-            が減る。体力が 0 になったアイコンはオワコンへ。受けたダメージは残る
+            が減る。体力が 0 になったキャラクターは墓地へ。受けたダメージは残る
           </li>
-          <li>相手の場にガードがいる間は、ガードしか攻撃できない。晒し者になるとガードを失う</li>
+          <li>相手の場にガードがいる間は、ガードしか攻撃できない。晒し状態になるとガードを失う</li>
           <li>
-            闇堕ちを持つ★5は、オワコンになったら次の自分のターンの始めに、闇堕ちの姿で自動で戻ってくる（出たターンは相手のアイコンにだけ攻撃できる）。闇堕ちの姿がオワコンになったら消える
+            闇堕ちを持つ★5は、破壊されたら次の自分のターンの始めに、闇堕ちの姿で自動で戻ってくる（出たターンは相手のキャラクターにだけ攻撃できる）。闇堕ちの姿が破壊されたら消える
           </li>
           <li>
-            バズ：1試合に2回（自分の4ターン目から。後攻は3ターン目から）、自分のアイコン1体に攻撃力+2・体力+2と凸
+            バズ：1試合に2回（自分の4ターン目から。後攻は3ターン目から）、自分のキャラクター1体に攻撃力+2・体力+2と突進
           </li>
         </ul>
       </details>
@@ -364,7 +364,7 @@ function OpeningSide({ side, sel, who }: { side: "me" | "foe"; sel: DeckSel; who
         <strong className="op-name">{sel.name}</strong>
         <span className="op-attrs">
           {sel.attrs.length === 0 ? (
-            <span className="op-attr common">共通</span>
+            <span className="op-attr common">ニュートラル</span>
           ) : (
             sel.attrs.map((a) => (
               <span
@@ -413,7 +413,7 @@ function DeckAce({ id }: { id?: string }) {
 }
 
 /**
- * 盤面の背景。闇堕ちを持つカードがオワコンにされると「予兆」（持ち主の側から紫に染まる）、
+ * 盤面の背景。闇堕ちを持つカードが墓地にされると「予兆」（持ち主の側から紫に染まる）、
  * 闇堕ちの姿が場にいる間は「闇」（盤面全体が暗い闇のフィールドになる）
  */
 function FieldLayer({ kind, mine }: { kind: "dark" | "omen"; mine: boolean }) {
@@ -425,7 +425,7 @@ function FieldLayer({ kind, mine }: { kind: "dark" | "omen"; mine: boolean }) {
   );
 }
 
-/** 闇の気配：オワコンになったエースの枠に灯る紫の炎 */
+/** 闇の気配：破壊されたエースの枠に灯る紫の炎 */
 function OmenFlame() {
   return (
     <span className="omen-flame" aria-hidden="true">
@@ -483,7 +483,7 @@ export function DeckGrid({
       onClick={() => pick(sel)}
     >
       <DeckAce id={sel.ace} />
-      <span className="deck-attrs">{sel.attrs.length > 0 ? sel.attrs.join(" × ") : "共通"}</span>
+      <span className="deck-attrs">{sel.attrs.length > 0 ? sel.attrs.join(" × ") : "ニュートラル"}</span>
       <strong>{sel.name}</strong>
       <span>{sel.text}</span>
     </button>
@@ -500,7 +500,7 @@ export function DeckGrid({
         {mine.map((d) => customDeckSel(d)).map(button)}
         {broken > 0 && (
           <p className="muted deck-empty">
-            決まり（属性は1つ＋共通カード）を守れていないデッキが {broken}{" "}
+            決まり（属性は1つ＋ニュートラルのカード）を守れていないデッキが {broken}{" "}
             個あります。「デッキを組む」で直すと選べます
           </p>
         )}
@@ -559,7 +559,9 @@ function DeckConfirm({
       <button type="button" className="zoom-sheet-bg" aria-label="選び直す" onClick={onCancel} />
       <div className="deck-confirm-body">
         <div className="deck-confirm-head" style={{ background: deckGradient(deck.attrs, deck.ace) }}>
-          <span className="deck-attrs">{deck.attrs.length > 0 ? deck.attrs.join(" × ") : "共通"}</span>
+          <span className="deck-attrs">
+            {deck.attrs.length > 0 ? deck.attrs.join(" × ") : "ニュートラル"}
+          </span>
           <strong>{deck.name}</strong>
           <span>{deck.text}</span>
         </div>
@@ -586,7 +588,7 @@ function DeckConfirm({
   );
 }
 
-/** ターン終了の確認。まだ攻撃できるアイコンや、残っている話題力があれば添える */
+/** ターン終了の確認。まだ攻撃できるキャラクターや、残っているコストがあれば添える */
 function EndTurnConfirm({
   attackers,
   mana,
@@ -604,8 +606,8 @@ function EndTurnConfirm({
     return () => window.removeEventListener("keydown", onKey);
   }, [onNo]);
   const notes = [
-    attackers > 0 && `まだ攻撃できるアイコンが ${attackers} 体います`,
-    mana > 0 && `話題力が ${mana} 残っています`,
+    attackers > 0 && `まだ攻撃できるキャラクターが ${attackers} 体います`,
+    mana > 0 && `コストが ${mana} 残っています`,
   ].filter((x): x is string => !!x);
   return (
     <div
@@ -635,7 +637,7 @@ function EndTurnConfirm({
   );
 }
 
-/** バズの確認：対象のアイコンと、バズしたあとの攻撃力・体力・残りの回数を見せる */
+/** バズの確認：対象のキャラクターと、バズしたあとの攻撃力・体力・残りの回数を見せる */
 function BuzzConfirm({
   card,
   view,
@@ -674,7 +676,7 @@ function BuzzConfirm({
               <span className="hp">
                 体力 {view.hp} → <b>{view.hp + DEFAULT_CONFIG.buzzHp}</b>
               </span>
-              <span>凸が付く</span>
+              <span>突進が付く</span>
             </p>
           </div>
         </div>
@@ -699,21 +701,21 @@ type Peek = {
   view?: UnitView;
   where: "hand" | "mine" | "foe" | "trash";
   index: number;
-  /** 最初から闇堕ちの姿で開く（オワコンから闇堕ちさせる前の確認用） */
+  /** 最初から闇堕ちの姿で開く（墓地から闇堕ちさせる前の確認用） */
   dark?: boolean;
 };
 
-/** ドラッグしているもの（手札のカード／攻撃するアイコン） */
+/** ドラッグしているもの（手札のカード／攻撃するキャラクター） */
 type DragSrc = { kind: "hand"; index: number } | { kind: "unit"; slot: number };
 
-/** 攻撃したときの見込み（与えるダメージ・オワコンにできるか）を、攻撃先に重ねて出す */
+/** 攻撃したときの見込み（与えるダメージ・破壊できるか）を、攻撃先に重ねて出す */
 function AttackBadge({ pv, leader }: { pv: AttackPreview; leader?: boolean }) {
   const tag = leader
     ? pv.kills && "とどめ"
     : pv.kills && pv.dies
       ? "相打ち"
       : pv.kills
-        ? "オワコン"
+        ? "墓地"
         : pv.dies
           ? "返り討ち"
           : null;
@@ -725,7 +727,7 @@ function AttackBadge({ pv, leader }: { pv: AttackPreview; leader?: boolean }) {
   );
 }
 
-/** 攻撃するアイコンから指先（攻撃先）へ伸ばす矢印 */
+/** 攻撃するキャラクターから指先（攻撃先）へ伸ばす矢印 */
 function AttackArrow({
   from,
   to,
@@ -735,7 +737,7 @@ function AttackArrow({
   from: { x: number; y: number };
   to: { x: number; y: number };
   hot: boolean;
-  /** 味方を狙う投稿（緑の矢印） */
+  /** 味方を狙う呪文（緑の矢印） */
   ally?: boolean;
 }) {
   const dx = to.x - from.x;
@@ -825,7 +827,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   // テストなど、オープニングの長さが 0 のときは見せない
   const openingOn = opening > openSeen && openingMs() > 0;
   const foeDeck = useMemo(() => foeDeckSel(foeDeckRef), [foeDeckRef]);
-  /** マスターへの攻撃が当たった瞬間に先に見せたライフ（state が進むまでの間の表示）。同じ出来事の数字を二重に出さないためにも使う */
+  /** プレイヤーへの攻撃が当たった瞬間に先に見せたライフ（state が進むまでの間の表示）。同じ出来事の数字を二重に出さないためにも使う */
   const [lpHit, setLpHit] = useState<{ player: PlayerId; lp: number } | null>(null);
   const hitShown = useRef<{ player: PlayerId; lp: number } | null>(null);
   // 攻撃のあと state が進んだら、本当のライフの表示に戻す
@@ -834,7 +836,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const { stage, probe } = useStage();
   /** ターン終了の確認を出しているか（押し間違いで終わらないように） */
   const [confirmEnd, setConfirmEnd] = useState(false);
-  /** バズの確認を出している自分のアイコンの枠（アイコンを選んでからバズを押すと出る） */
+  /** バズの確認を出している自分のキャラクターの枠（キャラクターを選んでからバズを押すと出る） */
   const [buzzAsk, setBuzzAsk] = useState<number | null>(null);
   /** バズが使えるようになった回数。増えるたびに、ボタンの枠の光を右回りに走らせる */
   const [buzzWake, setBuzzWake] = useState(0);
@@ -853,7 +855,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     );
   };
 
-  // 手札を枠・対象へ、場のアイコンを攻撃先へ引っぱって離す（シャドバのような操作。タップでの操作もそのまま使える）
+  // 手札を枠・対象へ、場のキャラクターを攻撃先へ引っぱって離す（シャドバのような操作。タップでの操作もそのまま使える）
   const { drag, begin, justDragged } = useDragPlay<DragSrc>({
     onStart: (src) => {
       const s = useGame.getState();
@@ -889,7 +891,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           );
           return ok ? cast({ side: where === "foe" ? "enemy" : "ally", slot }) : select(null);
         }
-        // 対象を取らない投稿は、手札より上の場所で離せば使う
+        // 対象を取らない呪文は、手札より上の場所で離せば使う
         return over && over !== "hand" ? cast() : select(null);
       }
       const legal = attackTargets(g, ME, src.slot, CATALOG);
@@ -928,7 +930,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   useEffect(() => {
     setPresenter({
       beforeAttack: (g, a) => {
-        // マスターへの攻撃は、当たった瞬間にライフの表示を減らす（演出のあとでもう一度減ったように見せない）
+        // プレイヤーへの攻撃は、当たった瞬間にライフの表示を減らす（演出のあとでもう一度減ったように見せない）
         const foeId: PlayerId = a.player === ME ? CPU : ME;
         let lp: number | undefined;
         if (a.target.kind === "leader") {
@@ -954,7 +956,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         const attr = card?.attributes[0];
         const tint = attr ? ATTR_META[attr].color : undefined;
         if (a.type === "cast") {
-          // 自分の投稿も、使ったカードを真ん中に見せてから効果を飛ばす（相手の投稿は revealFoe で見せ済み）
+          // 自分の呪文も、使ったカードを真ん中に見せてから効果を飛ばす（相手の呪文は revealFoe で見せ済み）
           if (a.player === ME && card) {
             const id = Date.now();
             setReveal({ id, cardId: card.id, kind: "cast", mine: true });
@@ -969,7 +971,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         } else if (a.type === "play") {
           const does = (x: string) => !!card?.effects.some((f) => f.do === x);
           const uid = next.players[a.player].field[a.slot]?.uid;
-          // 出たアイコンが着地した瞬間から、運営サイドの演出を始める
+          // 出たキャラクターが着地した瞬間から、運営サイドの演出を始める
           const touch = () => (uid !== undefined ? landed(uid) : wait(320));
           if (does("stageAces")) {
             // 『演出家』：着地と同時に舞台が二色になり、0.4 秒たってから出した側のエース、その 0.5 秒あとに相手のエースが、
@@ -1002,17 +1004,17 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             return;
           }
           if (!visible) return;
-          await wait(560); // 出たアイコンが場に着いて弾むのを待ってから、効果を出す
+          await wait(560); // 出たキャラクターが場に着いて弾むのを待ってから、効果を出す
           const from = uid !== undefined ? document.querySelector<HTMLElement>(`[data-uid="${uid}"]`) : null;
           await animateEffects(shown, events, next, { from, tint });
         } else if (a.type === "sacrifice") {
-          // 差し出しが決まった：選ばれたアイコンを、真上で溜めた黒い閃光で貫く（黒い場はターンが終わるまで残す）
+          // 差し出しが決まった：選ばれたキャラクターを、真上で溜めた黒い閃光で貫く（黒い場はターンが終わるまで残す）
           const uids = events.flatMap((e) =>
             e.type === "sacrificed" ? [shown.players[e.player].field[e.slot]?.uid ?? -1] : [],
           );
           if (uids.length === 0) return;
           const pierced = await animateSacrifice(shown, events, ME);
-          // 貫いたアイコンはオワコンへ送り終えているので、残りのいなくなるアイコンだけを送る
+          // 貫いたキャラクターは墓地へ送り終えているので、残りのいなくなるキャラクターだけを送る
           const left: GameState = pierced
             ? {
                 ...shown,
@@ -1049,7 +1051,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       revealFoe: (g, cardId, a) =>
         new Promise<void>((resolve) => {
           setReveal({ id: Date.now(), cardId, kind: a.type });
-          // 対象がある投稿は、狙われたアイコンを光らせる（相手から見た enemy＝こちらのアイコン）
+          // 対象がある呪文は、狙われたキャラクターを光らせる（相手から見た enemy＝こちらのキャラクター）
           const t = a.type === "cast" ? a.target : undefined;
           const uid = t ? g.players[t.side === "enemy" ? ME : CPU].field[t.slot]?.uid : undefined;
           const el = uid ? document.querySelector(`[data-uid="${uid}"]`) : null;
@@ -1064,9 +1066,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     return () => setPresenter(null);
   }, []);
 
-  // アイコンが場に新しく現れたら、その場で着地の演出（溜め → 叩きつけ → 衝撃 → 余韻）。
+  // キャラクターが場に新しく現れたら、その場で着地の演出（溜め → 叩きつけ → 衝撃 → 余韻）。
   // 出来事（ログ）ではなく画面に現れた時点で動かすので、登場時の効果より先に着地する
-  // （効果があるとき、store は出したアイコンだけを先に置いた盤面を見せてから効果を見せる）
+  // （効果があるとき、store は出したキャラクターだけを先に置いた盤面を見せてから効果を見せる）
   const onField = useRef<Set<number> | null>(null);
   useLayoutEffect(() => {
     if (!game) {
@@ -1119,7 +1121,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         const { player, amount } = e;
         setTimeout(() => popMaster(player, `+${amount}`, "heal"), t);
       } else if (e.type === "leaderDamaged" && !fresh.some((l) => l.e.type === "battle")) {
-        // マスターへの攻撃のダメージは、当たった瞬間に見せ終わっている
+        // プレイヤーへの攻撃のダメージは、当たった瞬間に見せ終わっている
         const shown = hitShown.current;
         if (shown && shown.player === e.player && shown.lp === e.lp) {
           hitShown.current = null;
@@ -1168,7 +1170,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const buzzing = selection?.kind === "buzz";
   const buzzWhy = buzzBlock(game, ME);
   const canBuzz = myTurn && !buzzWhy;
-  // バズの対象：いま選んでいる自分のアイコン（攻撃のために選んだもの・押して説明を出したもの）
+  // バズの対象：いま選んでいる自分のキャラクター（攻撃のために選んだもの・押して説明を出したもの）
   const buzzTarget = (() => {
     if (attacking) return selection.slot;
     if (peek?.where !== "mine") return null;
@@ -1244,7 +1246,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         onLongPress={() => setZoom(p)}
       >
         {ready && (
-          <em className="mini-ready">{u.attacksLeft > 1 ? "2回攻撃可" : u.rushOnly ? "凸" : "攻撃可"}</em>
+          <em className="mini-ready">{u.attacksLeft > 1 ? "2回攻撃可" : u.rushOnly ? "突進" : "攻撃可"}</em>
         )}
       </MiniCard>
     );
@@ -1275,7 +1277,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           setPeek(p);
           if (!myTurn) return;
           if (selected && card.type === "post" && !card.target) return cast();
-          // アイコンは、出す枠を自分で選んだときだけ出す（もう一度押しても勝手に出さず、選ぶのをやめる）
+          // キャラクターは、出す枠を自分で選んだときだけ出す（もう一度押しても勝手に出さず、選ぶのをやめる）
           select(selected ? null : { kind: "hand", index: i });
         }}
         onPeek={() => setPeek(p)}
@@ -1379,12 +1381,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       className={`btn buzz-btn ${buzzing ? "on" : ""} ${canBuzz ? "ready" : ""}`}
       onClick={() => {
         if (buzzing) return select(null);
-        // アイコンを選んであれば確認を出す。選んでいなければ、選ぶところから
+        // キャラクターを選んであれば確認を出す。選んでいなければ、選ぶところから
         if (buzzTarget !== null) return setBuzzAsk(buzzTarget);
         select({ kind: "buzz" });
       }}
       disabled={!canBuzz && !buzzing}
-      title={buzzWhy ?? "選んだ自分のアイコン1体に攻撃力+2・体力+2・凸"}
+      title={buzzWhy ?? "選んだ自分のキャラクター1体に攻撃力+2・体力+2・突進"}
       aria-label={`バズ（残り${me.buzzLeft ?? 0}回）${buzzWhy ? `：${buzzWhy}` : ""}`}
     >
       {buzzOpen && buzzWake > 0 && <span key={buzzWake} className="buzz-ring" aria-hidden="true" />}
@@ -1433,7 +1435,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       {online ? "ロビーへ" : "戻る"}
     </button>
   );
-  /** 選んだカード（手札・攻撃するアイコン）をやめて、手札を元の形に戻す */
+  /** 選んだカード（手札・攻撃するキャラクター）をやめて、手札を元の形に戻す */
   const cancelSelection = () => {
     if (selection) select(null);
   };
@@ -1541,7 +1543,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         // 指の位置に付いてくる表示は画面座標で置くので、画面座標の層（.vp-layer。frame.ts）に入れる
         <div className="vp-layer">
           {(() => {
-            // 対象を取る投稿と攻撃は、カードから指先へ矢印を伸ばす（狙う相手が指やカードで隠れないように）
+            // 対象を取る呪文と攻撃は、カードから指先へ矢印を伸ばす（狙う相手が指やカードで隠れないように）
             const handId = drag.src.kind === "hand" ? me.hand[drag.src.index] : undefined;
             const handCard = handId ? CATALOG[handId] : undefined;
             if (
@@ -1603,7 +1605,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       {reveal && CATALOG[reveal.cardId] && (
         <div key={reveal.id} className={`foe-reveal ${reveal.mine ? "mine" : ""}`} aria-live="polite">
           <span className="fr-label">
-            {reveal.mine ? "あなたの投稿" : `${foeName}が${reveal.kind === "play" ? "出した" : "投稿した"}`}
+            {reveal.mine ? "あなたの呪文" : `${foeName}が${reveal.kind === "play" ? "出した" : "使った"}`}
           </span>
           <div className="fr-card">
             <HoloCard card={CATALOG[reveal.cardId] as CardDef} idle={false} />
@@ -1673,11 +1675,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       )}
 
       {trashView && (
-        <div className="sheet" role="dialog" aria-modal="true" aria-label="オワコン">
+        <div className="sheet" role="dialog" aria-modal="true" aria-label="墓地">
           <button type="button" className="sheet-bg" aria-label="閉じる" onClick={() => setTrashView(null)} />
           <div className="sheet-body trash-list">
             <h2>
-              {trashView === ME ? "あなた" : foeName}のオワコン（{game.players[trashView].trash.length}枚）
+              {trashView === ME ? "あなた" : foeName}の墓地（{game.players[trashView].trash.length}枚）
             </h2>
             <div className="trash-grid">
               {game.players[trashView].trash.map((id, i) => {
@@ -1736,10 +1738,10 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
   const keywords = view?.keywords ?? card.keywords;
   const states = view
     ? [
-        view.exposed && "晒し者",
+        view.exposed && "晒し状態",
         view.unit.exposeAtTurnEnd && "ターンの終わりに晒される",
         view.asleep && "眠っている",
-        view.unit.silenced && "訂正済み",
+        view.unit.silenced && "沈黙状態",
         view.hp < view.maxHp && "ダメージあり",
       ].filter((x): x is string => !!x)
     : [];
@@ -1751,7 +1753,7 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
           style={
             art
               ? { backgroundImage: `url(${art})` }
-              : { background: ATTR_META[card.attributes[0] ?? "草"].deep }
+              : { background: ATTR_META[card.attributes[0] ?? "自然"].deep }
           }
         />
         <span className="ps-body">
@@ -1771,7 +1773,7 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
                   </i>
                 </>
               ) : (
-                <i className="ps-post">投稿</i>
+                <i className="ps-post">呪文</i>
               )}
             </span>
           </span>
@@ -1849,7 +1851,7 @@ function Result({
   );
 }
 
-/** 山札（裏向きの束）とオワコン（いちばん上のカード）。オワコンを押すと一覧を出す */
+/** 山札（裏向きの束）と墓地（いちばん上のカード）。墓地を押すと一覧を出す */
 function Piles({
   owner,
   deck,
@@ -1861,7 +1863,7 @@ function Piles({
   deck: number;
   trash: string[];
   onTrash: () => void;
-  /** オワコンに闇堕ちできるカードがある（mine＝今出せる／foe＝相手が出してくるかも） */
+  /** 墓地に闇堕ちできるカードがある（mine＝今出せる／foe＝相手が出してくるかも） */
   dark?: "mine" | "foe";
 }) {
   const top = trash.at(-1);
@@ -1879,7 +1881,7 @@ function Piles({
         data-pile={`trash-${owner}`}
         onClick={onTrash}
         disabled={trash.length === 0}
-        aria-label={`オワコン ${trash.length}枚を見る`}
+        aria-label={`墓地 ${trash.length}枚を見る`}
       >
         {topCard ? (
           <span
@@ -1887,7 +1889,7 @@ function Piles({
             style={
               topCard.art
                 ? { backgroundImage: `url(${topCard.art})` }
-                : { background: ATTR_META[topCard.attributes[0] ?? "草"].deep }
+                : { background: ATTR_META[topCard.attributes[0] ?? "自然"].deep }
             }
           >
             <i>{topCard.name}</i>
@@ -1896,7 +1898,7 @@ function Piles({
           <span className="trash-empty" />
         )}
         <b className="pile-count">{trash.length}</b>
-        <small>{dark === "mine" ? "闇堕ち" : "オワコン"}</small>
+        <small>{dark === "mine" ? "闇堕ち" : "墓地"}</small>
       </button>
     </div>
   );
@@ -1910,14 +1912,14 @@ interface BarProps {
   maxMana: number;
   hand: number;
   active: boolean;
-  /** 場にガードがいてマスターを攻撃できない */
+  /** 場にガードがいてプレイヤーを攻撃できない */
   guarded?: boolean;
-  /** マスターが守られていて、ダメージを受けない */
+  /** プレイヤーが守られていて、ダメージを受けない */
   shielded?: boolean;
-  /** このマスターに付いている「次の自分のターンの終わりに受けるダメージ」（0 なら無し） */
+  /** このプレイヤーに付いている「次の自分のターンの終わりに受けるダメージ」（0 なら無し） */
   delayed?: number;
   targetable?: boolean;
-  /** ドラッグした攻撃が、いまこのマスターの上にある */
+  /** ドラッグした攻撃が、いまこのプレイヤーの上にある */
   dropOver?: boolean;
   /** 攻撃したときの見込み */
   preview?: AttackPreview | null;
@@ -1987,7 +1989,7 @@ function PlayerBar({
   const body = (
     <>
       <span className="pb-name">
-        {name}のマスター
+        {name}のプレイヤー
         {active && <i className="turn-dot" title="この人のターン" />}
         {guarded && <span className="pb-guard">ガードで守られている</span>}
         {shielded && <span className="pb-shield">無敵（次の相手のターンまで）</span>}
@@ -2000,11 +2002,11 @@ function PlayerBar({
           <span style={{ width: `${pct}%` }} />
         </span>
       </span>
-      <span className="pb-mana" title={`話題力 ${mana} / ${maxMana}`}>
-        話題力
+      <span className="pb-mana" title={`コスト ${mana} / ${maxMana}`}>
+        コスト
         <span className="pips">
           {pips.map((on, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: 話題力の玉は位置そのものが意味を持つ
+            // biome-ignore lint/suspicious/noArrayIndexKey: コストの玉は位置そのものが意味を持つ
             <i key={i} className={on ? "on" : ""} />
           ))}
         </span>
@@ -2036,7 +2038,7 @@ function PlayerBar({
           className={`pb-main ${active ? "active" : ""} ${targetable ? "targetable" : ""} ${dropOver ? "drop-over" : ""}`}
           disabled={!targetable}
           onClick={onClick}
-          aria-label={`${name}のマスターを攻撃`}
+          aria-label={`${name}のプレイヤーを攻撃`}
         >
           {body}
         </button>

@@ -11,7 +11,7 @@ type Point = { x: number; y: number };
  * @param at   ぶつかった点（画面座標）
  * @param from 攻撃してきた側の中心（火花を飛ばす向きを決める）
  * @param size 大きさの基準（攻撃したカードの幅）
- * @param power 1 が普通。マスターへの攻撃・大きなダメージは大きく
+ * @param power 1 が普通。プレイヤーへの攻撃・大きなダメージは大きく
  */
 export async function impact(
   at: Point,

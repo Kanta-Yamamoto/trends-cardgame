@@ -6,7 +6,7 @@ const MIST = [0xd8fff0, 0xbff6ff, 0xffffff, 0xa8f5d8];
 
 /**
  * 回復したとき、やわらかい霧が足もとから湧いて包み、ほどけながら上へ消える（約 1.2 秒）。
- * 霧の中を小さな光の粒がゆらゆら昇る。アイコンにもマスターの帯にも使える（大きさは要素に合わせる）。
+ * 霧の中を小さな光の粒がゆらゆら昇る。キャラクターにもプレイヤーの帯にも使える（大きさは要素に合わせる）。
  */
 export async function healMist(el: HTMLElement | null): Promise<void> {
   if (!el || !fxEnabled()) return;
@@ -15,7 +15,7 @@ export async function healMist(el: HTMLElement | null): Promise<void> {
   const { pixi, root, tex } = stage;
   const r = el.getBoundingClientRect();
   if (r.width === 0) return;
-  // マスターの帯のように横長の要素は、霧を横に広げすぎない
+  // プレイヤーの帯のように横長の要素は、霧を横に広げすぎない
   const w = Math.min(r.width, r.height * 1.6);
   const k = w / 80;
 

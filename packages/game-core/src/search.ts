@@ -20,8 +20,8 @@ type Catalog = Record<string, RuleCard>;
 /**
  * 強い CPU（先読みあり）。
  * 1ターンの中の「出す・使う・攻撃」の並びを、ビームサーチでたくさん試す。
- * 有望な終わり方は、ターンを終えたあとに相手が場のアイコンで殴り返してくるところまで試してから、盤面の点数で選ぶ。
- * 相手の手札・山札の中身は見ない（殴り返しは場のアイコンだけで考える）。
+ * 有望な終わり方は、ターンを終えたあとに相手が場のキャラクターで殴り返してくるところまで試してから、盤面の点数で選ぶ。
+ * 相手の手札・山札の中身は見ない（殴り返しは場のキャラクターだけで考える）。
  */
 
 export interface SearchOptions {
@@ -66,7 +66,7 @@ function unitValue(state: GameState, owner: PlayerId, slot: number, catalog: Cat
   if (v.guard) value += WEIGHTS.guard + v.hp * 0.3;
   if (v.keywords.includes("連撃")) value += v.attack * 0.7;
   if (v.keywords.includes("注目")) value += (slot === CENTER_SLOT ? 2 : 1) * WEIGHTS.focus;
-  if (v.keywords.includes("凸")) value += 0.3;
+  if (v.keywords.includes("突進")) value += 0.3;
   if (!u.silenced && card) {
     const lasting = card.effects.some((e) => {
       return e.on === "passive" || e.on === "turnEnd";
@@ -83,7 +83,7 @@ export function evaluate(state: GameState, player: PlayerId, catalog: Catalog): 
   const foeId = opponent(player);
   const me = state.players[player];
   const foe = state.players[foeId];
-  // マスターに付いた「次の自分のターンの終わりにダメージを受ける」効果は、もう減ったライフとして見る
+  // プレイヤーに付いた「次の自分のターンの終わりにダメージを受ける」効果は、もう減ったライフとして見る
   let score =
     (lifeValue(me.lp - delayedDamageOn(state, player)) - lifeValue(foe.lp - delayedDamageOn(state, foeId))) *
     WEIGHTS.life;
@@ -98,7 +98,7 @@ export function evaluate(state: GameState, player: PlayerId, catalog: Catalog): 
   const safe = (pid: PlayerId) =>
     state.players[pid].field.some((u) => u && hasPassive(u, "conspiracyWin", catalog));
   if (me.deck.length === 0 && !safe(player)) score -= 6;
-  // 陰謀論者：山札が少ないほど特殊勝利に近い。相手の陰謀論者は早く倒したい
+  // 陰謀論者：山札が少ないほど特殊勝利に近い。相手の陰謀論者は早く破壊したい
   const plot = (pid: PlayerId) =>
     state.players[pid].field.some((u) => u && hasPassive(u, "conspiracyWin", catalog))
       ? 40 / (1 + state.players[pid].deck.length)
@@ -182,7 +182,7 @@ interface Node {
   score: number;
 }
 
-/** ターンを終えて、相手が場のアイコンだけで殴り返したあとの盤面の点数 */
+/** ターンを終えて、相手が場のキャラクターだけで殴り返したあとの盤面の点数 */
 function scoreAfterReply(node: Node, player: PlayerId, catalog: Catalog): number {
   const settled = settle(node.state, catalog);
   if (settled.winner) return evaluate(settled, player, catalog);

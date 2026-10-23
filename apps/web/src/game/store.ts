@@ -21,13 +21,13 @@ export const CATALOG: Record<string, CardDef> = Object.fromEntries(CARDS.map((c)
 export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: string }> = {
   solo_flame: {
     ace: "c2",
-    name: "炎上アグロ",
+    name: "炎アグロ",
     text: "「レン」の連撃と闇堕ちで、相手が守る前に押し切ろう",
   },
   solo_idol: {
     ace: "c13",
-    name: "メロいミッドレンジ",
-    text: "「ミレイ」で育てたアイコンをそろえて、一斉攻撃を決めよう",
+    name: "推しミッドレンジ",
+    text: "「ミレイ」で育てたキャラクターをそろえて、一斉攻撃を決めよう",
   },
   solo_expert: {
     ace: "g4",
@@ -36,17 +36,17 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: strin
   },
   solo_meme: {
     ace: "k5",
-    name: "草アグロ",
+    name: "自然アグロ",
     text: "「コラ画像」で並べた草をそろえて、数で押し切ろう",
   },
   solo_heal: {
     ace: "c5",
-    name: "癒しコントロール",
-    text: "「ナギ」で相手を眠らせ、回復しながら守り切ろう",
+    name: "水コントロール",
+    text: "「ナギ」で相手を眠り状態にし、回復しながら守り切ろう",
   },
   fixer_meme: {
     ace: "c15",
-    name: "草ミッドレンジ",
+    name: "自然ミッドレンジ",
     text: "「クサハミ」の闇堕ち能力で一撃勝利を目指そう",
   },
   unei_idol: {
@@ -62,7 +62,7 @@ export const CPU: PlayerId = "p2";
 type Selection =
   | { kind: "hand"; index: number }
   | { kind: "attacker"; slot: number }
-  /** バズさせる自分のアイコンを選んでいる */
+  /** バズさせる自分のキャラクターを選んでいる */
   | { kind: "buzz" }
   | null;
 
@@ -111,13 +111,13 @@ interface GameStore {
   quit: () => void;
   select: (s: Selection) => void;
   play: (slot: number) => void;
-  /** 選んでいる手札の投稿を使う（対象が要るものは target を渡す） */
+  /** 選んでいる手札の呪文を使う（対象が要るものは target を渡す） */
   cast: (target?: CastTarget) => void;
   attack: (target: AttackTarget) => void;
   endTurn: () => void;
-  /** バズ：選んだ自分のアイコンに +2/+2 と凸（カットインを見せてから） */
+  /** バズ：選んだ自分のキャラクターに +2/+2 と突進（カットインを見せてから） */
   buzz: (slot: number) => void;
-  /** 差し出し（フィクサー）：自分のアイコンを1体選ぶ */
+  /** 差し出し（フィクサー）：自分のキャラクターを1体選ぶ */
   sacrifice: (slot: number) => void;
   /** オンライン対戦を始める（再接続のときも、届いた状態で呼び直す） */
   startOnline: (o: {
@@ -144,11 +144,11 @@ export interface Presenter {
   /** CPU のターンが始まってから最初の操作までの待ち（ターン開始の演出のため） */
   turnIntro: number;
   /**
-   * 出す・投稿・ターン終了の効果を見せる（state を進める前）。
-   * shown は今画面に出ている state（出したアイコンは場に置いた姿）、next は効果がすべて済んだ state
+   * 出す・呪文・ターン終了の効果を見せる（state を進める前）。
+   * shown は今画面に出ている state（出したキャラクターは場に置いた姿）、next は効果がすべて済んだ state
    */
   resolveEffects?: (shown: GameState, action: Action, events: GameEvent[], next: GameState) => Promise<void>;
-  /** 相手がカードを出す・投稿を使う前に、そのカードを大きく見せる */
+  /** 相手がカードを出す・呪文を使う前に、そのカードを大きく見せる */
   revealFoe?: (
     game: GameState,
     cardId: string,
@@ -156,7 +156,7 @@ export interface Presenter {
   ) => Promise<void>;
   /** 闇堕ちの演出（画面全体）。自分・相手どちらの闇堕ちでも、state を進める前に見せる */
   darkFall?: (cardId: string, player: PlayerId) => Promise<void>;
-  /** バズのカットイン（マスターとバズ）。state を進める前に見せる */
+  /** バズのカットイン（プレイヤーとバズ）。state を進める前に見せる */
   buzz?: (game: GameState, action: Extract<Action, { type: "buzz" }>) => Promise<void>;
 }
 let presenter: Presenter | null = null;
@@ -182,7 +182,7 @@ let draining = false;
 
 type PlaceAction = Extract<Action, { type: "play" }>;
 
-/** 出したアイコンだけを場に置いた、効果の前の姿（演出のあいだ画面に出す） */
+/** 出したキャラクターだけを場に置いた、効果の前の姿（演出のあいだ画面に出す） */
 function placedOnly(prev: GameState, a: PlaceAction, next: GameState): GameState {
   const unit = next.players[a.player].field[a.slot];
   if (!unit) return prev;
@@ -209,7 +209,7 @@ async function showDarkFalls(events: GameEvent[]) {
   for (const e of events)
     if (e.type === "darkFall" && presenter?.darkFall) await presenter.darkFall(e.cardId, e.player);
 }
-/** 演出を見せてから state を進める操作（差し出しは、選ばれたアイコンが糸で引き抜かれるのを見せる） */
+/** 演出を見せてから state を進める操作（差し出しは、選ばれたキャラクターが糸で引き抜かれるのを見せる） */
 const hasEffects = (a: Action) =>
   isPlace(a) || a.type === "cast" || a.type === "endTurn" || a.type === "sacrifice";
 
@@ -220,7 +220,7 @@ export const useGame = create<GameStore>((set, get) => {
     return [...log, ...events.map((e) => ({ id: ++id, e, ...(fx ? { fx } : {}) }))].slice(-60);
   };
 
-  /** 効果を見せる（出したアイコンを先に置いてから） */
+  /** 効果を見せる（出したキャラクターを先に置いてから） */
   const present = async (game: GameState, a: Action, events: GameEvent[], next: GameState) => {
     const shown = isPlace(a) ? placedOnly(game, a, next) : game;
     if (shown !== game) set({ game: shown });

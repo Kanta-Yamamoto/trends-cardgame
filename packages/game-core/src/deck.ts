@@ -3,7 +3,7 @@ import type { RuleCard } from "./types";
 
 type Catalog = Record<string, RuleCard>;
 
-/** デッキに入っている属性（共通カードは数えない） */
+/** デッキに入っている属性（ニュートラルのカードは数えない） */
 export function deckAttributes(deck: readonly string[], catalog: Catalog): string[] {
   const set = new Set<string>();
   for (const id of deck) for (const a of catalog[id]?.attributes ?? []) set.add(a);
@@ -12,7 +12,7 @@ export function deckAttributes(deck: readonly string[], catalog: Catalog): strin
 
 /**
  * デッキの決まりを確かめ、守れていないところを日本語で返す（空なら OK）。
- * 20枚・同じカードは2枚まで・トークンは入れられない・闇堕ちを持つカードは MAX_DARK_KINDS（1種類）まで・属性は MAX_DECK_ATTRIBUTES（今は1つ）まで（共通カードはいくつでも）
+ * 20枚・同じカードは2枚まで・トークンは入れられない・闇堕ちを持つカードは MAX_DARK_KINDS（1種類）まで・属性は MAX_DECK_ATTRIBUTES（今は1つ）まで（ニュートラルのカードはいくつでも）
  */
 export function validateDeck(deck: readonly string[], catalog: Catalog): string[] {
   const errors: string[] = [];
@@ -34,7 +34,9 @@ export function validateDeck(deck: readonly string[], catalog: Catalog): string[
     );
   const attrs = deckAttributes(deck, catalog);
   if (attrs.length > MAX_DECK_ATTRIBUTES)
-    errors.push(`属性は${MAX_DECK_ATTRIBUTES}つまでです（共通カードは数えません。今は ${attrs.join("・")}）`);
+    errors.push(
+      `属性は${MAX_DECK_ATTRIBUTES}つまでです（ニュートラルのカードは数えません。今は ${attrs.join("・")}）`,
+    );
   return errors;
 }
 
