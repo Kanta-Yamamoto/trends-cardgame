@@ -163,6 +163,16 @@ const catalog: Record<string, RuleCard> = {
     ],
   }),
   yuru: icon("yuru", 8, 5, 8, { effects: [{ on: "hand", do: "cheaperPerHeal" }] }),
+  shiba: icon("shiba", 4, 2, 3, { effects: [{ on: "passive", do: "healStrike", amount: 1 }] }),
+  // オワコンになったとき・ターンの終わり・凸で攻撃したときの組み合わせ（10月23日のコスト 1〜8 の見直し）
+  hamster: icon("hamster", 2, 1, 2, { effects: [{ on: "death", do: "heal", to: "master", amount: 3 }] }),
+  sprout: icon("sprout", 2, 1, 1, { effects: [{ on: "death", do: "summon", card: "kusa", count: 2 }] }),
+  flare: icon("flare", 4, 2, 3, { effects: [{ on: "death", do: "damage", to: "allEnemies", amount: 1 }] }),
+  leader: icon("leader", 4, 2, 3, { effects: [{ on: "turnEnd", do: "buffRandomAlly", attack: 1, hp: 0 }] }),
+  pup: icon("pup", 4, 2, 2, {
+    keywords: ["凸"],
+    effects: [{ on: "rush", do: "summon", card: "kusa", count: 1 }],
+  }),
   // 界隈を読む効果のテスト用（配信者 s1/s2、アイドル idl、無所属 f）
   s1: icon("s1", 1, 1, 1, { kaiwai: ["配信者"] }),
   s2: icon("s2", 1, 1, 1, { kaiwai: ["配信者", "アイドル"] }),
@@ -810,7 +820,10 @@ describe("デッキの決まり", () => {
     // 闇堕ちのない★5（ヒバナ）や共通の★5（『フィクサー』）は数えない
     const moreAces = [...flame.filter((id) => id !== "n6"), "c4", "c15"];
     expect(validateDeck(moreAces, real)).toEqual([]);
-    const commons = ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8", "n9", "n10"].flatMap((id) => [id, id]);
+    const commons = ["n2", "n3", "n5", "n6", "n8", "n9", "n10", "n11", "n12", "n13"].flatMap((id) => [
+      id,
+      id,
+    ]);
     expect(validateDeck(commons, real)).toEqual([]);
   });
   it("構築済みデッキは単属性で、5属性に1つずつある（ほかに『フィクサー』が主役の草のデッキと、運営サイドの★5 3枚のデッキ）", () => {
@@ -963,6 +976,50 @@ describe("切り札の効果（★4〜5）", () => {
     expect(dj2 && viewUnit(s, "p1", dj2, catalog).attack).toBe(4);
     // ゆるキャラは回復の回数だけ安くなる
     expect(effectiveCost(s, "p1", "yuru", catalog)).toBe(8 - 2);
+  });
+  it("回復の効果を使うたび：healStrike は攻撃力がいちばん高い相手のアイコン1体にダメージ", () => {
+    let s = play(withFoe(["shiba", "pet"], ["f", "big"]), 0, 0);
+    s = play(s, 0, 1);
+    const big = s.players.p2.field[1];
+    expect(big?.damage).toBe(1);
+    expect(s.players.p2.field[0]?.damage).toBe(0);
+  });
+  it("オワコンになったとき：ライフの回復（回復の回数にも数える）・草を出す", () => {
+    let s = game(["hamster", "sprout", "f"]);
+    s.players.p1.lp = 10;
+    s = play(s, 0, 0);
+    // 体力を削っておき、次にカードを出したときの片付けで倒れる
+    const ham = s.players.p1.field[0];
+    if (ham) ham.damage = 2;
+    s = play(s, 0, 1);
+    expect(s.players.p1.field[0]?.cardId).not.toBe("hamster");
+    expect(s.players.p1.lp).toBe(13);
+    expect(s.players.p1.heals).toBe(1);
+    const sp = s.players.p1.field[1];
+    if (sp) sp.damage = 1;
+    s = play(s, 0, 4);
+    expect(s.players.p1.field.filter((u) => u?.cardId === "kusa").length).toBe(2);
+  });
+  it("オワコンになったとき、相手のアイコンすべてにダメージ", () => {
+    let s = play(withFoe(["flare"], ["f", "wall"]), 0, 0);
+    s = end(s);
+    const atk = s.players.p2.field[1];
+    if (atk) Object.assign(atk, { canAttack: true, attacksLeft: 1, atkBuff: 5 });
+    s = run(s, { type: "attack", player: "p2", from: 1, target: { kind: "unit", slot: 0 } }).state;
+    expect(s.players.p1.field[0]).toBeNull();
+    expect(s.players.p2.field[0]).toBeNull();
+    expect(s.players.p2.field[1]?.damage).toBe(2 + 1);
+  });
+  it("自分のターンの終わりに、自分のほかのアイコン1体（ランダム）に攻撃力+1", () => {
+    let s = play(play(game(["leader", "wall"]), 0, 0), 0, 1);
+    s = end(s);
+    expect(s.players.p1.field[1]?.atkBuff).toBe(1);
+    expect(s.players.p1.field[0]?.atkBuff).toBe(0);
+  });
+  it("凸で攻撃したとき、草を出す", () => {
+    let s = play(withFoe(["pup"], ["wall"]), 0, 2);
+    s = run(s, { type: "attack", player: "p1", from: 2, target: { kind: "unit", slot: 0 } }).state;
+    expect(s.players.p1.field.filter((u) => u?.cardId === "kusa").length).toBe(1);
   });
   it("体力が1以下の相手のアイコンをすべて倒す", () => {
     const s = play(withFoe(["sweeper"], ["f", "wall", "f"]), 0, 0);
