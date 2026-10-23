@@ -625,56 +625,29 @@
   },
   {
     "id": "c1",
-    "name": "シロガネ",
-    "epithet": "神絵師",
+    "name": "ミコト",
+    "epithet": "神降臨",
     "type": "icon",
     "rarity": 5,
     "cost": 6,
-    "attack": 4,
-    "hp": 7,
+    "attack": 3,
+    "hp": 5,
     "attributes": ["神"],
     "kaiwai": ["配信者"],
-    "keywords": ["凸"],
+    "keywords": [],
     "effects": [
       {
         "on": "play",
-        "do": "removeEnemyGuards"
-      },
-      {
-        "on": "play",
-        "do": "damage",
-        "to": "strongestEnemy",
-        "amount": 3
+        "do": "prophecy",
+        "amount": 7
       }
     ],
-    "effect": "凸。場に出たとき、相手のアイコンすべてのガードを消し、攻撃力がいちばん高い相手のアイコン1体に3ダメージ。",
-    "flavor": "「さあ、こちら側へ。光はもう、君を選んでいる」",
+    "effect": "場に出たとき、お告げ：次の相手のターンの終わりに、相手のマスターに7ダメージ。",
+    "flavor": "",
     "number": "001/040",
     "art": "/assets/cards/c1-art.jpg",
     "subject": "/assets/cards/c1-subject.webp",
-    "original": "assets/original/c1-shirogane.png",
-    "dark": {
-      "name": "堕天のシロガネ",
-      "attack": 7,
-      "hp": 4,
-      "keywords": ["凸"],
-      "effects": [
-        {
-          "on": "play",
-          "do": "bounce",
-          "to": "costliestEnemy"
-        },
-        {
-          "on": "play",
-          "do": "damage",
-          "to": "allEnemies",
-          "amount": 1
-        }
-      ],
-      "effect": "凸。闇堕ちしたとき、コストがいちばん高い相手のアイコン1体を持ち主の手札に戻し（トークンは消える）、相手のアイコンすべてに1ダメージ。",
-      "art": "/assets/cards/c1-dark-art.jpg",
-      "subject": "/assets/cards/c1-dark-subject.webp"
-    }
+    "original": "assets/original/c1-shirogane.png"
   },
   {
     "id": "g1",

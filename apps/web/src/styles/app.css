@@ -367,7 +367,7 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .pstage .pb-mana { grid-area: mana; justify-self: end; gap: 4px; }
 .pstage .pips { gap: 2px; }
 .pstage .pips i { width: 7px; height: 7px; }
-.pstage .pb-guard, .pstage .pb-shield { font-size: 9.5px; padding: 1px 6px; margin: 0; }
+.pstage .pb-guard, .pstage .pb-shield, .pstage .pb-prophecy { font-size: 9.5px; padding: 1px 6px; margin: 0; }
 .pstage .piles { gap: 8px; }
 .pstage .pb-main .atk-pv { right: 6px; top: -12px; }
 /* 場：5 枠が横いっぱい。間の行は案内文と「ターン終了」 */
@@ -691,6 +691,8 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .dc-sub em { font-style: normal; color: #fff; font-family: "Zen Antique", serif; font-weight: 400; font-size: 1.25em; text-shadow: 0 0 10px #b06bff; }
 .dc-skip { right: max(16px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); font-size: 11px; color: #d9b0ffaa; }
 
+/* お告げ：神の金と白 */
+.pb-prophecy { margin-left: 6px; font-size: 10.5px; padding: 1px 6px; border-radius: 999px; color: #3a2a00; background: linear-gradient(90deg, #fff6d6, #f2c94c); font-weight: 800; box-shadow: 0 0 6px rgba(242, 201, 76, 0.7); }
 .pb-shield { margin-left: 6px; font-size: 10.5px; padding: 1px 6px; border-radius: 999px; color: #08202e; background: #9fd8ff; font-weight: 800; }
 
 /* ---------- デッキ構築 ---------- */

@@ -11,6 +11,7 @@ import {
   createGame,
   darkOmens,
   effectiveCost,
+  incomingProphecy,
   isShielded,
   legalTargets,
   previewAttack,
@@ -204,6 +205,11 @@ const catalog: Record<string, RuleCard> = {
   kill: post("kill", 3, { effects: [{ do: "destroy", to: "strongestEnemy" }] }),
   back: post("back", 3, { effects: [{ do: "bounce", to: "costliestEnemy" }] }),
   barrier: post("barrier", 2, { effects: [{ do: "shieldMaster" }] }),
+  oracle: icon("oracle", 6, 3, 5, {
+    attributes: ["神"],
+    effects: [{ on: "play", do: "prophecy", amount: 7 }],
+  }),
+  again: post("again", 1, { effects: [{ do: "extraTurn" }] }),
   therapy: post("therapy", 2, { effects: [{ do: "heal", to: "allAlliesAndMaster", amount: 2 }] }),
 };
 const F = (n: number) => Array.from({ length: n }, () => "f");
@@ -1264,6 +1270,60 @@ describe("闇堕ちの姿の効果（確定除去・手札に戻す・マスタ�
     expect(r.events.map((e) => e.type)).toContain("shield");
     s = end(r.state, "p2");
     expect(isShielded(s, "p1")).toBe(false);
+  });
+});
+
+describe("お告げ（ミコト）", () => {
+  it("出したときに予告し、そのターンには落ちない。次の相手のターンの終わりに相手のマスターに落ちる", () => {
+    const r = run(game(["oracle"]), { type: "play", player: "p1", handIndex: 0, slot: 0 });
+    expect(r.events.map((e) => e.type)).toContain("prophecy");
+    expect(incomingProphecy(r.state, "p2")).toBe(7);
+    expect(incomingProphecy(r.state, "p1")).toBe(0);
+    let s = end(r.state);
+    expect(s.players.p2.lp).toBe(20);
+    const e = run(s, { type: "endTurn", player: "p2" });
+    expect(e.events.map((x) => x.type)).toEqual(
+      expect.arrayContaining(["prophecyFulfilled", "leaderDamaged"]),
+    );
+    s = e.state;
+    expect(s.players.p2.lp).toBe(13);
+    expect(incomingProphecy(s, "p2")).toBe(0);
+    // 1回きり：次の相手のターンの終わりには、もう落ちない
+    s = end(end(s), "p2");
+    expect(s.players.p2.lp).toBe(13);
+  });
+  it("出したアイコンがオワコンになっても止まらない", () => {
+    let s = end(play(game(["oracle"]), 0, 0));
+    s.players.p1.field[0] = null;
+    s = end(s, "p2");
+    expect(s.players.p2.lp).toBe(13);
+  });
+  it("相手のマスターがダメージを受けない状態なら防がれる", () => {
+    let s = end(play(game(["oracle"]), 0, 0));
+    s.players.p2.mana = 30;
+    s.players.p2.hand = ["barrier", ...s.players.p2.hand];
+    s = run(s, { type: "cast", player: "p2", handIndex: 0 }).state;
+    s = end(s, "p2");
+    expect(s.players.p2.lp).toBe(20);
+    expect(incomingProphecy(s, "p2")).toBe(0);
+  });
+  it("自分の追加のターンでは落ちず、相手のターンの終わりまで待つ", () => {
+    let s = game(["oracle", "again"]);
+    s = play(s, 0, 0);
+    s = cast(s, 0);
+    s = end(s);
+    expect(s.active).toBe("p1");
+    s = end(s);
+    expect(s.players.p2.lp).toBe(20);
+    s = end(s, "p2");
+    expect(s.players.p2.lp).toBe(13);
+  });
+  it("ライフが尽きたら、お告げを出した側の勝ち。相手のターンは始まらない", () => {
+    const s = end(play(game(["oracle"]), 0, 0));
+    s.players.p2.lp = 7;
+    const r = run(s, { type: "endTurn", player: "p2" });
+    expect(r.state.winner).toBe("p1");
+    expect(r.events.map((e) => e.type)).not.toContain("turnStarted");
   });
 });
 

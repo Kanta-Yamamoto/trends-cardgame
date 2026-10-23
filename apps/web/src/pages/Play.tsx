@@ -14,6 +14,7 @@ import {
   fieldOf,
   type GameEvent,
   type GameState,
+  incomingProphecy,
   isShielded,
   type PlayerId,
   previewAttack,
@@ -141,6 +142,10 @@ function describe(e: GameEvent): string {
       return e.kind === "shielded"
         ? `${who(e.player)}のマスターは、次の相手のターンが終わるまでダメージを受けない`
         : `${who(e.player)}のマスターへの ${e.amount} ダメージを防いだ`;
+    case "prophecy":
+      return `${who(e.player)}：${nameOf(e.cardId)} のお告げ──次の相手のターンの終わりに、相手のマスターに ${e.amount} ダメージ`;
+    case "prophecyFulfilled":
+      return `${nameOf(e.cardId)} のお告げが果たされた`;
     case "extraTurn":
       return `${who(e.player)}は、このあともう一度ターンを行う`;
     case "resigned":
@@ -1272,6 +1277,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       active={game.active === CPU}
       guarded={foeGuarded}
       shielded={isShielded(game, CPU)}
+      prophecy={incomingProphecy(game, CPU)}
       targetable={attacking && canHit({ kind: "leader" })}
       dropOver={drag?.over === "leader" && attacking && canHit({ kind: "leader" })}
       preview={preview({ kind: "leader" })}
@@ -1290,6 +1296,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       buzz={me.buzzLeft ?? 0}
       active={game.active === ME}
       shielded={isShielded(game, ME)}
+      prophecy={incomingProphecy(game, ME)}
       piles={<Piles owner={ME} deck={me.deck.length} trash={me.trash} onTrash={() => setTrashView(ME)} />}
     />
   );
@@ -1855,6 +1862,8 @@ interface BarProps {
   guarded?: boolean;
   /** マスターが守られていて、ダメージを受けない */
   shielded?: boolean;
+  /** 次のこのマスターのターンの終わりに落ちる、お告げのダメージ（0 なら無し） */
+  prophecy?: number;
   targetable?: boolean;
   /** ドラッグした攻撃が、いまこのマスターの上にある */
   dropOver?: boolean;
@@ -1877,6 +1886,7 @@ function PlayerBar({
   active,
   guarded,
   shielded,
+  prophecy = 0,
   targetable,
   dropOver,
   preview,
@@ -1894,6 +1904,11 @@ function PlayerBar({
         {active && <i className="turn-dot" title="この人のターン" />}
         {guarded && <span className="pb-guard">ガードで守られている</span>}
         {shielded && <span className="pb-shield">無敵（次の相手のターンまで）</span>}
+        {prophecy > 0 && (
+          <span className="pb-prophecy">
+            お告げ {prophecy}（{side === "me" ? "あなた" : "相手"}のターンの終わり）
+          </span>
+        )}
       </span>
       <span className="pb-lp">
         ライフ <b key={lp}>{lp}</b>

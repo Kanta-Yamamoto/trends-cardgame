@@ -20,6 +20,7 @@ export {
   effectiveCost,
   fieldOf,
   hasKeyword,
+  incomingProphecy,
   inKaiwai,
   isShielded,
   legalTargets,
