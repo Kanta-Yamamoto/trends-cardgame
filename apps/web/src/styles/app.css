@@ -27,11 +27,13 @@ html, body { touch-action: manipulation; }
   .app-frame { height: 100vh; height: 100dvh; overflow: hidden; transform: translateZ(0); }
   .app-scroll { height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; }
 }
-/* 画面座標で置く演出の層（#fx-layer・PixiJS の #fx-stage）は、枠の外（body の直下）に、画面いっぱいに置く（枠を入れる前と同じ）。
-   広い画面だけ、枠の外にはみ出した分を切る（--frame-*。frame.ts が書く） */
-#fx-layer, #fx-stage { position: fixed; inset: 0; pointer-events: none; }
+/* 画面座標で置く演出の層（#fx-layer）は、枠の外（body の直下）に、画面いっぱいに置く（枠を入れる前と同じ）。
+   広い画面だけ、枠の外にはみ出した分を切る（--frame-*。frame.ts が書く）。
+   PixiJS の舞台（#fx-stage）も body の直下だが、Canvas そのものを枠の位置・大きさにする（fx/stage.ts が left・top・width・height を書く） */
+#fx-layer { position: fixed; inset: 0; pointer-events: none; }
+#fx-stage { position: fixed; left: 0; top: 0; pointer-events: none; }
 @media (min-width: 481px) {
-  #fx-layer, #fx-stage {
+  #fx-layer {
     clip-path: inset(var(--frame-y, 0px) calc(100% - var(--frame-x, 0px) - var(--frame-w, 100%)) 0 var(--frame-x, 0px));
   }
 }
@@ -309,8 +311,7 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 /* 演出のレイヤー（攻撃・ドロー・ダメージの数字） */
 /* 場に出たアイコンの動きは fx/fieldEntry.ts（GSAP） */
 #fx-layer { z-index: 35; }
-/* PixiJS の演出の舞台（fx/stage.ts）。盤面（.play-full）の上、拡大表示（.zoom）より下 */
-/* PixiJS の舞台（大きさは PixiJS がブラウザの画面に合わせる） */
+/* PixiJS の演出の舞台（fx/stage.ts）。盤面（.play-full）の上、拡大表示（.zoom）より下。大きさは画面の枠に合わせる */
 #fx-stage { z-index: 15; }
 .fx-num { position: fixed; font: 900 34px/1 var(--f-mark); color: #fff; -webkit-text-stroke: 1.5px #7a0a14; text-shadow: 0 0 14px #ff3b4c, 0 3px 0 #7a0a14; }
 .fx-num.heal { -webkit-text-stroke-color: #0b5a2e; text-shadow: 0 0 14px #3dff8b, 0 3px 0 #0b5a2e; }

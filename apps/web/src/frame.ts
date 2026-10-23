@@ -8,7 +8,8 @@ import { layoutViewport } from "./viewport";
  *   （10月23日：スマホで枠に transform を持たせ、演出の層を枠の中へ移したら、PixiJS の演出が出なくなった）
  * - それより広い画面（PC・横持ち）：枠（幅 480px・高さは画面いっぱい・中央）に transform を持たせ、中の position: fixed
  *   （モーダル・全画面の演出・カットイン）が枠いっぱいに収まるようにする。スクロールは枠の中の .app-scroll
- * - 演出の層（#fx-layer・PixiJS の #fx-stage）は、どちらでも body の直下に画面いっぱいに置き、広い画面だけ枠の外を切る
+ * - 演出の層（#fx-layer）は、どちらでも body の直下に画面いっぱいに置き、広い画面だけ枠の外を切る。
+ *   PixiJS の #fx-stage も body の直下。スマホの縦は画面いっぱい、広い画面は Canvas そのものを枠の大きさにする（fx/stage.ts）
  * - 大きさ・位置は、どちらでも frameSize()・frameRect() で測る（window.innerWidth を直接使わない）
  */
 
