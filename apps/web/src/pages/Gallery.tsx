@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ATTRIBUTES, type Attribute, CARDS, type CardDef } from "@trends/cards";
 import { useEffect, useState } from "react";
-import { fetchCards } from "../api/client";
+import { BUNDLED_CARDS, fetchCards } from "../api/client";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { CardZoom } from "../game/CardZoom";
@@ -89,7 +89,15 @@ function GallerySkeleton() {
 }
 
 export function Gallery() {
-  const { data, isLoading } = useQuery({ queryKey: ["cards"], queryFn: fetchCards });
+  // 同梱データをすぐ出し、サーバーの返事が来たら差し替える（起き上がり待ちで止まって見えないように）。
+  // 失敗しても数回やり直し、それでもだめなときだけ知らせる
+  const { data, isError, isLoading } = useQuery({
+    queryKey: ["cards"],
+    queryFn: fetchCards,
+    placeholderData: BUNDLED_CARDS,
+    retry: 3,
+    retryDelay: (n) => 2000 * (n + 1),
+  });
   const [filter, setFilter] = useState<Filter>(null);
   const [zoomId, setZoomId] = useState<string | null>(null);
 
@@ -97,7 +105,7 @@ export function Gallery() {
   const group = (c: CardDef) => (c.attributes[0] ? ATTRIBUTES.indexOf(c.attributes[0]) : ATTRIBUTES.length);
   const match = (c: CardDef) =>
     !filter || (filter === "共通" ? c.attributes.length === 0 : c.attributes.includes(filter));
-  const cards = (data?.cards.filter((c) => !c.token && !RETIRED.has(c.id) && match(c)) ?? [])
+  const cards = (data?.filter((c) => !c.token && !RETIRED.has(c.id) && match(c)) ?? [])
     .slice()
     .sort(
       (a, b) => b.rarity - a.rarity || group(a) - group(b) || a.cost - b.cost || a.id.localeCompare(b.id),
@@ -117,8 +125,10 @@ export function Gallery() {
         <p className="muted">
           カードを押すと拡大して、効果を大きな文字で読めます。拡大したまま「前へ・次へ」で順に見られます。
         </p>
-        {data?.fallback && (
-          <p className="notice">API に接続できないため、アプリに同梱したカードデータを表示しています。</p>
+        {isError && (
+          <p className="notice">
+            サーバーにつながらないため、アプリに入っているカードデータを表示しています。
+          </p>
         )}
       </header>
       <div className="g-filters" role="toolbar" aria-label="属性で絞り込む">
