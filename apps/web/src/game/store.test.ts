@@ -50,7 +50,7 @@ describe("対戦ストア", () => {
     const g = structuredClone(useGame.getState().game);
     if (!g) throw new Error("no game");
     g.players[ME].mana = 30;
-    g.players[ME].hand = ["n1", "c15"];
+    g.players[ME].hand = ["n2", "c15"];
     g.players[CPU].field[0] = {
       uid: 900,
       cardId: "n5",
@@ -96,7 +96,7 @@ describe("対戦ストア", () => {
       const g = structuredClone(useGame.getState().game);
       if (!g) throw new Error("no game");
       g.players[ME].mana = 30;
-      g.players[ME].hand = ["n1", "c15"];
+      g.players[ME].hand = ["n2", "c15"];
       g.players[CPU].field[0] = {
         uid: 902,
         cardId: "n5",

@@ -202,8 +202,6 @@ export interface CardDef {
   dark?: DarkSide;
   /** 効果で生まれるだけのカード（デッキには入れられない） */
   token?: boolean;
-  /** お蔵入り：カード一覧・デッキ構築に出さず、デッキにも入れられない（データと絵は残す） */
-  retired?: boolean;
   /** web の public からのパス。イラストがまだないカードは持たない */
   art?: string;
   subject?: string;

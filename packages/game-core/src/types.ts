@@ -13,7 +13,6 @@ export type RuleCard = Pick<
   | "target"
   | "dark"
   | "token"
-  | "retired"
   | "kaiwai"
   | "targetKaiwai"
   | "targetFilter"

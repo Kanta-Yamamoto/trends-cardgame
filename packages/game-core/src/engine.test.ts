@@ -102,7 +102,6 @@ const catalog: Record<string, RuleCard> = {
   burner: icon("burner", 1, 1, 1, { effects: [{ on: "death", do: "draw", count: 1 }] }),
   popper: icon("popper", 2, 1, 1, { effects: [{ on: "death", do: "damage", to: "allEnemies", amount: 1 }] }),
   eater: icon("eater", 3, 1, 3, { effects: [{ on: "passive", do: "attackPerLostToken", card: "kusa" }] }),
-  oldcard: icon("oldcard", 1, 1, 1, { retired: true }),
   fixer: icon("fixer", 4, 2, 3, { effects: [{ do: "sacrifice" }] }),
   judge: icon("judge", 5, 2, 5, { effects: [{ do: "judge" }] }),
   director: icon("director", 5, 2, 4, { effects: [{ do: "stageAces" }] }),
@@ -515,9 +514,6 @@ describe("★5 の作り直し（ヒバナ・カグラ・陰謀論者・クサ�
     expect(s.players.p1.tokensLost).toEqual({ kusa: 2 });
     expect(viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog).attack).toBe(3);
   });
-  it("お蔵入りのカードはデッキに入れられない", () => {
-    expect(validateDeck(["oldcard"], catalog).some((e) => e.includes("お蔵入り"))).toBe(true);
-  });
 });
 
 describe("差し出し（フィクサー）", () => {
@@ -809,7 +805,7 @@ describe("デッキの決まり", () => {
     expect(resolveDeckRef(42, DECKS)).toBeNull();
   });
   it("ニュートラルのカードは属性に数えない", () => {
-    expect(deckAttributes(["n1", "n2", "f6"], real)).toEqual(["炎"]);
+    expect(deckAttributes(["n5", "n2", "f6"], real)).toEqual(["炎"]);
   });
   it("1つの属性＋ニュートラルのカードの20枚は組める（ニュートラルのカードだけでもよい）。闇堕ちを持つカードは1種類まで、★5は何種類でも", () => {
     const flame = DECKS.solo_flame;

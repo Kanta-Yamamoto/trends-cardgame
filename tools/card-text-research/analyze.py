@@ -252,12 +252,12 @@ def summarize(rows: list[dict]):
 
 
 def trends_cards() -> list[dict]:
-    """TRENDS の今の効果文（お蔵入り・トークンは除く。闇堕ちの姿も 1 枚に数える）"""
+    """TRENDS の今の効果文（トークンは除く。闇堕ちの姿も 1 枚に数える）"""
     here = os.path.dirname(os.path.abspath(__file__))
     data = json.load(open(os.path.join(here, "../../packages/cards/src/cards.json"), encoding="utf-8"))
     rows = []
     for c in data:
-        if c.get("retired") or c.get("token"):
+        if c.get("token"):
             continue
         base = "packages/cards/src/cards.json#" + c["id"]
         kind = "キャラクター" if c["type"] == "icon" else "呪文"
