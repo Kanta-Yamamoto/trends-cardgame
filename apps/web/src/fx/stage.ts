@@ -1,12 +1,18 @@
 import type { Application, Container, Texture } from "pixi.js";
+import { FRAME_MAX, frameRect } from "../frame";
 
 /**
- * 演出用の舞台：画面いっぱいに重ねた透明な Canvas（PixiJS / WebGL）。
+ * 演出用の舞台：画面の枠（スマホの縦の画面。frame.ts）にぴったり重ねた透明な Canvas（PixiJS / WebGL）。
  * - カードや手札は今までどおり React（DOM）で描き、粒・光・衝撃波などの演出だけをここに描く
  * - タップは下の盤面へ素通りさせる（pointer-events: none）
  * - PixiJS は最初に使うときに読み込む（別ファイルに分けて、最初の表示を重くしない）
  * - 演出が動いている間だけ描き、止まっている間は描画を止める（電池を減らさない）
- * 動きの時間軸は GSAP で付ける（fx/*.ts）。座標は getBoundingClientRect の画面座標をそのまま使う。
+ * 動きの時間軸は GSAP で付ける（fx/*.ts）。座標は getBoundingClientRect の画面座標をそのまま使う
+ * （root を枠の左上の分だけずらしてあるので、演出の側は枠を気にしなくてよい）。
+ *
+ * Canvas は枠の大きさだけにする（10月23日の軽量化）。前はブラウザの画面いっぱい（PC の 1440×900・Retina で 2880×1626）に作り、
+ * 枠の外は CSS で切っていた。見えない部分にも GPU のメモリ（描画バッファ・アンチエイリアス）を取り、
+ * 演出のたびに全面を描いていた。スマホの縦（幅 480px まで）は、前と同じくブラウザの画面いっぱい（スマホの描画の土台は変えない）。
  */
 
 export type Pixi = typeof import("pixi.js");
@@ -31,6 +37,8 @@ export interface FxStage {
    * ふだんは盤面の上・拡大表示の下にいる
    */
   raise: (zIndex: number) => () => void;
+  /** Canvas を画面の枠に合わせ直す（画面の大きさが変わったとき） */
+  fitToFrame: () => void;
 }
 
 let boot: Promise<FxStage | null> | null = null;
@@ -82,11 +90,22 @@ export function fxStage(): Promise<FxStage | null> {
 function discard(stage: FxStage) {
   try {
     stage.app.ticker.stop();
+    window.removeEventListener("resize", stage.fitToFrame);
     stage.app.canvas.remove();
     stage.app.destroy(true, { children: true, texture: true });
   } catch {
     // 壊れた舞台は片付けに失敗してもよい
   }
+}
+
+/**
+ * 舞台の Canvas を置く四角（画面座標）。
+ * スマホの縦（幅 480px まで）はブラウザの画面いっぱい（前と同じ）。それより広い画面は、画面の枠の四角だけ
+ */
+function stageRect(): { left: number; top: number; width: number; height: number } {
+  if (window.innerWidth <= FRAME_MAX)
+    return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+  return frameRect();
 }
 
 /** 演出を出してよいか（テスト環境・「視差効果を減らす」設定では出さない） */
@@ -100,10 +119,12 @@ async function create(): Promise<FxStage | null> {
   if (!fxEnabled()) return null;
   const pixi = await import("pixi.js");
   const app = new pixi.Application();
+  const f = stageRect();
   await app.init({
     backgroundAlpha: 0,
     antialias: true,
-    resizeTo: window,
+    width: Math.max(1, f.width),
+    height: Math.max(1, f.height),
     // スマホの高解像度は 2 倍までに抑える（3 倍で描いても見た目はほぼ変わらず、重くなるだけ）
     resolution: Math.min(window.devicePixelRatio || 1, 2),
     autoDensity: true,
@@ -112,7 +133,7 @@ async function create(): Promise<FxStage | null> {
   });
   app.canvas.id = "fx-stage";
   app.canvas.setAttribute("aria-hidden", "true");
-  // body の直下に、画面いっぱいに置く（広い画面では、枠の外を CSS で切る。frame.ts）
+  // body の直下に、画面の枠の位置に置く（演出の層と同じく、枠の transform の影響を受けない場所）
   document.body.appendChild(app.canvas);
   // WebGL が止められたら、この舞台は捨てて、次の演出で作り直す
   app.canvas.addEventListener(
@@ -129,6 +150,24 @@ async function create(): Promise<FxStage | null> {
 
   const root = new pixi.Container();
   app.stage.addChild(root);
+
+  // 枠の位置・大きさに合わせる。root を枠の左上の分だけずらし、演出の側は画面座標のまま描けるようにする
+  const fitToFrame = () => {
+    const r = stageRect();
+    const w = Math.max(1, r.width);
+    const h = Math.max(1, r.height);
+    if (app.renderer.width !== w || app.renderer.height !== h) app.renderer.resize(w, h);
+    Object.assign(app.canvas.style, {
+      left: `${r.left}px`,
+      top: `${r.top}px`,
+      width: `${w}px`,
+      height: `${h}px`,
+    });
+    root.position.set(-r.left, -r.top);
+    if (!app.ticker.started) app.render();
+  };
+  fitToFrame();
+  window.addEventListener("resize", fitToFrame);
 
   // 何も動いていないときは描かない
   app.ticker.stop();
@@ -166,6 +205,7 @@ async function create(): Promise<FxStage | null> {
     app,
     root,
     raise,
+    fitToFrame,
     tex: { glow: glowTexture(pixi), spark: sparkTexture(pixi), puff: puffTexture(pixi) },
     hold,
   };
