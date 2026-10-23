@@ -66,7 +66,7 @@ export const matches = pgTable("matches", {
   code: text("code").notNull().unique(),
   /** waiting（相手待ち）/ playing / finished */
   status: text("status").notNull().default("waiting"),
-  /** friend（合言葉の部屋）/ random（ランダムマッチ。レーティングが動く） */
+  /** friend（合言葉の部屋）/ random（ランダムマッチ。レーティングが動く）/ cpu（人と組めなかったときの CPU と。レーティングは動かない） */
   kind: text("kind").notNull().default("friend"),
   p1Id: uuid("p1_id")
     .notNull()

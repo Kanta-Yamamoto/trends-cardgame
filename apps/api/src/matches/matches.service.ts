@@ -6,17 +6,19 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { CARDS, DECKS } from "@trends/cards";
+import { CARDS, CPU_DECKS, DECKS } from "@trends/cards";
 import {
   type Action,
   actionFrom,
   applyAction,
+  autoSacrifice,
   type Clock,
   clockAction,
   createGame,
   type GameEvent,
   type GameState,
   type PlayerId,
+  planTurnSearch,
   type RuleCard,
   RuleError,
   rateGame,
@@ -75,7 +77,7 @@ export function deckCards(ref: unknown): string[] {
 export interface MatchInfo {
   code: string;
   status: string;
-  /** friend（合言葉の部屋）/ random（ランダムマッチ） */
+  /** friend（合言葉の部屋）/ random（ランダムマッチ）/ cpu（ランダムマッチで待機している CPU と） */
   kind: string;
   /** deck は、構築済みデッキの ID か "custom:…"（自分で組んだデッキ） */
   players: Record<PlayerId, { id: string; name: string; deck: string } | null>;
@@ -85,6 +87,8 @@ export interface MatchInfo {
 export class MatchesService {
   /** 同じ部屋の操作を1つずつ順に処理するための列 */
   private queues = new Map<string, Promise<unknown>>();
+  /** 待機している CPU のユーザー ID（初めて使うときに users に作る） */
+  private cpuId: Promise<string> | null = null;
 
   constructor(@Inject(DB) private readonly db: Db) {}
 
@@ -95,16 +99,84 @@ export class MatchesService {
   }
 
   /** ランダムマッチで組まれた 2 人の対戦を始める（レーティングが動く） */
-  async createRandom(a: Pairing, b: Pairing) {
+  createRandom(a: Pairing, b: Pairing) {
+    return this.createMatch("random", a, b);
+  }
+
+  /** 2 人の席を乱数で決めて、始まった対戦を作る */
+  private createMatch(kind: "random" | "cpu", a: Pairing, b: Pairing) {
     const [p1, p2] = randomInt(2) === 0 ? [a, b] : [b, a];
     return this.insert({
-      kind: "random",
+      kind,
       status: "playing",
       p1Id: p1.userId,
       p1Deck: p1.deck,
       p2Id: p2.userId,
       p2Deck: p2.deck,
       ...newGame(p1.deck, p2.deck),
+    });
+  }
+
+  /** CPU のユーザー（ランダムマッチで人と組めなかった人の相手。レーティングは動かないのでランキングにも載らない） */
+  cpuUser(): Promise<string> {
+    this.cpuId ??= this.db
+      .insert(users)
+      .values({ sub: "cpu:standby", name: "CPU" })
+      .onConflictDoUpdate({ target: users.sub, set: { name: "CPU" } })
+      .returning()
+      .then(([u]) => {
+        if (!u) throw new Error("CPU のユーザーを作れませんでした");
+        return u.id;
+      })
+      .catch((e) => {
+        this.cpuId = null;
+        throw e;
+      });
+    return this.cpuId;
+  }
+
+  /** 待機している CPU と対戦を始める（CPU のデッキは CPU_DECKS から 1 つ。レーティングは動かない） */
+  async createCpu(human: Pairing) {
+    const deck = CPU_DECKS[randomInt(CPU_DECKS.length)];
+    if (!deck) throw new Error("CPU のデッキがありません");
+    return this.createMatch("cpu", human, { userId: await this.cpuUser(), deck });
+  }
+
+  /** その部屋の CPU の席（CPU との対戦でなければ null） */
+  async cpuSeat(row: MatchRow): Promise<PlayerId | null> {
+    if (row.kind !== "cpu") return null;
+    const id = await this.cpuUser();
+    return row.p1Id === id ? "p1" : row.p2Id === id ? "p2" : null;
+  }
+
+  /**
+   * CPU の番なら 1 手進める（先読みする CPU の planTurnSearch で、今の盤面からいちばん良い手順の最初の 1 手）。
+   * 差し出しを選ぶ番なら自動で選ぶ。CPU の番でなければ何もしない
+   */
+  cpuStep(code: string) {
+    return this.serial(code, async (): Promise<Step[]> => {
+      const row = await this.find(code);
+      const seat = await this.cpuSeat(row);
+      if (!seat || !row.state || row.status !== "playing") return [];
+      const now = Date.now();
+      const steps = await this.catchUp(row, now);
+      const cur = steps.at(-1)?.row ?? row;
+      const state = cur.state as GameState;
+      if (state.winner) return steps;
+      let action: Action | null = null;
+      if (state.pending?.waiting.includes(seat))
+        action = { type: "sacrifice", player: seat, slot: autoSacrifice(state, seat, CATALOG) };
+      else if (state.active === seat && !state.pending)
+        action = planTurnSearch(state, seat, CATALOG)[0] ?? { type: "endTurn", player: seat };
+      if (!action) return steps;
+      try {
+        steps.push(await this.advance(cur, action, now));
+      } catch (e) {
+        // 読み違えた手は、ターンを終えて次に進める
+        if (!(e instanceof RuleError) || action.type === "endTurn") throw e;
+        steps.push(await this.advance(cur, { type: "endTurn", player: seat }, now));
+      }
+      return steps;
     });
   }
 
