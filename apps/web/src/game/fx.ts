@@ -2,6 +2,7 @@ import type { AttackTarget, GameEvent, GameState, PlayerId, RuleCard, Unit } fro
 import { viewUnit, withRushBoost } from "@trends/game-core";
 import { gsap } from "gsap";
 import { frameRect } from "../frame";
+import { blackFlash } from "../fx/blackFlash";
 import { buzzPower } from "../fx/buzzPower";
 import { dissolve } from "../fx/dissolve";
 import { healMist } from "../fx/healMist";
@@ -720,4 +721,31 @@ export async function animateJudge(
   // 対象以外にいなくなるアイコンがいれば、まとめて送る
   retireUnits(shown, events, next, all);
   await wait(300);
+}
+
+/**
+ * 『フィクサー』の差し出し：差し出されたアイコンを、真上で溜めた黒い閃光で順に貫く（fx/blackFlash.ts）。
+ * 先に自分（me）のアイコン、次に相手。貫いたアイコンは、いつもの消え方でオワコンへ。演出を見せたら true
+ */
+export async function animateSacrifice(
+  shown: GameState,
+  events: GameEvent[],
+  me: PlayerId,
+): Promise<boolean> {
+  if (!canAnimate() || reduced()) return false;
+  const board = q(".board");
+  const targets = events
+    .flatMap((e) => {
+      if (e.type !== "sacrificed") return [];
+      const u = shown.players[e.player].field[e.slot];
+      const el = u ? q(`[data-uid="${u.uid}"]`) : null;
+      return u && el ? [{ el, uid: u.uid, owner: e.player }] : [];
+    })
+    .sort((a, b) => Number(b.owner === me) - Number(a.owner === me));
+  if (!board || targets.length === 0) return false;
+  await blackFlash(board, targets, (uid) => {
+    const t = targets.find((x) => x.uid === uid);
+    if (t) toTrash(t.el, t.owner);
+  });
+  return true;
 }
