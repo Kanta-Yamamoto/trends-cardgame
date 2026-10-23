@@ -173,7 +173,7 @@ let inbox: RemoteUpdate[] = [];
  */
 export function openingMs(): number {
   if (import.meta.env.MODE === "test" || typeof window === "undefined") return 0;
-  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 1200 : 2700;
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 1200 : 2200;
 }
 /** オープニングが終わる時刻（Date.now()）。それまでは CPU を動かさず、届いた相手の手も見せない */
 let openingEnds = 0;

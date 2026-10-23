@@ -56,6 +56,7 @@ import {
 import { FixerField, type FixerHandle } from "../game/FixerField";
 import {
   animateAttack,
+  animateBuzz,
   animateDraw,
   animateEffects,
   animateJudge,
@@ -289,7 +290,7 @@ function foeDeckSel(ref: string | null): DeckSel {
 
 /**
  * 対戦の始めのオープニング。画面を斜めに切り分け、上に相手・下に自分のデッキ（色・属性・エース）を
- * 点対称に並べてから「BATTLE START」。どちらの画面でも自分が下になるので、両者で同じ見え方になる
+ * 点対称に並べ、まん中に VS だけを出す。どちらの画面でも自分が下になるので、両者で同じ見え方になる
  */
 function Opening({
   me,
@@ -325,10 +326,6 @@ function Opening({
       <span className="op-vs" aria-hidden="true">
         VS
       </span>
-      <strong className="op-start" aria-hidden="true">
-        <span>BATTLE</span>
-        <span>START</span>
-      </strong>
     </div>
   );
 }
@@ -426,51 +423,6 @@ function OmenFlame() {
     </span>
   );
 }
-
-/** バズのカットイン：マスターと「バズ」の文字が、自分は左から・相手は右から差し込む */
-function BuzzCutIn({ cut, onDone }: { cut: BuzzCut; onDone: () => void }) {
-  const card = CATALOG[cut.cardId];
-  return (
-    <div
-      className={`buzz-cut ${cut.mine ? "mine" : "foe"}`}
-      aria-live="polite"
-      onAnimationEnd={(e) => e.target === e.currentTarget && onDone()}
-    >
-      <div className="bc-band">
-        <span className="bc-master">
-          <i aria-hidden="true">{cut.mine ? "YOU" : "VS"}</i>
-          <b>{cut.mine ? "あなた" : cut.foeName}のマスター</b>
-        </span>
-        <span className="bc-word" aria-hidden="true">
-          バズ
-        </span>
-        <span className="bc-target">
-          {card?.art && <span className="bc-art" style={{ backgroundImage: `url(${card.art})` }} />}
-          <span>
-            <b>{card?.name}</b>
-            <small>攻撃力+2・体力+2・凸</small>
-          </span>
-        </span>
-        <span className="bc-left" role="img" aria-label={`バズ 残り${cut.left}回`}>
-          {Array.from({ length: cut.total }, (_, k) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: 残りの玉は位置そのものが意味を持つ
-            <i key={k} className={k < cut.left ? "on" : ""} />
-          ))}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-type BuzzCut = {
-  id: number;
-  mine: boolean;
-  cardId: string;
-  foeName: string;
-  left: number;
-  total: number;
-  done: () => void;
-};
 
 /** エースで決まるデッキの色。『フィクサー』（c15）は白から黒へ滲む二色、『演出家』（c17）は真紅と黒を斜線で分ける */
 const ACE_GRADIENT: Record<string, string> = {
@@ -863,8 +815,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: game が変わったときだけ戻す
   useEffect(() => setLpHit(null), [game]);
   const { stage, probe } = useStage();
-  /** バズのカットイン */
-  const [buzzCut, setBuzzCut] = useState<BuzzCut | null>(null);
   /** ターン終了の確認を出しているか（押し間違いで終わらないように） */
   const [confirmEnd, setConfirmEnd] = useState(false);
   /** バズの確認を出している自分のアイコンの枠（アイコンを選んでからバズを押すと出る） */
@@ -1063,21 +1013,14 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           await animateEffects(shown, events, next, { from: null });
         }
       },
-      buzz: (g, a) =>
-        new Promise<void>((resolve) => {
-          const u = g.players[a.player].field[a.slot];
-          if (!u) return resolve();
-          const me = g.players[a.player];
-          setBuzzCut({
-            id: Date.now(),
-            mine: a.player === ME,
-            cardId: u.cardId,
-            foeName: useGame.getState().foeName,
-            left: Math.max(0, (me.buzzLeft ?? 0) - 1),
-            total: 2,
-            done: resolve,
-          });
-        }),
+      buzz: (g, a) => {
+        // 言葉は出さず、キャラの絵 → 赤い光の筋 → 「+2」。数字を変える瞬間に state を進める
+        const u = g.players[a.player].field[a.slot];
+        if (!u) return Promise.resolve();
+        const card = CATALOG[u.cardId];
+        const art = u.dark ? (card?.dark?.art ?? card?.art) : card?.art;
+        return animateBuzz(u.uid, { art, attack: DEFAULT_CONFIG.buzzAttack, hp: DEFAULT_CONFIG.buzzHp });
+      },
       darkFall: (cardId, player) =>
         new Promise<void>((resolve) => {
           setCut({ id: Date.now(), cardId, mine: player === ME, done: resolve });
@@ -1163,9 +1106,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         const uid = uidAt(e.player, e.slot);
         if (uid) setTimeout(() => popDamage(uid, e.amount), t);
       } else if (e.type === "buzz") {
-        // バズの対象を盤面で強調する（光の枠と「バズ」の札、+2/+2）
+        // バズで数字が変わった瞬間に、攻撃力・体力の丸を軽く弾ませる
         const uid = uidAt(e.player, e.slot);
-        if (uid) setTimeout(() => markBuzzed(uid, e.attack, e.hp), t);
+        if (uid) setTimeout(() => markBuzzed(uid), t);
       } else if (e.type === "darkFall" || e.type === "restored") {
         const uid = uidAt(e.player, e.slot);
         if (uid) setTimeout(() => flipCard(uid, e.type === "darkFall" ? "dark" : "restore"), t + 80);
@@ -1681,16 +1624,6 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           onNo={() => {
             setBuzzAsk(null);
             if (buzzing) select(null);
-          }}
-        />
-      )}
-      {buzzCut && (
-        <BuzzCutIn
-          key={buzzCut.id}
-          cut={buzzCut}
-          onDone={() => {
-            buzzCut.done();
-            setBuzzCut(null);
           }}
         />
       )}
