@@ -865,10 +865,11 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
   background: linear-gradient(90deg, transparent, #0e0d0cf0 18%, #0e0d0cf0 82%, transparent);
   animation: ff-caption 2.6s cubic-bezier(.2,.8,.2,1) 0.35s both;
 }
-.fixer-caption small { font-size: 11px; letter-spacing: 0.32em; opacity: 0.75; }
-.fixer-caption b { font: 900 clamp(30px, 8.6vmin, 60px)/1 "Zen Old Mincho", "Hiragino Mincho ProN", serif; letter-spacing: 0.06em; }
+.fixer-caption small { font-size: 11px; letter-spacing: 0.32em; opacity: 0.75; white-space: nowrap; }
+/* 舞台（幅 390px）ごと拡大縮小されるので、画面の大きさ（vmin）ではなく px で決める。名前は折り返さない */
+.fixer-caption b { font: 900 34px/1 "Zen Old Mincho", "Hiragino Mincho ProN", serif; letter-spacing: 0.06em; white-space: nowrap; }
 .fixer-caption .ff-en { font: 400 11px/1 "Lilita One", "Arial Black", sans-serif; letter-spacing: 0.6em; padding-left: 0.6em; }
-.fixer-caption .ff-rule { margin-top: 4px; padding-top: 7px; border-top: 1px solid currentColor; font-size: 12px; font-weight: 800; }
+.fixer-caption .ff-rule { margin-top: 4px; padding-top: 7px; border-top: 1px solid currentColor; font-size: 12px; font-weight: 800; white-space: nowrap; }
 @keyframes ff-caption {
   0% { opacity: 0; letter-spacing: 0.4em; filter: blur(6px); }
   18% { opacity: 1; filter: blur(0); }
