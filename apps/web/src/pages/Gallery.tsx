@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ATTRIBUTES, type Attribute, CARDS, type CardDef } from "@trends/cards";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchCards } from "../api/client";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
@@ -23,6 +23,71 @@ const RARITY_LABEL: Record<number, string> = {
  * カード一覧。★5 から順に、★ごとのまとまりで 3 列に並べる（縦にスクロールするだけで全部見られる）。
  * 押すと拡大し、拡大したまま「前へ・次へ」で、絞り込んだ並びの前後のカードを順に見られる
  */
+/** カードの絵（背景と切り抜き）を読み込み終えたか。初めて開いたときは絵が届くまで時間がかかる */
+function useArtReady(card: CardDef) {
+  const urls = [card.art, card.subject].filter((u): u is string => !!u);
+  const key = urls.join("|");
+  const [ready, setReady] = useState(urls.length === 0);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 絵の URL（key）が変わったときだけ読み直す
+  useEffect(() => {
+    if (!key) return setReady(true);
+    let alive = true;
+    let left = urls.length;
+    const done = () => {
+      left -= 1;
+      if (left <= 0 && alive) setReady(true);
+    };
+    for (const u of urls) {
+      const img = new Image();
+      img.onload = done;
+      img.onerror = done; // 読めなくても、いつまでも読み込み中にはしない
+      img.src = u;
+      if (img.complete) {
+        img.onload = null;
+        img.onerror = null;
+        done();
+      }
+    }
+    return () => {
+      alive = false;
+    };
+  }, [key]);
+  return ready;
+}
+
+/** 一覧の 1 枚。絵が届くまでは、カードの形の光る板（スケルトン）を出し、届いたらふわっと出す */
+function GalleryItem({ card, onOpen }: { card: CardDef; onOpen: () => void }) {
+  const ready = useArtReady(card);
+  return (
+    <div className={`g-item ${ready ? "ready" : "loading"}`} aria-busy={!ready || undefined}>
+      <HoloCard card={card} compact onClick={onOpen} />
+    </div>
+  );
+}
+
+/** カード一覧を読み込んでいる間の、カードの形の光る板（★ごとの見出しと 3 列の並びをまねる） */
+function GallerySkeleton() {
+  return (
+    <div aria-label="読み込み中" role="status">
+      {[3, 6].map((n, i) => (
+        <section key={n} className="g-row">
+          <h2 className="g-row-head">
+            <span className="g-skel-line" style={{ width: i === 0 ? 96 : 120 }} />
+          </h2>
+          <div className="gallery">
+            {Array.from({ length: n }, (_, k) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: 中身の無い板なので順番で十分
+              <div key={k} className="g-item loading">
+                <div className="g-skel-card" />
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 export function Gallery() {
   const { data, isLoading } = useQuery({ queryKey: ["cards"], queryFn: fetchCards });
   const [filter, setFilter] = useState<Filter>(null);
@@ -79,7 +144,7 @@ export function Gallery() {
         ))}
       </div>
       {isLoading ? (
-        <p className="muted">読み込み中…</p>
+        <GallerySkeleton />
       ) : (
         rows.map((row) => (
           <section key={row.rarity} className="g-row" aria-label={`★${row.rarity}`}>
@@ -90,9 +155,7 @@ export function Gallery() {
             </h2>
             <div className="gallery">
               {row.cards.map((c) => (
-                <div key={c.id} className="g-item">
-                  <HoloCard card={c} compact onClick={() => setZoomId(c.id)} />
-                </div>
+                <GalleryItem key={c.id} card={c} onOpen={() => setZoomId(c.id)} />
               ))}
             </div>
           </section>
