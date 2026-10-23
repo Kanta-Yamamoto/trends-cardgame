@@ -1,5 +1,4 @@
 import type { Application, Container, Texture } from "pixi.js";
-import { appFrame } from "../frame";
 
 /**
  * 演出用の舞台：画面いっぱいに重ねた透明な Canvas（PixiJS / WebGL）。
@@ -113,8 +112,8 @@ async function create(): Promise<FxStage | null> {
   });
   app.canvas.id = "fx-stage";
   app.canvas.setAttribute("aria-hidden", "true");
-  // 画面の枠の中に置く（枠の外にはみ出した演出は切られる。frame.ts）
-  appFrame().appendChild(app.canvas);
+  // body の直下に、画面いっぱいに置く（広い画面では、枠の外を CSS で切る。frame.ts）
+  document.body.appendChild(app.canvas);
   // WebGL が止められたら、この舞台は捨てて、次の演出で作り直す
   app.canvas.addEventListener(
     "webglcontextlost",
