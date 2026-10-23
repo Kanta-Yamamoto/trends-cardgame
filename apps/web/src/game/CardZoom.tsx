@@ -2,14 +2,14 @@ import type { CardDef } from "@trends/cards";
 import type { UnitView } from "@trends/game-core";
 import { useEffect, useState } from "react";
 import { AttrChips } from "../cards/AttrChips";
-import { EffectText } from "../cards/EffectText";
+import { EffectText, HelpTerm } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
 import { stars } from "../cards/meta";
-import { HELP } from "../help/help";
 
 /**
  * カードを画面いっぱいに大きく見せる（スマホで効果を読むため）。
  * 場のキャラクターなら、今の攻撃力・体力・状態も添える。カードを押すと文字を隠して絵だけを見られる。
+ * キーワード・状態・仕組みの説明は並べない。語を押すと解説の小窓が開く（docs/card-text.md「考え方」）。
  * darkPreview のときは、闇堕ちを持つカードの「闇堕ちすると」の姿と効果を添え、絵も切り替えられる
  * （対戦中もカード一覧でも）。initialDark で最初から闇堕ちの姿で開く。
  * nav を渡すと、下に「前へ・次へ」を出して、拡大したまま前後のカードへ移れる（← → キーでも）。
@@ -42,6 +42,8 @@ export function CardZoom({
   // 闇堕ちの姿を試しに見ているときは、場の今の値ではなく闇堕ちの姿の値を出す
   const live = previewing ? undefined : view;
   const keywords = live?.keywords ?? (dark ? (card.dark?.keywords ?? []) : card.keywords);
+  // 効果文に書いていないキーワード（バズなどで付いたもの）だけを札で出す
+  const gained = keywords.filter((k) => !effect.includes(`${k}。`));
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -89,37 +91,36 @@ export function CardZoom({
               <EffectText text={effect} />
             </p>
           )}
-          {keywords.length > 0 && (
-            <dl className="zs-keywords">
-              {keywords.map((k) => (
-                <div key={k}>
-                  <dt>{k}</dt>
-                  <dd>{HELP[k]?.text}</dd>
-                </div>
+          {gained.length > 0 && (
+            <p className="zs-tags">
+              {gained.map((k) => (
+                <HelpTerm key={k} term={k} className="zs-tag" />
               ))}
-            </dl>
+            </p>
           )}
           {live && (live.exposed || live.unit.exposeAtTurnEnd || live.asleep || live.unit.silenced) && (
-            <ul className="zs-states">
-              {live.exposed && <li>晒し状態：ガードを失い、それまでの強化が消えた</li>}
-              {live.unit.exposeAtTurnEnd && <li>炎上商法：このターンの終わりに晒し状態になる</li>}
-              {live.asleep && <li>眠っている：このターンは攻撃できない</li>}
-              {live.unit.silenced && <li>沈黙状態：キーワードと効果が消えている</li>}
-            </ul>
+            <p className="zs-tags zs-states">
+              {live.exposed && <HelpTerm term="晒し状態" className="zs-tag" />}
+              {live.unit.exposeAtTurnEnd && (
+                <span className="zs-tag">
+                  <EffectText text="このターンの終わりに晒し状態になる" />
+                </span>
+              )}
+              {live.asleep && <HelpTerm term="眠り状態" className="zs-tag" />}
+              {live.unit.silenced && <HelpTerm term="沈黙状態" className="zs-tag" />}
+            </p>
           )}
           {canPreview && card.dark && !previewing && (
             <div className="zs-darkbox">
               <p className="zs-darkbox-head">
-                闇堕ちすると <b>{card.dark.name}</b>
+                <HelpTerm term="闇堕ち" />
+                すると <b>{card.dark.name}</b>
                 <span className="zs-darkbox-stats">
                   <b className="t-atk">{card.dark.attack}</b>／<b className="t-hp">{card.dark.hp}</b>
                 </span>
               </p>
               <p className="zs-darkbox-effect">
                 <EffectText text={card.dark.effect} />
-              </p>
-              <p className="zs-note">
-                破壊されたら、次の自分のターンの始めに、コストなしでこの姿で自動で戻ってくる（出たターンは相手のキャラクターにだけ攻撃できる）。この姿が破壊されたら消える
               </p>
             </div>
           )}
