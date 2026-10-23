@@ -3,10 +3,13 @@ import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
+import { protect } from "./security";
 import { serveWeb } from "./web";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // 公開前の守り（招待リンク・回数の制限・安全のヘッダー）。ほかより先に差し込む
+  protect(app);
   app.enableCors({ origin: process.env.CORS_ORIGIN?.split(",") ?? true });
   // 本番ではビルドした Web も同じサーバーで配る
   serveWeb(app);

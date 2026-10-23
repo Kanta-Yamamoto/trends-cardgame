@@ -119,6 +119,9 @@ describe("ログインとオンライン対戦", () => {
     expect(await emit(b, "join", { code, deck: "solo_idol" })).toEqual({ ok: true });
     const [sa, sb] = [await ma, await mb];
     expect(sa.status).toBe("playing");
+    // 対戦中の数（デプロイを待つのに使う）
+    const live = await request(app.getHttpServer()).get("/health").expect(200);
+    expect(live.body.liveMatches).toBe(1);
     expect(sa.opponent?.name).toBe("ぶんた");
     expect(sb.opponent?.name).toBe("あいこ");
     // どちらも自分が p1 に見える。相手の手札は隠れている
@@ -154,5 +157,28 @@ describe("ログインとオンライン対戦", () => {
     const end = next<UpdateMsg>(b, "update");
     expect(await emit(a, "resign", { code })).toEqual({ ok: true });
     expect((await end).state.winner).toBe("p1");
+    const done = await request(app.getHttpServer()).get("/health").expect(200);
+    expect(done.body.liveMatches).toBe(0);
+  });
+
+  it("招待リンクの守りが効いているときは、招待済みのクッキーが無い接続を断る", async () => {
+    const token = await login("まねかれず");
+    process.env.INVITE_CODE = "test-invite";
+    try {
+      const err = await new Promise<Error>((resolve, reject) => {
+        const s = io(url, {
+          auth: { token },
+          transports: ["websocket"],
+          forceNew: true,
+          reconnection: false,
+        });
+        sockets.push(s);
+        s.on("connect", () => reject(new Error("つながってしまった")));
+        s.on("connect_error", resolve);
+      });
+      expect(err.message).toContain("招待");
+    } finally {
+      delete process.env.INVITE_CODE;
+    }
   });
 });

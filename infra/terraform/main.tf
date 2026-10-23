@@ -50,6 +50,25 @@ data "google_secret_manager_secret" "database_url" {
   secret_id = "database-url"
 }
 
+# 公開前の招待リンクの合言葉（https://…/?invite=合言葉）。最初の値は Terraform が決まった形のない文字列で作り、
+# あとはオーナーが Secret Manager で新しい版を足して変える（変え方は docs/deploy.md の「招待リンク」）
+resource "google_secret_manager_secret" "invite_code" {
+  secret_id = "invite-code"
+  replication {
+    auto {}
+  }
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_secret_manager_secret_version" "invite_code_first" {
+  secret      = google_secret_manager_secret.invite_code.id
+  secret_data = replace(uuid(), "-", "")
+  # 作ったあとは追わない（uuid() は毎回変わるため。値を変えるのはオーナーが足す新しい版）
+  lifecycle {
+    ignore_changes = [secret_data]
+  }
+}
+
 # API が動くときのサービスアカウント
 resource "google_service_account" "api" {
   account_id   = "trends-api"
@@ -58,6 +77,12 @@ resource "google_service_account" "api" {
 
 resource "google_secret_manager_secret_iam_member" "api_reads_db_url" {
   secret_id = data.google_secret_manager_secret.database_url.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.api.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "api_reads_invite_code" {
+  secret_id = google_secret_manager_secret.invite_code.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.api.email}"
 }
@@ -101,6 +126,16 @@ resource "google_cloud_run_v2_service" "api" {
           }
         }
       }
+      # 招待リンクの守り（これが入っていると、招待済みのクッキーが無い人には「準備中」だけを出す）
+      env {
+        name = "INVITE_CODE"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.invite_code.secret_id
+            version = "latest"
+          }
+        }
+      }
       resources {
         limits = { cpu = "1", memory = "512Mi" }
       }
@@ -110,10 +145,14 @@ resource "google_cloud_run_v2_service" "api" {
   lifecycle {
     ignore_changes = [template[0].containers[0].image, client, client_version]
   }
-  depends_on = [google_project_service.apis]
+  depends_on = [
+    google_project_service.apis,
+    google_secret_manager_secret_version.invite_code_first,
+    google_secret_manager_secret_iam_member.api_reads_invite_code,
+  ]
 }
 
-# 誰でも API を呼べるようにする（公開ゲーム用）
+# 誰でも API を呼べるようにする（公開ゲーム用。公開前は、アプリの中の招待リンクの守りで絞る）
 resource "google_cloud_run_v2_service_iam_member" "public" {
   name     = google_cloud_run_v2_service.api.name
   location = var.region
@@ -134,7 +173,8 @@ resource "google_iam_workload_identity_pool_provider" "github" {
     "google.subject"       = "assertion.sub"
     "attribute.repository" = "assertion.repository"
   }
-  attribute_condition = "assertion.repository == \"${var.github_repository}\""
+  # このリポジトリの main からの実行だけ（ほかのブランチや PR からはデプロイ用の権限を借りられない）
+  attribute_condition = "assertion.repository == \"${var.github_repository}\" && assertion.ref == \"refs/heads/main\""
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"
   }
@@ -152,7 +192,8 @@ resource "google_service_account_iam_member" "github_impersonates_deployer" {
 }
 
 resource "google_project_iam_member" "deployer_roles" {
-  for_each = toset(["roles/run.admin", "roles/artifactregistry.writer"])
+  # run.developer：デプロイはできるが、公開範囲（IAM）は変えられない。IAM は Terraform（main だけ）が持つ
+  for_each = toset(["roles/run.developer", "roles/artifactregistry.writer"])
   project  = var.project_id
   role     = each.value
   member   = "serviceAccount:${google_service_account.deployer.email}"

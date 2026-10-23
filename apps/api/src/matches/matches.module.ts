@@ -8,5 +8,6 @@ import { MatchesService } from "./matches.service";
   imports: [AuthModule],
   controllers: [MatchesController],
   providers: [MatchesService, MatchesGateway],
+  exports: [MatchesGateway],
 })
 export class MatchesModule {}
