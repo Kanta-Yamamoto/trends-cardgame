@@ -639,10 +639,10 @@
       {
         "on": "play",
         "do": "prophecy",
-        "amount": 7
+        "amount": 10
       }
     ],
-    "effect": "場に出たとき、お告げ：次の相手のターンの終わりに、相手のマスターに7ダメージ。",
+    "effect": "場に出たとき、お告げ：次の相手のターンの終わりに、相手のマスターに10ダメージ。",
     "flavor": "",
     "number": "001/040",
     "art": "/assets/cards/c1-art.jpg",
