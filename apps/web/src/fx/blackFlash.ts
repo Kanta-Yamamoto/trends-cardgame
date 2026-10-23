@@ -5,8 +5,9 @@ import { gsap } from "gsap";
  * 「『フィクサー』黒い閃光の案」（Artifact）の決定案と同じ動きと秒数。
  *
  * 差し出すアイコン 1 体ごとに：
- * 1. 溜め 0.3 秒：アイコンの真上に、白い光をまとった黒い玉が生まれる。白い粒が吸い込まれ、下へ細い狙いの光がちらつく
- * 2. 引き 0.35 秒：玉が 28px 上へ引かれ、震えがだんだん強くなる
+ * 1. 垂れる 0.3 秒：アイコンの真上（段と段のあいだ）から、墨の黒いモヤがカードの上辺まで垂れ下がる。
+ *    うしろから白い光がにじんで、黒い場の上でも形が見える（盤面が黒く滲む登場と同じ墨）
+ * 2. 引き絞る 0.35 秒：モヤがだんだん速く上へ引き戻されて真上で固まり、そこに白い光が溜まる
  * 3. 突き刺す：0.6 秒から 0.25 秒かけて、太い黒い閃光が真下へ伸びる。短い先がゆっくり出て、5 乗の加速で一気に伸びる
  *    （0.05 秒で伸ばすと、等倍では最初から下まであるように見え、0.18 秒では速すぎた。0.3 秒と比べて 0.25 秒に決めた）。伸びる先は白く光る。先はカードの下辺でちょうど止まる
  * 4. 白黒が入れ替わって 0.3 秒止まる：場は白い紙、閃光とアイコンは黒い影（盤面の .fx-fixer-flip。GSAP の時計も止める）。
@@ -20,11 +21,11 @@ import { gsap } from "gsap";
  * ほかの演出の transform とぶつからないようにする（『調停者』の突き fx/thrust.ts と同じ決まり）。
  */
 
-const CHARGE_AT = 80; // 決まってから玉が生まれるまで
-const CHARGE = 300; // 玉が育つ
-const PULL_AT = 380; // 引き始め
-const PULL = 350; // 引きの溜め
-const FIRE = 50; // 閃光が出てから溜めの玉が消えるまで
+const CHARGE_AT = 80; // 決まってからモヤが垂れ始めるまで
+const CHARGE = 300; // モヤがカードの上辺まで垂れる
+const PULL_AT = 380; // 引き戻し始め
+const PULL = 350; // 引き絞る
+const FIRE = 50; // 引き絞り終えてからモヤが消えるまで
 const GROW_AT = 600; // 閃光が伸び始める
 const GROW = 250; // 閃光が伸びる長さ（短い先がゆっくり出て、5 乗で一気に伸びる）
 const HIT = GROW_AT + GROW;
@@ -34,8 +35,8 @@ const AFTER = 300; // 貫いてから消え始めるまで
 const HOLD = 150; // 閃光がそのまま残る
 const FADE = 250; // 閃光が細くなって消える
 const SPARK = 520; // 白い筋と粒
-const RISE = 0.4; // 玉の高さ（カードの上辺から、カードの高さに対して）
-const PULL_PX = 28;
+const RISE = 0.7; // モヤが固まる高さ＝閃光の出どころ（カードの上辺から、カードの高さに対して）
+const MISTS = 26; // モヤの玉の数
 const WIDTH = 0.18; // 閃光の太さ（カードの幅に対して）
 
 const clamp = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -162,53 +163,71 @@ function spark(ctx: Ctx, x: number, y: number, R: number) {
   ctx.restore();
 }
 
-/** 溜め：黒い玉に白い光のふち。まわりから白い粒が吸い込まれ、下へ細い狙いの光がちらつく */
-function charge(
+/** 墨のモヤの玉 1 つ：黒い煙に、うしろから白い光がにじむ（黒い場の上でも形が見える） */
+function mist(ctx: Ctx, x: number, y: number, rad: number, show: number) {
+  if (show <= 0 || rad <= 0) return;
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  const g = ctx.createRadialGradient(x, y, rad * 0.3, x, y, rad * 1.7);
+  g.addColorStop(0, `rgba(255,255,255,${0.12 * show})`);
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(x - rad * 1.7, y - rad * 1.7, rad * 3.4, rad * 3.4);
+  ctx.restore();
+  const k = ctx.createRadialGradient(x, y, 0, x, y, rad);
+  k.addColorStop(0, `rgba(0,0,0,${0.9 * show})`);
+  k.addColorStop(0.6, `rgba(0,0,0,${0.6 * show})`);
+  k.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = k;
+  ctx.beginPath();
+  ctx.arc(x, y, rad, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/**
+ * モヤを引き絞る：top（閃光の出どころ）からカードの上辺（down）までモヤが垂れ下がり、上へ引き戻されて top で固まる。
+ * 引き戻す間、top に横に細長い白い光が溜まる
+ */
+function drawBack(
   ctx: Ctx,
   x: number,
-  y: number,
-  k: number,
+  top: number,
+  down: number,
+  a: number,
   w: number,
   rnd: number[],
   now: number,
-  down: number,
 ) {
+  if (a < CHARGE_AT || a >= PULL_AT + PULL + FIRE) return;
+  const r = (i: number) => rnd[i] ?? 0;
+  const reachK = eo(seg(a, CHARGE_AT, CHARGE), 3);
+  const back = ei(seg(a, PULL_AT, PULL));
+  const f = 1 - seg(a, PULL_AT + PULL, FIRE);
+  const bottom = lerp(top, down, reachK);
+  for (let i = 0; i < MISTS; i++) {
+    const v = r(i);
+    const y0 = lerp(top, down, v);
+    const reach = clamp((bottom - y0) / (w * 2.2));
+    if (reach <= 0) continue;
+    const drift = w * 0.3 * (1 - back);
+    const mx = x + (r(i + MISTS) - 0.5) * w * (1.2 + 1.2 * v) + Math.sin(now / 380 + i * 1.7) * drift;
+    const my = y0 + Math.cos(now / 450 + i) * drift;
+    const rad = w * (0.55 + 0.8 * r(i + MISTS * 2)) * (0.5 + 0.5 * reach) * (1 - 0.35 * back);
+    mist(ctx, lerp(mx, x, back), lerp(my, top + w * 0.6, back), rad, reach * f);
+  }
+  const k = seg(a, PULL_AT, PULL) * f;
   if (k <= 0) return;
-  const R = w * (0.35 + 0.75 * eo(k));
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
-  ctx.shadowColor = "#fff";
-  ctx.shadowBlur = 16 * k;
-  ctx.fillStyle = `rgba(255,255,255,${0.9 * k})`;
-  ctx.beginPath();
-  ctx.arc(x, y, R * 1.35, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  const g = ctx.createLinearGradient(0, y, 0, down);
-  g.addColorStop(0, `rgba(255,255,255,${0.35 * k * (0.6 + 0.4 * Math.sin(now / 23))})`);
+  const R = w * (0.6 + 1.8 * k);
+  const g = ctx.createRadialGradient(x, top, 0, x, top, R);
+  g.addColorStop(0, `rgba(255,255,255,${0.95 * k})`);
   g.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.strokeStyle = g;
-  ctx.lineWidth = 0.8;
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(x, down);
-  ctx.stroke();
-  ctx.fillStyle = "#fff";
-  for (let i = 0; i < 16; i++) {
-    const ph = (k * 1.7 + (rnd[i] ?? 0)) % 1;
-    const th = (rnd[i + 16] ?? 0) * Math.PI * 2;
-    const d = w * 4.2 * (1 - eo(ph));
-    ctx.globalAlpha = Math.sin(ph * Math.PI) * 0.9;
-    ctx.beginPath();
-    ctx.arc(x + Math.cos(th) * d, y + Math.sin(th) * d * 0.8, 1.1, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-  ctx.save();
-  ctx.fillStyle = "#000";
-  ctx.beginPath();
-  ctx.arc(x, y, R, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.fillStyle = g;
+  ctx.translate(x, top);
+  ctx.scale(1.8, 0.7);
+  ctx.translate(-x, -top);
+  ctx.fillRect(x - R, top - R, R * 2, R * 2);
   ctx.restore();
 }
 
@@ -370,23 +389,11 @@ export function blackFlash(
         const p = at(el);
         const rnd = rnds[i] ?? [];
         const w = p.w * WIDTH;
-        const fireAt = PULL_AT + PULL;
-        // 玉の位置（上へ引かれる）と震え
-        const oy = Math.max(10, p.top - p.h * RISE) - PULL_PX * eo(seg(a, PULL_AT, PULL));
-        const tremble = a >= PULL_AT && a < fireAt ? 1.8 * seg(a, PULL_AT, PULL) * Math.sin(now / 11) : 0;
+        // 閃光の出どころ（モヤが固まる所）
+        const oy = Math.max(10, p.top - p.h * RISE);
         const after = a - HIT;
-        if (a >= CHARGE_AT && a < HIT)
-          charge(
-            ctx,
-            p.x + tremble,
-            oy,
-            a < fireAt ? seg(a, CHARGE_AT, CHARGE) : 1 - seg(a, fireAt, FIRE) * 0.6,
-            w,
-            rnd,
-            now,
-            p.bottom,
-          );
-        // 閃光：玉から真下へ。等倍でも伸びていくのが見えるように、短い先がゆっくり出てから猛烈に加速する。先はカードの下辺で止める
+        if (a < HIT) drawBack(ctx, p.x, oy, p.top, a, w, rnd, now);
+        // 閃光：モヤが固まった所から真下へ。等倍でも伸びていくのが見えるように、短い先がゆっくり出てから猛烈に加速する。先はカードの下辺で止める
         if (a >= HIT - GROW) {
           const g = seg(a, HIT - GROW, GROW);
           const tip = lerp(oy, p.bottom, ei(g, 5));
