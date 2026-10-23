@@ -239,7 +239,7 @@
         "hp": 0
       }
     ],
-    "effect": "自分の空いている枠すべてに草を出し、自分のキャラクターすべてに攻撃力+1。",
+    "effect": "自分の空いている枠すべてに草を出す。自分のキャラクターすべてに攻撃力+1。",
     "art": "/assets/cards/k4-art.jpg",
     "original": "assets/original/k4.webp"
   },
@@ -269,7 +269,7 @@
         "do": "breakthrough"
       }
     ],
-    "effect": "自分の場のほかのミーム種族1体につき攻撃力+1。場に出たとき、このターン自分のキャラクターすべてがすぐ攻撃でき、ガードを無視できる。",
+    "effect": "自分の場のほかのミーム種族1体につき攻撃力+1。場に出たとき、自分のキャラクターすべてに速攻を付ける。このターン、自分のキャラクターすべてはガードを無視して攻撃できる。",
     "art": "/assets/cards/k5-art.jpg",
     "subject": "/assets/cards/k5-subject.webp",
     "original": "assets/original/k5.webp",
@@ -561,7 +561,7 @@
         "amount": 5
       }
     ],
-    "effect": "相手のキャラクターすべてを眠り状態にし、自分のキャラクターすべてと自分のライフを5回復する。",
+    "effect": "相手のキャラクターすべてを眠り状態にする。自分のキャラクターすべてと自分のライフを5回復する。",
     "art": "/assets/cards/i5-art.jpg",
     "original": "assets/original/i5.webp"
   },
@@ -626,7 +626,7 @@
         "ifHandAtMost": 3
       }
     ],
-    "effect": "場に出たとき、手札が3枚以下ならカードを1枚引く。",
+    "effect": "場に出たとき、手札が3枚以下なら、カードを1枚引く。",
     "art": "/assets/cards/g1-art.jpg",
     "original": "assets/original/g1.webp"
   },
@@ -664,7 +664,7 @@
         "attack": 2
       }
     ],
-    "effect": "相手のキャラクター1体を沈黙状態にし、攻撃力-2。",
+    "effect": "相手のキャラクター1体を沈黙状態にする。そのキャラクターの攻撃力-2。",
     "target": "enemyIcon",
     "art": "/assets/cards/g3-art.jpg",
     "original": "assets/original/g3.webp"
@@ -941,7 +941,7 @@
         }
       }
     ],
-    "effect": "速攻。場に出たとき、自分の場に炎属性が3体以上いれば攻撃力+1。",
+    "effect": "速攻。場に出たとき、自分の場に炎属性が3体以上いれば、攻撃力+1。",
     "art": "/assets/cards/f7-art.jpg",
     "original": "assets/original/f7.webp",
     "retired": true
@@ -962,7 +962,7 @@
         "attack": 3
       }
     ],
-    "effect": "自分のキャラクター1体に、このターン攻撃力+3。自分のターンの終わりに、そのキャラクターを晒し状態にする。",
+    "effect": "自分のキャラクター1体に、このターン攻撃力+3。このターンの終わりに、そのキャラクターを晒し状態にする。",
     "art": "/assets/cards/f8-art.jpg",
     "original": "assets/original/f8.webp"
   },
@@ -1028,7 +1028,7 @@
         "per": 2
       }
     ],
-    "effect": "場に出たとき、相手のキャラクターすべてに、相手のキャラクターの数×2ダメージ。",
+    "effect": "場に出たとき、相手のキャラクターすべてに、相手のキャラクター1体につき2ダメージ。",
     "art": "/assets/cards/c4-art.jpg",
     "original": "assets/original/c4.webp"
   },
@@ -1369,7 +1369,7 @@
         "totsu": true
       }
     ],
-    "effect": "場に出たとき、自分の空いている枠すべてに草を出し、自分のキャラクターすべてに突進を付ける。",
+    "effect": "場に出たとき、自分の空いている枠すべてに草を出す。自分のキャラクターすべてに突進を付ける。",
     "art": "/assets/cards/k10-art.jpg",
     "original": "assets/original/k10.webp",
     "retired": true
@@ -1642,7 +1642,7 @@
         "amount": 1
       }
     ],
-    "effect": "速攻。場に出たとき、このターン攻撃力+3し、このターンの終わりにこのキャラクターを晒し状態にする。自分のターンの終わりに、相手のプレイヤーに1ダメージ。",
+    "effect": "速攻。場に出たとき、このターン攻撃力+3。このターンの終わりに、このキャラクターを晒し状態にする。自分のターンの終わりに、相手のプレイヤーに1ダメージ。",
     "art": "/assets/cards/c9-art.jpg",
     "original": "assets/original/c9.webp",
     "dark": {
@@ -2052,7 +2052,7 @@
         "hp": 1
       }
     ],
-    "effect": "自分が回復の効果を使うたび、このキャラクターに攻撃力+1・体力+1。",
+    "effect": "自分が回復の効果を使うたび、攻撃力+1・体力+1。",
     "art": "/assets/cards/i12-art.jpg",
     "original": "assets/original/i12.webp"
   },
@@ -2749,7 +2749,7 @@
         "attack": 0
       }
     ],
-    "effect": "注目。場に出たとき、自分のほかのキャラクターすべてに攻撃力+2・体力+1し、自分のキャラクターすべてがすぐ攻撃できるようになる。",
+    "effect": "注目。場に出たとき、自分のほかのキャラクターすべてに攻撃力+2・体力+1。自分のキャラクターすべてに速攻を付ける。",
     "dark": {
       "name": "病み期のミレイ",
       "attack": 5,
@@ -2894,7 +2894,7 @@
           "card": "t-kusa"
         }
       ],
-      "effect": "突進。闇堕ちしたとき、攻撃力がいちばん高い相手のキャラクター1体を草にし、自分の空いている枠すべてに草を出す。",
+      "effect": "突進。闇堕ちしたとき、攻撃力がいちばん高い相手のキャラクター1体を草にする。自分の空いている枠すべてに草を出す。",
       "art": "/assets/cards/c12-dark-art.jpg",
       "original": "assets/original/c12-dark.webp",
       "subject": "/assets/cards/c12-dark-subject.webp"
@@ -3213,7 +3213,7 @@
         "card": "t-kusa"
       }
     ],
-    "effect": "場に出たとき、草を2体出す。自分の草が、このゲームで破壊された数だけ攻撃力+1。",
+    "effect": "自分の草が、このゲームで破壊された数だけ攻撃力+1。場に出たとき、草を2体出す。",
     "art": "/assets/cards/k19-art.jpg",
     "original": "assets/original/kusa-queen.webp"
   }
