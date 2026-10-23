@@ -793,6 +793,49 @@ function AttackArrow({
   );
 }
 
+/**
+ * 対象を取らない投稿：カードからバトル場（.post-zone）の真ん中へ、上へ流れる点線の矢印。「場へ投げれば使える」をさりげなく示す。
+ * from を渡さなければ、手札で選んでいるカードの上から伸ばす。場と手札の位置は毎フレーム測る（カードの持ち上がり・画面の大きさの変化に付いていく）
+ */
+function PostThrowArrow({ from }: { from: { x: number; y: number } | null }) {
+  const path = useRef<SVGPathElement>(null);
+  const head = useRef<SVGPolylineElement>(null);
+  const fromRef = useRef(from);
+  fromRef.current = from;
+  useLayoutEffect(() => {
+    let raf = 0;
+    const draw = () => {
+      raf = requestAnimationFrame(draw);
+      const p = path.current;
+      const h = head.current;
+      if (!p || !h) return;
+      const zone = document.querySelector(".post-zone")?.getBoundingClientRect();
+      const card = document.querySelector(".pstage .hand .mini.selected")?.getBoundingClientRect();
+      const s = fromRef.current ?? (card ? { x: card.left + card.width / 2, y: card.top - 6 } : null);
+      const to = zone ? { x: zone.left + zone.width / 2, y: zone.top + zone.height / 2 } : null;
+      // 場の真ん中より下から伸ばすときだけ（指が場に近づいたら消す）
+      if (!s || !to || s.y - to.y < 40) {
+        p.setAttribute("d", "");
+        h.setAttribute("points", "");
+        return;
+      }
+      const cy = (s.y + to.y) / 2;
+      p.setAttribute("d", `M${s.x},${s.y} Q${s.x},${cy} ${to.x},${to.y}`);
+      const a = Math.atan2(to.y - cy, to.x - s.x);
+      const wing = (k: number) => `${to.x - 11 * Math.cos(a - k * 0.6)},${to.y - 11 * Math.sin(a - k * 0.6)}`;
+      h.setAttribute("points", `${wing(1)} ${to.x},${to.y} ${wing(-1)}`);
+    };
+    draw();
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return (
+    <svg className="throw-arrow" aria-hidden="true">
+      <path ref={path} />
+      <polyline ref={head} />
+    </svg>
+  );
+}
+
 /** 対戦の画面。CPU 戦とオンライン対戦で共通（onQuit を渡すと「戻る」でそれを呼ぶ） */
 /** 見せ終わったオープニングの番号（store の opening） */
 let openingSeen = 0;
@@ -1196,6 +1239,17 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       : [];
   const canCastOn = (side: "enemy" | "ally", slot: number) =>
     castOptions.some((t) => t.side === side && t.slot === slot);
+  // 対象を取らない投稿を選んだ・引っぱっているあいだは、バトル場ぜんたいが置き場だと控えめに示す（字は出さない）
+  const throwHint =
+    myTurn &&
+    selectedCard?.type === "post" &&
+    !selectedCard.target &&
+    effectiveCost(game, ME, selectedCard.id, CATALOG) <= me.mana &&
+    !zoom &&
+    !logOpen &&
+    !confirmEnd;
+  // 手札より上で離せば使う（onDrop と同じ判定）
+  const throwOver = throwHint && drag?.src.kind === "hand" && drag.over !== null && drag.over !== "hand";
   const targets = attacking ? attackTargets(game, ME, selection.slot, CATALOG) : [];
   const buzzing = selection?.kind === "buzz";
   const buzzWhy = buzzBlock(game, ME);
@@ -1514,6 +1568,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           </div>
           {foeBar}
           <div className="pfield">
+            {throwHint && <div className={`post-zone ${throwOver ? "over" : ""}`} aria-hidden="true" />}
             {foeRow}
             {/* 場と場の間には何も置かない（案内の文は出さない。反則のときだけ、短く知らせて消える） */}
             {error && (
@@ -1571,6 +1626,13 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         </div>
       )}
 
+      {throwHint && !drag && (
+        // 対象を取らない投稿を押して選んだだけのときも、同じ矢印で「場へ」を示す
+        <div className="vp-layer">
+          <PostThrowArrow from={null} />
+        </div>
+      )}
+
       {drag && (
         // 指の位置に付いてくる表示は画面座標で置くので、画面座標の層（.vp-layer。frame.ts）に入れる
         <div className="vp-layer">
@@ -1584,23 +1646,29 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               handCard &&
               !(handCard.type === "post" && handCard.target)
             ) {
+              // 付いてくるカードの上端（translate(-50%, -62%) scale(s) で置いたカードの、縮める前の高さ h から）
+              const h = (drag.width * 88) / 63;
+              const top = drag.y - 0.12 * h - (stage.scale * 1.08 * h) / 2;
               return (
-                <div
-                  className="drag-ghost"
-                  aria-hidden="true"
-                  style={{
-                    left: drag.x,
-                    top: drag.y,
-                    width: drag.width,
-                    transform: `translate(-50%, -62%) scale(${stage.scale * 1.08})`,
-                  }}
-                >
-                  <MiniCard
-                    card={handCard}
-                    cost={effectiveCost(game, ME, handId, CATALOG)}
-                    className="in-hand"
-                  />
-                </div>
+                <>
+                  {throwHint && !throwOver && <PostThrowArrow from={{ x: drag.x, y: top - 6 }} />}
+                  <div
+                    className="drag-ghost"
+                    aria-hidden="true"
+                    style={{
+                      left: drag.x,
+                      top: drag.y,
+                      width: drag.width,
+                      transform: `translate(-50%, -62%) scale(${stage.scale * 1.08})`,
+                    }}
+                  >
+                    <MiniCard
+                      card={handCard}
+                      cost={effectiveCost(game, ME, handId, CATALOG)}
+                      className="in-hand"
+                    />
+                  </div>
+                </>
               );
             }
             const from = { x: drag.rect.left + drag.rect.width / 2, y: drag.rect.top + drag.rect.height / 2 };
