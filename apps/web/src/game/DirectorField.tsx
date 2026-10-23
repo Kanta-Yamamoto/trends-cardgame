@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { MID, type Pt, scenes, shapeAt, slash, toClip } from "../cards/directorMotion";
-import { CROWN_MS, crownCard, crownSeed, paintCrown } from "../fx/bloodCrown";
+import { CROWN_MS, crownCard, paintCrown } from "../fx/bloodCrown";
 
 /**
  * 『演出家』が場に出たとき、バトル場全体の背景を真紅と黒の二色が支配する演出（見た目だけ。ルールは game-core）。
@@ -76,7 +76,6 @@ export function DirectorField({ aces = [], onDone }: { aces?: StagedAce[]; onDon
     }
     const list = staged.current.map((s) => ({
       ...s,
-      rnd: crownSeed(s.uid),
       rect: null as DOMRect | null,
       over: false,
     }));
@@ -117,13 +116,12 @@ export function DirectorField({ aces = [], onDone }: { aces?: StagedAce[]; onDon
         // 位置は、まだ動かしていない（隠しただけの）ときに 1 度だけ測る
         s.rect ??= card.getBoundingClientRect();
         const r = s.rect;
-        paintCrown(
-          u,
-          o,
-          a,
-          { x: (r.left - b.left) * k, y: (r.top - b.top) * k, w: r.width * k, h: r.height * k },
-          s.rnd,
-        );
+        paintCrown(u, o, a, {
+          x: (r.left - b.left) * k,
+          y: (r.top - b.top) * k,
+          w: r.width * k,
+          h: r.height * k,
+        });
         const st = crownCard(a);
         if (st.hidden) card.style.opacity = "0";
         else if (st.sunk > 0.001) {
