@@ -19,7 +19,7 @@ function Ui({ card, en, inverse }: { card: CardDef; en: string; inverse?: boolea
         </div>
         <p className="duo-effect">{inverse ? card.effect : <EffectText text={card.effect} />}</p>
         <div className="duo-foot">
-          <span className="duo-kind">ICON · 共通</span>
+          <span className="duo-kind">CHARACTER · NEUTRAL</span>
           <span className="duo-stats">
             <i className="a" title="攻撃力">
               {card.attack ?? 0}

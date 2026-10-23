@@ -9,7 +9,7 @@ import { CardZoom } from "../game/CardZoom";
 /** お蔵入りのカード（同梱データの印で見る。API の DB には印の列が無い） */
 const RETIRED = new Set(CARDS.filter((c) => c.retired).map((c) => c.id));
 
-type Filter = Attribute | "共通" | null;
+type Filter = Attribute | "ニュートラル" | null;
 
 const RARITY_LABEL: Record<number, string> = {
   5: "切り札",
@@ -101,12 +101,13 @@ export function Gallery() {
   const [filter, setFilter] = useState<Filter>(null);
   const [zoomId, setZoomId] = useState<string | null>(null);
 
-  // 同じ★の中は、属性ごと（共通は最後）に、コストの低い順
+  // 同じ★の中は、属性ごと（ニュートラルは最後）に、コストの低い順
   const group = (c: CardDef) => (c.attributes[0] ? ATTRIBUTES.indexOf(c.attributes[0]) : ATTRIBUTES.length);
   const match = (c: CardDef) =>
-    !filter || (filter === "共通" ? c.attributes.length === 0 : c.attributes.includes(filter));
-  const cards = (data?.filter((c) => !c.token && !RETIRED.has(c.id) && match(c)) ?? [])
-    .slice()
+    !filter || (filter === "ニュートラル" ? c.attributes.length === 0 : c.attributes.includes(filter));
+  // やり直しても失敗したときは data が空になるので、同梱データを出し続ける
+  const cards = (data ?? BUNDLED_CARDS)
+    .filter((c) => !c.token && !RETIRED.has(c.id) && match(c))
     .sort(
       (a, b) => b.rarity - a.rarity || group(a) - group(b) || a.cost - b.cost || a.id.localeCompare(b.id),
     );
@@ -132,13 +133,13 @@ export function Gallery() {
         )}
       </header>
       <div className="g-filters" role="toolbar" aria-label="属性で絞り込む">
-        {([null, ...ATTRIBUTES, "共通"] as Filter[]).map((f) => (
+        {([null, ...ATTRIBUTES, "ニュートラル"] as Filter[]).map((f) => (
           <button
             key={f ?? "all"}
             type="button"
             className={`g-chip ${filter === f ? "on" : ""}`}
             style={
-              f && f !== "共通"
+              f && f !== "ニュートラル"
                 ? {
                     borderColor: ATTR_META[f].color,
                     color: filter === f ? "#fff" : ATTR_META[f].color,

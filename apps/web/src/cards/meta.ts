@@ -2,14 +2,14 @@ import type { Attribute, CardDef, Kaiwai } from "@trends/cards";
 
 /** 属性ごとの色とマーク（色だけで区別しないよう、必ずマークも出す） */
 export const ATTR_META: Record<Attribute, { slug: string; color: string; deep: string; mark: string }> = {
-  炎上: { slug: "flame", color: "#ff5a1f", deep: "#7a1d05", mark: "炎" },
-  メロい: { slug: "mero", color: "#ff4fa3", deep: "#7a0f45", mark: "♥" },
-  癒し: { slug: "iyashi", color: "#3ec8f0", deep: "#0b4f66", mark: "◎" },
-  草: { slug: "kusa", color: "#6bcb3b", deep: "#25520c", mark: "w" },
+  炎: { slug: "flame", color: "#ff5a1f", deep: "#7a1d05", mark: "炎" },
+  推し: { slug: "mero", color: "#ff4fa3", deep: "#7a0f45", mark: "♥" },
+  水: { slug: "iyashi", color: "#3ec8f0", deep: "#0b4f66", mark: "◎" },
+  自然: { slug: "kusa", color: "#6bcb3b", deep: "#25520c", mark: "w" },
   神: { slug: "kami", color: "#f2c14e", deep: "#6b4c06", mark: "✦" },
 };
 
-/** 界隈のマーク（対戦中の小さいカードで、ひと目で分かるように名前の頭の字） */
+/** 種族のマーク（対戦中の小さいカードで、ひと目で分かるように名前の頭の字） */
 export const KAIWAI_META: Record<Kaiwai, { mark: string }> = {
   配信者: { mark: "配" },
   アイドル: { mark: "ア" },
@@ -32,4 +32,4 @@ export function attrBackground(card: Pick<CardDef, "attributes">): string {
 }
 
 export const typeLabel = (card: CardDef) =>
-  card.token ? "トークン" : card.type === "post" ? "投稿" : "アイコン";
+  card.token ? "トークン" : card.type === "post" ? "呪文" : "キャラクター";

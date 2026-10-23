@@ -26,7 +26,7 @@ export const SLOTS = 5;
 /** 真ん中の枠（注目が多くたまる） */
 export const CENTER_SLOT = 2;
 
-/** 場に出ているアイコン */
+/** 場に出ているキャラクター */
 export interface Unit {
   /** 場に出るたびに振られる一意な番号 */
   uid: number;
@@ -43,9 +43,9 @@ export interface Unit {
   /** 闇堕ちの姿になっているか／一度闇堕ちしたか */
   dark: boolean;
   darkUsed: boolean;
-  /** 晒し者（ガードを失い、晒された時点で強化が消えた。ずっと続く。TL浄化で消える） */
+  /** 晒し状態（ガードを失い、晒された時点で強化が消えた。ずっと続く。TL浄化で消える） */
   exposed: boolean;
-  /** 自分のターンの終わりに晒し者になる（炎上商法） */
+  /** 自分のターンの終わりに晒し状態になる（炎上商法） */
   exposeAtTurnEnd?: boolean;
   /** このターン数までは眠っていて攻撃できない */
   boundUntil: number;
@@ -53,44 +53,44 @@ export interface Unit {
   silenced: boolean;
   /** ガードだけ消されている */
   noGuard: boolean;
-  /** トークン（オワコンに行くと消える） */
+  /** トークン（破壊されると消える） */
   token: boolean;
-  /** このターンは相手のアイコンにだけ攻撃できる（凸・闇堕ちした直後） */
+  /** このターンは相手のキャラクターにだけ攻撃できる（突進・闇堕ちした直後） */
   rushOnly?: boolean;
   /** このターンだけの攻撃力の強化（ターンの終わりに消える） */
   tempAtk?: number;
 }
 
-/** マスター（操作するプレイヤー）の状態 */
+/** プレイヤー（操作するプレイヤー）の状態 */
 export interface PlayerState {
   /** ライフ。0 になったら負け */
   lp: number;
-  /** 今使える話題力 */
+  /** 今使えるコスト */
   mana: number;
-  /** 話題力の上限（ターンごとに1増える） */
+  /** コストの上限（ターンごとに1増える） */
   maxMana: number;
   deck: string[];
   hand: string[];
   field: (Unit | null)[];
-  /** オワコン（倒されたアイコンや使った投稿が行く場所） */
+  /** 墓地（破壊されたキャラクターや使った呪文が行く場所） */
   trash: string[];
   /** このターンに出した・使ったカードの枚数 */
   playedThisTurn: number;
-  /** このゲームで使った投稿の枚数 */
+  /** このゲームで使った呪文の枚数 */
   postsUsed: number;
   /** このゲームで回復の効果を使った回数（癒しの「回復するたびに」で使う） */
   heals: number;
-  /** このゲームで、自分のトークンがオワコンに行った数（カード ID ごと。クサハミで使う） */
+  /** このゲームで、自分のトークンが破壊された数（カード ID ごと。クサハミで使う） */
   tokensLost?: Record<string, number>;
   /** このターンのあとに続けて行うターンの数 */
   extraTurns: number;
-  /** このターン数の間、自分のアイコンはガードを無視して攻撃できる */
+  /** このターン数の間、自分のキャラクターはガードを無視して攻撃できる */
   breakthroughTurn: number;
-  /** 闇堕ちを使い終えたカード（闇堕ちの姿のまま手札に戻されたもの）。次にそのカードが倒されても闇堕ちしない */
+  /** 闇堕ちを使い終えたカード（闇堕ちの姿のまま手札に戻されたもの）。次にそのカードが破壊されても闇堕ちしない */
   darkSpent: string[];
   /**
-   * 闇の気配：倒された闇堕ちを持つカード。次の自分のターンの始めに、闇堕ちの姿で場に出る
-   * （slot は倒された枠。埋まっていればほかの空き枠へ。空きがなければ待つ）
+   * 闇の気配：破壊された闇堕ちを持つカード。次の自分のターンの始めに、闇堕ちの姿で場に出る
+   * （slot は破壊された枠。埋まっていればほかの空き枠へ。空きがなければ待つ）
    */
   darkOmens?: { cardId: string; slot: number }[];
   /** バズの残り回数 */
@@ -101,10 +101,10 @@ export interface PlayerState {
   turnsTaken?: number;
   /** バズを使えるのは、自分のこのターン目から（後攻は先攻より1ターン早い） */
   buzzFrom?: number;
-  /** この通算ターンまで、マスターはダメージを受けない（0 なら守られていない） */
+  /** この通算ターンまで、プレイヤーはダメージを受けない（0 なら守られていない） */
   shieldUntil?: number;
   /**
-   * このマスターに付与された「次の自分のターンの終わりに amount ダメージを受ける」効果（ミコト）。
+   * このプレイヤーに付与された「次の自分のターンの終わりに amount ダメージを受ける」効果（ミコト）。
    * turn は付与された通算ターン（そのターンのうちには働かない）。働いたら消える
    */
   delayedDamage?: { cardId: string; amount: number; turn: number }[];
@@ -119,14 +119,14 @@ export interface GameState {
   seed: number;
   nextUid: number;
   /**
-   * 差し出し待ち（フィクサー）：waiting のプレイヤーが、自分のアイコンを1体選ぶまで、ほかの操作はできない。
-   * 選ばれたアイコンは picks に入り、全員が選び終えたら一度に倒される
+   * 差し出し待ち（フィクサー）：waiting のプレイヤーが、自分のキャラクターを1体選ぶまで、ほかの操作はできない。
+   * 選ばれたキャラクターは picks に入り、全員が選び終えたら一度に破壊される
    */
   pending?: {
     kind: "sacrifice";
     /** 効果を出したプレイヤー（この人の手番の途中） */
     source: PlayerId;
-    /** 効果を出したアイコン（自分の差し出しには選べない） */
+    /** 効果を出したキャラクター（自分の差し出しには選べない） */
     sourceUid: number;
     waiting: PlayerId[];
     picks: Partial<Record<PlayerId, number>>;
@@ -134,17 +134,17 @@ export interface GameState {
 }
 
 export type AttackTarget = { kind: "leader" } | { kind: "unit"; slot: number };
-/** 投稿の対象（相手のアイコンか、自分のアイコン） */
+/** 呪文の対象（相手のキャラクターか、自分のキャラクター） */
 export type CastTarget = { side: "enemy" | "ally"; slot: number };
 
 export type Action =
   | { type: "play"; player: PlayerId; handIndex: number; slot: number }
   | { type: "cast"; player: PlayerId; handIndex: number; target?: CastTarget }
   | { type: "attack"; player: PlayerId; from: number; target: AttackTarget }
-  /** バズ：自分のアイコン1体に攻撃力+2・体力+2と凸（1試合に2回・1ターンに1回） */
+  /** バズ：自分のキャラクター1体に攻撃力+2・体力+2と突進（1試合に2回・1ターンに1回） */
   | { type: "buzz"; player: PlayerId; slot: number }
   | { type: "endTurn"; player: PlayerId }
-  /** 差し出し（フィクサー）：自分のアイコンを1体選ぶ。相手の手番の途中でも、選ぶ番の人が行う */
+  /** 差し出し（フィクサー）：自分のキャラクターを1体選ぶ。相手の手番の途中でも、選ぶ番の人が行う */
   | { type: "sacrifice"; player: PlayerId; slot: number }
   /** 降参（相手の勝ちになる。自分のターンでなくてもできる） */
   | { type: "resign"; player: PlayerId }
@@ -156,9 +156,9 @@ export type GameEvent =
   | { type: "played"; player: PlayerId; cardId: string; slot: number; cost: number }
   | { type: "cast"; player: PlayerId; cardId: string; cost: number; target?: CastTarget }
   | { type: "summoned"; player: PlayerId; cardId: string; slot: number }
-  /** 蘇生：オワコンから場に戻った */
+  /** 蘇生：墓地から場に戻った */
   | { type: "revived"; player: PlayerId; cardId: string; slot: number }
-  /** 変身：そのアイコンが別のカード（トークン）になった */
+  /** 変身：そのキャラクターが別のカード（トークン）になった */
   | { type: "transformed"; player: PlayerId; slot: number; cardId: string; into: string }
   | {
       type: "battle";
@@ -171,12 +171,12 @@ export type GameEvent =
       destroyed: string[];
     }
   | { type: "damaged"; player: PlayerId; slot: number; cardId: string; amount: number }
-  /** 倒された。vanished は闇堕ちの姿が倒されて消えた（オワコンに行かない） */
+  /** 破壊された。vanished は闇堕ちの姿が破壊されて消えた（墓地に行かない） */
   | { type: "destroyed"; player: PlayerId; cardId: string; vanished?: boolean }
-  /** 闇の気配：闇堕ちを持つカードが倒され、次の自分のターンの始めに闇堕ちして戻ってくる */
+  /** 闇の気配：闇堕ちを持つカードが破壊され、次の自分のターンの始めに闇堕ちして戻ってくる */
   | { type: "darkOmen"; player: PlayerId; slot: number; cardId: string }
   | { type: "darkFall"; player: PlayerId; slot: number; cardId: string }
-  /** バズ：そのアイコンに攻撃力+2・体力+2と凸 */
+  /** バズ：そのキャラクターに攻撃力+2・体力+2と突進 */
   | { type: "buzz"; player: PlayerId; slot: number; cardId: string; attack: number; hp: number; left: number }
   | { type: "restored"; player: PlayerId; slot: number; cardId: string }
   | {
@@ -184,16 +184,16 @@ export type GameEvent =
       player: PlayerId;
       slot: number;
       cardId: string;
-      status: "晒し" | "眠り" | "訂正" | "ガード消滅";
+      status: "晒し" | "眠り" | "沈黙" | "ガード消滅";
     }
   | { type: "stolen"; player: PlayerId; from: number; slot: number; cardId: string }
-  /** 場のアイコンが持ち主の手札に戻った（player は持ち主） */
+  /** 場のキャラクターが持ち主の手札に戻った（player は持ち主） */
   | { type: "bounced"; player: PlayerId; slot: number; cardId: string }
-  /** マスターが守られた（shielded：守りを得た／blocked：ダメージを防いだ） */
+  /** プレイヤーが守られた（shielded：守りを得た／blocked：ダメージを防いだ） */
   | { type: "shield"; player: PlayerId; kind: "shielded" | "blocked"; amount: number }
-  /** マスターに「次の自分のターンの終わりに amount ダメージを受ける」効果が付いた（player は付けられた人） */
+  /** プレイヤーに「次の自分のターンの終わりに amount ダメージを受ける」効果が付いた（player は付けられた人） */
   | { type: "delayedDamageSet"; player: PlayerId; cardId: string; amount: number }
-  /** 付いていた効果が働いた（player は付けられた人。このあとマスターへのダメージが続く） */
+  /** 付いていた効果が働いた（player は付けられた人。このあとプレイヤーへのダメージが続く） */
   | { type: "delayedDamageFired"; player: PlayerId; cardId: string; amount: number }
   | { type: "extraTurn"; player: PlayerId }
   | { type: "buffed"; player: PlayerId; slot: number; cardId: string; attack: number; hp: number }
@@ -202,13 +202,13 @@ export type GameEvent =
   | { type: "leaderHealed"; player: PlayerId; amount: number; lp: number }
   | { type: "drew"; player: PlayerId; cardId: string }
   | { type: "deckOut"; player: PlayerId }
-  /** 差し出し待ちが始まった（waiting の人が自分のアイコンを1体選ぶ） */
+  /** 差し出し待ちが始まった（waiting の人が自分のキャラクターを1体選ぶ） */
   | { type: "sacrificeAsk"; player: PlayerId; waiting: PlayerId[] }
-  /** 差し出し：選ばれたアイコンが倒された（player はそのアイコンの持ち主） */
+  /** 差し出し：選ばれたキャラクターが破壊された（player はそのキャラクターの持ち主） */
   | { type: "sacrificed"; player: PlayerId; slot: number; cardId: string }
   /** 特殊勝利（陰謀論者：山札が0枚で自分のターンを始めた） */
   | { type: "specialWin"; player: PlayerId; cardId: string }
-  /** 手札が上限で、引いたカードがオワコンへ行った */
+  /** 手札が上限で、引いたカードが墓地へ行った */
   | { type: "burned"; player: PlayerId; cardId: string }
   | { type: "resigned"; player: PlayerId }
   | { type: "timedOut"; player: PlayerId }
@@ -221,7 +221,7 @@ export interface Config {
   startHand: number;
   /** 後攻が追加で持つ枚数 */
   secondExtra: number;
-  /** 後攻の最初のターンだけ追加される話題力 */
+  /** 後攻の最初のターンだけ追加されるコスト */
   secondBonusMana: number;
   /** バズの回数（1試合に） */
   buzzCount: number;
@@ -231,7 +231,7 @@ export interface Config {
   buzzAttack: number;
   buzzHp: number;
 }
-/** 手札の上限。上限のときに引いたカードはオワコンへ */
+/** 手札の上限。上限のときに引いたカードは墓地へ */
 export const MAX_HAND = 9;
 export const DEFAULT_CONFIG: Config = {
   maxMana: 10,
@@ -245,7 +245,7 @@ export const DEFAULT_CONFIG: Config = {
   buzzHp: 2,
 };
 
-/** 画面や CPU が使う、アイコンの今の姿 */
+/** 画面や CPU が使う、キャラクターの今の姿 */
 export interface UnitView {
   unit: Unit;
   name?: string;

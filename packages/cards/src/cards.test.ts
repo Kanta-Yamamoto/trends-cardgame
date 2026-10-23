@@ -7,7 +7,7 @@ describe("cards.json", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("アイコンは攻撃力0以上・体力1以上、投稿は攻撃力と体力を持たない", () => {
+  it("キャラクターは攻撃力0以上・体力1以上、呪文は攻撃力と体力を持たない", () => {
     for (const c of CARDS) {
       expect(Number.isInteger(c.cost) && c.cost >= 0).toBe(true);
       if (c.type === "icon") {
@@ -20,7 +20,7 @@ describe("cards.json", () => {
     }
   });
 
-  it("属性は0〜1個（0個は共通カード）、界隈は0〜2個で、決められたものだけ", () => {
+  it("属性は0〜1個（0個は共通カード）、種族は0〜2個で、決められたものだけ", () => {
     for (const c of CARDS) {
       expect({ id: c.id, n: c.attributes.length }).toEqual({ id: c.id, n: Math.min(1, c.attributes.length) });
       expect(c.kaiwai.length).toBeLessThanOrEqual(2);
@@ -30,14 +30,14 @@ describe("cards.json", () => {
     }
   });
 
-  it("2つの界隈に入るのは★3以上の少数だけ", () => {
+  it("2つの種族に入るのは★3以上の少数だけ", () => {
     const dual = CARDS.filter((c) => c.kaiwai.length === 2);
     for (const c of dual)
       expect({ id: c.id, rarity: c.rarity }).toEqual({ id: c.id, rarity: Math.max(3, c.rarity) });
     expect(dual.length).toBeLessThanOrEqual(10);
   });
 
-  it("どの界隈も、2つ以上の属性にまたがっている（界隈が属性の言い換えにならないように）", () => {
+  it("どの種族も、2つ以上の属性にまたがっている（種族が属性の言い換えにならないように）", () => {
     for (const k of KAIWAI) {
       const attrs = new Set(
         CARDS.filter((c) => c.type === "icon" && c.kaiwai.includes(k)).flatMap((c) => c.attributes),

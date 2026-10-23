@@ -1,11 +1,11 @@
 import type { CardDef } from "@trends/cards";
 import { ATTR_META } from "./meta";
 
-/** 属性（色とマーク）と界隈のラベル */
+/** 属性（色とマーク）と種族のラベル */
 export function AttrChips({ card, kaiwai = true }: { card: CardDef; kaiwai?: boolean }) {
   return (
     <span className="chips">
-      {card.attributes.length === 0 && <span className="chip common">共通</span>}
+      {card.attributes.length === 0 && <span className="chip common">ニュートラル</span>}
       {card.attributes.map((a) => (
         <span
           key={a}
@@ -19,7 +19,7 @@ export function AttrChips({ card, kaiwai = true }: { card: CardDef; kaiwai?: boo
       {kaiwai &&
         card.kaiwai.map((k) => (
           <span key={k} className="chip kaiwai">
-            {k}界隈
+            {k}種族
           </span>
         ))}
     </span>

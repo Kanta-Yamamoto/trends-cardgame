@@ -7,7 +7,7 @@ import { summonWave } from "./summonWave";
 type Rect = { left: number; top: number; width: number; height: number };
 
 /**
- * アイコンがバトル場に出たときの演出。時間を 4 つに分けて、重みと緩急をつける。
+ * キャラクターがバトル場に出たときの演出。時間を 4 つに分けて、重みと緩急をつける。
  * 1. 溜め（0.16 秒）：枠の上にふわっと浮かび、少しだけふくらむ（ゆっくり）
  * 2. 解放（0.1 秒）：枠へ一気に叩きつける（速く）
  * 3. 衝撃：着地の瞬間につぶれて止まり、白く光る。足もとに属性の色の輪と火花（PixiJS）。★4 以上は光の柱と盤面の揺れ、★5 は波動も
@@ -170,7 +170,7 @@ async function landingImpact(rect: Rect, attributes: readonly Attribute[], rarit
 }
 
 /**
- * 場に出た uid のアイコンが着地するまで待つ（fieldEntry の衝撃の瞬間）。
+ * 場に出た uid のキャラクターが着地するまで待つ（fieldEntry の衝撃の瞬間）。
  * 演出を切っている・要素が見つからないときのために、limitMs で打ち切る
  */
 export function landed(uid: number, limitMs = 700): Promise<void> {

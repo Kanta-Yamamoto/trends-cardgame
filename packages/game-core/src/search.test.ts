@@ -67,7 +67,7 @@ describe("先読みする CPU（planTurnSearch）", () => {
     s.players[foe].lp = 1;
     s.players[foe].field = s.players[foe].field.map(() => null);
     s.players[me].field = s.players[me].field.map((u) => (u ? { ...u, canAttack: true, attacksLeft: 1 } : u));
-    if (!s.players[me].field.some((u) => u)) return; // 場にアイコンがいない引きなら確かめられない
+    if (!s.players[me].field.some((u) => u)) return; // 場にキャラクターがいない引きなら確かめられない
     s = runTurn(s, true);
     expect(s.winner).toBe(me);
   });

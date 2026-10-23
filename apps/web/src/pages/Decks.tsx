@@ -28,8 +28,8 @@ import {
 import { CATALOG as CARD_BY_ID, DECK_INFO } from "../game/store";
 import { useSession } from "../online/session";
 
-type Filter = Attribute | "共通" | "全部";
-const FILTERS: Filter[] = ["全部", ...ATTRIBUTES, "共通"];
+type Filter = Attribute | "ニュートラル" | "全部";
+const FILTERS: Filter[] = ["全部", ...ATTRIBUTES, "ニュートラル"];
 const COST_LABELS = ["1", "2", "3", "4", "5", "6", "7+"];
 /** デッキに入れられるカード（トークンは除く）。属性→コスト→★の順 */
 const POOL: CardDef[] = CARDS.filter((c) => !c.token && !c.retired).sort(
@@ -97,7 +97,7 @@ export function Decks() {
         <h1>デッキ構築</h1>
         <p className="muted">
           {DECK_SIZE} 枚ちょうど・同じカードは {MAX_COPIES} 枚まで・属性は {MAX_DECK_ATTRIBUTES}{" "}
-          つ（共通カードはいくつでも）・闇堕ちを持つカードは1種類まで。 保存したデッキは「CPU
+          つ（ニュートラルのカードはいくつでも）・闇堕ちを持つカードは1種類まで。 保存したデッキは「CPU
           と対戦」「オンライン対戦」で選べます。
         </p>
         <p className="db-sync muted">
@@ -154,7 +154,7 @@ export function Decks() {
                 <div className="db-saved-info">
                   <strong>{d.name}</strong>
                   <span className="muted">
-                    {attrs.length > 0 ? attrs.join("×") : "共通"}・{d.cards.length}枚
+                    {attrs.length > 0 ? attrs.join("×") : "ニュートラル"}・{d.cards.length}枚
                     {errors.length > 0 && <b className="db-bad">（決まりを守れていません）</b>}
                   </span>
                 </div>
@@ -236,7 +236,7 @@ function DeckEditor({
   const shown = POOL.filter((c) => {
     if (onlyIn && !counts.has(c.id)) return false;
     if (filter === "全部") return true;
-    if (filter === "共通") return c.attributes.length === 0;
+    if (filter === "ニュートラル") return c.attributes.length === 0;
     return c.attributes[0] === filter;
   });
   const maxCurve = Math.max(1, ...curve);
@@ -309,7 +309,7 @@ function DeckEditor({
             type="button"
             className={`chip ${filter === f ? "on" : ""}`}
             style={
-              f !== "全部" && f !== "共通"
+              f !== "全部" && f !== "ニュートラル"
                 ? {
                     background: filter === f ? ATTR_META[f].color : undefined,
                     color: filter === f ? ATTR_META[f].deep : undefined,

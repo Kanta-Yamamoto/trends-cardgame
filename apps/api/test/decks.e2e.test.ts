@@ -43,14 +43,14 @@ describe("アカウントに保存するデッキ", () => {
     await request(app.getHttpServer())
       .put("/me/decks")
       .set("Authorization", `Bearer ${a}`)
-      .send({ decks: [deck("d1", "炎上"), deck("d2")] })
+      .send({ decks: [deck("d1", "炎"), deck("d2")] })
       .expect(200);
 
     // 別の端末から同じアカウントで入った想定（開発用ログインは同じ名前なら同じユーザー）
     const again = await login(name);
     const res = await request(app.getHttpServer()).get("/me/decks").set("Authorization", `Bearer ${again}`);
     expect(res.body.decks.map((d: { id: string }) => d.id)).toEqual(["d1", "d2"]);
-    expect(res.body.decks[0].name).toBe("炎上");
+    expect(res.body.decks[0].name).toBe("炎");
 
     const other = await login(`${name}の友だち`);
     const theirs = await request(app.getHttpServer())

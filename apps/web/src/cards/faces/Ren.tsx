@@ -35,7 +35,7 @@ export function RenFace({ card }: { card: CardDef }) {
         </div>
         <div className="box">
           <span className="tribe">
-            {[...card.attributes, ...card.kaiwai.map((k) => `${k}界隈`)].join("・")}
+            {[...card.attributes, ...card.kaiwai.map((k) => `${k}種族`)].join("・")}
           </span>
           <p className="effect">
             <EffectText text={card.effect} />

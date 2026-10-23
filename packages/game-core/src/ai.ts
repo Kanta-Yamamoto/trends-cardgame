@@ -22,7 +22,7 @@ function views(state: GameState, owner: PlayerId, catalog: Catalog) {
   );
 }
 
-/** 投稿をいつ・誰に使うか。使う価値が無ければ null */
+/** 呪文をいつ・誰に使うか。使う価値が無ければ null */
 function judgePost(
   state: GameState,
   player: PlayerId,
@@ -74,7 +74,7 @@ function judgePost(
       effects.includes("transform")) &&
     card.target === "enemyIcon"
   ) {
-    // 確定除去・手札に戻す：使える相手の中でいちばん価値の高いアイコンに。安いアイコンには使わない
+    // 確定除去・手札に戻す：使える相手の中でいちばん価値の高いキャラクターに。安いキャラクターには使わない
     const legal = new Set(castTargets(state, player, cardId, catalog).map((t) => t.slot));
     const t = foes.filter((x) => legal.has(x.slot)).sort((a, b) => worth(b.v) - worth(a.v))[0];
     if (!t) return null;
@@ -98,7 +98,7 @@ function judgePost(
       .map((x) => ({ x, b: Math.max(0, x.v.unit.atkBuff) + Math.max(0, x.v.unit.hpBuff) }))
       .sort((a, b) => b.b - a.b)[0];
     if (buffed && buffed.b >= 2) return { score: 8 + buffed.b * 3, target: enemy(buffed.x.slot) };
-    // 晒すとガードを失う：ガードが1体だけなら、晒せばマスターまで通る
+    // 晒すとガードを失う：ガードが1体だけなら、晒せばプレイヤーまで通る
     const guards = foes.filter((x) => x.v.guard);
     const only = guards.length === 1 ? guards[0] : undefined;
     if (only && ready.length > 0) return { score: 14, target: enemy(only.slot) };
@@ -106,7 +106,7 @@ function judgePost(
     return t ? { score: guards.length > 0 ? 6 : 2, target: enemy(t.slot) } : null;
   }
   if (card.effects.some((e) => e.do === "bind" && e.to === "allEnemies")) {
-    // 相手のアイコンすべてを眠らせる（優しい世界）：止められる攻撃力の合計で見る
+    // 相手のキャラクターすべてを眠り状態にする（優しい世界）：止められる攻撃力の合計で見る
     const stopped = foes.filter((x) => !x.v.asleep).reduce((s, x) => s + x.v.attack, 0);
     return stopped >= 5 ? { score: stopped * 2 } : null;
   }
@@ -123,7 +123,7 @@ function judgePost(
     return t ? { score: t.v.attack * 3, target: enemy(t.slot) } : null;
   }
   if ((effects.includes("buff") || effects.includes("hype")) && card.target === "allyIcon") {
-    // このターンだけの強化（炎上商法）は、今攻撃できるアイコンにしか意味がない
+    // このターンだけの強化（炎上商法）は、今攻撃できるキャラクターにしか意味がない
     const temporary = card.effects.some((e) => e.do === "hype");
     if (temporary && ready.length === 0) return null;
     const legal = new Set(castTargets(state, player, cardId, catalog).map((t) => t.slot));
@@ -144,7 +144,7 @@ function judgePost(
     const myBuff = onlyFoes
       ? 0
       : mine.reduce((s, x) => s + Math.max(0, x.v.unit.atkBuff) + x.v.unit.hpBuff, 0);
-    // 相手を眠らせていたら、起こしてしまう分を引く
+    // 相手を眠り状態にしていたら、起こしてしまう分を引く
     const foeAsleep = foes.filter((x) => x.v.asleep).reduce((s, x) => s + x.v.attack, 0);
     const score = foeDark * 15 + foeBuff * 2 - myBuff * 2 - foeAsleep * 2;
     return score >= 8 ? { score } : null;
@@ -163,7 +163,7 @@ function judgePost(
     ? { score: 3, target: fallbackTarget() }
     : null;
 
-  /** 対象が要るのに決めていない投稿は、いちばん強い相手（味方向けなら、いちばん強い味方）に使う */
+  /** 対象が要るのに決めていない呪文は、いちばん強い相手（味方向けなら、いちばん強い味方）に使う */
   function fallbackTarget(): CastTarget | undefined {
     if (!card?.target) return undefined;
     if (card.target === "enemyIcon") {
@@ -178,8 +178,8 @@ function judgePost(
 
 /**
  * CPU の1ターン分の操作を決める（貪欲法）。
- * 1. 出せるアイコン・使う価値のある投稿を、価値の高い順に使う
- * 2. 攻撃できるアイコンで、とどめ → 一方的に倒せる相手 → 得な相打ち → マスター の順に攻撃する
+ * 1. 出せるキャラクター・使う価値のある呪文を、価値の高い順に使う
+ * 2. 攻撃できるキャラクターで、とどめ → 一方的に破壊できる相手 → 得な相打ち → プレイヤー の順に攻撃する
  * 3. ターン終了
  * 返す操作は順に applyAction すればそのまま合法になる。
  */
@@ -197,8 +197,8 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
 const WAIT_FOE = Symbol("wait-foe");
 
 /**
- * 差し出し（フィクサー）で差し出すアイコン。闇堕ちを持つカード（倒されたら次のターンに闇堕ちして戻る）があればそれを、
- * なければいちばん価値の低いアイコン（トークンを先に）
+ * 差し出し（フィクサー）で差し出すキャラクター。闇堕ちを持つカード（破壊されたら次のターンに闇堕ちして戻る）があればそれを、
+ * なければいちばん価値の低いキャラクター（トークンを先に）
  */
 export function autoSacrifice(state: GameState, player: PlayerId, catalog: Catalog): number {
   const slots = sacrificeCandidates(state, player);
@@ -213,7 +213,7 @@ export function autoSacrifice(state: GameState, player: PlayerId, catalog: Catal
   const value = (slot: number) => {
     const u = state.players[player].field[slot];
     if (!u) return 0;
-    // 「倒されたとき」の効果を持つものは、差し出すと得をするので先に選ぶ
+    // 「破壊されたとき」の効果を持つものは、差し出すと得をするので先に選ぶ
     const onDeath = (u.dark ? catalog[u.cardId]?.dark?.effects : catalog[u.cardId]?.effects)?.some(
       (e) => e.on === "death",
     );
@@ -241,14 +241,14 @@ function pickBuzz(state: GameState, player: PlayerId, catalog: Catalog): number 
     const hp = m.v.hp + 2;
     for (const e of foe) {
       if (guarded && !e.v.guard) continue;
-      if (m.v.attack >= e.v.hp) continue; // バズなしでも倒せる
+      if (m.v.attack >= e.v.hp) continue; // バズなしでも破壊できる
       if (atk < e.v.hp || e.v.attack >= hp) continue;
       const score = worth(e.v);
       if (!best || score > best.score) best = { slot: m.slot, score };
     }
   }
   if (best && best.score >= 4) return best.slot;
-  // とどめ：ガードがいなくて、マスターに届く攻撃力の合計 +2 で倒せる
+  // とどめ：ガードがいなくて、プレイヤーに届く攻撃力の合計 +2 で破壊できる
   if (!guarded) {
     const can = mine.filter((m) => canUnitAttack(state, m.v.unit) && !m.v.unit.rushOnly);
     const total = can.reduce((n, m) => n + m.v.attack * m.v.unit.attacksLeft, 0);
@@ -286,11 +286,11 @@ function planTurnInner(start: GameState, player: PlayerId, catalog: Catalog, act
       if (cost > me.mana) return;
       if (card.type === "icon") {
         if (slot < 0) return;
-        // 注目のアイコンは真ん中の枠を優先する
+        // 注目のキャラクターは真ん中の枠を優先する
         const wantsCenter = card.keywords.includes("注目") || card.effects.some((e) => e.do === "focusAura");
         const center = wantsCenter && !me.field[2] ? 2 : slot;
         let score = card.cost * 10 + (card.attack ?? 0) + (card.hp ?? 0);
-        // 場のアイコンが多いほど安く・強くなるカードは、ほかを出してから
+        // 場のキャラクターが多いほど安く・強くなるカードは、ほかを出してから
         if (card.effects.some((e) => e.do === "cheaperPerAlly")) {
           const others = me.field.filter((u) => u).length;
           if (others < 3 && me.hand.length > 1) score -= 100;
@@ -311,7 +311,7 @@ function planTurnInner(start: GameState, player: PlayerId, catalog: Catalog, act
     step((best as { action: Action }).action);
   }
 
-  // 1.5 バズ：+2/+2 で倒せなかった相手のアイコンを倒せる（自分は残る）なら、いちばん価値の高い相手に。とどめになるときも使う
+  // 1.5 バズ：+2/+2 で破壊できなかった相手のキャラクターを破壊できる（自分は残る）なら、いちばん価値の高い相手に。とどめになるときも使う
   if (!state.winner && !state.pending && !buzzBlock(state, player)) {
     const buzz = pickBuzz(state, player, catalog);
     if (buzz !== null) step({ type: "buzz", player, slot: buzz });
@@ -330,7 +330,7 @@ function planTurnInner(start: GameState, player: PlayerId, catalog: Catalog, act
     let targets = attackTargets(state, player, mine[0]?.slot ?? 0, catalog);
     for (const { slot: from, v } of mine) {
       targets = attackTargets(state, player, from, catalog);
-      // マスターが守られている間は、殴っても意味がない
+      // プレイヤーが守られている間は、殴っても意味がない
       const canFace = !isShielded(state, foeId) && targets.some((t) => t.kind === "leader");
       anyFace ||= canFace;
       if (canFace && foe.lp <= readyAttack) {
@@ -367,7 +367,7 @@ function planTurnInner(start: GameState, player: PlayerId, catalog: Catalog, act
       break; // 盤面が変わったので選び直す
     }
     if (!acted && !anyFace) {
-      // ガードに阻まれているとき：全員でかかれば倒せるなら、弱いアイコンから削りに行く
+      // ガードに阻まれているとき：全員でかかれば破壊できるなら、弱いキャラクターから削りに行く
       const guards = targets
         .flatMap((t) => {
           if (t.kind !== "unit") return [];
