@@ -1,6 +1,7 @@
 import type { AttackTarget, GameEvent, GameState, PlayerId, RuleCard, Unit } from "@trends/game-core";
 import { viewUnit, withRushBoost } from "@trends/game-core";
 import { gsap } from "gsap";
+import { appFrame, frameRect } from "../frame";
 import { dissolve } from "../fx/dissolve";
 import { healMist } from "../fx/healMist";
 import { impact } from "../fx/impact";
@@ -24,7 +25,7 @@ function layer(): HTMLElement {
   if (!el) {
     el = document.createElement("div");
     el.id = "fx-layer";
-    document.body.appendChild(el);
+    appFrame().appendChild(el);
   }
   return el;
 }
@@ -38,8 +39,9 @@ const center = (r: DOMRect) => ({ x: r.left + r.width / 2, y: r.top + r.height /
 function keepInside(n: HTMLElement, x: number) {
   const half = n.offsetWidth / 2;
   const margin = 8;
-  const vw = document.documentElement.clientWidth || window.innerWidth;
-  const clamped = Math.min(Math.max(x, half + margin), vw - half - margin);
+  // 画面の枠（スマホの縦の画面）の中に収める
+  const f = frameRect();
+  const clamped = Math.min(Math.max(x, f.left + half + margin), f.right - half - margin);
   n.style.left = `${clamped}px`;
 }
 

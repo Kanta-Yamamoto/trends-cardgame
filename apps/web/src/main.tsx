@@ -20,6 +20,7 @@ import "./cards/rare.css";
 import "./cards/rare5.css";
 import "./cards/stats.css";
 import "./styles/app.css";
+import { FRAME_ID, watchFrame } from "./frame";
 import { isStandalone, registerPwa } from "./pwa";
 import { lockZoom } from "./viewport";
 
@@ -34,8 +35,16 @@ createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={new QueryClient()}>
       <BrowserRouter>
-        <App />
+        {/* 画面の枠：すべての画面と演出を、スマホの縦の画面1つの中だけで出す（frame.ts） */}
+        <div id={FRAME_ID} className="app-frame">
+          <div className="app-scroll">
+            <App />
+          </div>
+        </div>
       </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>,
 );
+
+watchFrame();
+requestAnimationFrame(() => watchFrame());

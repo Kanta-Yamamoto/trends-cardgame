@@ -37,6 +37,7 @@ import { Link } from "react-router";
 import { EffectText, HelpTerm } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
+import { frameRect, frameSize } from "../frame";
 import { fieldEntry, landed } from "../fx/fieldEntry";
 import { fxStage } from "../fx/stage";
 import { ArbiterField } from "../game/ArbiterField";
@@ -68,7 +69,7 @@ import {
 import { MiniCard } from "../game/MiniCard";
 import { CATALOG, CPU, DECK_INFO, ME, openingMs, setPresenter, useGame } from "../game/store";
 import { useDragPlay } from "../game/useDragPlay";
-import { layoutViewport, lockZoom, resetZoom } from "../viewport";
+import { lockZoom, resetZoom } from "../viewport";
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 /** 演出（GSAP）と同じ時計で待つ。着地などの GSAP の動きに間合いを合わせたいところで使う */
@@ -206,7 +207,8 @@ function useStage() {
   useLayoutEffect(() => {
     // 拡大の影響を受けない大きさで測る（iPhone で拡大されても舞台が縮まない）
     const on = () => {
-      const { width, height } = layoutViewport();
+      // 画面の枠（スマホの縦の画面。frame.ts）の大きさで測る。PC でも枠の中だけに舞台を置く
+      const { width, height } = frameSize();
       setStage(measureStage(width, height, safeArea(probe.current)));
     };
     on();
@@ -991,7 +993,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             await wait(visible ? 620 : 900);
           }
           if (visible) {
-            const from = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+            const f = frameRect();
+            const from = { x: f.left + f.width / 2, y: f.top + f.height / 2 };
             await animateEffects(shown, events, next, { from, tint });
           }
         } else if (a.type === "play") {
@@ -1568,50 +1571,54 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         </div>
       )}
 
-      {drag &&
-        (() => {
-          // 対象を取る投稿と攻撃は、カードから指先へ矢印を伸ばす（狙う相手が指やカードで隠れないように）
-          const handId = drag.src.kind === "hand" ? me.hand[drag.src.index] : undefined;
-          const handCard = handId ? CATALOG[handId] : undefined;
-          if (
-            drag.src.kind === "hand" &&
-            handId &&
-            handCard &&
-            !(handCard.type === "post" && handCard.target)
-          ) {
-            return (
-              <div
-                className="drag-ghost"
-                aria-hidden="true"
-                style={{
-                  left: drag.x,
-                  top: drag.y,
-                  width: drag.width,
-                  transform: `translate(-50%, -62%) scale(${stage.scale * 1.08})`,
-                }}
-              >
-                <MiniCard
-                  card={handCard}
-                  cost={effectiveCost(game, ME, handId, CATALOG)}
-                  className="in-hand"
-                />
-              </div>
-            );
-          }
-          const from = { x: drag.rect.left + drag.rect.width / 2, y: drag.rect.top + drag.rect.height / 2 };
-          const [where, n] = (drag.over ?? "").split(":");
-          const slot = Number(n);
-          const hot =
-            drag.src.kind === "unit"
-              ? (where === "leader" && canHit({ kind: "leader" })) ||
-                (where === "foe" && canHit({ kind: "unit", slot }))
-              : (where === "foe" && canCastOn("enemy", slot)) ||
-                (where === "ally" && canCastOn("ally", slot));
-          const el = hot ? document.querySelector(`[data-drop="${drag.over}"]`) : null;
-          const r = el?.getBoundingClientRect();
-          const to = r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: drag.x, y: drag.y };
-          return <AttackArrow from={from} to={to} hot={hot} ally={where === "ally"} />;
-        })()}
+      {drag && (
+        // 指の位置に付いてくる表示は画面座標で置くので、画面座標の層（.vp-layer。frame.ts）に入れる
+        <div className="vp-layer">
+          {(() => {
+            // 対象を取る投稿と攻撃は、カードから指先へ矢印を伸ばす（狙う相手が指やカードで隠れないように）
+            const handId = drag.src.kind === "hand" ? me.hand[drag.src.index] : undefined;
+            const handCard = handId ? CATALOG[handId] : undefined;
+            if (
+              drag.src.kind === "hand" &&
+              handId &&
+              handCard &&
+              !(handCard.type === "post" && handCard.target)
+            ) {
+              return (
+                <div
+                  className="drag-ghost"
+                  aria-hidden="true"
+                  style={{
+                    left: drag.x,
+                    top: drag.y,
+                    width: drag.width,
+                    transform: `translate(-50%, -62%) scale(${stage.scale * 1.08})`,
+                  }}
+                >
+                  <MiniCard
+                    card={handCard}
+                    cost={effectiveCost(game, ME, handId, CATALOG)}
+                    className="in-hand"
+                  />
+                </div>
+              );
+            }
+            const from = { x: drag.rect.left + drag.rect.width / 2, y: drag.rect.top + drag.rect.height / 2 };
+            const [where, n] = (drag.over ?? "").split(":");
+            const slot = Number(n);
+            const hot =
+              drag.src.kind === "unit"
+                ? (where === "leader" && canHit({ kind: "leader" })) ||
+                  (where === "foe" && canHit({ kind: "unit", slot }))
+                : (where === "foe" && canCastOn("enemy", slot)) ||
+                  (where === "ally" && canCastOn("ally", slot));
+            const el = hot ? document.querySelector(`[data-drop="${drag.over}"]`) : null;
+            const r = el?.getBoundingClientRect();
+            const to = r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: drag.x, y: drag.y };
+            return <AttackArrow from={from} to={to} hot={hot} ally={where === "ally"} />;
+          })()}
+        </div>
+      )}
 
       {banner && (
         <div

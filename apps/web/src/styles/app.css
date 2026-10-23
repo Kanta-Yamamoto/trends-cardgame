@@ -16,6 +16,21 @@
 * { box-sizing: border-box; }
 /* 素早い2回タップで拡大しない（iPhone はメタタグの user-scalable=no を無視するので CSS で止める） */
 html, body { touch-action: manipulation; }
+/* 画面の枠（frame.ts）：すべての画面と演出を、スマホの縦の画面1つの中だけで出す。
+   transform を持たせて、中の position: fixed（モーダル・全画面の演出）が枠いっぱいに広がるようにする。スクロールは中の .app-scroll */
+html, body, #root { height: 100%; }
+body { overflow: hidden; }
+.app-frame {
+  position: relative; width: min(100%, 480px); height: 100vh; height: 100dvh; margin: 0 auto;
+  overflow: hidden; transform: translateZ(0);
+}
+.app-scroll { height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; }
+/* 画面座標で置く層：枠の中で「左上がブラウザの画面の左上」になるようにずらす（はみ出した分は枠で切られる） */
+#fx-layer, .vp-layer {
+  position: fixed; left: calc(-1 * var(--frame-x, 0px)); top: calc(-1 * var(--frame-y, 0px));
+  width: 100vw; height: 100vh; transform: translateZ(0); pointer-events: none;
+}
+.vp-layer { z-index: 60; }
 body {
   margin: 0;
   min-height: 100vh;
@@ -274,9 +289,10 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 
 /* 演出のレイヤー（攻撃・ドロー・ダメージの数字） */
 /* 場に出たアイコンの動きは fx/fieldEntry.ts（GSAP） */
-#fx-layer { position: fixed; inset: 0; z-index: 35; pointer-events: none; }
+#fx-layer { z-index: 35; }
 /* PixiJS の演出の舞台（fx/stage.ts）。盤面（.play-full）の上、拡大表示（.zoom）より下 */
-#fx-stage { position: fixed; inset: 0; z-index: 15; pointer-events: none; }
+/* PixiJS の舞台：画面座標で描くので、#fx-layer と同じく枠の中でずらして置く（大きさは PixiJS がブラウザの画面に合わせる） */
+#fx-stage { position: fixed; left: calc(-1 * var(--frame-x, 0px)); top: calc(-1 * var(--frame-y, 0px)); z-index: 15; pointer-events: none; }
 .fx-num { position: fixed; font: 900 34px/1 var(--f-mark); color: #fff; -webkit-text-stroke: 1.5px #7a0a14; text-shadow: 0 0 14px #ff3b4c, 0 3px 0 #7a0a14; }
 .fx-num.heal { -webkit-text-stroke-color: #0b5a2e; text-shadow: 0 0 14px #3dff8b, 0 3px 0 #0b5a2e; }
 .fx-burst { position: fixed; width: 90px; height: 90px; border-radius: 50%; border: 6px solid var(--c); box-shadow: 0 0 30px var(--c), inset 0 0 20px var(--c); }
@@ -865,10 +881,11 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
   background: linear-gradient(90deg, transparent, #0e0d0cf0 18%, #0e0d0cf0 82%, transparent);
   animation: ff-caption 2.6s cubic-bezier(.2,.8,.2,1) 0.35s both;
 }
-.fixer-caption small { font-size: 11px; letter-spacing: 0.32em; opacity: 0.75; }
-.fixer-caption b { font: 900 clamp(30px, 8.6vmin, 60px)/1 "Zen Old Mincho", "Hiragino Mincho ProN", serif; letter-spacing: 0.06em; }
+.fixer-caption small { font-size: 11px; letter-spacing: 0.32em; opacity: 0.75; white-space: nowrap; }
+/* 舞台（幅 390px）ごと拡大縮小されるので、画面の大きさ（vmin）ではなく px で決める。名前は折り返さない */
+.fixer-caption b { font: 900 34px/1 "Zen Old Mincho", "Hiragino Mincho ProN", serif; letter-spacing: 0.06em; white-space: nowrap; }
 .fixer-caption .ff-en { font: 400 11px/1 "Lilita One", "Arial Black", sans-serif; letter-spacing: 0.6em; padding-left: 0.6em; }
-.fixer-caption .ff-rule { margin-top: 4px; padding-top: 7px; border-top: 1px solid currentColor; font-size: 12px; font-weight: 800; }
+.fixer-caption .ff-rule { margin-top: 4px; padding-top: 7px; border-top: 1px solid currentColor; font-size: 12px; font-weight: 800; white-space: nowrap; }
 @keyframes ff-caption {
   0% { opacity: 0; letter-spacing: 0.4em; filter: blur(6px); }
   18% { opacity: 1; filter: blur(0); }
