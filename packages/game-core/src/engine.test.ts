@@ -632,6 +632,22 @@ describe("演出（『演出家』）", () => {
     // 場に出たときの効果（played の後の効果のイベント）は、出たエースからは起きない
     expect(r.events.filter((e) => e.type === "played")).toHaveLength(1);
   });
+  it("出したアイコンには凸が付く（相手のアイコンにだけすぐ攻撃できる）。相手側のアイコンは自分のターンには攻撃できず、相手のターンの始めに凸が外れる", () => {
+    let s = withFoe(["director"], ["f"]);
+    s.players.p1.deck.unshift(ace);
+    s.players.p2.deck.unshift(ace);
+    s = play(s, 0, 0);
+    const mine = s.players.p1.field[1];
+    expect(mine?.canAttack).toBe(true);
+    expect(mine?.rushOnly).toBe(true);
+    expect(attackTargets(s, "p1", 1, catalog).some((t) => t.kind === "leader")).toBe(false);
+    s = run(s, { type: "attack", player: "p1", from: 1, target: { kind: "unit", slot: 0 } }).state;
+    expect(() => run(s, { type: "attack", player: "p2", from: 1, target: { kind: "leader" } })).toThrow(
+      /相手のターン/,
+    );
+    s = end(s);
+    expect(s.players.p2.field[1]?.rushOnly).toBe(false);
+  });
   it("どちらかの場が埋まっていれば、どちらにも出ない", () => {
     let s = withFoe(["director"], ["f", "f", "f", "f", "f"]);
     s.players.p1.deck.unshift(ace);

@@ -752,7 +752,8 @@ function runEffect(e: CardEffect, ctx: Ctx) {
     case "stageAces": {
       // 演出：両方に空き枠があるときだけ（公平に）、それぞれの山札から闇堕ちを持つカードを1枚ずつ出す。
       // デッキの決まりで闇堕ち持ちは1種類だが、決まりが変わってもいいように山札の中からランダムに選ぶ。
-      // 舞台に上げるだけなので、場に出たときの効果は働かない
+      // 舞台に上げるだけなので、場に出たときの効果は働かない。出したアイコンには凸を付ける
+      // （相手側にも付くが、攻撃は自分のターンにしかできず、相手のターンの始めに凸は外れるので、相手が得をすることはない）
       const sides = [player, foeId] as const;
       if (sides.some((pid) => !state.players[pid].field.some((u) => !u))) break;
       for (const pid of sides) {
@@ -763,7 +764,13 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         const [cardId] = p.deck.splice(at, 1);
         const slot = p.field.findIndex((u) => !u);
         if (cardId === undefined || slot < 0) continue;
-        p.field[slot] = newUnit(state, cardId, catalog, false);
+        const u = newUnit(state, cardId, catalog, false);
+        if (!u.canAttack) {
+          u.canAttack = true;
+          u.attacksLeft = hasKeyword(u, "連撃", catalog) ? 2 : 1;
+          u.rushOnly = true;
+        }
+        p.field[slot] = u;
         emit({ type: "summoned", player: pid, cardId, slot });
       }
       break;
