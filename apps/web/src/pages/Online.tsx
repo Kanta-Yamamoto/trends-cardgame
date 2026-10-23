@@ -1,5 +1,5 @@
 import type { Action, GameState } from "@trends/game-core";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { io, type Socket } from "socket.io-client";
 import { API_URL } from "../api/client";
@@ -7,6 +7,30 @@ import { type DeckSel, deckFromRef } from "../game/decks";
 import { type RemoteLink, type RemoteUpdate, useGame } from "../game/store";
 import { type AuthConfig, api, loadGoogle, useSession } from "../online/session";
 import { Board, DeckGrid } from "./Play";
+
+/**
+ * 部屋に誘うリンク。公開前の招待リンクの守りが効いているときは、合言葉（?invite=）も付ける
+ * （まだ招待されていない友だちでも、このリンク1つで入れるように）
+ */
+function useRoomLink() {
+  const [link, setLink] = useState(() => window.location.href);
+  useEffect(() => {
+    let alive = true;
+    fetch(`${API_URL}/auth/invite`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b: { invite?: string | null } | null) => {
+        if (!alive || !b?.invite) return;
+        const url = new URL(window.location.href);
+        url.searchParams.set("invite", b.invite);
+        setLink(url.toString());
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return link;
+}
 
 interface Seat {
   id: string;
@@ -263,7 +287,7 @@ export function OnlineRoom() {
     };
   }, [ready, token, code, deck, logout]);
 
-  const invite = useMemo(() => window.location.href, []);
+  const invite = useRoomLink();
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(invite);

@@ -9,3 +9,5 @@ onlyBuiltDependencies:
   - "@swc/core"
   - "esbuild"
   - "prisma"
+# 公開されてから3日（4320 分）たっていない版は入れない（乗っ取られた版はたいてい数時間〜1日で見つかって消されるため）
+minimumReleaseAge: 4320

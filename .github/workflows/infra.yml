@@ -24,19 +24,19 @@ jobs:
       run:
         working-directory: infra/terraform
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: 設定を読む（infra/gcp.env）
         id: cfg
         run: |
           grep -E '^[A-Z_]+=' ../gcp.env >> "$GITHUB_ENV"
           . ../gcp.env
           if [ -n "$GCP_PROJECT_NUMBER" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "GCP_PROJECT_NUMBER が未設定なので何もしません" >> "$GITHUB_STEP_SUMMARY"; fi
-      - uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
         if: steps.cfg.outputs.ok == 'true'
         with:
           workload_identity_provider: projects/${{ env.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-bootstrap/providers/github
           service_account: terraform@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         if: steps.cfg.outputs.ok == 'true'
         with:
           terraform_wrapper: false
@@ -54,7 +54,9 @@ jobs:
           fi
       - name: Summary
         if: steps.cfg.outputs.ok == 'true'
-        run: echo "### Cloud Run の URL：$(terraform output -raw api_url)" >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          echo "### Cloud Run の URL：$(terraform output -raw api_url)" >> "$GITHUB_STEP_SUMMARY"
+          echo "招待リンクの合言葉は Secret Manager の invite-code（値はここには出さない。見方・変え方は docs/deploy.md）" >> "$GITHUB_STEP_SUMMARY"
       - name: ログインの設定が届いたか確かめる
         if: steps.cfg.outputs.ok == 'true' && env.GOOGLE_CLIENT_ID != ''
         run: |

@@ -3,6 +3,7 @@ import {
   ConnectedSocket,
   MessageBody,
   type OnGatewayConnection,
+  type OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -11,6 +12,7 @@ import { type Action, actionFor, eventsFor, RuleError, stateFor } from "@trends/
 import type { Server, Socket } from "socket.io";
 import { AuthService, type PublicUser } from "../auth/auth.service";
 import type { MatchRow } from "../db/schema";
+import { isInvited } from "../security";
 import { MatchesService } from "./matches.service";
 
 type Ack = { ok: true } | { ok: false; error: string };
@@ -25,13 +27,39 @@ const corsOrigin = () => process.env.CORS_ORIGIN?.split(",") ?? true;
  * どちらの人にも、その人から見た形（自分が p1、相手の手札は隠す）で送る。
  */
 @WebSocketGateway({ cors: { origin: corsOrigin() } })
-export class MatchesGateway implements OnGatewayConnection {
+export class MatchesGateway implements OnGatewayInit, OnGatewayConnection {
   @WebSocketServer() server!: Server;
+  /** 対戦中（決着していない）の部屋の合言葉 */
+  private playing = new Set<string>();
 
   constructor(
     private readonly auth: AuthService,
     private readonly matches: MatchesService,
   ) {}
+
+  afterInit(server: Server) {
+    // 招待リンクの守り：招待済みのクッキーが無い接続は、つなぐ前に断る
+    server.use((socket, next) =>
+      isInvited(socket.request) ? next() : next(new Error("招待リンクから開いてください")),
+    );
+  }
+
+  /** いま人がつないでいる、決着していない対戦の数（デプロイで対戦を切らないように、/health で出す） */
+  liveMatches(): number {
+    const rooms = this.server?.sockets?.adapter?.rooms;
+    if (!rooms) return 0;
+    let n = 0;
+    for (const code of this.playing) {
+      if (rooms.get(code)?.size) n += 1;
+      else this.playing.delete(code);
+    }
+    return n;
+  }
+
+  private track(code: string, live: boolean) {
+    if (live) this.playing.add(code);
+    else this.playing.delete(code);
+  }
 
   async handleConnection(client: Client) {
     const user = await this.auth.verify(client.handshake.auth?.token);
@@ -75,6 +103,7 @@ export class MatchesGateway implements OnGatewayConnection {
 
   private async apply(code: string, user: PublicUser, action: Action) {
     const r = await this.matches.act(code, user.id, action);
+    this.track(r.row.code, !r.state.winner);
     const sockets = await this.server.in(r.row.code).fetchSockets();
     for (const s of sockets) {
       const viewer = s.data.user as PublicUser | undefined;
@@ -90,6 +119,7 @@ export class MatchesGateway implements OnGatewayConnection {
 
   /** 部屋の全員に、その人から見た対戦の様子を送る */
   private async sendMatch(row: MatchRow) {
+    this.track(row.code, row.status === "playing");
     const info = await this.matches.info(row);
     const sockets = await this.server.in(row.code).fetchSockets();
     for (const s of sockets) {

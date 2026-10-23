@@ -26,7 +26,7 @@ jobs:
     env:
       SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ env.SHA }}
       - name: 設定を読む（infra/gcp.env）
@@ -35,12 +35,12 @@ jobs:
           grep -E '^[A-Z_]+=' infra/gcp.env >> "$GITHUB_ENV"
           . infra/gcp.env
           if [ -n "$GCP_PROJECT_NUMBER" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "GCP_PROJECT_NUMBER が未設定なので何もしません" >> "$GITHUB_STEP_SUMMARY"; fi
-      - uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
         if: steps.cfg.outputs.ok == 'true'
         with:
           workload_identity_provider: projects/${{ env.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/github-actions
           service_account: github-deployer@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com
-      - uses: google-github-actions/setup-gcloud@v2
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2
         if: steps.cfg.outputs.ok == 'true'
       - name: Cloud Run があるか確かめる
         id: ready
@@ -62,6 +62,19 @@ jobs:
           docker build -f apps/api/Dockerfile -t "$IMAGE" .
           docker push "$IMAGE"
           echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+      - name: 対戦中なら終わるまで待つ（最長 30 分）
+        if: steps.ready.outputs.ok == 'true'
+        run: |
+          URL=$(gcloud run services describe trends-api --region "$GCP_REGION" --project "${GCP_PROJECT_ID}" --format 'value(status.url)')
+          # 入れ替えると WebSocket が切れて対戦が止まるので、オンライン対戦が 0 件になってから出す
+          for i in $(seq 1 60); do
+            LIVE=$(curl -fsS --max-time 10 "$URL/health" | jq -r '.liveMatches // 0' || echo 0)
+            if [ "$LIVE" = "0" ]; then exit 0; fi
+            echo "対戦中が ${LIVE} 件あるので待ちます（${i}/60）"
+            sleep 30
+          done
+          echo "::error::30 分待っても対戦が終わらなかったので、出しませんでした。終わったら Actions の Deploy を手で動かしてください"
+          exit 1
       - name: Deploy to Cloud Run
         if: steps.ready.outputs.ok == 'true'
         run: gcloud run deploy trends-api --image "$IMAGE" --region "$GCP_REGION" --project "${GCP_PROJECT_ID}" --quiet
@@ -71,7 +84,18 @@ jobs:
           URL=$(gcloud run services describe trends-api --region "$GCP_REGION" --project "${GCP_PROJECT_ID}" --format 'value(status.url)')
           # 起動直後（DB の起動待ちなど）は失敗することがあるので、少し待ってやり直す
           curl -fsS --retry 6 --retry-delay 10 --retry-all-errors "$URL/health"
-          curl -fsS --retry 6 --retry-delay 10 --retry-all-errors -H 'Accept: text/html' "$URL/" | grep -q '<title>TRENDS'
-          # カードのデータが DB に入っているか
-          curl -fsS --retry 3 --retry-delay 5 --retry-all-errors "$URL/cards" | grep -q '"id":"c1"'
+          # 招待リンクの守りが効いているか（招待なしでは「準備中」だけで、API も断る）。守りが無いときは、画面とカードのデータを確かめる
+          PAGE=$(curl -sS --retry 3 --retry-delay 5 -o page.html -w '%{http_code}' -H 'Accept: text/html' "$URL/")
+          if [ "$PAGE" = "403" ]; then
+            grep -q '準備中' page.html
+            test "$(curl -sS -o /dev/null -w '%{http_code}' "$URL/cards")" = "403"
+            echo "招待リンクの守り：有効" >> "$GITHUB_STEP_SUMMARY"
+          else
+            test "$PAGE" = "200" && grep -q '<title>TRENDS' page.html
+            # カードのデータが DB に入っているか
+            curl -fsS --retry 3 --retry-delay 5 --retry-all-errors "$URL/cards" | grep -q '"id":"c1"'
+            echo "招待リンクの守り：無効（INVITE_CODE が入っていない）" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          # 検索エンジンに載せない指示
+          curl -fsS -I "$URL/health" | grep -qi 'x-robots-tag: noindex'
           echo "### デプロイしました: $URL" >> "$GITHUB_STEP_SUMMARY"
