@@ -6,11 +6,8 @@ import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { CardZoom } from "../game/CardZoom";
 
-/**
- * 一覧に出すカード（同梱データで見る）。API の DB には、お蔵入りの印の列が無く、
- * cards.json から消したカードの行も残るので、同梱データにあってお蔵入りでないものだけを出す
- */
-const LISTED = new Set(CARDS.filter((c) => !c.retired).map((c) => c.id));
+/** 一覧に出すカード（同梱データにあるものだけ。API の DB に古い行が残っていても出さない） */
+const LISTED = new Set(CARDS.map((c) => c.id));
 
 type Filter = Attribute | "ニュートラル" | null;
 

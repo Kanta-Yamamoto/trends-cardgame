@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { sql } from "drizzle-orm";
+import { notInArray, sql } from "drizzle-orm";
 import { createDb } from "./client";
 import { cards } from "./schema";
 import { cardRows } from "./seed-data";
@@ -37,7 +37,19 @@ async function main() {
         updatedAt: sql`now()`,
       },
     });
-  console.log(`seeded ${rows.length} cards`);
+  // cards.json から消したカードは、データベースからも消す（カードの表を参照する表は無い）。
+  // 取り込むカードが 0 枚のときは、すべてを消してしまわないよう何もしない
+  if (rows.length === 0) throw new Error("cards.json にカードがありません");
+  const removed = await db
+    .delete(cards)
+    .where(
+      notInArray(
+        cards.id,
+        rows.map((r) => r.id),
+      ),
+    )
+    .returning({ id: cards.id });
+  console.log(`seeded ${rows.length} cards, removed ${removed.length}`);
   await pool.end();
 }
 main();
