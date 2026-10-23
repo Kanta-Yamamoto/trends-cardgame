@@ -7,7 +7,8 @@ import { gsap } from "gsap";
  * 差し出すアイコン 1 体ごとに：
  * 1. 溜め 0.3 秒：アイコンの真上に、白い光をまとった黒い玉が生まれる。白い粒が吸い込まれ、下へ細い狙いの光がちらつく
  * 2. 引き 0.35 秒：玉が 28px 上へ引かれ、震えがだんだん強くなる
- * 3. 叩き込む 0.05 秒：太い黒い閃光が真下へ。先はカードの下辺でちょうど止まる
+ * 3. 突き刺す：貫く 0.18 秒前から、太い黒い閃光が真下へ伸びる。短い先がゆっくり出て、5 乗の加速で一気に伸びる
+ *    （0.05 秒で伸ばすと、等倍では最初から下まであるように見えたため）。伸びる先は白く光る。先はカードの下辺でちょうど止まる
  * 4. 白黒が入れ替わって 0.3 秒止まる：場は白い紙、閃光とアイコンは黒い影（盤面の .fx-fixer-flip。GSAP の時計も止める）。
  *    閃光には白い輪郭を付け、黒い影のカードに刺さっているところが見えるようにする
  * 5. 動き出す：カードが白く飛んで震え、白い筋と粒が上と横へ跳ね、盤面が強く揺れ、まわりのアイコンも揺れる。
@@ -25,6 +26,7 @@ const PULL_AT = 380; // 引き始め
 const PULL = 350; // 引きの溜め
 const FIRE = 50; // 叩き込んで届くまで
 const HIT = PULL_AT + PULL + FIRE;
+const GROW = 180; // 閃光が伸びる長さ（貫く 0.18 秒前から。短い先がゆっくり出て、5 乗で一気に伸びる）
 const FREEZE = 300; // 白黒が入れ替わって止まる
 const GAP = 900; // 次の対象までの間（止まっていた時間を除く）
 const AFTER = 300; // 貫いてから消え始めるまで
@@ -144,6 +146,18 @@ function beam(
     ctx.lineTo(x + dx, yb);
     ctx.stroke();
   }
+  ctx.restore();
+}
+
+/** 伸びていく閃光の先の白い光 */
+function spark(ctx: Ctx, x: number, y: number, R: number) {
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  const g = ctx.createRadialGradient(x, y, 0, x, y, R);
+  g.addColorStop(0, "rgba(255,255,255,0.95)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(x - R, y - R, R * 2, R * 2);
   ctx.restore();
 }
 
@@ -371,9 +385,11 @@ export function blackFlash(
             now,
             p.bottom,
           );
-        // 閃光：玉から真下へ。先はカードの下辺で止める
-        if (a >= fireAt) {
-          const tip = lerp(oy, p.bottom, ei(seg(a, fireAt, FIRE)));
+        // 閃光：玉から真下へ。等倍でも伸びていくのが見えるように、短い先がゆっくり出てから猛烈に加速する。先はカードの下辺で止める
+        if (a >= HIT - GROW) {
+          const g = seg(a, HIT - GROW, GROW);
+          const tip = lerp(oy, p.bottom, ei(g, 5));
+          if (g < 1 && !frozen) spark(ctx, p.x, tip, w * (1 + 1.4 * g));
           let bw = w;
           let glow = 1;
           if (after >= 0 && !frozen) {
