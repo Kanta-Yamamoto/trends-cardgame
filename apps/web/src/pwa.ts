@@ -52,11 +52,63 @@ export function registerPwa() {
   const native = "Capacitor" in window;
   if (!import.meta.env.PROD || import.meta.env.BASE_URL !== "/" || native || !("serviceWorker" in navigator))
     return;
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      // 登録できなくても、普通の Web として遊べる
-    });
+  // 開いた時点で、もう前の版のサービスワーカーが動いていたか（初めての人には「新しい版」を出さない）
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController) return;
+    updateReady = true;
+    notify();
   });
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((reg) => {
+        // アプリに戻ってきたときにも、新しい版が出ていないか確かめる（ホーム画面のアプリは開きっぱなしになりやすい）
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") void reg.update().catch(() => {});
+        });
+      })
+      .catch(() => {
+        // 登録できなくても、普通の Web として遊べる
+      });
+  });
+}
+
+/** 新しい版のサービスワーカーに切り替わった（画面はまだ前の版のまま） */
+let updateReady = false;
+
+/** 新しい版が出ているか（画面の下に「新しい版があります」の帯を出す） */
+export function useUpdateReady() {
+  const [, rerender] = useState(0);
+  useEffect(() => {
+    const l = () => rerender((n) => n + 1);
+    listeners.add(l);
+    return () => {
+      listeners.delete(l);
+    };
+  }, []);
+  return updateReady;
+}
+
+/**
+ * アプリを最新にする：保存しているアプリのファイル（サービスワーカーとそのキャッシュ）を消して、読み直す。
+ * 不具合らしいときの逃げ道。ホーム画面のアプリには再読み込みボタンもキャッシュを消す画面も無いので、画面から呼べるようにする。
+ * デッキ・ログイン・設定（localStorage・ログインの Cookie）は消さない
+ */
+export async function refreshApp() {
+  try {
+    const regs = (await navigator.serviceWorker?.getRegistrations()) ?? [];
+    await Promise.all(regs.map((r) => r.unregister()));
+  } catch {
+    // 消せなくても読み直す
+  }
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((k) => k.startsWith("trends-")).map((k) => caches.delete(k)));
+  } catch {
+    // 消せなくても読み直す
+  }
+  window.location.reload();
 }
 
 /** 初めての人に案内を自動で出すか（閉じてから7日は出さない・「もう表示しない」なら出さない） */

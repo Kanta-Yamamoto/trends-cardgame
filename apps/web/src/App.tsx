@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from "react-router";
+import { RefreshButton, UpdateBar } from "./AppRefresh";
 import { useDeckSync } from "./game/deckSync";
 import { HelpSheet } from "./help/HelpSheet";
 import { InstallButton } from "./InstallButton";
@@ -21,6 +22,7 @@ export function App() {
         <NavLink to="/play">CPU と対戦</NavLink>
         <NavLink to="/online">オンライン対戦</NavLink>
         <span className="spacer" />
+        <RefreshButton />
         <InstallButton />
       </nav>
       <main>
@@ -33,6 +35,7 @@ export function App() {
         </Routes>
       </main>
       <HelpSheet />
+      <UpdateBar />
     </div>
   );
 }
