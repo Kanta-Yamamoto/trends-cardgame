@@ -507,14 +507,16 @@ function resolveDeaths(
   config: Config = DEFAULT_CONFIG,
 ): string[] {
   const destroyed: string[] = [];
-  // 「破壊されたとき」の効果で、さらに倒れることがある。落ち着くまで繰り返す
+  // 「破壊されたとき」の効果や、配信者がいなくなったリスナーで、さらに倒れることがある。落ち着くまで繰り返す
   for (let round = 0; round < 10; round++) {
     const deaths: { owner: PlayerId; effects: CardEffect[] }[] = [];
+    let removed = false;
     for (const owner of ["p1", "p2"] as const) {
       const p = state.players[owner];
       p.field.forEach((u, slot) => {
         if (!u) return;
-        if (viewUnit(state, owner, u, catalog).hp > 0) return;
+        if (viewUnit(state, owner, u, catalog).hp > 0 && !orphaned(state, owner, u, catalog)) return;
+        removed = true;
         const onDeath = effectsOf(u, catalog).filter((e) => triggerOf(e) === "death");
         p.field[slot] = null;
         // 闇堕ちの姿が破壊されたら、そのカードは消える（墓地にも行かない）
@@ -541,12 +543,22 @@ function resolveDeaths(
         if (onDeath.length) deaths.push({ owner, effects: onDeath });
       });
     }
-    if (deaths.length === 0) break;
+    if (!removed) break;
     for (const d of deaths)
       for (const e of d.effects)
         runEffect(e, { state, player: d.owner, catalog, config, emit, playedBefore: 0 });
   }
   return destroyed;
+}
+
+/** 自分の場に、決まった種族のキャラクター（自分を除く）がいなくなったか（リスナー） */
+function orphaned(state: GameState, owner: PlayerId, u: Unit, catalog: Catalog): boolean {
+  return effectsOf(u, catalog).some(
+    (e) =>
+      e.do === "vanishWithout" &&
+      triggerOf(e) === "passive" &&
+      countAllies(state, owner, catalog, e.kaiwai, u.uid) === 0,
+  );
 }
 
 function strongestEnemy(state: GameState, player: PlayerId, catalog: Catalog): number {
@@ -1084,6 +1096,8 @@ function runEffect(e: CardEffect, ctx: Ctx) {
     case "conspiracyWin":
     case "extraAttackOnKill":
     case "buffOnKill":
+    case "faceOnKill":
+    case "vanishWithout":
     case "focusAura":
     case "lullaby":
     case "cheaperPerAlly":
@@ -1381,6 +1395,12 @@ export function applyAction(
               u.hpBuff += fx.hp;
               after.push({ type: "buffed", player, slot, cardId: u.cardId, attack: fx.attack, hp: fx.hp });
             });
+          }
+        // 破壊するたび、相手のプレイヤーにダメージ（ヒバナ。殴り合いで自分が倒れても働く）
+        if (killed)
+          for (const fx of effectsOf(atk, catalog)) {
+            if (fx.do !== "faceOnKill" || triggerOf(fx) !== "passive") continue;
+            damageLeader(state, foeId, fx.amount, (e) => after.push(e));
           }
         emit({
           type: "battle",

@@ -118,6 +118,10 @@ export type CardEffect = (
   | { do: "extraAttackOnKill" }
   /** passive：このキャラクターが攻撃して相手のキャラクターを破壊するたび、自分の cards（カード ID）のキャラクターすべてに強化（メン地下） */
   | { do: "buffOnKill"; cards: string[]; attack: number; hp: number }
+  /** passive：このキャラクターが攻撃して相手のキャラクターを破壊するたび、相手のプレイヤーにダメージ（ヒバナ） */
+  | { do: "faceOnKill"; amount: number }
+  /** passive：自分の場に kaiwai のキャラクター（このキャラクターを除く）がいなくなったら破壊される（リスナー） */
+  | { do: "vanishWithout"; kaiwai: Kaiwai }
   /** passive：センターにいる間、自分のほかのキャラクターも注目と同じく伸びる */
   | { do: "focusAura" }
   /** passive：相手のターンの始めに、相手の攻撃力がいちばん高いキャラクターを眠り状態にする */

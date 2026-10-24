@@ -72,6 +72,7 @@ function sectionOf(e: CardEffect): Section {
   switch (e.do) {
     case "extraAttackOnKill":
     case "buffOnKill":
+    case "faceOnKill":
     case "healGrow":
     case "healBurn":
     case "healStrike":
@@ -275,6 +276,10 @@ function sentence(e: CardEffect, ctx: Ctx, prev: CardEffect | undefined): string
         return `${ENEMY}を破壊するたび、もう1回攻撃できる`;
       case "buffOnKill":
         return `このキャラクターが${ENEMY}を破壊するたび、自分の${e.cards.map(ctx.nameOf).join("と")}すべてに${stats(e.attack, e.hp)}`;
+      case "faceOnKill":
+        return `このキャラクターが${ENEMY}を破壊するたび、相手のプレイヤーに${e.amount}ダメージ`;
+      case "vanishWithout":
+        return `自分の場に${e.kaiwai}種族がいなくなったら、このキャラクターは破壊される`;
       case "healGrow":
         return `自分が回復の効果を使うたび、${stats(e.attack, e.hp)}`;
       case "healBurn":

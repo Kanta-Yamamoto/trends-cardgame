@@ -4,40 +4,28 @@
     "name": "レン",
     "type": "icon",
     "rarity": 5,
-    "cost": 6,
-    "attack": 5,
+    "cost": 5,
+    "attack": 2,
     "hp": 4,
     "attributes": ["炎"],
     "kaiwai": ["配信者"],
-    "keywords": ["連撃"],
-    "effects": [
-      {
-        "on": "play",
-        "do": "damage",
-        "to": "strongestEnemy",
-        "amount": 1
-      },
-      {
-        "on": "passive",
-        "do": "extraAttackOnKill"
-      }
-    ],
-    "effect": "連撃。【場に出たとき】攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。相手のキャラクターを破壊するたび、もう1回攻撃できる。",
+    "keywords": ["速攻"],
+    "effects": [],
+    "effect": "速攻。",
     "dark": {
       "name": "闇堕ちレン",
-      "attack": 6,
-      "hp": 3,
-      "keywords": ["突進", "連撃"],
-      "effect": "突進。連撃。【闇堕ちしたとき】相手のキャラクターすべてに1ダメージ。",
+      "attack": 4,
+      "hp": 2,
+      "keywords": ["速攻"],
+      "effect": "速攻。【闇堕ちしたとき】相手のキャラクターすべてを晒し状態にする。",
       "art": "/assets/cards/c2-dark-art.jpg",
       "subject": "/assets/cards/c2-dark-subject.webp",
       "original": "assets/original/c2-dark.webp",
       "effects": [
         {
           "on": "play",
-          "do": "damage",
-          "to": "allEnemies",
-          "amount": 1
+          "do": "expose",
+          "to": "allEnemies"
         }
       ]
     },
@@ -300,6 +288,28 @@
     "token": true,
     "art": "/assets/cards/t-gachikoi-art.jpg",
     "original": "assets/original/m6.webp"
+  },
+  {
+    "id": "t-listener",
+    "name": "リスナー",
+    "type": "icon",
+    "rarity": 1,
+    "cost": 0,
+    "attack": 1,
+    "hp": 1,
+    "attributes": [],
+    "kaiwai": [],
+    "keywords": ["ガード"],
+    "effects": [
+      {
+        "on": "passive",
+        "do": "vanishWithout",
+        "kaiwai": "配信者"
+      }
+    ],
+    "effect": "ガード。自分の場に配信者種族がいなくなったら、このキャラクターは破壊される。",
+    "token": true,
+    "art": "/assets/cards/t-listener-art.jpg"
   },
   {
     "id": "m1",
@@ -908,7 +918,7 @@
   },
   {
     "id": "f10",
-    "name": "暴露系配信者",
+    "name": "炎上系配信者",
     "type": "icon",
     "rarity": 4,
     "cost": 7,
@@ -916,15 +926,17 @@
     "hp": 4,
     "attributes": ["炎"],
     "kaiwai": ["配信者"],
-    "keywords": ["速攻"],
+    "keywords": [],
     "effects": [
       {
         "on": "play",
-        "do": "expose",
-        "to": "allEnemies"
+        "do": "summon",
+        "card": "t-listener",
+        "count": 2,
+        "flank": true
       }
     ],
-    "effect": "速攻。【場に出たとき】相手のキャラクターすべてを晒し状態にする。",
+    "effect": "【場に出たとき】隣にリスナーを2体出す。",
     "art": "/assets/cards/f10-art.jpg",
     "original": "assets/original/f10.webp"
   },
@@ -933,19 +945,20 @@
     "name": "ヒバナ",
     "type": "icon",
     "rarity": 5,
-    "cost": 7,
-    "attack": 2,
-    "hp": 3,
+    "cost": 4,
+    "attack": 3,
+    "hp": 4,
     "attributes": ["炎"],
     "kaiwai": ["配信者"],
-    "keywords": [],
+    "keywords": ["突進"],
     "effects": [
       {
-        "do": "damagePerEnemy",
-        "per": 2
+        "on": "passive",
+        "do": "faceOnKill",
+        "amount": 1
       }
     ],
-    "effect": "【場に出たとき】相手のキャラクターすべてに、相手のキャラクター1体につき2ダメージ。",
+    "effect": "突進。このキャラクターが相手のキャラクターを破壊するたび、相手のプレイヤーに1ダメージ。",
     "art": "/assets/cards/c4-art.jpg",
     "original": "assets/original/c4.webp"
   },
