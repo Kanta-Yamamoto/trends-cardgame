@@ -659,7 +659,7 @@ describe("属性の効果", () => {
     expect(v.guard).toBe(false);
     expect(v.attack).toBe(0);
   });
-  it("草を生やす・空き枠を埋める。トークンは墓地に残らない", () => {
+  it("草を生やす・空き枠を埋める。トークンも破壊されたら墓地に行く（10月24日）", () => {
     let s = play(game(["cat", "meadow"]), 0, 0);
     expect(s.players.p1.field.filter((u) => u?.cardId === "kusa")).toHaveLength(2);
     s = cast(s, 0);
@@ -670,7 +670,7 @@ describe("属性の効果", () => {
     s = end(end(s, "p2"));
     s = run(s, { type: "attack", player: "p2", from: 0, target: { kind: "unit", slot: 1 } }).state;
     expect(s.players.p1.field[1]).toBeNull();
-    expect(s.players.p1.trash).not.toContain("kusa");
+    expect(s.players.p1.trash).toContain("kusa");
   });
   it("コピー：同じキャラクターがもう1体出て、墓地には残らない", () => {
     const s = play(game(["copy"]), 0, 0);
@@ -844,17 +844,20 @@ describe("デッキの決まり", () => {
     expect(deckAttributes(DECKS.unei_idol, real)).toEqual(["推し"]);
     for (const id of ["c15", "c16", "c17"]) expect(DECKS.unei_idol.filter((c) => c === id)).toHaveLength(2);
   });
-  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、ニュートラルのカードを4枚入れる（運営デッキ・推しデッキ・炎デッキ・神デッキは例外）", () => {
+  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、ニュートラルのカードを4枚入れる（運営デッキ・推しデッキ・炎デッキ・神デッキ・水デッキは例外）", () => {
     // 運営デッキ（unei_）は、共通で固めるのがコンセプト（オーナー）なので、共通の枚数の決まりから外す
     expect(DECKS.unei_idol.filter((c) => real[c]?.attributes.length === 0)).toHaveLength(14);
     // 推しデッキは、運営サイドの3枚とインフルエンサー・スクショで、ニュートラル8枚（10月24日、docs/design-oshi.md）
     expect(DECKS.solo_idol.filter((c) => real[c]?.attributes.length === 0)).toHaveLength(8);
     // 炎デッキは、『フィクサー』『調停者』の2枚だけ（10月24日、docs/design-fire.md）
     expect(DECKS.solo_flame.filter((c) => real[c]?.attributes.length === 0)).toEqual(["c15", "c16"]);
+    // 水デッキはライブ配信の2枚だけ（10月24日、docs/design-water.md）
+    expect(DECKS.solo_heal.filter((c) => real[c]?.attributes.length === 0)).toEqual(["n17", "n17"]);
     // 神デッキは『調停者』の1枚だけ（10月24日、docs/design-god.md）
     expect(DECKS.solo_expert.filter((c) => real[c]?.attributes.length === 0)).toEqual(["c16"]);
     for (const [id, deck] of Object.entries(DECKS)) {
-      if (id.startsWith("unei_") || ["solo_idol", "solo_flame", "solo_expert"].includes(id)) continue;
+      if (id.startsWith("unei_") || ["solo_idol", "solo_flame", "solo_expert", "solo_heal"].includes(id))
+        continue;
       const aces = deck.filter((c) => real[c]?.dark);
       const commons = deck.filter((c) => real[c]?.attributes.length === 0);
       expect({ id, aces: aces.length, kinds: new Set(aces).size, commons: commons.length }).toEqual({
@@ -1300,7 +1303,7 @@ describe("闇堕ちの姿の効果（確定除去・手札に戻す・プレイ�
     expect(s.players.p2.field.map((u) => u?.cardId ?? null)).toEqual(["wall", null, "f", null, null]);
     expect(s.players.p2.trash).toContain("big");
   });
-  it("コストがいちばん高い相手のキャラクターを手札に戻す（トークンは消える）", () => {
+  it("コストがいちばん高い相手のキャラクターを手札に戻す（トークンも手札に入る）", () => {
     let s = withFoe(["back", "back"], ["wall", "big"]);
     const hand = s.players.p2.hand.length;
     s = cast(s, 0);
@@ -1315,7 +1318,8 @@ describe("闇堕ちの姿の効果（確定除去・手札に戻す・プレイ�
     } as Unit;
     const r = run(s, { type: "cast", player: "p1", handIndex: 0 });
     expect(r.state.players.p2.field[0]).toBeNull();
-    expect(r.state.players.p2.hand).toHaveLength(hand + 1);
+    expect(r.state.players.p2.hand).toHaveLength(hand + 2);
+    expect(r.state.players.p2.hand.at(-1)).toBe("kusa");
   });
   it("闇堕ちの姿が手札に戻されたら、そのカードの闇堕ちは使い終わり（次に破壊されても闇堕ちしない）", () => {
     // p2 の闇堕ちは p2 のターンの始めに出る
@@ -1563,7 +1567,7 @@ describe("対象を選ぶ除去の呪文（確定除去・手札に戻す・奪�
     s = cast(s, 0, { side: "enemy", slot: 1 });
     expect(s.players.p2.field[1]).toBeNull();
   });
-  it("ブロック：選んだ相手のキャラクターを手札に戻す（トークンは消える）", () => {
+  it("ブロック：選んだ相手のキャラクターを手札に戻す（トークンも手札に入る）", () => {
     let s = withFoe(["block", "block"], ["big", "cat"]);
     const hand = s.players.p2.hand.length;
     s = cast(s, 0, { side: "enemy", slot: 0 });
@@ -1572,7 +1576,7 @@ describe("対象を選ぶ除去の呪文（確定除去・手札に戻す・奪�
     const tokenSlot = s.players.p2.field.findIndex((u) => u?.token);
     s = cast(s, 0, { side: "enemy", slot: tokenSlot });
     expect(s.players.p2.field[tokenSlot]).toBeNull();
-    expect(s.players.p2.hand).toHaveLength(hand + 1);
+    expect(s.players.p2.hand).toHaveLength(hand + 2);
   });
   it("引き抜き：攻撃力3以下の相手だけを選んで奪える。奪ったターンは攻撃できない", () => {
     let s = withFoe(["hikinuki"], ["big", "wall"]);
@@ -1726,12 +1730,12 @@ describe("炎属性の作り直し（10月24日。docs/design-fire.md）", () =>
       effects: [{ on: "play", do: "summon", card: "lis", count: 2, flank: true }],
     }),
     st2: icon("st2", 1, 1, 1, { kaiwai: ["配信者"] }),
-    // リスナー：ガード。自分の場に配信者種族がいなくなったら破壊される
+    // リスナー：1/1。出たとき、場に配信者種族がいればガードを得る
     lis: icon("lis", 0, 1, 1, {
-      keywords: ["ガード"],
       token: true,
-      effects: [{ on: "passive", do: "vanishWithout", kaiwai: "配信者" }],
+      effects: [{ on: "play", do: "guardIfKaiwai", kaiwai: "配信者" }],
     }),
+    live: post("live", 1, { effects: [{ do: "summon", card: "lis", count: 2 }] }),
   };
   const go = (s: GameState, a: Action) => applyAction(s, a, local);
   const put = (s: GameState, handIndex: number, slot: number, player: "p1" | "p2" = "p1") =>
@@ -1751,21 +1755,25 @@ describe("炎属性の作り直し（10月24日。docs/design-fire.md）", () =>
     expect(s.players.p2.lp).toBe(life - 1);
   });
 
-  it("リスナー：配信者の隣に2体出る。自分の場に配信者種族がいなくなったら、すべて破壊される", () => {
+  it("リスナー：配信者の隣に出ると、ガードを得る。配信者がいなくなってもガードは残り、破壊もされない", () => {
     let s = put(game(["st"]), 0, 2);
     expect(ids(s)).toEqual([null, "lis", "st", "lis", null]);
+    expect(viewUnit(s, "p1", s.players.p1.field[1] as Unit, local).keywords).toContain("ガード");
     (s.players.p1.field[2] as Unit).damage = 99;
     s = fin(s);
-    expect(ids(s)).toEqual([null, null, null, null, null]);
-    expect(s.players.p1.tokensLost?.lis).toBe(2);
+    expect(ids(s)).toEqual([null, "lis", null, "lis", null]);
+    expect(viewUnit(s, "p1", s.players.p1.field[1] as Unit, local).keywords).toContain("ガード");
   });
 
-  it("リスナー：ほかの配信者種族が場に残っていれば、破壊されない", () => {
-    let s = put(put(game(["st2", "st"]), 0, 4), 0, 1);
-    expect(ids(s)).toEqual(["lis", "st", "lis", null, "st2"]);
-    (s.players.p1.field[1] as Unit).damage = 99;
-    s = fin(s);
-    expect(ids(s)).toEqual(["lis", null, "lis", null, "st2"]);
+  it("リスナー：場に配信者がいなければ、ただの 1/1。相手の場の配信者でもガードを得る", () => {
+    let s = game(["live", "live"]);
+    s = go(s, { type: "cast", player: "p1", handIndex: 0 }).state;
+    const plain = s.players.p1.field.find((u) => u?.cardId === "lis") as Unit;
+    expect(viewUnit(s, "p1", plain, local).keywords).not.toContain("ガード");
+    s.players.p2.field[2] = { ...plain, uid: 999, cardId: "st2", token: false };
+    s = go(s, { type: "cast", player: "p1", handIndex: 0 }).state;
+    const guarded = s.players.p1.field.filter((u) => u?.cardId === "lis").at(-1) as Unit;
+    expect(viewUnit(s, "p1", guarded, local).keywords).toContain("ガード");
   });
 
   it("エース：破壊された次の自分のターンの始めに、闇の姿が速攻で戻る。相手全員を晒し状態にして、相手のプレイヤーを殴れる", () => {
@@ -1823,14 +1831,14 @@ describe("神属性の作り直し（10月24日。docs/design-god.md）", () => 
     expect(effectiveCost(s, "p1", "god", local)).toBe(11);
   });
 
-  it("ネ申：出たとき、盾・裁きの雷・天罰を手札に加える。呪文のトークンは使っても墓地に行かない", () => {
+  it("ネ申：出たとき、盾・裁きの雷・天罰を手札に加える。呪文のトークンも使ったら墓地に行く", () => {
     let s = game(["god"], F(12), 30);
     s = put(s, 0, 2);
     expect(s.players.p1.hand.slice(-3)).toEqual(["tate", "rai", "ten"]);
     const lp = s.players.p2.lp;
     s = go(s, { type: "cast", player: "p1", handIndex: s.players.p1.hand.indexOf("ten") }).state;
     expect(s.players.p2.lp).toBe(lp - 5);
-    expect(s.players.p1.trash).not.toContain("ten");
+    expect(s.players.p1.trash).toContain("ten");
   });
 
   it("盾：次の相手のターンの終わりまで、受けるダメージを1回ごとに5減らす。大きい一撃は差だけ通る", () => {
@@ -1895,5 +1903,46 @@ describe("神属性の作り直し（10月24日。docs/design-god.md）", () => 
     s = put(s, 0, 0);
     expect(s.players.p1.hand).toContain("sg");
     expect(s.players.p1.deck.slice(0, 2)).toEqual(["f", "nsg"]);
+  });
+});
+
+describe("水属性の作り直し（10月24日。docs/design-water.md）", () => {
+  const local: Record<string, RuleCard> = {
+    ...catalog,
+    lis: icon("lis", 0, 1, 1, {
+      token: true,
+      effects: [{ on: "play", do: "guardIfKaiwai", kaiwai: "配信者" }],
+    }),
+    // ミナモ：隣にリスナーを2体。ターンの終わりに、リスナー1体につきライフを1回復
+    vt: icon("vt", 1, 2, 5, {
+      kaiwai: ["配信者"],
+      effects: [
+        { on: "play", do: "summon", card: "lis", count: 2, flank: true },
+        { on: "turnEnd", do: "healPerCard", card: "lis" },
+      ],
+    }),
+    // 不眠のルリ（闇の姿だけを使う）：回復するたび、コストがいちばん高い相手1体を手札に戻す
+    nurse: icon("nurse", 1, 6, 2, { effects: [{ on: "passive", do: "healBounce" }] }),
+    pill: post("pill", 0, { effects: [{ do: "heal", to: "master", amount: 1 }] }),
+  };
+  const go = (s: GameState, a: Action) => applyAction(s, a, local);
+
+  it("ミナモ：ターンの終わりに、自分の場のリスナー1体につき自分のライフを1回復する（回復の効果として数える）", () => {
+    let s = game(["vt"]);
+    s.players.p1.lp = 10;
+    s = go(s, { type: "play", player: "p1", handIndex: 0, slot: 2 }).state;
+    s = go(s, { type: "endTurn", player: "p1" }).state;
+    expect(s.players.p1.lp).toBe(12);
+    expect(s.players.p1.heals).toBe(1);
+  });
+
+  it("不眠のルリ：回復するたび、コストがいちばん高い相手のキャラクター1体を持ち主の手札に戻す", () => {
+    let s = withFoe(["nurse", "pill"], ["f", "big"]);
+    s = go(s, { type: "play", player: "p1", handIndex: 0, slot: 0 }).state;
+    const hand = s.players.p2.hand.length;
+    s = go(s, { type: "cast", player: "p1", handIndex: 0 }).state;
+    expect(s.players.p2.field[1]).toBeNull();
+    expect(s.players.p2.hand.at(-1)).toBe("big");
+    expect(s.players.p2.hand).toHaveLength(hand + 1);
   });
 });

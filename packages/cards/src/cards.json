@@ -299,15 +299,15 @@
     "hp": 1,
     "attributes": [],
     "kaiwai": [],
-    "keywords": ["ガード"],
+    "keywords": [],
     "effects": [
       {
-        "on": "passive",
-        "do": "vanishWithout",
+        "on": "play",
+        "do": "guardIfKaiwai",
         "kaiwai": "配信者"
       }
     ],
-    "effect": "ガード。自分の場に配信者種族がいなくなったら、このキャラクターは破壊される。",
+    "effect": "【場に出たとき】場に配信者種族がいれば、ガードを得る。",
     "token": true,
     "art": "/assets/cards/t-listener-art.jpg"
   },
@@ -442,26 +442,26 @@
     "type": "icon",
     "rarity": 5,
     "cost": 5,
-    "attack": 3,
+    "attack": 2,
     "hp": 5,
     "attributes": ["水"],
     "kaiwai": ["配信者", "アイドル"],
-    "keywords": ["注目"],
+    "keywords": [],
     "effects": [
       {
         "on": "play",
-        "do": "heal",
-        "to": "allAlliesAndMaster",
-        "amount": 2
+        "do": "summon",
+        "card": "t-listener",
+        "count": 2,
+        "flank": true
       },
       {
         "on": "turnEnd",
-        "do": "heal",
-        "to": "allAlliesAndMaster",
-        "amount": 1
+        "do": "healPerCard",
+        "card": "t-listener"
       }
     ],
-    "effect": "注目。【場に出たとき】自分のキャラクターすべてと自分のライフを2回復する。自分のターンの終わりに、自分のキャラクターすべてと自分のライフを1回復する。",
+    "effect": "【場に出たとき】隣にリスナーを2体出す。自分のターンの終わりに、自分の場のリスナー1体につき、自分のライフを1回復する。",
     "art": "/assets/cards/c3-art.jpg",
     "subject": "/assets/cards/c3-subject.webp",
     "original": "assets/original/c3-minamo.png"
@@ -471,14 +471,21 @@
     "name": "カピバラ",
     "type": "icon",
     "rarity": 1,
-    "cost": 3,
-    "attack": 1,
-    "hp": 3,
+    "cost": 1,
+    "attack": 0,
+    "hp": 2,
     "attributes": ["水"],
     "kaiwai": ["動物"],
-    "keywords": ["ガード"],
-    "effects": [],
-    "effect": "ガード。",
+    "keywords": [],
+    "effects": [
+      {
+        "on": "play",
+        "do": "heal",
+        "to": "master",
+        "amount": 1
+      }
+    ],
+    "effect": "【場に出たとき】自分のライフを1回復する。",
     "art": "/assets/cards/i1-art.jpg",
     "original": "assets/original/i1.webp"
   },
@@ -487,8 +494,8 @@
     "name": "おひるねねこ",
     "type": "icon",
     "rarity": 2,
-    "cost": 4,
-    "attack": 2,
+    "cost": 2,
+    "attack": 1,
     "hp": 3,
     "attributes": ["水"],
     "kaiwai": ["動物"],
@@ -504,75 +511,6 @@
     "effect": "自分のターンの終わりに、自分のライフを2回復する。",
     "art": "/assets/cards/i2-art.jpg",
     "original": "assets/original/i2.webp"
-  },
-  {
-    "id": "i3",
-    "name": "柴犬",
-    "type": "icon",
-    "rarity": 3,
-    "cost": 4,
-    "attack": 2,
-    "hp": 3,
-    "attributes": ["水"],
-    "kaiwai": ["動物"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "passive",
-        "do": "healStrike",
-        "amount": 1
-      }
-    ],
-    "effect": "自分が回復の効果を使うたび、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。",
-    "art": "/assets/cards/i3-art.jpg",
-    "original": "assets/original/i3.webp"
-  },
-  {
-    "id": "i4",
-    "name": "寝落ち配信",
-    "type": "post",
-    "rarity": 2,
-    "cost": 2,
-    "attributes": ["水"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "bind"
-      },
-      {
-        "do": "draw",
-        "count": 1
-      }
-    ],
-    "effect": "相手のキャラクター1体を眠り状態にする。カードを1枚引く。",
-    "target": "enemyIcon",
-    "art": "/assets/cards/i4-art.jpg",
-    "original": "assets/original/i4.webp"
-  },
-  {
-    "id": "i5",
-    "name": "優しい世界",
-    "type": "post",
-    "rarity": 3,
-    "cost": 8,
-    "attributes": ["水"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "bind",
-        "to": "allEnemies"
-      },
-      {
-        "do": "heal",
-        "to": "allAlliesAndMaster",
-        "amount": 5
-      }
-    ],
-    "effect": "相手のキャラクターすべてを眠り状態にする。自分のキャラクターすべてと自分のライフを5回復する。",
-    "art": "/assets/cards/i5-art.jpg",
-    "original": "assets/original/i5.webp"
   },
   {
     "id": "i6",
@@ -1034,36 +972,13 @@
     "original": "assets/original/m9.webp"
   },
   {
-    "id": "i7",
-    "name": "ハムスター",
-    "type": "icon",
-    "rarity": 1,
-    "cost": 2,
-    "attack": 1,
-    "hp": 2,
-    "attributes": ["水"],
-    "kaiwai": ["動物"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "death",
-        "do": "heal",
-        "to": "master",
-        "amount": 3
-      }
-    ],
-    "effect": "【破壊されたとき】自分のライフを3回復する。",
-    "art": "/assets/cards/i7-art.jpg",
-    "original": "assets/original/i7.webp"
-  },
-  {
     "id": "i8",
     "name": "ASMR配信者",
     "type": "icon",
     "rarity": 2,
-    "cost": 6,
-    "attack": 4,
-    "hp": 3,
+    "cost": 4,
+    "attack": 2,
+    "hp": 4,
     "attributes": ["水"],
     "kaiwai": ["配信者"],
     "keywords": [],
@@ -1094,19 +1009,15 @@
         "on": "play",
         "do": "bind",
         "to": "allEnemies"
-      },
-      {
-        "on": "passive",
-        "do": "lullaby"
       }
     ],
-    "effect": "ガード。【場に出たとき】相手のキャラクターすべてを眠り状態にする。相手のターンの始めに、攻撃力がいちばん高い相手のキャラクター1体を眠り状態にする。",
+    "effect": "ガード。【場に出たとき】相手のキャラクターすべてを眠り状態にする。",
     "dark": {
       "name": "病みボイス ナギ",
-      "attack": 4,
-      "hp": 4,
-      "keywords": ["突進", "連撃"],
-      "effect": "突進。連撃。【闇堕ちしたとき】相手のキャラクターすべてを眠り状態にする。",
+      "attack": 6,
+      "hp": 2,
+      "keywords": ["突進"],
+      "effect": "突進。【闇堕ちしたとき】相手のキャラクターすべてを眠り状態にする。",
       "art": "/assets/cards/c5-dark-art.jpg",
       "subject": "/assets/cards/c5-dark-subject.webp",
       "original": "assets/original/c5-dark.webp",
@@ -1585,7 +1496,7 @@
     "name": "ネ申",
     "type": "icon",
     "rarity": 5,
-    "cost": 13,
+    "cost": 15,
     "attack": 5,
     "hp": 10,
     "attributes": ["神"],
@@ -1745,52 +1656,12 @@
     "original": "assets/original/c8.webp"
   },
   {
-    "id": "i10",
-    "name": "#癒し動画",
-    "type": "post",
-    "rarity": 2,
-    "cost": 3,
-    "attributes": ["水"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "heal",
-        "to": "allAlliesAndMaster",
-        "amount": 2
-      },
-      {
-        "do": "draw",
-        "count": 1
-      }
-    ],
-    "effect": "自分のキャラクターすべてと自分のライフを2回復する。カードを1枚引く。",
-    "art": "/assets/cards/i10-art.jpg",
-    "original": "assets/original/i10.webp"
-  },
-  {
-    "id": "i11",
-    "name": "看板猫",
-    "type": "icon",
-    "rarity": 3,
-    "cost": 2,
-    "attack": 2,
-    "hp": 1,
-    "attributes": ["水"],
-    "kaiwai": ["動物"],
-    "keywords": ["速攻"],
-    "effects": [],
-    "effect": "速攻。",
-    "art": "/assets/cards/i11-art.jpg",
-    "original": "assets/original/i11.webp"
-  },
-  {
     "id": "i12",
     "name": "深夜ラジオのDJ",
     "type": "icon",
     "rarity": 4,
-    "cost": 5,
-    "attack": 3,
+    "cost": 3,
+    "attack": 1,
     "hp": 3,
     "attributes": ["水"],
     "kaiwai": ["配信者"],
@@ -1817,7 +1688,7 @@
     "hp": 5,
     "attributes": ["水"],
     "kaiwai": ["動物", "ミーム"],
-    "keywords": ["ガード"],
+    "keywords": [],
     "effects": [
       {
         "on": "hand",
@@ -1829,7 +1700,7 @@
         "amount": 2
       }
     ],
-    "effect": "ガード。手札にある間、このゲームで自分が回復の効果を使った回数だけコスト-1。【場に出たとき】自分のキャラクターすべてと自分のライフを2回復する。",
+    "effect": "手札にある間、このゲームで自分が回復の効果を使った回数だけコスト-1。【場に出たとき】自分のキャラクターすべてと自分のライフを2回復する。",
     "art": "/assets/cards/i13-art.jpg",
     "original": "assets/original/i13.webp"
   },
@@ -1837,9 +1708,9 @@
     "id": "c10",
     "name": "ユズハ",
     "type": "icon",
-    "rarity": 5,
+    "rarity": 4,
     "cost": 4,
-    "attack": 3,
+    "attack": 2,
     "hp": 4,
     "attributes": ["水"],
     "kaiwai": ["配信者"],
@@ -1848,10 +1719,10 @@
       {
         "on": "passive",
         "do": "healBurn",
-        "amount": 1
+        "amount": 2
       }
     ],
-    "effect": "自分が回復の効果を使うたび、相手のプレイヤーに1ダメージ。",
+    "effect": "自分が回復の効果を使うたび、相手のプレイヤーに2ダメージ。",
     "art": "/assets/cards/c10-art.jpg",
     "original": "assets/original/c10.webp"
   },
@@ -1998,29 +1869,6 @@
     "original": "assets/original/m17.webp"
   },
   {
-    "id": "i15",
-    "name": "お悩み相談のお姉さん",
-    "type": "icon",
-    "rarity": 3,
-    "cost": 3,
-    "attack": 2,
-    "hp": 2,
-    "attributes": ["水"],
-    "kaiwai": ["有識者"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "heal",
-        "to": "allAlliesAndMaster",
-        "amount": 1
-      }
-    ],
-    "effect": "【場に出たとき】自分のキャラクターすべてと自分のライフを1回復する。",
-    "art": "/assets/cards/i15-art.jpg",
-    "original": "assets/original/i15.webp"
-  },
-  {
     "id": "k16",
     "name": "踊るワンコ",
     "type": "icon",
@@ -2089,7 +1937,7 @@
     "name": "ブロック",
     "type": "post",
     "rarity": 2,
-    "cost": 4,
+    "cost": 3,
     "attributes": ["水"],
     "kaiwai": [],
     "keywords": [],
@@ -2190,7 +2038,7 @@
     "type": "icon",
     "rarity": 5,
     "cost": 6,
-    "attack": 4,
+    "attack": 2,
     "hp": 6,
     "attributes": ["水"],
     "kaiwai": ["配信者", "有識者"],
@@ -2198,27 +2046,27 @@
     "effects": [
       {
         "on": "play",
-        "do": "bounce",
-        "to": "costliestEnemy"
+        "do": "heal",
+        "to": "allAlliesAndMaster",
+        "amount": 3
       }
     ],
-    "effect": "【場に出たとき】コストがいちばん高い相手のキャラクター1体を持ち主の手札に戻す。",
+    "effect": "【場に出たとき】自分のキャラクターすべてと自分のライフを3回復する。",
     "art": "/assets/cards/c11-art.jpg",
     "subject": "/assets/cards/c11-subject.webp",
     "original": "assets/original/c11.webp",
     "dark": {
       "name": "不眠のルリ",
-      "attack": 4,
-      "hp": 4,
+      "attack": 6,
+      "hp": 2,
       "keywords": ["突進"],
       "effects": [
         {
-          "on": "play",
-          "do": "revive",
-          "maxCost": 3
+          "on": "passive",
+          "do": "healBounce"
         }
       ],
-      "effect": "突進。【闇堕ちしたとき】墓地のコストが3以下の自分のキャラクターのうち、コストがいちばん高い1体を場に戻す。【場に出たとき】も働く。",
+      "effect": "突進。自分が回復の効果を使うたび、コストがいちばん高い相手のキャラクター1体を持ち主の手札に戻す。",
       "art": "/assets/cards/c11-dark-art.jpg",
       "subject": "/assets/cards/c11-dark-subject.webp",
       "original": "assets/original/c11-dark.webp"
@@ -2473,52 +2321,6 @@
     "original": "assets/original/c17.webp"
   },
   {
-    "id": "i18",
-    "name": "子猫",
-    "type": "icon",
-    "rarity": 1,
-    "cost": 1,
-    "attack": 1,
-    "hp": 1,
-    "attributes": ["水"],
-    "kaiwai": ["動物"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "heal",
-        "to": "master",
-        "amount": 2
-      }
-    ],
-    "effect": "【場に出たとき】自分のライフを2回復する。",
-    "art": "/assets/cards/i18-art.jpg",
-    "original": "assets/original/i18.webp"
-  },
-  {
-    "id": "i19",
-    "name": "保健室の先生",
-    "type": "icon",
-    "rarity": 3,
-    "cost": 7,
-    "attack": 4,
-    "hp": 4,
-    "attributes": ["水"],
-    "kaiwai": ["有識者"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "heal",
-        "to": "allAlliesAndMaster",
-        "amount": 3
-      }
-    ],
-    "effect": "【場に出たとき】自分のキャラクターすべてと自分のライフを3回復する。",
-    "art": "/assets/cards/i19-art.jpg",
-    "original": "assets/original/i19.webp"
-  },
-  {
     "id": "n12",
     "name": "有名人",
     "type": "icon",
@@ -2618,6 +2420,24 @@
     "effect": "【破壊されたとき】攻撃力がいちばん高い相手のキャラクター1体に2ダメージ。",
     "art": "/assets/cards/n16-art.jpg",
     "original": "assets/original/n16.webp"
+  },
+  {
+    "id": "n17",
+    "name": "ライブ配信",
+    "type": "post",
+    "rarity": 2,
+    "cost": 2,
+    "attributes": [],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "summon",
+        "card": "t-listener",
+        "count": 2
+      }
+    ],
+    "effect": "リスナーを2体出す。"
   },
   {
     "id": "k19",

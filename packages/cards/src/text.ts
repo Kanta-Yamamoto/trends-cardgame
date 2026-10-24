@@ -76,6 +76,7 @@ function sectionOf(e: CardEffect): Section {
     case "healGrow":
     case "healBurn":
     case "healStrike":
+    case "healBounce":
       return "whenever";
     case "conspiracyWin":
       return "turnStart";
@@ -284,8 +285,12 @@ function sentence(e: CardEffect, ctx: Ctx, prev: CardEffect | undefined): string
         return `このキャラクターが${ENEMY}を破壊するたび、自分の${e.cards.map(ctx.nameOf).join("と")}すべてに${stats(e.attack, e.hp)}`;
       case "faceOnKill":
         return `このキャラクターが${ENEMY}を破壊するたび、相手のプレイヤーに${e.amount}ダメージ`;
-      case "vanishWithout":
-        return `自分の場に${e.kaiwai}種族がいなくなったら、このキャラクターは破壊される`;
+      case "guardIfKaiwai":
+        return `場に${e.kaiwai}種族がいれば、ガードを得る`;
+      case "healPerCard":
+        return `自分の場の${ctx.nameOf(e.card)}1体につき、自分のライフを1回復する`;
+      case "healBounce":
+        return `自分が回復の効果を使うたび、コストがいちばん高い${ENEMY}1体を持ち主の手札に戻す`;
       case "healGrow":
         return `自分が回復の効果を使うたび、${stats(e.attack, e.hp)}`;
       case "healBurn":
