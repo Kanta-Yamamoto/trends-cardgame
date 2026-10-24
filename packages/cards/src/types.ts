@@ -216,5 +216,5 @@ export const DECK_SIZE = 20;
 /** 1つのデッキに入れられる属性の数（共通カードは数えない）。初期リリースは単属性だけ（2026-10-19 に 2→1） */
 export const MAX_DECK_ATTRIBUTES = 1;
 export const MAX_COPIES = 2;
-/** 1つのデッキに入れられる、闇堕ちを持つカードの種類（2026-10-20。★5 の種類は制限しない） */
-export const MAX_DARK_KINDS = 1;
+/** 1つのデッキに入れられる、闇堕ちを持つカードの枚数。種類は問わない（2026-10-24 に「1種類まで」から変更。★5 の種類は制限しない） */
+export const MAX_DARK_CARDS = 2;
