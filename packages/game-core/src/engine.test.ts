@@ -807,12 +807,18 @@ describe("デッキの決まり", () => {
   it("ニュートラルのカードは属性に数えない", () => {
     expect(deckAttributes(["n5", "n2", "f6"], real)).toEqual(["炎"]);
   });
-  it("1つの属性＋ニュートラルのカードの20枚は組める（ニュートラルのカードだけでもよい）。闇堕ちを持つカードは1種類まで、★5は何種類でも", () => {
+  it("1つの属性＋ニュートラルのカードの20枚は組める（ニュートラルのカードだけでもよい）。闇堕ちを持つカードは種類を問わず2枚まで、★5は何種類でも", () => {
     const flame = DECKS.solo_flame;
     expect(validateDeck(flame, real)).toEqual([]);
-    // 闇堕ちを持つカード（レン・カグラ）を2種類は反則
-    const twoDark = [...flame.filter((id) => id !== "c4"), "c9"];
-    expect(validateDeck(twoDark, real).some((e) => e.includes("闇堕ちを持つカードは1種類まで"))).toBe(true);
+    // 闇堕ちを持つカードを2種類1枚ずつ（レン・カグラ）は組める
+    const withoutRen = [...flame];
+    withoutRen.splice(withoutRen.indexOf("c2"), 1);
+    const twoKinds = [...withoutRen.filter((id) => id !== "c4"), "c9"];
+    expect(twoKinds.filter((id) => real[id]?.dark)).toEqual(["c2", "c9"]);
+    expect(validateDeck(twoKinds, real)).toEqual([]);
+    // 3枚（レン2枚＋カグラ）は反則
+    const threeDark = [...flame.filter((id) => id !== "c4"), "c9"];
+    expect(validateDeck(threeDark, real).some((e) => e.includes("闇堕ちを持つカードは2枚まで"))).toBe(true);
     // 闇堕ちのない★5（ヒバナ）や共通の★5（『フィクサー』）は数えない
     const moreAces = [...flame.filter((id) => id !== "n6"), "c4", "c15"];
     expect(validateDeck(moreAces, real)).toEqual([]);

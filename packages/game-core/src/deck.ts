@@ -1,4 +1,4 @@
-import { DECK_SIZE, MAX_COPIES, MAX_DARK_KINDS, MAX_DECK_ATTRIBUTES } from "@trends/cards";
+import { DECK_SIZE, MAX_COPIES, MAX_DARK_CARDS, MAX_DECK_ATTRIBUTES } from "@trends/cards";
 import type { RuleCard } from "./types";
 
 type Catalog = Record<string, RuleCard>;
@@ -12,7 +12,7 @@ export function deckAttributes(deck: readonly string[], catalog: Catalog): strin
 
 /**
  * デッキの決まりを確かめ、守れていないところを日本語で返す（空なら OK）。
- * 20枚・同じカードは2枚まで・トークンは入れられない・闇堕ちを持つカードは MAX_DARK_KINDS（1種類）まで・属性は MAX_DECK_ATTRIBUTES（今は1つ）まで（ニュートラルのカードはいくつでも）
+ * 20枚・同じカードは2枚まで・トークンは入れられない・闇堕ちを持つカードは種類を問わず MAX_DARK_CARDS（2枚）まで・属性は MAX_DECK_ATTRIBUTES（今は1つ）まで（ニュートラルのカードはいくつでも）
  */
 export function validateDeck(deck: readonly string[], catalog: Catalog): string[] {
   const errors: string[] = [];
@@ -25,11 +25,11 @@ export function validateDeck(deck: readonly string[], catalog: Catalog): string[
     else if (card.token) errors.push(`トークンはデッキに入れられません：${id}`);
     if (n > MAX_COPIES) errors.push(`同じカードは${MAX_COPIES}枚までです：${id}（${n}枚）`);
   }
-  // 闇堕ちを持つカード（エース）は1種類まで。2枚入れれば、闇堕ちは最大2回
-  const aces = [...counts.keys()].filter((id) => !!catalog[id]?.dark);
-  if (aces.length > MAX_DARK_KINDS)
+  // 闇堕ちを持つカード（エース）は、種類を問わず2枚まで。闇堕ちは最大2回
+  const aces = deck.filter((id) => !!catalog[id]?.dark);
+  if (aces.length > MAX_DARK_CARDS)
     errors.push(
-      `闇堕ちを持つカードは${MAX_DARK_KINDS}種類までです（今は${aces.length}種類：${aces.join("・")}）`,
+      `闇堕ちを持つカードは${MAX_DARK_CARDS}枚までです（今は${aces.length}枚：${aces.join("・")}）`,
     );
   const attrs = deckAttributes(deck, catalog);
   if (attrs.length > MAX_DECK_ATTRIBUTES)

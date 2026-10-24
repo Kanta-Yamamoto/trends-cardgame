@@ -6,6 +6,7 @@ import {
   DECK_SIZE,
   type DeckId,
   MAX_COPIES,
+  MAX_DARK_CARDS,
   MAX_DECK_ATTRIBUTES,
 } from "@trends/cards";
 import { useCallback, useMemo, useState } from "react";
@@ -97,8 +98,8 @@ export function Decks() {
         <h1>デッキ構築</h1>
         <p className="muted">
           {DECK_SIZE} 枚ちょうど・同じカードは {MAX_COPIES} 枚まで・属性は {MAX_DECK_ATTRIBUTES}{" "}
-          つ（ニュートラルのカードはいくつでも）・闇堕ちを持つカードは1種類まで。 保存したデッキは「CPU
-          と対戦」「オンライン対戦」で選べます。
+          つ（ニュートラルのカードはいくつでも）・闇堕ちを持つカードは {MAX_DARK_CARDS}{" "}
+          枚まで（種類は問わない）。 保存したデッキは「CPU と対戦」「オンライン対戦」で選べます。
         </p>
         <p className="db-sync muted">
           {user ? (
@@ -219,8 +220,8 @@ function DeckEditor({
     if (total >= DECK_SIZE) return false;
     const a = c.attributes[0];
     if (a && !attrs.includes(a) && attrs.length >= MAX_DECK_ATTRIBUTES) return false;
-    // 闇堕ちを持つカードは1種類まで
-    if (c.dark && cards.some((id) => id !== c.id && CARD_BY_ID[id]?.dark)) return false;
+    // 闇堕ちを持つカードは、種類を問わず2枚まで
+    if (c.dark && cards.filter((id) => CARD_BY_ID[id]?.dark).length >= MAX_DARK_CARDS) return false;
     return true;
   };
   const add = (id: string) => setCounts((m) => new Map(m).set(id, (m.get(id) ?? 0) + 1));
