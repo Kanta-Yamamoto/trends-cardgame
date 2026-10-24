@@ -844,7 +844,7 @@ describe("デッキの決まり", () => {
     expect(deckAttributes(DECKS.unei_idol, real)).toEqual(["推し"]);
     for (const id of ["c15", "c16", "c17"]) expect(DECKS.unei_idol.filter((c) => c === id)).toHaveLength(2);
   });
-  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、ニュートラルのカードを4枚入れる（運営デッキ・推しデッキ・炎デッキ・神デッキは例外）", () => {
+  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、ニュートラルのカードを4枚入れる（運営デッキ・推しデッキ・炎デッキ・神デッキ・自然の2デッキは例外）", () => {
     // 運営デッキ（unei_）は、共通で固めるのがコンセプト（オーナー）なので、共通の枚数の決まりから外す
     expect(DECKS.unei_idol.filter((c) => real[c]?.attributes.length === 0)).toHaveLength(14);
     // 推しデッキは、運営サイドの3枚とインフルエンサー・スクショで、ニュートラル8枚（10月24日、docs/design-oshi.md）
@@ -853,8 +853,21 @@ describe("デッキの決まり", () => {
     expect(DECKS.solo_flame.filter((c) => real[c]?.attributes.length === 0)).toEqual(["c15", "c16"]);
     // 神デッキは『調停者』の1枚だけ（10月24日、docs/design-god.md）
     expect(DECKS.solo_expert.filter((c) => real[c]?.attributes.length === 0)).toEqual(["c16"]);
+    // 自然の全体強化デッキは自然だけ、クサハミデッキはスクショと『フィクサー』『調停者』の5枚（10月25日、docs/design-nature.md）
+    expect(DECKS.solo_meme.filter((c) => real[c]?.attributes.length === 0)).toEqual([]);
+    expect(DECKS.fixer_meme.filter((c) => real[c]?.attributes.length === 0)).toEqual([
+      "n9",
+      "n9",
+      "c15",
+      "c15",
+      "c16",
+    ]);
     for (const [id, deck] of Object.entries(DECKS)) {
-      if (id.startsWith("unei_") || ["solo_idol", "solo_flame", "solo_expert"].includes(id)) continue;
+      if (
+        id.startsWith("unei_") ||
+        ["solo_idol", "solo_flame", "solo_expert", "solo_meme", "fixer_meme"].includes(id)
+      )
+        continue;
       const aces = deck.filter((c) => real[c]?.dark);
       const commons = deck.filter((c) => real[c]?.attributes.length === 0);
       expect({ id, aces: aces.length, kinds: new Set(aces).size, commons: commons.length }).toEqual({
@@ -1895,5 +1908,80 @@ describe("神属性の作り直し（10月24日。docs/design-god.md）", () => 
     s = put(s, 0, 0);
     expect(s.players.p1.hand).toContain("sg");
     expect(s.players.p1.deck.slice(0, 2)).toEqual(["f", "nsg"]);
+  });
+});
+
+describe("自然属性の作り直し（10月25日。docs/design-nature.md）", () => {
+  const local = { ...catalog, ...Object.fromEntries(CARDS.map((c) => [c.id, c])) } as Record<
+    string,
+    RuleCard
+  >;
+  const go = (s: GameState, a: Action) => applyAction(s, a, local);
+  const put = (s: GameState, handIndex: number, slot: number) =>
+    go(s, { type: "play", player: "p1", handIndex, slot }).state;
+  const fin = (s: GameState, player: "p1" | "p2" = "p1") => go(s, { type: "endTurn", player }).state;
+  const stat = (s: GameState, slot: number) => {
+    const u = s.players.p1.field[slot] as Unit;
+    const v = viewUnit(s, "p1", u, local);
+    return [v.attack, v.hp];
+  };
+
+  it("伝説のコラ画像：このゲームで先に出した伝説のコラ画像1体につき攻撃力+2・体力+2（場から離れても数える）", () => {
+    let s = game(["k5", "k5"], F(12), 20);
+    s = put(s, 0, 0);
+    expect(stat(s, 0)).toEqual([2, 3]);
+    s.players.p1.field[0] = null;
+    s = put(s, 0, 1);
+    expect(stat(s, 1)).toEqual([4, 5]);
+  });
+
+  it("呪いのコラ画像：闇堕ちしたとき、闇堕ちを持たない伝説のコラ画像（トークン）を手札に加える。それも先に出した数で育つ", () => {
+    let s = game(["k5"], F(12), 20);
+    s = put(s, 0, 0);
+    (s.players.p1.field[0] as Unit).damage = 99;
+    s = fin(fin(s), "p2");
+    const dark = s.players.p1.field[0] as Unit;
+    expect(dark.dark).toBe(true);
+    expect(stat(s, 0)).toEqual([3, 1]);
+    expect(dark.canAttack && !dark.rushOnly).toBe(true);
+    expect(s.players.p1.hand).toContain("t-kora");
+    expect(local["t-kora"]?.dark).toBeUndefined();
+
+    s.players.p1.mana = 10;
+    s = put(s, s.players.p1.hand.indexOf("t-kora"), 1);
+    expect(stat(s, 1)).toEqual([4, 5]);
+    // 写しは破壊されても闇堕ちせず、墓地にも行かない
+    (s.players.p1.field[1] as Unit).damage = 99;
+    s = fin(s);
+    expect(darkOmens(s, "p1")).toEqual([]);
+    expect(s.players.p1.trash).not.toContain("t-kora");
+  });
+
+  it("ワラ：空いている枠すべてに草を出し、自分のキャラクターすべてに突進を付ける", () => {
+    let s = game(["c8"], F(12), 20);
+    s = put(s, 0, 2);
+    expect(s.players.p1.field.map((u) => u?.cardId)).toEqual(["t-kusa", "t-kusa", "c8", "t-kusa", "t-kusa"]);
+    for (const u of s.players.p1.field) expect(u?.canAttack && u.rushOnly).toBe(true);
+  });
+
+  it("草の女王：草を2体出し、自分のターンの終わりに自分の草すべてに攻撃力+1・体力+1（草のほかは上がらない）", () => {
+    let s = game(["f", "k19"], F(12), 20);
+    s = put(s, 0, 0);
+    s = put(s, 0, 2);
+    expect(s.players.p1.field.filter((u) => u?.cardId === "t-kusa")).toHaveLength(2);
+    s = fin(s);
+    for (const [slot, u] of s.players.p1.field.entries()) {
+      if (u?.cardId === "t-kusa") expect(stat(s, slot)).toEqual([2, 2]);
+    }
+    expect(stat(s, 0)).toEqual([1, 1]);
+    expect(stat(s, 2)).toEqual([3, 5]);
+  });
+
+  it("トレンドメーカー：自分のほかのキャラクターすべてに攻撃力+2", () => {
+    let s = game(["f", "k14"], F(12), 20);
+    s = put(s, 0, 0);
+    s = put(s, 0, 1);
+    expect(stat(s, 0)).toEqual([3, 1]);
+    expect(stat(s, 1)).toEqual([4, 4]);
   });
 });

@@ -730,6 +730,22 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       }
       break;
     }
+    case "growPerPlayed": {
+      const n = e.cards.reduce((sum, id) => sum + (me.played?.[id] ?? 0), 0);
+      if (n > 0 && self && ctx.selfSlot !== undefined) {
+        self.atkBuff += e.attack * n;
+        self.hpBuff += e.hp * n;
+        emit({
+          type: "buffed",
+          player,
+          slot: ctx.selfSlot,
+          cardId: self.cardId,
+          attack: e.attack * n,
+          hp: e.hp * n,
+        });
+      }
+      break;
+    }
     case "buffSelf":
       if (self && ctx.selfSlot !== undefined) {
         self.atkBuff += e.attack;
@@ -741,6 +757,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       me.field.forEach((u, slot) => {
         if (!u || slot === ctx.selfSlot) return;
         if (e.kaiwai && !inKaiwai(u, e.kaiwai, catalog)) return;
+        if (e.cards && !e.cards.includes(u.cardId)) return;
         if (e.thisTurn) u.tempAtk = (u.tempAtk ?? 0) + e.attack;
         else u.atkBuff += e.attack;
         u.hpBuff += e.hp;
@@ -1351,12 +1368,15 @@ export function applyAction(
       me.mana -= cost;
       me.hand.splice(action.handIndex, 1);
       useDiscount(me, cardId);
-      me.field[action.slot] = newUnit(state, cardId, catalog, false);
+      // 手札に加えたトークン（伝説のコラ画像の写し）は、出してもトークンのまま（墓地に行かない）
+      me.field[action.slot] = newUnit(state, cardId, catalog, !!card.token);
       countGuard(state, player, cardId, catalog);
       const playedBefore = me.playedThisTurn++;
       emit({ type: "played", player, cardId, slot: action.slot, cost });
       const ctx: Ctx = { state, player, catalog, config, emit, selfSlot: action.slot, playedBefore };
       for (const e of card.effects) if (triggerOf(e) === "play") runEffect(e, ctx);
+      // 「先に出した」数は、このキャラクターの効果のあとで数える
+      me.played = { ...me.played, [cardId]: (me.played?.[cardId] ?? 0) + 1 };
       resolveDeaths(state, catalog, emit, config);
       break;
     }

@@ -109,6 +109,8 @@ export interface PlayerState {
   handDiscount?: Record<string, number>;
   /** このゲームで自分が出したガードのキャラクターの数（ネ申のコスト） */
   guardsPlayed?: number;
+  /** このゲームで自分が手札から出したキャラクターの数（カード ID ごと。伝説のコラ画像） */
+  played?: Record<string, number>;
   /**
    * このプレイヤーに付与された「次の自分のターンの終わりに amount ダメージを受ける」効果（ミコト）。
    * turn は付与された通算ターン（そのターンのうちには働かない）。働いたら消える
