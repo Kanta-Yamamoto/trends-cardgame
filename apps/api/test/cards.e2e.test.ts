@@ -48,7 +48,7 @@ describe("cards API", () => {
       attack: def?.attack,
       hp: def?.hp,
       attributes: ["炎"],
-      keywords: ["連撃"],
+      keywords: def?.keywords,
     });
     expect(ren.dark).toMatchObject({ name: "闇堕ちレン", attack: def?.dark?.attack, hp: def?.dark?.hp });
     // 呪文は攻撃力・体力を持たない
