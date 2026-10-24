@@ -58,6 +58,7 @@ export type CardEffect = (
   | { do: "damage"; to?: "strongestEnemy" | "allEnemies" | "enemyMaster"; amount: number }
   /** passive：自分の場のほかのキャラクター1体につき攻撃力+1 */
   /** 自分の場のほかのキャラクター1体につき攻撃力+1。kaiwai を付けると、その種族だけ数える */
+  /** play：出たときに、自分の場のほかのキャラクター（kaiwai があればその種族）1体につき攻撃力+1。強化なので、あとで仲間が減っても下がらない */
   | { do: "attackPerAlly"; kaiwai?: Kaiwai }
   /** 晒し状態にする（ガードを失い、それまでの強化がすべて消える。ずっと続く）。to が無ければ呪文の対象を */
   | { do: "expose"; to?: "strongestEnemy" | "allEnemies" }
