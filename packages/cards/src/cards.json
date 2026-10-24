@@ -285,6 +285,23 @@
     "original": "assets/original/t-kusa.webp"
   },
   {
+    "id": "t-gachikoi",
+    "name": "ガチ恋勢",
+    "type": "icon",
+    "rarity": 1,
+    "cost": 0,
+    "attack": 2,
+    "hp": 1,
+    "attributes": ["推し"],
+    "kaiwai": [],
+    "keywords": ["突進"],
+    "effects": [],
+    "effect": "突進。",
+    "token": true,
+    "art": "/assets/cards/t-gachikoi-art.jpg",
+    "original": "assets/original/m6.webp"
+  },
+  {
     "id": "m1",
     "name": "トップアイドル",
     "type": "icon",
@@ -295,31 +312,28 @@
     "attributes": ["推し"],
     "kaiwai": ["アイドル"],
     "keywords": ["注目"],
-    "effects": [
-      {
-        "on": "play",
-        "do": "summon",
-        "card": "m4",
-        "count": 1,
-        "centerCount": 2,
-        "flank": true
-      }
-    ],
-    "effect": "注目。【場に出たとき】隣に親衛隊を1体出す。センターに出したときは、左右に2体出す。",
+    "effects": [],
+    "effect": "注目。",
     "dark": {
       "name": "闇深アイドル",
-      "attack": 6,
+      "attack": 5,
       "hp": 4,
-      "keywords": ["突進", "連撃"],
-      "effect": "突進。連撃。【闇堕ちしたとき】攻撃力が4以下の相手のキャラクターのうち、攻撃力がいちばん高い1体を奪う。",
+      "keywords": ["突進", "注目"],
+      "effect": "突進。注目。【闇堕ちしたとき】左右の空いている枠に、親衛隊を1体ずつ出す。出した親衛隊に攻撃力+2・体力+2。",
       "art": "/assets/cards/m1-dark-art.jpg",
       "subject": "/assets/cards/m1-dark-subject.webp",
       "original": "assets/original/m1-dark.webp",
       "effects": [
         {
           "on": "play",
-          "do": "steal",
-          "maxAttack": 4
+          "do": "summon",
+          "card": "m4",
+          "count": 2,
+          "sides": true,
+          "buff": {
+            "attack": 2,
+            "hp": 2
+          }
         }
       ]
     },
@@ -331,15 +345,24 @@
     "id": "m2",
     "name": "地下アイドル",
     "type": "icon",
-    "rarity": 2,
-    "cost": 2,
-    "attack": 1,
-    "hp": 2,
+    "rarity": 5,
+    "cost": 3,
+    "attack": 0,
+    "hp": 5,
     "attributes": ["推し"],
     "kaiwai": ["アイドル"],
     "keywords": ["注目"],
-    "effects": [],
-    "effect": "注目。",
+    "effects": [
+      {
+        "on": "turnEnd",
+        "do": "draw",
+        "count": 1,
+        "if": {
+          "center": true
+        }
+      }
+    ],
+    "effect": "注目。自分のターンの終わりに、このキャラクターがセンターにいれば、カードを1枚引く。",
     "art": "/assets/cards/m2-art.jpg",
     "original": "assets/original/m2.webp"
   },
@@ -2160,6 +2183,35 @@
     "effect": "相手のキャラクターすべてに1ダメージ。自分の場にアイドル種族がいれば、さらに1ダメージ。",
     "art": "/assets/cards/m20-art.jpg",
     "original": "assets/original/m20.webp"
+  },
+  {
+    "id": "m21",
+    "name": "メン地下",
+    "type": "icon",
+    "rarity": 3,
+    "cost": 4,
+    "attack": 2,
+    "hp": 3,
+    "attributes": ["推し"],
+    "kaiwai": ["アイドル"],
+    "keywords": [],
+    "effects": [
+      {
+        "on": "play",
+        "do": "summon",
+        "card": "t-gachikoi",
+        "count": 1,
+        "flank": true
+      },
+      {
+        "on": "passive",
+        "do": "buffOnKill",
+        "cards": ["t-gachikoi", "m4"],
+        "attack": 1,
+        "hp": 1
+      }
+    ],
+    "effect": "【場に出たとき】隣にガチ恋勢を1体出す。このキャラクターが相手のキャラクターを破壊するたび、自分のガチ恋勢と親衛隊すべてに攻撃力+1・体力+1。"
   },
   {
     "id": "c11",

@@ -25,9 +25,9 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: strin
     text: "「レン」の連撃と闇堕ちで、相手が守る前に押し切ろう",
   },
   solo_idol: {
-    ace: "c13",
+    ace: "m1",
     name: "推しミッドレンジ",
-    text: "「ミレイ」で育てたキャラクターをそろえて、一斉攻撃を決めよう",
+    text: "「トップアイドル」が闇堕ちすると、親衛隊を連れて戻ってくる。育てた盤面で押し切ろう",
   },
   solo_expert: {
     ace: "g4",

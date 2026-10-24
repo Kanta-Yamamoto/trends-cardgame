@@ -39,6 +39,10 @@ export type CardEffect = (
       centerCount?: number;
       /** このキャラクターの両隣（左、右の順）から埋める。埋まっていれば左から空いた枠へ */
       flank?: boolean;
+      /** このキャラクターの左右の空いている枠にだけ、1体ずつ出す（count は使わない。空いていない側には出さない） */
+      sides?: boolean;
+      /** 出したキャラクターに強化（攻撃力+attack・体力+hp） */
+      buff?: { attack: number; hp: number };
     }
   | { do: "copySelf" }
   | { do: "buffSelf"; attack: number; hp: number }
@@ -112,6 +116,8 @@ export type CardEffect = (
   | { do: "sweep"; maxHp: number }
   /** passive：相手のキャラクターを破壊するたび、もう1回攻撃できる */
   | { do: "extraAttackOnKill" }
+  /** passive：このキャラクターが攻撃して相手のキャラクターを破壊するたび、自分の cards（カード ID）のキャラクターすべてに強化（メン地下） */
+  | { do: "buffOnKill"; cards: string[]; attack: number; hp: number }
   /** passive：センターにいる間、自分のほかのキャラクターも注目と同じく伸びる */
   | { do: "focusAura" }
   /** passive：相手のターンの始めに、相手の攻撃力がいちばん高いキャラクターを眠り状態にする */
@@ -149,8 +155,11 @@ export type CardEffect = (
   | { do: "revive"; maxCost: number }
 ) & {
   on?: EffectTrigger;
-  /** 条件：自分の場（このキャラクターを含む）に、その属性（または種族）のキャラクターが atLeast 体以上いるときだけ */
-  if?: { allies: Attribute; atLeast: number } | { kaiwai: Kaiwai; atLeast: number };
+  /**
+   * 条件：自分の場（このキャラクターを含む）に、その属性（または種族）のキャラクターが atLeast 体以上いるときだけ／
+   * center：このキャラクターがセンターにいるときだけ
+   */
+  if?: { allies: Attribute; atLeast: number } | { kaiwai: Kaiwai; atLeast: number } | { center: true };
 };
 
 /**

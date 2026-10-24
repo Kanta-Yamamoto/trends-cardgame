@@ -71,6 +71,7 @@ function lead(section: Section, dark: boolean): string {
 function sectionOf(e: CardEffect): Section {
   switch (e.do) {
     case "extraAttackOnKill":
+    case "buffOnKill":
     case "healGrow":
     case "healBurn":
     case "healStrike":
@@ -151,6 +152,7 @@ function condition(e: CardEffect): string {
   if ("ifHandAtMost" in e && e.ifHandAtMost !== undefined) return `手札が${e.ifHandAtMost}枚以下なら、`;
   const c = e.if;
   if (!c) return "";
+  if ("center" in c) return "このキャラクターがセンターにいれば、";
   const what = "kaiwai" in c ? `${c.kaiwai}種族` : `${c.allies}属性`;
   return c.atLeast <= 1 ? `自分の場に${what}がいれば、` : `自分の場に${what}が${c.atLeast}体以上いれば、`;
 }
@@ -252,9 +254,12 @@ function sentence(e: CardEffect, ctx: Ctx, prev: CardEffect | undefined): string
         return `${ENEMY}すべてのガードを消す`;
       case "summon": {
         const name = ctx.nameOf(e.card);
+        const buffed = e.buff ? `。出した${name}に${stats(e.buff.attack, e.buff.hp)}` : "";
+        if (e.sides) return `左右の空いている枠に、${name}を1体ずつ出す${buffed}`;
         if (e.flank && e.centerCount !== undefined)
-          return `隣に${name}を${e.count}体出す。センターに出したときは、左右に${e.centerCount}体出す`;
-        return `${name}を${e.count}体出す`;
+          return `隣に${name}を${e.count}体出す。センターに出したときは、左右に${e.centerCount}体出す${buffed}`;
+        if (e.flank) return `隣に${name}を${e.count}体出す${buffed}`;
+        return `${name}を${e.count}体出す${buffed}`;
       }
       case "fill":
         return `自分の空いている枠すべてに${ctx.nameOf(e.card)}を出す`;
@@ -268,6 +273,8 @@ function sentence(e: CardEffect, ctx: Ctx, prev: CardEffect | undefined): string
         return `自分の${ctx.nameOf(e.card)}が、このゲームで破壊された数だけ攻撃力+1`;
       case "extraAttackOnKill":
         return `${ENEMY}を破壊するたび、もう1回攻撃できる`;
+      case "buffOnKill":
+        return `このキャラクターが${ENEMY}を破壊するたび、自分の${e.cards.map(ctx.nameOf).join("と")}すべてに${stats(e.attack, e.hp)}`;
       case "healGrow":
         return `自分が回復の効果を使うたび、${stats(e.attack, e.hp)}`;
       case "healBurn":

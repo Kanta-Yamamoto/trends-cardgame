@@ -837,11 +837,13 @@ describe("デッキの決まり", () => {
     expect(deckAttributes(DECKS.unei_idol, real)).toEqual(["推し"]);
     for (const id of ["c15", "c16", "c17"]) expect(DECKS.unei_idol.filter((c) => c === id)).toHaveLength(2);
   });
-  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、ニュートラルのカードを4枚入れる（運営デッキは共通で固める）", () => {
+  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、ニュートラルのカードを4枚入れる（運営デッキと推しデッキは例外）", () => {
     // 運営デッキ（unei_）は、共通で固めるのがコンセプト（オーナー）なので、共通の枚数の決まりから外す
     expect(DECKS.unei_idol.filter((c) => real[c]?.attributes.length === 0)).toHaveLength(14);
+    // 推しデッキは、運営サイドの3枚とインフルエンサー・スクショで、ニュートラル8枚（10月24日、docs/design-oshi.md）
+    expect(DECKS.solo_idol.filter((c) => real[c]?.attributes.length === 0)).toHaveLength(8);
     for (const [id, deck] of Object.entries(DECKS)) {
-      if (id.startsWith("unei_")) continue;
+      if (id.startsWith("unei_") || id === "solo_idol") continue;
       const aces = deck.filter((c) => real[c]?.dark);
       const commons = deck.filter((c) => real[c]?.attributes.length === 0);
       expect({ id, aces: aces.length, kinds: new Set(aces).size, commons: commons.length }).toEqual({
@@ -1571,5 +1573,112 @@ describe("対象を選ぶ除去の呪文（確定除去・手札に戻す・奪�
     expect(s.players.p2.field[1]).toBeNull();
     const mine = s.players.p1.field.find((u) => u?.cardId === "wall");
     expect(mine?.canAttack).toBe(false);
+  });
+});
+
+describe("推し属性の作り直し（10月24日。docs/design-oshi.md）", () => {
+  const local: Record<string, RuleCard> = {
+    ...catalog,
+    sg: icon("sg", 3, 1, 3, { keywords: ["ガード"] }),
+    gk: icon("gk", 0, 2, 1, { keywords: ["突進"], token: true }),
+    // エース：闇堕ちしたとき、左右の空いている枠に sg を1体ずつ出し、攻撃力+2・体力+2
+    oshi: icon("oshi", 1, 4, 5, {
+      rarity: 5,
+      keywords: ["注目"],
+      dark: {
+        name: "闇の推し",
+        attack: 5,
+        hp: 4,
+        keywords: ["突進", "注目"],
+        effects: [{ on: "play", do: "summon", card: "sg", count: 2, sides: true, buff: { attack: 2, hp: 2 } }],
+        effect: "",
+      },
+    }),
+    // 育つ推し：センターにいれば、ターンの終わりに1枚引く
+    grow: icon("grow", 1, 0, 5, {
+      keywords: ["注目"],
+      effects: [{ on: "turnEnd", do: "draw", count: 1, if: { center: true } }],
+    }),
+    // メン地下：隣に gk を出す。破壊するたび、自分の gk と sg すべてに攻撃力+1・体力+1
+    men: icon("men", 1, 2, 3, {
+      effects: [
+        { on: "play", do: "summon", card: "gk", count: 1, flank: true },
+        { on: "passive", do: "buffOnKill", cards: ["gk", "sg"], attack: 1, hp: 1 },
+      ],
+    }),
+  };
+  const go = (s: GameState, a: Action) => applyAction(s, a, local).state;
+  const put = (s: GameState, handIndex: number, slot: number, player: "p1" | "p2" = "p1") =>
+    go(s, { type: "play", player, handIndex, slot });
+  const fin = (s: GameState, player: "p1" | "p2" = "p1") => go(s, { type: "endTurn", player });
+  const ids = (s: GameState) => s.players.p1.field.map((u) => u?.cardId ?? null);
+
+  /** p1 の slot のキャラクターを、相手の big 2 体で破壊して、次の p1 のターンの始めまで進める */
+  function killAndReturn(s: GameState, slot: number): GameState {
+    s = fin(s);
+    s.players.p2.mana = 30;
+    s.players.p2.hand = ["big", "big", ...s.players.p2.hand];
+    s.players.p2.field = s.players.p2.field.map(() => null);
+    s = put(put(s, 0, 0, "p2"), 0, 1, "p2");
+    s.players.p2.field.forEach((u) => {
+      if (u) Object.assign(u, { canAttack: true, attacksLeft: 1 });
+    });
+    for (const from of [0, 1])
+      if (s.players.p1.field[slot]) s = go(s, { type: "attack", player: "p2", from, target: { kind: "unit", slot } });
+    return fin(s, "p2");
+  }
+
+  it("エースの闇堕ち：センターで戻れば、左右に親衛隊を1体ずつ出し、攻撃力+2・体力+2", () => {
+    const s = killAndReturn(put(game(["oshi"]), 0, 2), 2);
+    expect(ids(s)).toEqual([null, "sg", "oshi", "sg", null]);
+    expect(s.players.p1.field[2]?.dark).toBe(true);
+    for (const slot of [1, 3]) {
+      expect(viewUnit(s, "p1", s.players.p1.field[slot] as Unit, local)).toMatchObject({ attack: 3, hp: 5 });
+    }
+    expect(viewUnit(s, "p1", s.players.p1.field[2] as Unit, local)).toMatchObject({ hp: 4 });
+  });
+
+  it("エースの闇堕ち：端の枠で戻れば1体だけ。埋まっている側には出さず、ほかの枠にも回さない", () => {
+    expect(ids(killAndReturn(put(game(["oshi"]), 0, 0), 0))).toEqual(["oshi", "sg", null, null, null]);
+    let s = put(put(game(["f", "oshi"]), 0, 1), 0, 2);
+    s = killAndReturn(s, 2);
+    expect(ids(s)).toEqual([null, "f", "oshi", "sg", null]);
+  });
+
+  it("育つ推し：センターにいれば、自分のターンの終わりに1枚引く。センターでなければ引かない", () => {
+    const center = put(game(["grow"]), 0, 2);
+    const n = center.players.p1.hand.length;
+    expect(fin(center).players.p1.hand.length).toBe(n + 1);
+    const side = put(game(["grow"]), 0, 1);
+    expect(fin(side).players.p1.hand.length).toBe(n);
+  });
+
+  it("メン地下：隣にトークンを出す。トークンは突進で、出たターンに相手のキャラクターを攻撃できる", () => {
+    let s = withFoe([], ["f"]);
+    s.players.p1.hand = ["men", ...s.players.p1.hand];
+    s = put(s, 0, 2);
+    expect(ids(s)).toEqual([null, "gk", "men", null, null]);
+    const gk = s.players.p1.field[1] as Unit;
+    expect(gk.token).toBe(true);
+    expect(gk.rushOnly).toBe(true);
+    expect(attackTargets(s, "p1", 1, local).some((t) => t.kind === "leader")).toBe(false);
+  });
+
+  it("メン地下：相手のキャラクターを破壊するたび、自分のトークンと親衛隊すべてに攻撃力+1・体力+1。破壊できなければ何もしない", () => {
+    let s = withFoe([], ["f", "wall"]);
+    s.players.p1.hand = ["sg", "men", ...s.players.p1.hand];
+    s = put(put(s, 0, 4), 0, 2);
+    const men = s.players.p1.field[2] as Unit;
+    Object.assign(men, { canAttack: true, attacksLeft: 2 });
+    // 破壊できない相手（wall 1/6）には働かない
+    let t = go(s, { type: "attack", player: "p1", from: 2, target: { kind: "unit", slot: 1 } });
+    expect(viewUnit(t, "p1", t.players.p1.field[4] as Unit, local)).toMatchObject({ attack: 1, hp: 3 });
+    // f（1/1）を破壊したら、gk と sg が育つ。メン地下自身は育たない
+    const r = applyAction(t, { type: "attack", player: "p1", from: 2, target: { kind: "unit", slot: 0 } }, local);
+    t = r.state;
+    expect(viewUnit(t, "p1", t.players.p1.field[4] as Unit, local)).toMatchObject({ attack: 2, hp: 4 });
+    expect(viewUnit(t, "p1", t.players.p1.field[1] as Unit, local)).toMatchObject({ attack: 3, hp: 2 });
+    expect(viewUnit(t, "p1", t.players.p1.field[2] as Unit, local)).toMatchObject({ attack: 2 });
+    expect(r.events.filter((e) => e.type === "buffed")).toHaveLength(2);
   });
 });
