@@ -50,7 +50,10 @@ export type CardEffect = (
   | { do: "buffRandomAlly"; attack: number; hp: number }
   /** 自分の場のほかのキャラクターすべて */
   /** 自分のほかのキャラクターすべてに。kaiwai を付けると、その種族だけ */
-  | { do: "buffAllies"; attack: number; hp: number; kaiwai?: Kaiwai; thisTurn?: boolean }
+  /** cards を付けると、そのカード（トークンの ID など）のキャラクターだけ（草の女王） */
+  | { do: "buffAllies"; attack: number; hp: number; kaiwai?: Kaiwai; cards?: string[]; thisTurn?: boolean }
+  /** play：このゲームで自分が先に手札から出した cards のキャラクター1体につき、このキャラクターに強化（伝説のコラ画像） */
+  | { do: "growPerPlayed"; cards: string[]; attack: number; hp: number }
   | { do: "heal"; to: "master" | "allAlliesAndMaster" | "allAlliesFull"; amount?: number }
   | { do: "draw"; count: number; ifHandAtMost?: number }
   | { do: "removeEnemyGuards" }

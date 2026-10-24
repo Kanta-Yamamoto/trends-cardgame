@@ -243,7 +243,11 @@ function sentence(e: CardEffect, ctx: Ctx, prev: CardEffect | undefined): string
       case "buffRandomAlly":
         return `ランダムな自分の${others}キャラクター1体に${stats(e.attack, e.hp)}`;
       case "buffAllies":
+        if (e.cards)
+          return `自分の${e.cards.map(ctx.nameOf).join("・")}すべてに${e.thisTurn ? "このターン" : ""}${stats(e.attack, e.hp)}`;
         return `自分の${others}${kaiwaiOr(e.kaiwai, "キャラクター")}すべてに${e.thisTurn ? "このターン" : ""}${stats(e.attack, e.hp)}`;
+      case "growPerPlayed":
+        return `このゲームで自分が先に出した${ctx.nameOf(e.cards[0] as string)}1体につき、${stats(e.attack, e.hp)}`;
       case "hype":
         return ctx.icon
           ? `このターン攻撃力+${e.attack}。このターンの終わりに、このキャラクターを晒し状態にする`

@@ -36,8 +36,8 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: strin
   },
   solo_meme: {
     ace: "k5",
-    name: "自然アグロ",
-    text: "「コラ画像」で並べた草をそろえて、数で押し切ろう",
+    name: "自然・全体強化",
+    text: "草で場を埋め、全体を強化して押し切ろう。「伝説のコラ画像」は出すたびに大きくなる",
   },
   solo_heal: {
     ace: "c5",
@@ -45,9 +45,9 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: strin
     text: "「ナギ」で相手を眠り状態にし、回復しながら守り切ろう",
   },
   fixer_meme: {
-    ace: "c15",
-    name: "自然ミッドレンジ",
-    text: "「クサハミ」の闇堕ち能力で一撃勝利を目指そう",
+    ace: "c14",
+    name: "自然・クサハミ",
+    text: "草が破壊されるほど「クサハミ」が育つ。育てて一撃で押し切ろう",
   },
   unei_idol: {
     ace: "c17",
