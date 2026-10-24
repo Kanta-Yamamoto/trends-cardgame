@@ -1557,10 +1557,10 @@
       {
         "on": "passive",
         "do": "armor",
-        "amount": 2
+        "amount": 1
       }
     ],
-    "effect": "ガード。このキャラクターが攻撃されたとき、受けるダメージを2減らす。",
+    "effect": "ガード。このキャラクターが攻撃されたとき、受けるダメージを1減らす。",
     "art": "/assets/cards/g13-art.jpg",
     "original": "assets/original/g13.webp"
   },
