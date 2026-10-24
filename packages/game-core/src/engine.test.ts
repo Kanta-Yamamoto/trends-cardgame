@@ -1590,7 +1590,9 @@ describe("推し属性の作り直し（10月24日。docs/design-oshi.md）", ()
         attack: 5,
         hp: 4,
         keywords: ["突進", "注目"],
-        effects: [{ on: "play", do: "summon", card: "sg", count: 2, sides: true, buff: { attack: 2, hp: 2 } }],
+        effects: [
+          { on: "play", do: "summon", card: "sg", count: 2, sides: true, buff: { attack: 2, hp: 2 } },
+        ],
         effect: "",
       },
     }),
@@ -1624,7 +1626,8 @@ describe("推し属性の作り直し（10月24日。docs/design-oshi.md）", ()
       if (u) Object.assign(u, { canAttack: true, attacksLeft: 1 });
     });
     for (const from of [0, 1])
-      if (s.players.p1.field[slot]) s = go(s, { type: "attack", player: "p2", from, target: { kind: "unit", slot } });
+      if (s.players.p1.field[slot])
+        s = go(s, { type: "attack", player: "p2", from, target: { kind: "unit", slot } });
     return fin(s, "p2");
   }
 
@@ -1674,7 +1677,11 @@ describe("推し属性の作り直し（10月24日。docs/design-oshi.md）", ()
     let t = go(s, { type: "attack", player: "p1", from: 2, target: { kind: "unit", slot: 1 } });
     expect(viewUnit(t, "p1", t.players.p1.field[4] as Unit, local)).toMatchObject({ attack: 1, hp: 3 });
     // f（1/1）を破壊したら、gk と sg が育つ。メン地下自身は育たない
-    const r = applyAction(t, { type: "attack", player: "p1", from: 2, target: { kind: "unit", slot: 0 } }, local);
+    const r = applyAction(
+      t,
+      { type: "attack", player: "p1", from: 2, target: { kind: "unit", slot: 0 } },
+      local,
+    );
     t = r.state;
     expect(viewUnit(t, "p1", t.players.p1.field[4] as Unit, local)).toMatchObject({ attack: 2, hp: 4 });
     expect(viewUnit(t, "p1", t.players.p1.field[1] as Unit, local)).toMatchObject({ attack: 3, hp: 2 });
