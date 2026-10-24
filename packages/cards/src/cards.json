@@ -1605,7 +1605,9 @@
         "cards": ["t-tate", "t-ikazuchi", "t-tenbatsu"]
       }
     ],
-    "effect": "手札にある間、このゲームで自分が出したガードの数だけコスト-1。【場に出たとき】盾・裁きの雷・天罰を手札に加える。"
+    "effect": "手札にある間、このゲームで自分が出したガードの数だけコスト-1。【場に出たとき】盾・裁きの雷・天罰を手札に加える。",
+    "art": "/assets/cards/g20-art.jpg",
+    "original": "assets/original/g20.webp"
   },
   {
     "id": "t-tate",
@@ -1623,7 +1625,9 @@
       }
     ],
     "effect": "次の相手のターンの終わりまで、自分のプレイヤーが受けるダメージを1回ごとに5減らす。",
-    "token": true
+    "token": true,
+    "art": "/assets/cards/t-tate-art.jpg",
+    "original": "assets/original/t-tate.jpg"
   },
   {
     "id": "t-ikazuchi",
@@ -1642,7 +1646,9 @@
     ],
     "effect": "相手のキャラクター1体に5ダメージ。",
     "target": "enemyIcon",
-    "token": true
+    "token": true,
+    "art": "/assets/cards/t-ikazuchi-art.jpg",
+    "original": "assets/original/t-ikazuchi.jpg"
   },
   {
     "id": "t-tenbatsu",
@@ -1661,7 +1667,9 @@
       }
     ],
     "effect": "相手のプレイヤーに5ダメージ。",
-    "token": true
+    "token": true,
+    "art": "/assets/cards/t-tenbatsu-art.jpg",
+    "original": "assets/original/t-tenbatsu.jpg"
   },
   {
     "id": "k11",
