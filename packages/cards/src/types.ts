@@ -9,8 +9,9 @@ export type Kaiwai = "ミーム" | "アイドル" | "配信者" | "有識者" | 
  * - 突進：場に出たターンに、相手のキャラクターにだけ攻撃できる（キーワード自体でステータスは上がらない。「突進で攻撃したとき」の効果はカードごと）
  * - 連撃：1ターンに2回攻撃できる
  * - 注目：自分のターンの始めに攻撃力+1（センターなら+2）
+ * - 便乗：自分と相手のどちらかがバズを使うたび、攻撃力+1・体力+1（10月25日。バズった曲にアイドルが乗る）
  */
-export type Keyword = "ガード" | "速攻" | "突進" | "連撃" | "注目";
+export type Keyword = "ガード" | "速攻" | "突進" | "連撃" | "注目" | "便乗";
 /** キャラクター：場に出て戦う／呪文：使い切りの効果 */
 export type CardType = "icon" | "post";
 /** ★1〜★5（★5 が最高） */
@@ -50,7 +51,10 @@ export type CardEffect = (
   | { do: "buffRandomAlly"; attack: number; hp: number }
   /** 自分の場のほかのキャラクターすべて */
   /** 自分のほかのキャラクターすべてに。kaiwai を付けると、その種族だけ */
-  | { do: "buffAllies"; attack: number; hp: number; kaiwai?: Kaiwai; thisTurn?: boolean }
+  /** cards を付けると、そのカード（トークンの ID など）のキャラクターだけ（草の女王） */
+  | { do: "buffAllies"; attack: number; hp: number; kaiwai?: Kaiwai; cards?: string[]; thisTurn?: boolean }
+  /** play：このゲームで自分が先に手札から出した cards のキャラクター1体につき、このキャラクターに強化（伝説のコラ画像） */
+  | { do: "growPerPlayed"; cards: string[]; attack: number; hp: number }
   | { do: "heal"; to: "master" | "allAlliesAndMaster" | "allAlliesFull"; amount?: number }
   | { do: "draw"; count: number; ifHandAtMost?: number }
   | { do: "removeEnemyGuards" }

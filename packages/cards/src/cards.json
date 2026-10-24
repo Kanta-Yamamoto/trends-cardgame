@@ -116,7 +116,7 @@
     "name": "猫ミーム",
     "type": "icon",
     "rarity": 3,
-    "cost": 4,
+    "cost": 3,
     "attack": 1,
     "hp": 1,
     "attributes": ["自然"],
@@ -128,15 +128,9 @@
         "do": "summon",
         "card": "t-kusa",
         "count": 2
-      },
-      {
-        "on": "play",
-        "do": "heal",
-        "to": "master",
-        "amount": 2
       }
     ],
-    "effect": "【場に出たとき】草を2体出す。自分のライフを2回復する。",
+    "effect": "【場に出たとき】草を2体出す。",
     "art": "/assets/cards/k1-art.jpg",
     "original": "assets/original/k1.webp"
   },
@@ -144,8 +138,8 @@
     "id": "k2",
     "name": "コピペ",
     "type": "icon",
-    "rarity": 1,
-    "cost": 5,
+    "rarity": 2,
+    "cost": 3,
     "attack": 1,
     "hp": 2,
     "attributes": ["自然"],
@@ -212,45 +206,39 @@
     "name": "伝説のコラ画像",
     "type": "icon",
     "rarity": 5,
-    "cost": 6,
-    "attack": 3,
-    "hp": 6,
+    "cost": 5,
+    "attack": 2,
+    "hp": 3,
     "attributes": ["自然"],
     "kaiwai": ["ミーム"],
     "keywords": [],
     "effects": [
       {
         "on": "play",
-        "do": "attackPerAlly",
-        "kaiwai": "ミーム"
-      },
-      {
-        "on": "play",
-        "do": "rally"
-      },
-      {
-        "on": "play",
-        "do": "breakthrough"
+        "do": "growPerPlayed",
+        "cards": ["k5", "t-kora"],
+        "attack": 2,
+        "hp": 2
       }
     ],
-    "effect": "【場に出たとき】自分の場のほかのミーム種族1体につき攻撃力+1。自分のキャラクターすべてに速攻を付ける。このターン、自分のキャラクターすべてはガードを無視して攻撃できる。",
+    "effect": "【場に出たとき】このゲームで自分が先に出した伝説のコラ画像1体につき、攻撃力+2・体力+2。",
     "art": "/assets/cards/k5-art.jpg",
     "subject": "/assets/cards/k5-subject.webp",
     "original": "assets/original/k5.webp",
     "dark": {
       "name": "呪いのコラ画像",
-      "attack": 5,
-      "hp": 4,
-      "keywords": ["突進"],
-      "effect": "突進。【闇堕ちしたとき】自分の空いている枠すべてに草を出す。",
+      "attack": 3,
+      "hp": 1,
+      "keywords": ["速攻"],
+      "effect": "速攻。【闇堕ちしたとき】伝説のコラ画像を手札に加える。",
       "art": "/assets/cards/k5-dark-art.jpg",
       "subject": "/assets/cards/k5-dark-subject.webp",
       "original": "assets/original/k5-dark.webp",
       "effects": [
         {
           "on": "play",
-          "do": "fill",
-          "card": "t-kusa"
+          "do": "addToHand",
+          "cards": ["t-kora"]
         }
       ]
     }
@@ -271,6 +259,32 @@
     "token": true,
     "art": "/assets/cards/t-kusa-art.jpg",
     "original": "assets/original/t-kusa.webp"
+  },
+  {
+    "id": "t-kora",
+    "name": "伝説のコラ画像",
+    "type": "icon",
+    "rarity": 5,
+    "cost": 5,
+    "attack": 2,
+    "hp": 3,
+    "attributes": ["自然"],
+    "kaiwai": ["ミーム"],
+    "keywords": [],
+    "effects": [
+      {
+        "on": "play",
+        "do": "growPerPlayed",
+        "cards": ["k5", "t-kora"],
+        "attack": 2,
+        "hp": 2
+      }
+    ],
+    "effect": "【場に出たとき】このゲームで自分が先に出した伝説のコラ画像1体につき、攻撃力+2・体力+2。",
+    "art": "/assets/cards/k5-art.jpg",
+    "subject": "/assets/cards/k5-subject.webp",
+    "original": "assets/original/k5.webp",
+    "token": true
   },
   {
     "id": "t-gachikoi",
@@ -940,12 +954,12 @@
     "rarity": 2,
     "cost": 4,
     "attack": 3,
-    "hp": 2,
+    "hp": 4,
     "attributes": ["推し"],
     "kaiwai": ["配信者"],
-    "keywords": ["速攻"],
+    "keywords": ["便乗"],
     "effects": [],
-    "effect": "速攻。",
+    "effect": "便乗。",
     "art": "/assets/cards/m7-art.jpg",
     "original": "assets/original/m7.webp"
   },
@@ -1060,7 +1074,7 @@
     "name": "ネタ投稿者",
     "type": "icon",
     "rarity": 2,
-    "cost": 6,
+    "cost": 5,
     "attack": 3,
     "hp": 3,
     "attributes": ["自然"],
@@ -1071,14 +1085,10 @@
         "on": "play",
         "do": "buffAllies",
         "attack": 1,
-        "hp": 0,
-        "if": {
-          "allies": "自然",
-          "atLeast": 2
-        }
+        "hp": 0
       }
     ],
-    "effect": "【場に出たとき】自分の場に自然属性が2体以上いれば、自分のほかのキャラクターすべてに攻撃力+1。",
+    "effect": "【場に出たとき】自分のほかのキャラクターすべてに攻撃力+1。",
     "art": "/assets/cards/k7-art.jpg",
     "original": "assets/original/k7.webp"
   },
@@ -1350,21 +1360,14 @@
     "name": "バーチャルアイドル",
     "type": "icon",
     "rarity": 3,
-    "cost": 6,
-    "attack": 4,
+    "cost": 2,
+    "attack": 1,
     "hp": 3,
     "attributes": ["推し"],
     "kaiwai": ["配信者", "アイドル"],
-    "keywords": ["注目"],
-    "effects": [
-      {
-        "on": "play",
-        "do": "heal",
-        "to": "allAlliesAndMaster",
-        "amount": 2
-      }
-    ],
-    "effect": "注目。【場に出たとき】自分のキャラクターすべてと自分のライフを2回復する。",
+    "keywords": ["便乗"],
+    "effects": [],
+    "effect": "便乗。",
     "art": "/assets/cards/m13-art.jpg",
     "original": "assets/original/m13.webp"
   },
@@ -1513,7 +1516,9 @@
         "cards": ["t-tate", "t-ikazuchi", "t-tenbatsu"]
       }
     ],
-    "effect": "手札にある間、このゲームで自分が出したガードの数だけコスト-1。【場に出たとき】盾・裁きの雷・天罰を手札に加える。"
+    "effect": "手札にある間、このゲームで自分が出したガードの数だけコスト-1。【場に出たとき】盾・裁きの雷・天罰を手札に加える。",
+    "art": "/assets/cards/g20-art.jpg",
+    "original": "assets/original/g20.webp"
   },
   {
     "id": "t-tate",
@@ -1531,7 +1536,9 @@
       }
     ],
     "effect": "次の相手のターンの終わりまで、自分のプレイヤーが受けるダメージを1回ごとに5減らす。",
-    "token": true
+    "token": true,
+    "art": "/assets/cards/t-tate-art.jpg",
+    "original": "assets/original/t-tate.jpg"
   },
   {
     "id": "t-ikazuchi",
@@ -1550,7 +1557,9 @@
     ],
     "effect": "相手のキャラクター1体に5ダメージ。",
     "target": "enemyIcon",
-    "token": true
+    "token": true,
+    "art": "/assets/cards/t-ikazuchi-art.jpg",
+    "original": "assets/original/t-ikazuchi.jpg"
   },
   {
     "id": "t-tenbatsu",
@@ -1569,7 +1578,9 @@
       }
     ],
     "effect": "相手のプレイヤーに5ダメージ。",
-    "token": true
+    "token": true,
+    "art": "/assets/cards/t-tenbatsu-art.jpg",
+    "original": "assets/original/t-tenbatsu.jpg"
   },
   {
     "id": "k11",
@@ -1612,7 +1623,7 @@
     "name": "トレンドメーカー",
     "type": "icon",
     "rarity": 4,
-    "cost": 8,
+    "cost": 7,
     "attack": 4,
     "hp": 4,
     "attributes": ["自然"],
@@ -1621,11 +1632,12 @@
     "effects": [
       {
         "on": "play",
-        "do": "burnPerAlly",
-        "amount": 1
+        "do": "buffAllies",
+        "attack": 2,
+        "hp": 0
       }
     ],
-    "effect": "【場に出たとき】自分の場のキャラクター1体につき、相手のプレイヤーに1ダメージ。",
+    "effect": "【場に出たとき】自分のほかのキャラクターすべてに攻撃力+2。",
     "art": "/assets/cards/k14-art.jpg",
     "original": "assets/original/k14.webp"
   },
@@ -1634,7 +1646,7 @@
     "name": "ワラ",
     "type": "icon",
     "rarity": 5,
-    "cost": 4,
+    "cost": 5,
     "attack": 2,
     "hp": 3,
     "attributes": ["自然"],
@@ -1642,16 +1654,18 @@
     "keywords": [],
     "effects": [
       {
-        "do": "summon",
-        "card": "t-kusa",
-        "count": 2
+        "on": "play",
+        "do": "fill",
+        "card": "t-kusa"
       },
       {
         "on": "play",
-        "do": "attackPerAlly"
+        "do": "rally",
+        "attack": 0,
+        "totsu": true
       }
     ],
-    "effect": "【場に出たとき】草を2体出す。自分の場のほかのキャラクター1体につき攻撃力+1。",
+    "effect": "【場に出たとき】自分の空いている枠すべてに草を出す。自分のキャラクターすべてに突進を付ける。",
     "art": "/assets/cards/c8-art.jpg",
     "original": "assets/original/c8.webp"
   },
@@ -1873,7 +1887,7 @@
     "name": "踊るワンコ",
     "type": "icon",
     "rarity": 2,
-    "cost": 4,
+    "cost": 3,
     "attack": 2,
     "hp": 2,
     "attributes": ["自然"],
@@ -2216,9 +2230,9 @@
     "name": "クサハミ",
     "type": "icon",
     "rarity": 5,
-    "cost": 4,
+    "cost": 3,
     "attack": 2,
-    "hp": 3,
+    "hp": 2,
     "attributes": ["自然"],
     "kaiwai": ["動物"],
     "keywords": [],
@@ -2238,8 +2252,8 @@
       "art": "/assets/cards/c14-dark-art.jpg",
       "original": "assets/original/c14-dark.webp",
       "subject": "/assets/cards/c14-dark-subject.webp",
-      "attack": 3,
-      "hp": 3,
+      "attack": 2,
+      "hp": 2,
       "keywords": ["速攻"],
       "effects": [
         {
@@ -2444,25 +2458,28 @@
     "name": "草の女王",
     "type": "icon",
     "rarity": 4,
-    "cost": 7,
+    "cost": 6,
     "attack": 3,
-    "hp": 3,
+    "hp": 5,
     "attributes": ["自然"],
     "kaiwai": ["ミーム"],
     "keywords": [],
     "effects": [
       {
+        "on": "play",
         "do": "summon",
         "card": "t-kusa",
         "count": 2
       },
       {
-        "on": "passive",
-        "do": "attackPerLostToken",
-        "card": "t-kusa"
+        "on": "turnEnd",
+        "do": "buffAllies",
+        "attack": 1,
+        "hp": 1,
+        "cards": ["t-kusa"]
       }
     ],
-    "effect": "自分の草が、このゲームで破壊された数だけ攻撃力+1。【場に出たとき】草を2体出す。",
+    "effect": "【場に出たとき】草を2体出す。自分のターンの終わりに、自分の草すべてに攻撃力+1・体力+1。",
     "art": "/assets/cards/k19-art.jpg",
     "original": "assets/original/kusa-queen.webp"
   }

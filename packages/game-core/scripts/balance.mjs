@@ -27,13 +27,18 @@ function play(a, b, seed) {
   const oshiTurn = { p1: 0, p2: 0 };
   const darkTurn = { p1: 0, p2: 0 };
   const buzzes = { p1: 0, p2: 0 };
+  // バズを使った自分のターン目
+  const buzzTurns = [];
   const record = (r) => {
     for (const e of r.events) {
       if (e.type === "played" || e.type === "cast") used[e.player].add(e.cardId);
       if (e.type === "played" && catalog[e.cardId]?.dark && !oshiTurn[e.player])
         oshiTurn[e.player] = own[e.player];
       if (e.type === "darkFall") darkTurn[e.player] = own[e.player];
-      if (e.type === "buzz") buzzes[e.player]++;
+      if (e.type === "buzz") {
+        buzzes[e.player]++;
+        buzzTurns.push(own[e.player]);
+      }
     }
   };
   for (; turns < 80 && !s.winner; turns++) {
@@ -66,6 +71,7 @@ function play(a, b, seed) {
     oshiTurn,
     darkTurn,
     buzzes,
+    buzzTurns,
     used: { p1: [...used.p1], p2: [...used.p2] },
   };
 }
@@ -139,6 +145,14 @@ if (!isMainThread) {
   {
     const b = results.reduce((n, r) => n + (r.buzzes?.p1 ?? 0) + (r.buzzes?.p2 ?? 0), 0);
     console.log(`バズ：1人1試合あたり平均 ${(b / (results.length * 2)).toFixed(2)} 回`);
+    // 使った自分のターン目ごとの回数（1人1試合あたり）
+    const byTurn = new Map();
+    for (const r of results) for (const t of r.buzzTurns ?? []) byTurn.set(t, (byTurn.get(t) ?? 0) + 1);
+    const line = [...byTurn.entries()]
+      .sort((x, y) => x[0] - y[0])
+      .map(([t, n]) => `${t}:${(n / (results.length * 2)).toFixed(2)}`)
+      .join(" ");
+    console.log(`  使った自分のターン目 ${line}`);
   }
   {
     // 闇堕ちを持つ★5：出した割合・出した自分のターン（平均）と、闇堕ちした割合、デッキ別

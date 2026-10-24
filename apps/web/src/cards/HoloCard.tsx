@@ -28,6 +28,8 @@ const FACES: Record<string, { cls: string; Face: ComponentType<{ card: CardDef }
   c3: { cls: "k3", Face: MinamoFace },
   m1: { cls: "s-idol", Face: IdolFace },
   k5: { cls: "s-collage", Face: CollageFace },
+  // 呪いのコラ画像が手札に加える写し（闇堕ちを持たない）も、元と同じカード面
+  "t-kora": { cls: "s-collage", Face: CollageFace },
   g4: { cls: "s-expert", Face: ExpertFace },
   c4: { cls: "s-hibana", Face: HibanaFace },
   c5: { cls: "s-nagi", Face: NagiFace },
