@@ -457,6 +457,7 @@ function newUnit(state: GameState, cardId: string, catalog: Catalog, token: bool
   };
 }
 
+/** 効果でキャラクターを出す。出した枠を返す（出せなければ -1） */
 function summon(
   state: GameState,
   player: PlayerId,
@@ -464,16 +465,28 @@ function summon(
   catalog: Catalog,
   emit: Emit,
   near?: number,
-): boolean {
+): number {
   const field = state.players[player].field;
   // 両隣を先に（左、右の順）。どちらも埋まっていれば、左から空いた枠へ
   const flank =
     near === undefined ? [] : [near - 1, near + 1].filter((s) => s >= 0 && s < field.length && !field[s]);
   const slot = flank[0] ?? field.findIndex((u) => !u);
-  if (slot < 0) return false;
-  field[slot] = newUnit(state, cardId, catalog, true);
+  if (slot < 0) return -1;
+  placeSummoned(state, player, cardId, catalog, emit, slot);
+  return slot;
+}
+
+/** 空いている枠 slot に、効果で出したキャラクターを置く */
+function placeSummoned(
+  state: GameState,
+  player: PlayerId,
+  cardId: string,
+  catalog: Catalog,
+  emit: Emit,
+  slot: number,
+) {
+  state.players[player].field[slot] = newUnit(state, cardId, catalog, true);
   emit({ type: "summoned", player, cardId, slot });
-  return true;
 }
 
 function damageUnit(state: GameState, owner: PlayerId, slot: number, amount: number, emit: Emit) {
@@ -604,25 +617,54 @@ function runEffect(e: CardEffect, ctx: Ctx) {
 
   const cond = e.if;
   if (cond) {
-    const n =
-      "kaiwai" in cond
-        ? countAllies(state, player, catalog, cond.kaiwai)
-        : me.field.filter((u) => u && must(catalog, u.cardId).attributes.includes(cond.allies)).length;
-    if (n < cond.atLeast) return;
+    if ("center" in cond) {
+      if (ctx.selfSlot !== CENTER_SLOT) return;
+    } else {
+      const n =
+        "kaiwai" in cond
+          ? countAllies(state, player, catalog, cond.kaiwai)
+          : me.field.filter((u) => u && must(catalog, u.cardId).attributes.includes(cond.allies)).length;
+      if (n < cond.atLeast) return;
+    }
   }
 
   switch (e.do) {
     case "summon": {
-      const n = e.centerCount !== undefined && ctx.selfSlot === CENTER_SLOT ? e.centerCount : e.count;
-      const near = e.flank ? ctx.selfSlot : undefined;
-      for (let i = 0; i < n; i++) if (!summon(state, player, e.card, catalog, emit, near)) break;
+      const placed: number[] = [];
+      if (e.sides) {
+        // 左右の空いている枠にだけ、1体ずつ（空いていない側には出さない）
+        const at = ctx.selfSlot;
+        if (at !== undefined)
+          for (const s of [at - 1, at + 1]) {
+            if (s < 0 || s >= me.field.length || me.field[s]) continue;
+            placeSummoned(state, player, e.card, catalog, emit, s);
+            placed.push(s);
+          }
+      } else {
+        const n = e.centerCount !== undefined && ctx.selfSlot === CENTER_SLOT ? e.centerCount : e.count;
+        const near = e.flank ? ctx.selfSlot : undefined;
+        for (let i = 0; i < n; i++) {
+          const s = summon(state, player, e.card, catalog, emit, near);
+          if (s < 0) break;
+          placed.push(s);
+        }
+      }
+      // 出したキャラクターに強化
+      if (e.buff)
+        for (const s of placed) {
+          const u = me.field[s];
+          if (!u) continue;
+          u.atkBuff += e.buff.attack;
+          u.hpBuff += e.buff.hp;
+          emit({ type: "buffed", player, slot: s, cardId: u.cardId, attack: e.buff.attack, hp: e.buff.hp });
+        }
       break;
     }
     case "copySelf":
       if (self) summon(state, player, self.cardId, catalog, emit);
       break;
     case "fill":
-      while (summon(state, player, e.card, catalog, emit)) {}
+      while (summon(state, player, e.card, catalog, emit) >= 0) {}
       break;
     case "buffSelfPerPlayed":
       if (self && ctx.playedBefore > 0 && ctx.selfSlot !== undefined) {
@@ -1041,6 +1083,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
     case "attackPerLostToken":
     case "conspiracyWin":
     case "extraAttackOnKill":
+    case "buffOnKill":
     case "focusAura":
     case "lullaby":
     case "cheaperPerAlly":
@@ -1328,6 +1371,17 @@ export function applyAction(
         if (killed && alive?.uid === atk.uid && hasPassive(alive, "extraAttackOnKill", catalog)) {
           alive.attacksLeft += 1;
         }
+        // 破壊するたび、自分の決まったキャラクターすべてに強化（メン地下。殴り合いで自分が倒れても働く）
+        if (killed)
+          for (const fx of effectsOf(atk, catalog)) {
+            if (fx.do !== "buffOnKill" || triggerOf(fx) !== "passive") continue;
+            me.field.forEach((u, slot) => {
+              if (!u || !fx.cards.includes(u.cardId)) return;
+              u.atkBuff += fx.attack;
+              u.hpBuff += fx.hp;
+              after.push({ type: "buffed", player, slot, cardId: u.cardId, attack: fx.attack, hp: fx.hp });
+            });
+          }
         emit({
           type: "battle",
           attacker: attackerId,
