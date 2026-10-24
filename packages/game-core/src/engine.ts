@@ -305,16 +305,24 @@ function previewRaw(
   if (!atk) return null;
   const av = viewUnit(state, player, atk, catalog);
   if (target.kind === "leader") {
-    const lp = state.players[opponent(player)].lp;
+    const foe = state.players[opponent(player)];
     if (isShielded(state, opponent(player)))
       return { toDefender: 0, toAttacker: 0, kills: false, dies: false };
-    return { toDefender: av.attack, toAttacker: 0, kills: av.attack >= lp, dies: false };
+    // 盾：1回ごとに減らす
+    const cut = state.turn <= (foe.cutUntil ?? 0) ? (foe.cutAmount ?? 0) : 0;
+    const dmg = Math.max(0, av.attack - cut);
+    return { toDefender: dmg, toAttacker: 0, kills: dmg >= foe.lp, dies: false };
   }
   const foeId = opponent(player);
   const def = state.players[foeId].field[target.slot];
   if (!def) return null;
   const dv = viewUnit(state, foeId, def, catalog);
-  const toDefender = av.attack;
+  // 攻撃されたときに受けるダメージを減らす（ベテラン解説者）
+  const armor = effectsOf(def, catalog).reduce(
+    (n, e) => (e.do === "armor" && triggerOf(e) === "passive" ? n + e.amount : n),
+    0,
+  );
+  const toDefender = Math.max(0, av.attack - armor);
   return {
     toDefender,
     toAttacker: dv.attack,
@@ -1168,6 +1176,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
     case "cheaperPerAlly":
     case "cheaperPerPost":
     case "cheaperPerGuard":
+    case "armor":
       break; // 場にいる間・手札にある間ずっと効く（それぞれの場所で計算）
   }
 }

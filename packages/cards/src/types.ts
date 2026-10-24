@@ -136,6 +136,8 @@ export type CardEffect = (
   | { do: "cheaperPerHeal" }
   /** play：自分の手札でいちばんコストが高い attribute 属性のカード1枚のコスト-amount（雑学博士）。出すまで続く */
   | { do: "discountHand"; attribute: Attribute; amount: number }
+  /** passive：このキャラクターが攻撃されたとき、受けるダメージを amount 減らす（ベテラン解説者） */
+  | { do: "armor"; amount: number }
   /** hand：このゲームで自分が出したガードの数だけコスト-1（ネ申） */
   | { do: "cheaperPerGuard" }
   /** play：カード（呪文のトークンなど）を手札に加える。手札が上限なら加えられない（トークンは消える） */

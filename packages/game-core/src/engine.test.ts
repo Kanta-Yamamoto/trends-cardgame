@@ -1868,6 +1868,27 @@ describe("神属性の作り直し（10月24日。docs/design-god.md）", () => 
     expect(s.players.p1.handDiscount?.god).toBeUndefined();
   });
 
+  it("ベテラン解説者：攻撃されたとき、受けるダメージを2減らす（攻撃力6の相手から4）", () => {
+    const loc = {
+      ...local,
+      vet: icon("vet", 1, 2, 5, {
+        keywords: ["ガード"],
+        effects: [{ on: "passive", do: "armor", amount: 2 }],
+      }),
+    };
+    let s = withFoe([], ["big"]);
+    s.players.p1.hand = ["vet", ...s.players.p1.hand];
+    s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 0 }, loc).state;
+    s = applyAction(s, { type: "endTurn", player: "p1" }, loc).state;
+    s = applyAction(
+      s,
+      { type: "attack", player: "p2", from: 0, target: { kind: "unit", slot: 0 } },
+      loc,
+    ).state;
+    expect((s.players.p1.field[0] as Unit).damage).toBe(4);
+    expect(s.players.p1.field[0]).not.toBeNull();
+  });
+
   it("ミコト：山札からガードを持つ神属性のキャラクターを探す。ニュートラルのガードは選ばない", () => {
     let s = game(["seek"]);
     s.players.p1.deck = ["f", "nsg", "sg", ...s.players.p1.deck];
