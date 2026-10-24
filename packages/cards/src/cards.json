@@ -956,9 +956,13 @@
         "on": "passive",
         "do": "faceOnKill",
         "amount": 1
+      },
+      {
+        "on": "passive",
+        "do": "extraAttackOnKill"
       }
     ],
-    "effect": "突進。このキャラクターが相手のキャラクターを破壊するたび、相手のプレイヤーに1ダメージ。",
+    "effect": "突進。このキャラクターが相手のキャラクターを破壊するたび、相手のプレイヤーに1ダメージ。相手のキャラクターを破壊するたび、もう1回攻撃できる。",
     "art": "/assets/cards/c4-art.jpg",
     "original": "assets/original/c4.webp"
   },
