@@ -63,7 +63,7 @@ const catalog: Record<string, RuleCard> = {
   cat: icon("cat", 3, 1, 2, { effects: [{ on: "play", do: "summon", card: "kusa", count: 2 }] }),
   copy: icon("copy", 2, 1, 1, { effects: [{ on: "play", do: "copySelf" }] }),
   nori: icon("nori", 2, 2, 2, { effects: [{ on: "play", do: "buffSelfPerPlayed", attack: 1 }] }),
-  kora: icon("kora", 5, 2, 5, { effects: [{ on: "passive", do: "attackPerAlly" }] }),
+  kora: icon("kora", 5, 2, 5, { effects: [{ on: "play", do: "attackPerAlly" }] }),
   kami: icon("kami", 7, 4, 7, { keywords: ["ガード"], effects: [{ on: "play", do: "removeEnemyGuards" }] }),
   expert: icon("expert", 5, 4, 5, {
     effects: [{ on: "play", do: "damage", to: "strongestEnemy", amount: 3 }],
@@ -178,7 +178,7 @@ const catalog: Record<string, RuleCard> = {
   idl: icon("idl", 1, 1, 1, { kaiwai: ["アイドル"] }),
   collab: icon("collab", 3, 2, 3, {
     kaiwai: ["配信者"],
-    effects: [{ on: "passive", do: "attackPerAlly", kaiwai: "配信者" }],
+    effects: [{ on: "play", do: "attackPerAlly", kaiwai: "配信者" }],
   }),
   producer: icon("producer", 5, 2, 5, {
     effects: [{ on: "play", do: "buffAllies", attack: 2, hp: 1, kaiwai: "アイドル" }],
@@ -681,9 +681,13 @@ describe("属性の効果", () => {
     const s = play(play(play(game(["f", "f", "nori"]), 0, 0), 0, 1), 0, 2);
     expect(viewUnit(s, "p1", s.players.p1.field[2] as never, catalog).attack).toBe(4);
   });
-  it("コラ画像：自分の場のほかのキャラクター1体につき攻撃力+1", () => {
+  it("コラ画像：出たときに、自分の場のほかのキャラクター1体につき攻撃力+1。あとで仲間が減っても下がらない", () => {
     const s = play(play(play(game(["f", "f", "kora"]), 0, 0), 0, 1), 0, 2);
-    expect(viewUnit(s, "p1", s.players.p1.field[2] as never, catalog).attack).toBe(4);
+    const kora = s.players.p1.field[2] as Unit;
+    expect(viewUnit(s, "p1", kora, catalog).attack).toBe(4);
+    s.players.p1.field[0] = null;
+    s.players.p1.field[1] = null;
+    expect(viewUnit(s, "p1", kora, catalog).attack).toBe(4);
   });
   it("神：相手のガードをすべて消す／専門家：いちばん強い相手に3ダメージ", () => {
     let s = withFoe(["kami", "expert"], ["guard", "big"]);
@@ -1394,18 +1398,15 @@ describe("相手のプレイヤーに付与する時間差のダメージ（ミ�
 });
 
 describe("種族を読む効果（自分の側だけ）", () => {
-  it("自分の場のほかの配信者1体につき攻撃力+1。2種族のカードは両方に数える", () => {
+  it("出たときに、自分の場のほかの配信者1体につき攻撃力+1。2種族のカードは両方に数え、ほかの種族は数えない。出たあとに増えても伸びない", () => {
     let s = game(["collab"]);
-    s.players.p1.hand = ["collab", "s1", "s2", "idl", "f"];
-    s = play(s, 0, 0);
-    const atk = () => viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog).attack;
-    expect(atk()).toBe(2);
-    s = play(s, 0, 1); // 配信者
-    expect(atk()).toBe(3);
-    s = play(s, 0, 2); // 配信者＋アイドル
+    s.players.p1.hand = ["s1", "s2", "idl", "f", "collab", "s1"];
+    s = play(play(play(play(s, 0, 0), 0, 1), 0, 2), 0, 3); // 配信者・配信者＋アイドル・アイドルだけ・無所属
+    s.players.p1.mana = 10;
+    s = play(s, 0, 4);
+    const atk = () => viewUnit(s, "p1", s.players.p1.field[4] as Unit, catalog).attack;
     expect(atk()).toBe(4);
-    s = play(s, 0, 3); // アイドルだけ
-    s = play(s, 0, 4); // 無所属
+    s.players.p1.field[0] = null;
     expect(atk()).toBe(4);
   });
 

@@ -220,7 +220,7 @@
     "keywords": [],
     "effects": [
       {
-        "on": "passive",
+        "on": "play",
         "do": "attackPerAlly",
         "kaiwai": "ミーム"
       },
@@ -233,7 +233,7 @@
         "do": "breakthrough"
       }
     ],
-    "effect": "自分の場のほかのミーム種族1体につき攻撃力+1。【場に出たとき】自分のキャラクターすべてに速攻を付ける。このターン、自分のキャラクターすべてはガードを無視して攻撃できる。",
+    "effect": "【場に出たとき】自分の場のほかのミーム種族1体につき攻撃力+1。自分のキャラクターすべてに速攻を付ける。このターン、自分のキャラクターすべてはガードを無視して攻撃できる。",
     "art": "/assets/cards/k5-art.jpg",
     "subject": "/assets/cards/k5-subject.webp",
     "original": "assets/original/k5.webp",
@@ -1751,16 +1751,16 @@
     "keywords": [],
     "effects": [
       {
-        "on": "passive",
-        "do": "attackPerAlly"
-      },
-      {
         "do": "summon",
         "card": "t-kusa",
         "count": 2
+      },
+      {
+        "on": "play",
+        "do": "attackPerAlly"
       }
     ],
-    "effect": "自分の場のほかのキャラクター1体につき攻撃力+1。【場に出たとき】草を2体出す。",
+    "effect": "【場に出たとき】草を2体出す。自分の場のほかのキャラクター1体につき攻撃力+1。",
     "art": "/assets/cards/c8-art.jpg",
     "original": "assets/original/c8.webp"
   },
@@ -1912,12 +1912,12 @@
     "keywords": ["速攻"],
     "effects": [
       {
-        "on": "passive",
+        "on": "play",
         "do": "attackPerAlly",
         "kaiwai": "配信者"
       }
     ],
-    "effect": "速攻。自分の場のほかの配信者種族1体につき攻撃力+1。",
+    "effect": "速攻。【場に出たとき】自分の場のほかの配信者種族1体につき攻撃力+1。",
     "art": "/assets/cards/f15-art.jpg",
     "original": "assets/original/f15.webp"
   },

@@ -143,9 +143,6 @@ export function viewUnit(state: GameState, owner: PlayerId, unit: Unit, catalog:
   const base = unit.dark && card.dark ? card.dark : { attack: card.attack ?? 0, hp: card.hp ?? 1 };
   let attack = base.attack + unit.atkBuff + (unit.tempAtk ?? 0);
   for (const e of effectsOf(unit, catalog)) {
-    if (triggerOf(e) === "passive" && e.do === "attackPerAlly") {
-      attack += countAllies(state, owner, catalog, e.kaiwai, unit.uid);
-    }
     if (triggerOf(e) === "passive" && e.do === "attackPerLostToken")
       attack += state.players[owner].tokensLost?.[e.card] ?? 0;
   }
@@ -691,6 +688,16 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         });
       }
       break;
+    case "attackPerAlly": {
+      // 出たときに数えて強化する。強化は晒し状態と TL浄化でしか消えないので、あとで仲間が減っても下がらない
+      if (!self || ctx.selfSlot === undefined) break;
+      const n = countAllies(state, player, catalog, e.kaiwai, self.uid);
+      if (n > 0) {
+        self.atkBuff += n;
+        emit({ type: "buffed", player, slot: ctx.selfSlot, cardId: self.cardId, attack: n, hp: 0 });
+      }
+      break;
+    }
     case "buffSelf":
       if (self && ctx.selfSlot !== undefined) {
         self.atkBuff += e.attack;
@@ -1091,7 +1098,6 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         });
       }
       break;
-    case "attackPerAlly":
     case "attackPerLostToken":
     case "conspiracyWin":
     case "extraAttackOnKill":
