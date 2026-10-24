@@ -226,37 +226,55 @@ export function autoSacrifice(state: GameState, player: PlayerId, catalog: Catal
   return [...slots].sort((a, b) => value(a) - value(b))[0] ?? -1;
 }
 
+/**
+ * バズを slot のキャラクターに使う価値があるか（10月25日）。シャドバの進化のセオリーと同じく、使えるようになったターンから
+ * 盤面の取り合いに使う。ただし、不用意には使わない（オーナー：「不用意にバズを使わず」「なるべく盤面にキャラを残す」）：
+ * - 除去：バズなしでは破壊できない相手のキャラクターを、+2/+2 なら破壊して自分は残る（いちばん価値の高い相手）
+ * - とどめ：プレイヤーに届く攻撃力の合計に +2 で、相手のライフが 0 になる
+ * - そのほか、プレイヤーを殴れるキャラクターか、出したばかりで突進が付くキャラクター
+ * 攻撃し終えた・眠り状態のキャラクターには使わない（バズしても殴れない）。
+ * 「除去になるまで取っておく」形は、CPU どうしで前の CPU に 34% しか勝てなかった（バズの +2/+2 は消えずに残るので、早く使うほど得をする）。
+ * 返り値は除去できる相手の価値（とどめは 100、それ以外は 1）。使わないなら 0
+ */
+export function buzzValue(state: GameState, player: PlayerId, slot: number, catalog: Catalog): number {
+  const u = state.players[player].field[slot];
+  if (!u || state.turn <= u.boundUntil) return 0;
+  if (!(canUnitAttack(state, u) || !u.canAttack)) return 0;
+  const foeId = opponent(player);
+  const v = viewUnit(state, player, u, catalog);
+  let best = 0;
+  for (const t of attackTargets(state, player, slot, catalog)) {
+    if (t.kind !== "unit") continue;
+    const d = state.players[foeId].field[t.slot];
+    if (!d) continue;
+    const e = viewUnit(state, foeId, d, catalog);
+    if (v.attack >= e.hp) continue; // バズなしでも破壊できる
+    if (v.attack + 2 < e.hp || e.attack >= v.hp + 2) continue;
+    best = Math.max(best, worth(e));
+  }
+  if (best > 0) return best;
+  // 出したばかり：バズで突進が付いて、相手のキャラクターと取り合える
+  if (!u.canAttack) return 1;
+  // とどめ：まだ攻撃できるキャラクターでプレイヤーに届く合計が、あと 2 足りない
+  const mine = views(state, player, catalog).filter(
+    (m) =>
+      canUnitAttack(state, m.v.unit) &&
+      attackTargets(state, player, m.slot, catalog).some((t) => t.kind === "leader"),
+  );
+  if (isShielded(state, foeId) || !mine.some((m) => m.slot === slot)) return 0;
+  const total = mine.reduce((n, m) => n + m.v.attack * m.v.unit.attacksLeft, 0);
+  const lp = state.players[foeId].lp;
+  return total < lp && total + 2 * u.attacksLeft >= lp ? 100 : 1;
+}
+
 /** 貪欲法のバズの使いどころ。使わないなら null */
 function pickBuzz(state: GameState, player: PlayerId, catalog: Catalog): number | null {
-  const foeId = opponent(player);
-  const foe = views(state, foeId, catalog);
-  const mine = views(state, player, catalog);
-  const guarded = foe.some((x) => x.v.guard);
   let best: { slot: number; score: number } | null = null;
-  for (const m of mine) {
-    const u = m.v.unit;
-    const ready = canUnitAttack(state, u) || !u.canAttack;
-    if (!ready || state.turn <= u.boundUntil) continue;
-    const atk = m.v.attack + 2;
-    const hp = m.v.hp + 2;
-    for (const e of foe) {
-      if (guarded && !e.v.guard) continue;
-      if (m.v.attack >= e.v.hp) continue; // バズなしでも破壊できる
-      if (atk < e.v.hp || e.v.attack >= hp) continue;
-      const score = worth(e.v);
-      if (!best || score > best.score) best = { slot: m.slot, score };
-    }
+  for (const m of views(state, player, catalog)) {
+    const score = buzzValue(state, player, m.slot, catalog);
+    if (score > 0 && (!best || score > best.score)) best = { slot: m.slot, score };
   }
-  if (best && best.score >= 4) return best.slot;
-  // とどめ：ガードがいなくて、プレイヤーに届く攻撃力の合計 +2 で破壊できる
-  if (!guarded) {
-    const can = mine.filter((m) => canUnitAttack(state, m.v.unit) && !m.v.unit.rushOnly);
-    const total = can.reduce((n, m) => n + m.v.attack * m.v.unit.attacksLeft, 0);
-    const lp = state.players[foeId].lp;
-    if (can.length > 0 && total < lp && total + 2 * (can[0]?.v.unit.attacksLeft ?? 1) >= lp)
-      return (can[0] as { slot: number }).slot;
-  }
-  return null;
+  return best?.slot ?? null;
 }
 
 function planTurnInner(start: GameState, player: PlayerId, catalog: Catalog, actions: Action[]): Action[] {

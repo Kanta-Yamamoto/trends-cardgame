@@ -1404,6 +1404,14 @@ export function applyAction(
         hp: config.buzzHp,
         left: me.buzzLeft,
       });
+      // 便乗：どちらのバズでも、場の便乗を持つキャラクターすべてに攻撃力+1・体力+1（バズを使った側から）
+      for (const pid of [player, opponent(player)] as const)
+        state.players[pid].field.forEach((b, slot) => {
+          if (!b || !hasKeyword(b, "便乗", catalog)) return;
+          b.atkBuff += 1;
+          b.hpBuff += 1;
+          emit({ type: "buffed", player: pid, slot, cardId: b.cardId, attack: 1, hp: 1 });
+        });
       break;
     }
     case "cast": {

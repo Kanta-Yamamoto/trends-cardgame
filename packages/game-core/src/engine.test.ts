@@ -54,6 +54,7 @@ const catalog: Record<string, RuleCard> = {
   twin: icon("twin", 2, 2, 3, { keywords: ["速攻", "連撃"] }),
   basher: icon("basher", 2, 2, 5, { keywords: ["速攻"] }),
   totsu: icon("totsu", 2, 2, 2, { keywords: ["突進"] }),
+  bin: icon("bin", 1, 1, 3, { keywords: ["便乗"] }),
   charger: icon("charger", 3, 2, 3, {
     keywords: ["突進"],
     effects: [{ on: "rush", do: "buffSelf", attack: 2, hp: 2 }],
@@ -1288,6 +1289,35 @@ describe("バズ（1試合2回・自分のキャラクター1体に+2/+2と突�
     expect(buzzLeft(s, "p1")).toBe(0);
     s = end(end(s), "p2");
     expect(() => buzz(s, 0)).toThrow(/使い切り/);
+  });
+
+  it("便乗：自分か相手がバズを使うたび、場の便乗を持つキャラクターすべてに攻撃力+1・体力+1", () => {
+    // 自分の場：便乗・便乗なし。相手の場：便乗
+    let s = atTurn(4, ["bin", "f"], ["bin"]);
+    s = play(play(s, 0, 0), 0, 1);
+    const r = buzz(s, 1);
+    s = r.state;
+    const [mine, other] = [s.players.p1.field[0] as Unit, s.players.p1.field[1] as Unit];
+    const foe = s.players.p2.field[0] as Unit;
+    expect([mine.atkBuff, mine.hpBuff]).toEqual([1, 1]);
+    expect([other.atkBuff, other.hpBuff]).toEqual([2, 2]);
+    expect([foe.atkBuff, foe.hpBuff]).toEqual([1, 1]);
+    expect(r.events).toContainEqual({
+      type: "buffed",
+      player: "p2",
+      slot: 0,
+      cardId: "bin",
+      attack: 1,
+      hp: 1,
+    });
+  });
+
+  it("便乗：バズしたのが便乗を持つキャラクターなら、+2/+2 に便乗の +1/+1 も乗る", () => {
+    let s = atTurn(4, ["bin"]);
+    s = play(s, 0, 0);
+    s = buzz(s, 0).state;
+    const u = s.players.p1.field[0] as Unit;
+    expect([u.atkBuff, u.hpBuff]).toEqual([3, 3]);
   });
 
   it("バズの強化は晒しで消える（強化として扱う）", () => {

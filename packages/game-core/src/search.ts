@@ -1,4 +1,4 @@
-import { autoSacrifice, planTurn } from "./ai";
+import { autoSacrifice, buzzValue, planTurn } from "./ai";
 import {
   applyAction,
   attackTargets,
@@ -50,7 +50,27 @@ export const WEIGHTS = {
   focus: 1,
   /** 残っているバズ1回の価値（これより得をする場面でだけ使う） */
   buzz: 4,
+  /** 攻める側（殴り合いで先に削り切れる）のとき、相手のライフを削る点を何倍に見るか */
+  faceBias: 1.5,
 };
+
+/**
+ * このターンの構え。殴り合いで先に削り切れそう（盤面の攻撃力で相手のライフを削るターン数が、相手より少ない）か、
+ * 次の自分のターンまでに削り切れそうなら「攻める」：相手のプレイヤーを殴る点を重く見る（10月25日、オーナー：
+ * 「体力、盤面的に有利な場合には積極的に顔を殴る」）。そうでなければ、盤面を取ることを優先する
+ */
+export function faceBiasOf(state: GameState, player: PlayerId, catalog: Catalog): number {
+  const foeId = opponent(player);
+  const power = (pid: PlayerId) =>
+    state.players[pid].field.reduce((n, u) => (u ? n + viewUnit(state, pid, u, catalog).attack : n), 0);
+  const mine = power(player);
+  const theirs = power(foeId);
+  if (mine <= 0) return 1;
+  const foeLp = state.players[foeId].lp;
+  const myClock = Math.ceil(foeLp / mine);
+  const foeClock = theirs > 0 ? Math.ceil(state.players[player].lp / theirs) : Number.POSITIVE_INFINITY;
+  return myClock < foeClock || foeLp <= mine * 2 ? WEIGHTS.faceBias : 1;
+}
 
 const WIN = 1_000_000;
 
@@ -78,14 +98,15 @@ function unitValue(state: GameState, owner: PlayerId, slot: number, catalog: Cat
 }
 
 /** 盤面の点数（player から見て。高いほど良い） */
-export function evaluate(state: GameState, player: PlayerId, catalog: Catalog): number {
+export function evaluate(state: GameState, player: PlayerId, catalog: Catalog, faceBias = 1): number {
   if (state.winner) return state.winner === player ? WIN : -WIN;
   const foeId = opponent(player);
   const me = state.players[player];
   const foe = state.players[foeId];
   // プレイヤーに付いた「次の自分のターンの終わりにダメージを受ける」効果は、もう減ったライフとして見る
   let score =
-    (lifeValue(me.lp - delayedDamageOn(state, player)) - lifeValue(foe.lp - delayedDamageOn(state, foeId))) *
+    (lifeValue(me.lp - delayedDamageOn(state, player)) -
+      lifeValue(foe.lp - delayedDamageOn(state, foeId)) * faceBias) *
     WEIGHTS.life;
   for (let s = 0; s < me.field.length; s++) score += unitValue(state, player, s, catalog);
   for (let s = 0; s < foe.field.length; s++) score -= unitValue(state, foeId, s, catalog);
@@ -150,9 +171,10 @@ function candidates(state: GameState, player: PlayerId, catalog: Catalog): Actio
         out.push({ type: "cast", player, handIndex, target });
     } else out.push({ type: "cast", player, handIndex });
   });
+  // バズは、使っても殴れないキャラクター（攻撃し終えた・眠り状態）には試さない
   if (!buzzBlock(state, player))
     me.field.forEach((u, slot) => {
-      if (u) out.push({ type: "buzz", player, slot });
+      if (u && buzzValue(state, player, slot, catalog) > 0) out.push({ type: "buzz", player, slot });
     });
   me.field.forEach((u, from) => {
     if (!u || !canUnitAttack(state, u)) return;
@@ -183,11 +205,11 @@ interface Node {
 }
 
 /** ターンを終えて、相手が場のキャラクターだけで殴り返したあとの盤面の点数 */
-function scoreAfterReply(node: Node, player: PlayerId, catalog: Catalog): number {
+function scoreAfterReply(node: Node, player: PlayerId, catalog: Catalog, faceBias: number): number {
   const settled = settle(node.state, catalog);
-  if (settled.winner) return evaluate(settled, player, catalog);
+  if (settled.winner) return evaluate(settled, player, catalog, faceBias);
   let s = applyAction(settled, { type: "endTurn", player }, catalog).state;
-  if (s.winner || s.active === player) return evaluate(s, player, catalog); // 追加ターンなど
+  if (s.winner || s.active === player) return evaluate(s, player, catalog, faceBias); // 追加ターンなど
   const foeId = opponent(player);
   // 相手の手札は分からないので、空にして「攻撃だけ」させる
   s = { ...s, players: { ...s.players, [foeId]: { ...s.players[foeId], hand: [] } } };
@@ -200,7 +222,7 @@ function scoreAfterReply(node: Node, player: PlayerId, catalog: Catalog): number
   } catch {
     // 読み違いは気にしない
   }
-  return evaluate(s, player, catalog);
+  return evaluate(s, player, catalog, faceBias);
 }
 
 export function planTurnSearch(
@@ -210,7 +232,9 @@ export function planTurnSearch(
   options: Partial<SearchOptions> = {},
 ): Action[] {
   const opt = { ...DEFAULT_SEARCH, ...options };
-  const root: Node = { state: start, actions: [], score: evaluate(start, player, catalog) };
+  // 構え（攻めるか、盤面を取るか）はターンの初めの盤面で決める
+  const bias = faceBiasOf(start, player, catalog);
+  const root: Node = { state: start, actions: [], score: evaluate(start, player, catalog, bias) };
   const all = new Map<string, Node>([[signature(start), root]]);
   let frontier = [root];
   let nodes = 0;
@@ -225,7 +249,7 @@ export function planTurnSearch(
       s = applyAction(s, a, catalog).state;
       acts.push(a);
     }
-    all.set(`greedy:${signature(s)}`, { state: s, actions: acts, score: evaluate(s, player, catalog) });
+    all.set(`greedy:${signature(s)}`, { state: s, actions: acts, score: evaluate(s, player, catalog, bias) });
   } catch {
     // 使えなければ探索だけで決める
   }
@@ -248,7 +272,7 @@ export function planTurnSearch(
         const child: Node = {
           state,
           actions: [...node.actions, a],
-          score: evaluate(state.pending ? settle(state, catalog) : state, player, catalog),
+          score: evaluate(state.pending ? settle(state, catalog) : state, player, catalog, bias),
         };
         all.set(sig, child);
         if (state.winner === player) return [...child.actions];
@@ -263,7 +287,7 @@ export function planTurnSearch(
   let best = finalists[0] ?? root;
   let bestScore = Number.NEGATIVE_INFINITY;
   for (const n of finalists) {
-    const s = scoreAfterReply(n, player, catalog) + n.score * WEIGHTS.now;
+    const s = scoreAfterReply(n, player, catalog, bias) + n.score * WEIGHTS.now;
     if (s > bestScore) {
       bestScore = s;
       best = n;

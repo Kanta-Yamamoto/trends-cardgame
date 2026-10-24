@@ -1016,12 +1016,12 @@
     "rarity": 2,
     "cost": 4,
     "attack": 3,
-    "hp": 2,
+    "hp": 4,
     "attributes": ["推し"],
     "kaiwai": ["配信者"],
-    "keywords": ["速攻"],
+    "keywords": ["便乗"],
     "effects": [],
-    "effect": "速攻。",
+    "effect": "便乗。",
     "art": "/assets/cards/m7-art.jpg",
     "original": "assets/original/m7.webp"
   },
@@ -1449,21 +1449,14 @@
     "name": "バーチャルアイドル",
     "type": "icon",
     "rarity": 3,
-    "cost": 6,
-    "attack": 4,
+    "cost": 2,
+    "attack": 1,
     "hp": 3,
     "attributes": ["推し"],
     "kaiwai": ["配信者", "アイドル"],
-    "keywords": ["注目"],
-    "effects": [
-      {
-        "on": "play",
-        "do": "heal",
-        "to": "allAlliesAndMaster",
-        "amount": 2
-      }
-    ],
-    "effect": "注目。【場に出たとき】自分のキャラクターすべてと自分のライフを2回復する。",
+    "keywords": ["便乗"],
+    "effects": [],
+    "effect": "便乗。",
     "art": "/assets/cards/m13-art.jpg",
     "original": "assets/original/m13.webp"
   },
