@@ -10,7 +10,7 @@ import type { Attribute, Kaiwai } from "./types";
 export const NEUTRAL = "ニュートラル";
 
 /** キーワードを効果文に書く順（1 つずつ「。」で区切って、効果文の先頭に置く） */
-export const KEYWORD_ORDER = ["ガード", "速攻", "突進", "連撃", "注目", "コンボ"] as const;
+export const KEYWORD_ORDER = ["ガード", "速攻", "突進", "連撃", "注目", "便乗", "コンボ"] as const;
 
 export type TermKind = "keyword" | "state" | "dark" | "word";
 
@@ -58,6 +58,11 @@ export const TERMS: Record<string, Term> = {
   注目: {
     title: "注目",
     text: "自分のターンの始めに攻撃力+1。センター（場の真ん中の枠）にいると+2。",
+    kind: "keyword",
+  },
+  便乗: {
+    title: "便乗",
+    text: "自分か相手がバズを使うたび、攻撃力+1・体力+1。上がった分は強化なので、晒し状態で消える。",
     kind: "keyword",
   },
   コンボ: {
