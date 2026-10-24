@@ -844,15 +844,17 @@ describe("デッキの決まり", () => {
     expect(deckAttributes(DECKS.unei_idol, real)).toEqual(["推し"]);
     for (const id of ["c15", "c16", "c17"]) expect(DECKS.unei_idol.filter((c) => c === id)).toHaveLength(2);
   });
-  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、ニュートラルのカードを4枚入れる（運営デッキ・推しデッキ・炎デッキは例外）", () => {
+  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、ニュートラルのカードを4枚入れる（運営デッキ・推しデッキ・炎デッキ・神デッキは例外）", () => {
     // 運営デッキ（unei_）は、共通で固めるのがコンセプト（オーナー）なので、共通の枚数の決まりから外す
     expect(DECKS.unei_idol.filter((c) => real[c]?.attributes.length === 0)).toHaveLength(14);
     // 推しデッキは、運営サイドの3枚とインフルエンサー・スクショで、ニュートラル8枚（10月24日、docs/design-oshi.md）
     expect(DECKS.solo_idol.filter((c) => real[c]?.attributes.length === 0)).toHaveLength(8);
     // 炎デッキは、『フィクサー』『調停者』の2枚だけ（10月24日、docs/design-fire.md）
     expect(DECKS.solo_flame.filter((c) => real[c]?.attributes.length === 0)).toEqual(["c15", "c16"]);
+    // 神デッキは『調停者』の1枚だけ（10月24日、docs/design-god.md）
+    expect(DECKS.solo_expert.filter((c) => real[c]?.attributes.length === 0)).toEqual(["c16"]);
     for (const [id, deck] of Object.entries(DECKS)) {
-      if (id.startsWith("unei_") || id === "solo_idol" || id === "solo_flame") continue;
+      if (id.startsWith("unei_") || ["solo_idol", "solo_flame", "solo_expert"].includes(id)) continue;
       const aces = deck.filter((c) => real[c]?.dark);
       const commons = deck.filter((c) => real[c]?.attributes.length === 0);
       expect({ id, aces: aces.length, kinds: new Set(aces).size, commons: commons.length }).toEqual({
@@ -1782,5 +1784,75 @@ describe("炎属性の作り直し（10月24日。docs/design-fire.md）", () =>
     const life = s.players.p2.lp;
     s = go(s, { type: "attack", player: "p1", from: 2, target: { kind: "leader" } }).state;
     expect(s.players.p2.lp).toBe(life - 4);
+  });
+});
+
+describe("神属性の作り直し（10月24日。docs/design-god.md）", () => {
+  const local: Record<string, RuleCard> = {
+    ...catalog,
+    sg: icon("sg", 1, 1, 3, { keywords: ["ガード"], attributes: ["神"] }),
+    nsg: icon("nsg", 1, 1, 3, { keywords: ["ガード"], attributes: [] }),
+    // ネ申：出したガードの数だけコスト-1。出たとき、呪文のトークン3枚を手札に加える
+    god: icon("god", 13, 5, 10, {
+      attributes: ["神"],
+      effects: [
+        { on: "hand", do: "cheaperPerGuard" },
+        { on: "play", do: "addToHand", cards: ["tate", "rai", "ten"] },
+      ],
+    }),
+    tate: post("tate", 0, { token: true, effects: [{ do: "damageCut", amount: 5 }] }),
+    rai: post("rai", 0, { token: true, target: "enemyIcon", effects: [{ do: "damage", amount: 5 }] }),
+    ten: post("ten", 0, { token: true, effects: [{ do: "damage", to: "enemyMaster", amount: 5 }] }),
+    // ミコト：山札からガードを持つ神属性のキャラクターを1枚探す
+    seek: icon("seek", 1, 2, 6, {
+      keywords: ["ガード"],
+      effects: [{ on: "play", do: "tutor", guard: true, attribute: "神", count: 1 }],
+    }),
+  };
+  const go = (s: GameState, a: Action) => applyAction(s, a, local);
+  const put = (s: GameState, handIndex: number, slot: number, player: "p1" | "p2" = "p1") =>
+    go(s, { type: "play", player, handIndex, slot }).state;
+  const fin = (s: GameState, player: "p1" | "p2" = "p1") => go(s, { type: "endTurn", player }).state;
+
+  it("ネ申：このゲームで自分が出したガードの数だけコスト-1（場から離れても戻らない）", () => {
+    let s = game(["sg", "sg", "god"], F(12), 30);
+    expect(effectiveCost(s, "p1", "god", local)).toBe(13);
+    s = put(put(s, 0, 0), 0, 1);
+    expect(effectiveCost(s, "p1", "god", local)).toBe(11);
+    s.players.p1.field[0] = null;
+    expect(effectiveCost(s, "p1", "god", local)).toBe(11);
+  });
+
+  it("ネ申：出たとき、盾・裁きの雷・天罰を手札に加える。呪文のトークンは使っても墓地に行かない", () => {
+    let s = game(["god"], F(12), 30);
+    s = put(s, 0, 2);
+    expect(s.players.p1.hand.slice(-3)).toEqual(["tate", "rai", "ten"]);
+    const lp = s.players.p2.lp;
+    s = go(s, { type: "cast", player: "p1", handIndex: s.players.p1.hand.indexOf("ten") }).state;
+    expect(s.players.p2.lp).toBe(lp - 5);
+    expect(s.players.p1.trash).not.toContain("ten");
+  });
+
+  it("盾：次の相手のターンの終わりまで、受けるダメージを1回ごとに5減らす。大きい一撃は差だけ通る", () => {
+    let s = withFoe(["tate"], ["f", "big"]);
+    s = go(s, { type: "cast", player: "p1", handIndex: 0 }).state;
+    s = fin(s);
+    for (const u of s.players.p2.field) if (u) Object.assign(u, { canAttack: true, attacksLeft: 1 });
+    const lp = s.players.p1.lp;
+    s = go(s, { type: "attack", player: "p2", from: 0, target: { kind: "leader" } }).state;
+    expect(s.players.p1.lp).toBe(lp);
+    s = go(s, { type: "attack", player: "p2", from: 1, target: { kind: "leader" } }).state;
+    expect(s.players.p1.lp).toBe(lp - 1);
+    // 相手のターンが終わったら消える
+    s = fin(s, "p2");
+    expect(s.turn > (s.players.p1.cutUntil ?? 0)).toBe(true);
+  });
+
+  it("ミコト：山札からガードを持つ神属性のキャラクターを探す。ニュートラルのガードは選ばない", () => {
+    let s = game(["seek"]);
+    s.players.p1.deck = ["f", "nsg", "sg", ...s.players.p1.deck];
+    s = put(s, 0, 0);
+    expect(s.players.p1.hand).toContain("sg");
+    expect(s.players.p1.deck.slice(0, 2)).toEqual(["f", "nsg"]);
   });
 });

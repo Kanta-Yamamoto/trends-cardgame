@@ -130,9 +130,16 @@ export type CardEffect = (
   /** hand：自分の場のキャラクター1体につきコスト-1 */
   | { do: "cheaperPerAlly"; kaiwai?: Kaiwai }
   /** 山札から、その種族のカードを上から count 枚探して手札に（足りない分は普通に引く） */
-  | { do: "tutor"; kaiwai: Kaiwai; count: number }
+  /** play：山札から探して手札に加える。kaiwai の種族のカード、または guard（ガードを持つ）・attribute の属性のキャラクター。なければ引く */
+  | { do: "tutor"; kaiwai?: Kaiwai; guard?: boolean; attribute?: Attribute; count: number }
   /** hand：このゲームで自分が回復の効果を使った回数だけコスト-1 */
   | { do: "cheaperPerHeal" }
+  /** hand：このゲームで自分が出したガードの数だけコスト-1（ネ申） */
+  | { do: "cheaperPerGuard" }
+  /** play：カード（呪文のトークンなど）を手札に加える。手札が上限なら加えられない（トークンは消える） */
+  | { do: "addToHand"; cards: string[] }
+  /** play：次の相手のターンの終わりまで、自分のプレイヤーが受けるダメージを1回ごとに amount 減らす（盾） */
+  | { do: "damageCut"; amount: number }
   /** passive：自分が回復の効果を使うたび、このキャラクターに攻撃力+attack・体力+hp */
   | { do: "healGrow"; attack: number; hp: number }
   /** passive：自分が回復の効果を使うたび、相手のプレイヤーに amount ダメージ */

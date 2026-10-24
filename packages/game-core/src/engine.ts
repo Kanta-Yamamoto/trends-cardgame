@@ -171,6 +171,7 @@ export function effectiveCost(state: GameState, player: PlayerId, cardId: string
     if (e.do === "cheaperPerAlly") cost -= countAllies(state, player, catalog, e.kaiwai);
     if (e.do === "cheaperPerPost") cost -= me.postsUsed ?? 0;
     if (e.do === "cheaperPerHeal") cost -= me.heals ?? 0;
+    if (e.do === "cheaperPerGuard") cost -= me.guardsPlayed ?? 0;
   }
   return Math.max(0, cost);
 }
@@ -382,6 +383,13 @@ function damageLeader(state: GameState, player: PlayerId, amount: number, emit: 
     emit({ type: "shield", player, kind: "blocked", amount });
     return;
   }
+  // 盾：1回ごとに決まった数だけ減らす
+  if (state.turn <= (p.cutUntil ?? 0) && (p.cutAmount ?? 0) > 0) {
+    const cut = Math.min(amount, p.cutAmount ?? 0);
+    emit({ type: "shield", player, kind: "blocked", amount: cut });
+    amount -= cut;
+    if (amount <= 0) return;
+  }
   p.lp = Math.max(0, p.lp - amount);
   emit({ type: "leaderDamaged", player, amount, lp: p.lp });
 }
@@ -483,7 +491,15 @@ function placeSummoned(
   slot: number,
 ) {
   state.players[player].field[slot] = newUnit(state, cardId, catalog, true);
+  countGuard(state, player, cardId, catalog);
   emit({ type: "summoned", player, cardId, slot });
+}
+
+/** 出したキャラクターがガードなら数える（ネ申のコスト） */
+function countGuard(state: GameState, player: PlayerId, cardId: string, catalog: Catalog) {
+  if (!must(catalog, cardId).keywords.includes("ガード")) return;
+  const p = state.players[player];
+  p.guardsPlayed = (p.guardsPlayed ?? 0) + 1;
 }
 
 function damageUnit(state: GameState, owner: PlayerId, slot: number, amount: number, emit: Emit) {
@@ -759,7 +775,15 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       break;
     case "tutor":
       for (let i = 0; i < e.count; i++) {
-        const at = me.deck.findIndex((id) => must(catalog, id).kaiwai.includes(e.kaiwai));
+        const at = me.deck.findIndex((id) => {
+          const c = must(catalog, id);
+          if (e.kaiwai) return c.kaiwai.includes(e.kaiwai);
+          return (
+            c.type === "icon" &&
+            (!e.guard || c.keywords.includes("ガード")) &&
+            (!e.attribute || c.attributes.includes(e.attribute))
+          );
+        });
         if (at < 0) {
           draw(state, player, emit);
           continue;
@@ -1022,6 +1046,18 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       emit({ type: "delayedDamageSet", player: foeId, cardId, amount: e.amount });
       break;
     }
+    case "addToHand":
+      for (const id of e.cards) {
+        if (me.hand.length >= MAX_HAND) break;
+        me.hand.push(id);
+        emit({ type: "drew", player, cardId: id });
+      }
+      break;
+    case "damageCut":
+      me.cutUntil = state.turn + 1;
+      me.cutAmount = e.amount;
+      emit({ type: "shield", player, kind: "shielded", amount: e.amount });
+      break;
     case "shieldMaster":
       me.shieldUntil = state.turn + 1;
       emit({ type: "shield", player, kind: "shielded", amount: 0 });
@@ -1108,6 +1144,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
     case "lullaby":
     case "cheaperPerAlly":
     case "cheaperPerPost":
+    case "cheaperPerGuard":
       break; // 場にいる間・手札にある間ずっと効く（それぞれの場所で計算）
   }
 }
@@ -1282,6 +1319,7 @@ export function applyAction(
       me.mana -= cost;
       me.hand.splice(action.handIndex, 1);
       me.field[action.slot] = newUnit(state, cardId, catalog, false);
+      countGuard(state, player, cardId, catalog);
       const playedBefore = me.playedThisTurn++;
       emit({ type: "played", player, cardId, slot: action.slot, cost });
       const ctx: Ctx = { state, player, catalog, config, emit, selfSlot: action.slot, playedBefore };
@@ -1331,7 +1369,8 @@ export function applyAction(
       }
       me.mana -= cost;
       me.hand.splice(action.handIndex, 1);
-      me.trash.push(cardId);
+      // 呪文のトークン（盾など）は墓地に行かずに消える
+      if (!card.token) me.trash.push(cardId);
       me.postsUsed = (me.postsUsed ?? 0) + 1;
       const playedBefore = me.playedThisTurn++;
       emit({ type: "cast", player, cardId, cost, target: action.target });

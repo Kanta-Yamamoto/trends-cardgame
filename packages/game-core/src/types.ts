@@ -102,6 +102,11 @@ export interface PlayerState {
   buzzFrom?: number;
   /** この通算ターンまで、プレイヤーはダメージを受けない（0 なら守られていない） */
   shieldUntil?: number;
+  /** この通算ターンまで、プレイヤーが受けるダメージを1回ごとに cutAmount 減らす（盾） */
+  cutUntil?: number;
+  cutAmount?: number;
+  /** このゲームで自分が出したガードのキャラクターの数（ネ申のコスト） */
+  guardsPlayed?: number;
   /**
    * このプレイヤーに付与された「次の自分のターンの終わりに amount ダメージを受ける」効果（ミコト）。
    * turn は付与された通算ターン（そのターンのうちには働かない）。働いたら消える
