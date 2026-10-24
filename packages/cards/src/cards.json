@@ -687,7 +687,7 @@
     "rarity": 5,
     "cost": 5,
     "attack": 3,
-    "hp": 5,
+    "hp": 4,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
     "keywords": ["ガード"],
@@ -703,7 +703,7 @@
     "original": "assets/original/g4.webp",
     "dark": {
       "name": "陰謀論者",
-      "attack": 5,
+      "attack": 4,
       "hp": 3,
       "keywords": ["突進"],
       "effect": "突進。自分のターンの始めに、自分の山札が0枚なら勝ち。",
