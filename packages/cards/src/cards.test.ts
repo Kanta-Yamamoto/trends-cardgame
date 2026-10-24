@@ -46,6 +46,14 @@ describe("cards.json", () => {
     }
   });
 
+  it("場の数を見て攻撃力が変わる効果は無い（強化は一度上がったら、晒し状態と TL浄化以外では下がらない。10月24日）", () => {
+    const fluid = CARDS.flatMap((c) =>
+      [...(c.effects ?? []), ...(c.dark?.effects ?? [])]
+        .filter((e) => e.do === "attackPerAlly" && (e.on ?? "play") !== "play")
+        .map(() => c.id),
+    );
+    expect(fluid).toEqual([]);
+  });
   it("効果で呼び出すカードは登録済み", () => {
     for (const c of CARDS)
       for (const e of c.effects) if ("card" in e) expect(() => getCard(e.card)).not.toThrow();
