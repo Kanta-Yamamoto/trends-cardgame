@@ -105,6 +105,8 @@ export interface PlayerState {
   /** この通算ターンまで、プレイヤーが受けるダメージを1回ごとに cutAmount 減らす（盾） */
   cutUntil?: number;
   cutAmount?: number;
+  /** 手札のカード（ID ごと）のコストを下げる分（雑学博士）。そのカードを出す・使うと消える */
+  handDiscount?: Record<string, number>;
   /** このゲームで自分が出したガードのキャラクターの数（ネ申のコスト） */
   guardsPlayed?: number;
   /**

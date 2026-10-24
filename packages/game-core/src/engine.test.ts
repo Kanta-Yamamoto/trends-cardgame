@@ -1848,6 +1848,26 @@ describe("神属性の作り直し（10月24日。docs/design-god.md）", () => 
     expect(s.turn > (s.players.p1.cutUntil ?? 0)).toBe(true);
   });
 
+  it("雑学博士：手札でいちばんコストが高い神属性のカード1枚のコスト-1。出すと消える", () => {
+    const loc = {
+      ...local,
+      quiz: icon("quiz", 1, 1, 2, {
+        effects: [{ on: "play", do: "discountHand", attribute: "神", amount: 1 }],
+      }),
+    };
+    let s = game(["quiz", "sg", "god", "big"], F(12), 30);
+    s = applyAction(s, { type: "play", player: "p1", handIndex: 0, slot: 0 }, loc).state;
+    expect(effectiveCost(s, "p1", "god", loc)).toBe(12);
+    expect(effectiveCost(s, "p1", "sg", loc)).toBe(1);
+    expect(effectiveCost(s, "p1", "big", loc)).toBe(4);
+    s = applyAction(
+      s,
+      { type: "play", player: "p1", handIndex: s.players.p1.hand.indexOf("god"), slot: 2 },
+      loc,
+    ).state;
+    expect(s.players.p1.handDiscount?.god).toBeUndefined();
+  });
+
   it("ミコト：山札からガードを持つ神属性のキャラクターを探す。ニュートラルのガードは選ばない", () => {
     let s = game(["seek"]);
     s.players.p1.deck = ["f", "nsg", "sg", ...s.players.p1.deck];

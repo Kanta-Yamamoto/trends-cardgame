@@ -625,19 +625,19 @@
     "rarity": 1,
     "cost": 2,
     "attack": 1,
-    "hp": 3,
+    "hp": 2,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": ["ガード"],
+    "keywords": [],
     "effects": [
       {
         "on": "play",
-        "do": "draw",
-        "count": 1,
-        "ifHandAtMost": 3
+        "do": "discountHand",
+        "attribute": "神",
+        "amount": 1
       }
     ],
-    "effect": "ガード。【場に出たとき】手札が3枚以下なら、カードを1枚引く。",
+    "effect": "【場に出たとき】自分の手札でいちばんコストが高い神属性のカード1枚のコスト-1。",
     "art": "/assets/cards/g1-art.jpg",
     "original": "assets/original/g1.webp"
   },

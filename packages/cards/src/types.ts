@@ -134,6 +134,8 @@ export type CardEffect = (
   | { do: "tutor"; kaiwai?: Kaiwai; guard?: boolean; attribute?: Attribute; count: number }
   /** hand：このゲームで自分が回復の効果を使った回数だけコスト-1 */
   | { do: "cheaperPerHeal" }
+  /** play：自分の手札でいちばんコストが高い attribute 属性のカード1枚のコスト-amount（雑学博士）。出すまで続く */
+  | { do: "discountHand"; attribute: Attribute; amount: number }
   /** hand：このゲームで自分が出したガードの数だけコスト-1（ネ申） */
   | { do: "cheaperPerGuard" }
   /** play：カード（呪文のトークンなど）を手札に加える。手札が上限なら加えられない（トークンは消える） */

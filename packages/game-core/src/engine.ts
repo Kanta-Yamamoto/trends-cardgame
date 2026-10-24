@@ -173,6 +173,7 @@ export function effectiveCost(state: GameState, player: PlayerId, cardId: string
     if (e.do === "cheaperPerHeal") cost -= me.heals ?? 0;
     if (e.do === "cheaperPerGuard") cost -= me.guardsPlayed ?? 0;
   }
+  cost -= me.handDiscount?.[cardId] ?? 0;
   return Math.max(0, cost);
 }
 
@@ -493,6 +494,13 @@ function placeSummoned(
   state.players[player].field[slot] = newUnit(state, cardId, catalog, true);
   countGuard(state, player, cardId, catalog);
   emit({ type: "summoned", player, cardId, slot });
+}
+
+/** 手札のコストを下げていた分は、そのカードを出す・使うと消える */
+function useDiscount(me: PlayerState, cardId: string) {
+  if (!me.handDiscount?.[cardId]) return;
+  const { [cardId]: _, ...rest } = me.handDiscount;
+  me.handDiscount = rest;
 }
 
 /** 出したキャラクターがガードなら数える（ネ申のコスト） */
@@ -1053,6 +1061,21 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         emit({ type: "drew", player, cardId: id });
       }
       break;
+    case "discountHand": {
+      // 手札でいちばんコストが高い、その属性のカード（同じなら先に持っていた方）
+      let best: string | undefined;
+      for (const id of me.hand) {
+        if (!must(catalog, id).attributes.includes(e.attribute)) continue;
+        if (
+          best === undefined ||
+          effectiveCost(state, player, id, catalog) > effectiveCost(state, player, best, catalog)
+        )
+          best = id;
+      }
+      if (best === undefined) break;
+      me.handDiscount = { ...me.handDiscount, [best]: (me.handDiscount?.[best] ?? 0) + e.amount };
+      break;
+    }
     case "damageCut":
       me.cutUntil = state.turn + 1;
       me.cutAmount = e.amount;
@@ -1318,6 +1341,7 @@ export function applyAction(
         throw new RuleError("no_mana", `コストが足りません（必要 ${cost}・残り ${me.mana}）`);
       me.mana -= cost;
       me.hand.splice(action.handIndex, 1);
+      useDiscount(me, cardId);
       me.field[action.slot] = newUnit(state, cardId, catalog, false);
       countGuard(state, player, cardId, catalog);
       const playedBefore = me.playedThisTurn++;
@@ -1369,6 +1393,7 @@ export function applyAction(
       }
       me.mana -= cost;
       me.hand.splice(action.handIndex, 1);
+      useDiscount(me, cardId);
       // 呪文のトークン（盾など）は墓地に行かずに消える
       if (!card.token) me.trash.push(cardId);
       me.postsUsed = (me.postsUsed ?? 0) + 1;

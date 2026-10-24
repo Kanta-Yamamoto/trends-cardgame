@@ -300,6 +300,8 @@ function sentence(e: CardEffect, ctx: Ctx, prev: CardEffect | undefined): string
         return "センターにいる間、自分のほかのキャラクターも注目を持つ";
       case "cheaperPerAlly":
         return `自分の場の${kaiwaiOr(e.kaiwai, "キャラクター")}1体につきコスト-1`;
+      case "discountHand":
+        return `自分の手札でいちばんコストが高い${e.attribute}属性のカード1枚のコスト-${e.amount}`;
       case "cheaperPerGuard":
         return "このゲームで自分が出したガードの数だけコスト-1";
       case "addToHand":
