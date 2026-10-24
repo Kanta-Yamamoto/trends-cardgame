@@ -597,21 +597,23 @@
     "id": "c1",
     "name": "ミコト",
     "type": "icon",
-    "rarity": 5,
-    "cost": 6,
-    "attack": 3,
+    "rarity": 4,
+    "cost": 5,
+    "attack": 1,
     "hp": 5,
     "attributes": ["神"],
     "kaiwai": ["配信者"],
-    "keywords": [],
+    "keywords": ["ガード"],
     "effects": [
       {
         "on": "play",
-        "do": "delayedDamage",
-        "amount": 10
+        "do": "tutor",
+        "guard": true,
+        "attribute": "神",
+        "count": 1
       }
     ],
-    "effect": "【場に出たとき】相手のプレイヤーに「次の自分のターンの終わりに10ダメージを受ける」効果を付与する。",
+    "effect": "ガード。【場に出たとき】山札からガードを持つ神属性のキャラクターを1枚探して手札に加える。なければカードを1枚引く。",
     "art": "/assets/cards/c1-art.jpg",
     "subject": "/assets/cards/c1-subject.webp",
     "original": "assets/original/c1-shirogane.png"
@@ -630,12 +632,12 @@
     "effects": [
       {
         "on": "play",
-        "do": "draw",
-        "count": 1,
-        "ifHandAtMost": 3
+        "do": "discountHand",
+        "attribute": "神",
+        "amount": 1
       }
     ],
-    "effect": "【場に出たとき】手札が3枚以下なら、カードを1枚引く。",
+    "effect": "【場に出たとき】自分の手札でいちばんコストが高い神属性のカード1枚のコスト-1。",
     "art": "/assets/cards/g1-art.jpg",
     "original": "assets/original/g1.webp"
   },
@@ -684,25 +686,25 @@
     "type": "icon",
     "rarity": 5,
     "cost": 5,
-    "attack": 4,
+    "attack": 3,
     "hp": 4,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": [],
+    "keywords": ["ガード"],
     "effects": [
       {
         "do": "draw",
         "count": 1
       }
     ],
-    "effect": "【場に出たとき】カードを1枚引く。",
+    "effect": "ガード。【場に出たとき】カードを1枚引く。",
     "art": "/assets/cards/g4-art.jpg",
     "subject": "/assets/cards/g4-subject.webp",
     "original": "assets/original/g4.webp",
     "dark": {
       "name": "陰謀論者",
       "attack": 4,
-      "hp": 4,
+      "hp": 3,
       "keywords": ["突進"],
       "effect": "突進。自分のターンの始めに、自分の山札が0枚なら勝ち。",
       "art": "/assets/cards/g4-dark-art.jpg",
@@ -1190,51 +1192,6 @@
     "original": "assets/original/k8.webp"
   },
   {
-    "id": "g5",
-    "name": "検索ニキ",
-    "type": "icon",
-    "rarity": 1,
-    "cost": 2,
-    "attack": 1,
-    "hp": 2,
-    "attributes": ["神"],
-    "kaiwai": ["有識者"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "tutor",
-        "kaiwai": "有識者",
-        "count": 1
-      }
-    ],
-    "effect": "【場に出たとき】山札から有識者種族のカードを1枚探して手札に加える。なければカードを1枚引く。",
-    "art": "/assets/cards/g5-art.jpg",
-    "original": "assets/original/g5.webp"
-  },
-  {
-    "id": "g6",
-    "name": "論破王",
-    "type": "icon",
-    "rarity": 2,
-    "cost": 4,
-    "attack": 2,
-    "hp": 3,
-    "attributes": ["神"],
-    "kaiwai": ["有識者"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "sweep",
-        "maxHp": 2
-      }
-    ],
-    "effect": "【場に出たとき】体力が2以下の相手のキャラクターすべてを破壊する。",
-    "art": "/assets/cards/g6-art.jpg",
-    "original": "assets/original/g6.webp"
-  },
-  {
     "id": "g7",
     "name": "解説動画",
     "type": "post",
@@ -1252,34 +1209,6 @@
     "effect": "カードを2枚引く。",
     "art": "/assets/cards/g7-art.jpg",
     "original": "assets/original/g7.webp"
-  },
-  {
-    "id": "g8",
-    "name": "大学教授",
-    "type": "icon",
-    "rarity": 4,
-    "cost": 8,
-    "attack": 5,
-    "hp": 4,
-    "attributes": ["神"],
-    "kaiwai": ["有識者"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "destroy",
-        "to": "strongestEnemy"
-      },
-      {
-        "on": "play",
-        "do": "heal",
-        "to": "master",
-        "amount": 3
-      }
-    ],
-    "effect": "【場に出たとき】攻撃力がいちばん高い相手のキャラクター1体を破壊する。自分のライフを3回復する。",
-    "art": "/assets/cards/g8-art.jpg",
-    "original": "assets/original/g8.webp"
   },
   {
     "id": "g9",
@@ -1575,41 +1504,15 @@
     "type": "icon",
     "rarity": 1,
     "cost": 1,
-    "attack": 1,
-    "hp": 1,
+    "attack": 0,
+    "hp": 2,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "damage",
-        "to": "strongestEnemy",
-        "amount": 1
-      }
-    ],
-    "effect": "【場に出たとき】攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。",
+    "keywords": ["ガード"],
+    "effects": [],
+    "effect": "ガード。",
     "art": "/assets/cards/g10-art.jpg",
     "original": "assets/original/g10.webp"
-  },
-  {
-    "id": "g11",
-    "name": "ソース貼れ",
-    "type": "post",
-    "rarity": 2,
-    "cost": 1,
-    "attributes": ["神"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "weaken",
-        "attack": 2
-      }
-    ],
-    "effect": "相手のキャラクター1体の攻撃力-2。",
-    "target": "enemyIcon",
-    "art": "/assets/cards/g11-art.jpg",
-    "original": "assets/original/g11.webp"
   },
   {
     "id": "g12",
@@ -1640,19 +1543,18 @@
     "rarity": 4,
     "cost": 4,
     "attack": 2,
-    "hp": 3,
+    "hp": 4,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": [],
+    "keywords": ["ガード"],
     "effects": [
       {
-        "on": "turnEnd",
-        "do": "damage",
-        "to": "strongestEnemy",
-        "amount": 2
+        "on": "passive",
+        "do": "armor",
+        "amount": 1
       }
     ],
-    "effect": "自分のターンの終わりに、攻撃力がいちばん高い相手のキャラクター1体に2ダメージ。",
+    "effect": "ガード。このキャラクターが攻撃されたとき、受けるダメージを1減らす。",
     "art": "/assets/cards/g13-art.jpg",
     "original": "assets/original/g13.webp"
   },
@@ -1660,29 +1562,103 @@
     "id": "c7",
     "name": "ヨミ",
     "type": "icon",
-    "rarity": 5,
+    "rarity": 4,
     "cost": 6,
     "attack": 3,
     "hp": 6,
     "attributes": ["神"],
     "kaiwai": ["有識者"],
-    "keywords": ["ガード", "突進"],
+    "keywords": ["ガード"],
     "effects": [
       {
         "on": "play",
         "do": "sweep",
         "maxHp": 2
-      },
-      {
-        "on": "turnEnd",
-        "do": "damage",
-        "to": "strongestEnemy",
-        "amount": 1
       }
     ],
-    "effect": "ガード。突進。【場に出たとき】体力が2以下の相手のキャラクターすべてを破壊する。自分のターンの終わりに、攻撃力がいちばん高い相手のキャラクター1体に1ダメージ。",
+    "effect": "ガード。【場に出たとき】体力が2以下の相手のキャラクターすべてを破壊する。",
     "art": "/assets/cards/c7-art.jpg",
     "original": "assets/original/c7.webp"
+  },
+  {
+    "id": "g20",
+    "name": "ネ申",
+    "type": "icon",
+    "rarity": 5,
+    "cost": 13,
+    "attack": 5,
+    "hp": 10,
+    "attributes": ["神"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "on": "hand",
+        "do": "cheaperPerGuard"
+      },
+      {
+        "on": "play",
+        "do": "addToHand",
+        "cards": ["t-tate", "t-ikazuchi", "t-tenbatsu"]
+      }
+    ],
+    "effect": "手札にある間、このゲームで自分が出したガードの数だけコスト-1。【場に出たとき】盾・裁きの雷・天罰を手札に加える。"
+  },
+  {
+    "id": "t-tate",
+    "name": "盾",
+    "type": "post",
+    "rarity": 1,
+    "cost": 0,
+    "attributes": ["神"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "damageCut",
+        "amount": 5
+      }
+    ],
+    "effect": "次の相手のターンの終わりまで、自分のプレイヤーが受けるダメージを1回ごとに5減らす。",
+    "token": true
+  },
+  {
+    "id": "t-ikazuchi",
+    "name": "裁きの雷",
+    "type": "post",
+    "rarity": 1,
+    "cost": 0,
+    "attributes": ["神"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "damage",
+        "amount": 5
+      }
+    ],
+    "effect": "相手のキャラクター1体に5ダメージ。",
+    "target": "enemyIcon",
+    "token": true
+  },
+  {
+    "id": "t-tenbatsu",
+    "name": "天罰",
+    "type": "post",
+    "rarity": 1,
+    "cost": 0,
+    "attributes": ["神"],
+    "kaiwai": [],
+    "keywords": [],
+    "effects": [
+      {
+        "do": "damage",
+        "to": "enemyMaster",
+        "amount": 5
+      }
+    ],
+    "effect": "相手のプレイヤーに5ダメージ。",
+    "token": true
   },
   {
     "id": "k11",
@@ -2045,28 +2021,6 @@
     "original": "assets/original/i15.webp"
   },
   {
-    "id": "g16",
-    "name": "学会の重鎮",
-    "type": "icon",
-    "rarity": 4,
-    "cost": 6,
-    "attack": 4,
-    "hp": 3,
-    "attributes": ["神"],
-    "kaiwai": ["有識者"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "draw",
-        "count": 2
-      }
-    ],
-    "effect": "【場に出たとき】カードを2枚引く。",
-    "art": "/assets/cards/g16-art.jpg",
-    "original": "assets/original/g16.webp"
-  },
-  {
     "id": "k16",
     "name": "踊るワンコ",
     "type": "icon",
@@ -2368,45 +2322,6 @@
     "art": "/assets/cards/c13-art.jpg",
     "original": "assets/original/c13.webp",
     "subject": "/assets/cards/c13-subject.webp"
-  },
-  {
-    "id": "g18",
-    "name": "大御所コメンテーター",
-    "type": "icon",
-    "rarity": 3,
-    "cost": 5,
-    "attack": 3,
-    "hp": 3,
-    "attributes": ["神"],
-    "kaiwai": ["有識者"],
-    "keywords": ["速攻"],
-    "effects": [],
-    "effect": "速攻。",
-    "art": "/assets/cards/g18-art.jpg",
-    "original": "assets/original/g18.webp"
-  },
-  {
-    "id": "g19",
-    "name": "学長",
-    "type": "icon",
-    "rarity": 4,
-    "cost": 7,
-    "attack": 4,
-    "hp": 4,
-    "attributes": ["神"],
-    "kaiwai": ["有識者"],
-    "keywords": ["ガード"],
-    "effects": [
-      {
-        "on": "play",
-        "do": "damage",
-        "to": "allEnemies",
-        "amount": 2
-      }
-    ],
-    "effect": "ガード。【場に出たとき】相手のキャラクターすべてに2ダメージ。",
-    "art": "/assets/cards/g19-art.jpg",
-    "original": "assets/original/g19.webp"
   },
   {
     "id": "k17",

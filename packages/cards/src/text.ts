@@ -148,6 +148,12 @@ function targetOf(e: CardEffect, ctx: Ctx): { key: string; noun: string } {
   }
 }
 
+/** 山札から探すものの書き方 */
+function tutorWhat(e: Extract<CardEffect, { do: "tutor" }>): string {
+  if (e.kaiwai) return `${e.kaiwai}種族のカード`;
+  return `${e.guard ? "ガードを持つ" : ""}${e.attribute ? `${e.attribute}属性の` : ""}キャラクター`;
+}
+
 /** 条件（if）の書き出し */
 function condition(e: CardEffect): string {
   if ("ifHandAtMost" in e && e.ifHandAtMost !== undefined) return `手札が${e.ifHandAtMost}枚以下なら、`;
@@ -200,7 +206,7 @@ function sentence(e: CardEffect, ctx: Ctx, prev: CardEffect | undefined): string
       case "drawPerAllies":
         return `自分の場のキャラクター${e.per}体につき、カードを1枚引く。引くのは${e.max}枚まで`;
       case "tutor":
-        return `山札から${e.kaiwai}種族のカードを${e.count}枚探して手札に加える。なければカードを${e.count}枚引く`;
+        return `山札から${tutorWhat(e)}を${e.count}枚探して手札に加える。なければカードを${e.count}枚引く`;
       case "heal": {
         const who = e.to === "master" ? "自分のライフ" : `${ALL_ALLIES}と自分のライフ`;
         return e.to === "allAlliesFull"
@@ -294,6 +300,16 @@ function sentence(e: CardEffect, ctx: Ctx, prev: CardEffect | undefined): string
         return "センターにいる間、自分のほかのキャラクターも注目を持つ";
       case "cheaperPerAlly":
         return `自分の場の${kaiwaiOr(e.kaiwai, "キャラクター")}1体につきコスト-1`;
+      case "armor":
+        return `このキャラクターが攻撃されたとき、受けるダメージを${e.amount}減らす`;
+      case "discountHand":
+        return `自分の手札でいちばんコストが高い${e.attribute}属性のカード1枚のコスト-${e.amount}`;
+      case "cheaperPerGuard":
+        return "このゲームで自分が出したガードの数だけコスト-1";
+      case "addToHand":
+        return `${e.cards.map(ctx.nameOf).join("・")}を手札に加える`;
+      case "damageCut":
+        return `次の相手のターンの終わりまで、自分のプレイヤーが受けるダメージを1回ごとに${e.amount}減らす`;
       case "cheaperPerHeal":
         return "このゲームで自分が回復の効果を使った回数だけコスト-1";
       case "cheaperPerPost":
