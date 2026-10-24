@@ -810,18 +810,21 @@ describe("デッキの決まり", () => {
   it("1つの属性＋ニュートラルのカードの20枚は組める（ニュートラルのカードだけでもよい）。闇堕ちを持つカードは種類を問わず2枚まで、★5は何種類でも", () => {
     const flame = DECKS.solo_flame;
     expect(validateDeck(flame, real)).toEqual([]);
+    const swap = (from: string, to: string) => {
+      const d = [...flame];
+      d.splice(d.indexOf(from), 1, to);
+      return d;
+    };
     // 闇堕ちを持つカードを2種類1枚ずつ（レン・カグラ）は組める
-    const withoutRen = [...flame];
-    withoutRen.splice(withoutRen.indexOf("c2"), 1);
-    const twoKinds = [...withoutRen.filter((id) => id !== "c4"), "c9"];
-    expect(twoKinds.filter((id) => real[id]?.dark)).toEqual(["c2", "c9"]);
+    const twoKinds = swap("c2", "c9");
+    expect(twoKinds.filter((id) => real[id]?.dark).sort()).toEqual(["c2", "c9"]);
     expect(validateDeck(twoKinds, real)).toEqual([]);
     // 3枚（レン2枚＋カグラ）は反則
-    const threeDark = [...flame.filter((id) => id !== "c4"), "c9"];
+    const threeDark = swap("f1", "c9");
     expect(validateDeck(threeDark, real).some((e) => e.includes("闇堕ちを持つカードは2枚まで"))).toBe(true);
-    // 闇堕ちのない★5（ヒバナ）や共通の★5（『フィクサー』）は数えない
-    const moreAces = [...flame.filter((id) => id !== "n6"), "c4", "c15"];
-    expect(validateDeck(moreAces, real)).toEqual([]);
+    // 闇堕ちのない★5（ヒバナ）や共通の★5（『フィクサー』『演出家』）は数えない
+    expect(flame.filter((id) => id === "c4")).toHaveLength(2);
+    expect(validateDeck(swap("f1", "c17"), real)).toEqual([]);
     const commons = ["n2", "n3", "n5", "n6", "n8", "n9", "n10", "n11", "n12", "n13"].flatMap((id) => [
       id,
       id,
@@ -837,13 +840,15 @@ describe("デッキの決まり", () => {
     expect(deckAttributes(DECKS.unei_idol, real)).toEqual(["推し"]);
     for (const id of ["c15", "c16", "c17"]) expect(DECKS.unei_idol.filter((c) => c === id)).toHaveLength(2);
   });
-  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、ニュートラルのカードを4枚入れる（運営デッキと推しデッキは例外）", () => {
+  it("構築済みデッキは、エース（闇堕ちを持つカード）を1種類2枚、ニュートラルのカードを4枚入れる（運営デッキ・推しデッキ・炎デッキは例外）", () => {
     // 運営デッキ（unei_）は、共通で固めるのがコンセプト（オーナー）なので、共通の枚数の決まりから外す
     expect(DECKS.unei_idol.filter((c) => real[c]?.attributes.length === 0)).toHaveLength(14);
     // 推しデッキは、運営サイドの3枚とインフルエンサー・スクショで、ニュートラル8枚（10月24日、docs/design-oshi.md）
     expect(DECKS.solo_idol.filter((c) => real[c]?.attributes.length === 0)).toHaveLength(8);
+    // 炎デッキは、『フィクサー』『調停者』の2枚だけ（10月24日、docs/design-fire.md）
+    expect(DECKS.solo_flame.filter((c) => real[c]?.attributes.length === 0)).toEqual(["c15", "c16"]);
     for (const [id, deck] of Object.entries(DECKS)) {
-      if (id.startsWith("unei_") || id === "solo_idol") continue;
+      if (id.startsWith("unei_") || id === "solo_idol" || id === "solo_flame") continue;
       const aces = deck.filter((c) => real[c]?.dark);
       const commons = deck.filter((c) => real[c]?.attributes.length === 0);
       expect({ id, aces: aces.length, kinds: new Set(aces).size, commons: commons.length }).toEqual({
@@ -1687,5 +1692,94 @@ describe("推し属性の作り直し（10月24日。docs/design-oshi.md）", ()
     expect(viewUnit(t, "p1", t.players.p1.field[1] as Unit, local)).toMatchObject({ attack: 3, hp: 2 });
     expect(viewUnit(t, "p1", t.players.p1.field[2] as Unit, local)).toMatchObject({ attack: 2 });
     expect(r.events.filter((e) => e.type === "buffed")).toHaveLength(2);
+  });
+});
+
+describe("炎属性の作り直し（10月24日。docs/design-fire.md）", () => {
+  const local: Record<string, RuleCard> = {
+    ...catalog,
+    sg: icon("sg", 1, 1, 3, { keywords: ["ガード"] }),
+    // エース：速攻。闇の姿は攻撃力と体力が入れ替わり、速攻。闇堕ちしたとき相手全員を晒し状態にする
+    ren: icon("ren", 1, 2, 4, {
+      rarity: 5,
+      keywords: ["速攻"],
+      dark: {
+        name: "闇のエース",
+        attack: 4,
+        hp: 2,
+        keywords: ["速攻"],
+        effects: [{ on: "play", do: "expose", to: "allEnemies" }],
+        effect: "",
+      },
+    }),
+    // 突進。このキャラクターが相手のキャラクターを破壊するたび、相手のプレイヤーに1ダメージ
+    hib: icon("hib", 1, 3, 4, {
+      keywords: ["突進"],
+      effects: [{ on: "passive", do: "faceOnKill", amount: 1 }],
+    }),
+    // 配信者：隣にリスナーを2体出す
+    st: icon("st", 1, 4, 4, {
+      kaiwai: ["配信者"],
+      effects: [{ on: "play", do: "summon", card: "lis", count: 2, flank: true }],
+    }),
+    st2: icon("st2", 1, 1, 1, { kaiwai: ["配信者"] }),
+    // リスナー：ガード。自分の場に配信者種族がいなくなったら破壊される
+    lis: icon("lis", 0, 1, 1, {
+      keywords: ["ガード"],
+      token: true,
+      effects: [{ on: "passive", do: "vanishWithout", kaiwai: "配信者" }],
+    }),
+  };
+  const go = (s: GameState, a: Action) => applyAction(s, a, local);
+  const put = (s: GameState, handIndex: number, slot: number, player: "p1" | "p2" = "p1") =>
+    go(s, { type: "play", player, handIndex, slot }).state;
+  const fin = (s: GameState, player: "p1" | "p2" = "p1") => go(s, { type: "endTurn", player }).state;
+  const ids = (s: GameState) => s.players.p1.field.map((u) => u?.cardId ?? null);
+
+  it("ヒバナ：突進で相手のキャラクターを破壊するたび、相手のプレイヤーに1ダメージ。破壊できなければ何もしない", () => {
+    let s = withFoe([], ["f", "wall"]);
+    s.players.p1.hand = ["hib", ...s.players.p1.hand];
+    s = put(s, 0, 2);
+    (s.players.p1.field[2] as Unit).attacksLeft = 2;
+    const life = s.players.p2.lp;
+    s = go(s, { type: "attack", player: "p1", from: 2, target: { kind: "unit", slot: 1 } }).state;
+    expect(s.players.p2.lp).toBe(life);
+    s = go(s, { type: "attack", player: "p1", from: 2, target: { kind: "unit", slot: 0 } }).state;
+    expect(s.players.p2.lp).toBe(life - 1);
+  });
+
+  it("リスナー：配信者の隣に2体出る。自分の場に配信者種族がいなくなったら、すべて破壊される", () => {
+    let s = put(game(["st"]), 0, 2);
+    expect(ids(s)).toEqual([null, "lis", "st", "lis", null]);
+    (s.players.p1.field[2] as Unit).damage = 99;
+    s = fin(s);
+    expect(ids(s)).toEqual([null, null, null, null, null]);
+    expect(s.players.p1.tokensLost?.lis).toBe(2);
+  });
+
+  it("リスナー：ほかの配信者種族が場に残っていれば、破壊されない", () => {
+    let s = put(put(game(["st2", "st"]), 0, 4), 0, 1);
+    expect(ids(s)).toEqual(["lis", "st", "lis", null, "st2"]);
+    (s.players.p1.field[1] as Unit).damage = 99;
+    s = fin(s);
+    expect(ids(s)).toEqual(["lis", null, "lis", null, "st2"]);
+  });
+
+  it("エース：破壊された次の自分のターンの始めに、闇の姿が速攻で戻る。相手全員を晒し状態にして、相手のプレイヤーを殴れる", () => {
+    let s = put(game(["ren"]), 0, 2);
+    (s.players.p1.field[2] as Unit).damage = 99;
+    s = fin(s);
+    s.players.p2.mana = 30;
+    s.players.p2.hand = ["sg", ...s.players.p2.hand];
+    s = put(s, 0, 2, "p2");
+    s = fin(s, "p2");
+    const ace = s.players.p1.field[2] as Unit;
+    expect(ace.dark).toBe(true);
+    expect(viewUnit(s, "p1", ace, local)).toMatchObject({ attack: 4, hp: 2 });
+    expect(s.players.p2.field[2]?.exposed).toBe(true);
+    expect(attackTargets(s, "p1", 2, local).some((t) => t.kind === "leader")).toBe(true);
+    const life = s.players.p2.lp;
+    s = go(s, { type: "attack", player: "p1", from: 2, target: { kind: "leader" } }).state;
+    expect(s.players.p2.lp).toBe(life - 4);
   });
 });
