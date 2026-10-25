@@ -1,15 +1,22 @@
 import type { CardDef } from "@trends/cards";
 import { Fragment } from "react";
-import { HELP, HELP_TERMS, useHelp } from "../help/help";
+import { HELP, HELP_TERMS, TOKEN_CARDS, useHelp } from "../help/help";
 
 const SPLIT = new RegExp(`(〈[^〉]+〉|${HELP_TERMS.join("|")})`);
 
 /**
- * 効果文の〈種族〉とキーワード・状態の語を強調する。
- * キーワードなどは押すと解説の小窓が開く（カード自体がボタンのことがあるので、押しても親には伝えない）
+ * 効果文の〈種族〉とキーワード・状態の語・トークンの名前を強調する。
+ * キーワードなどは押すと解説の小窓が開き、トークンの名前はそのカードの効果が開く
+ * （カード自体がボタンのことがあるので、押しても親には伝えない）
  */
 export function EffectText({ text }: { text: string }) {
-  const open = useHelp((s) => s.open);
+  const openTerm = useHelp((s) => s.open);
+  const openToken = useHelp((s) => s.openToken);
+  const open = (p: string) => {
+    const token = TOKEN_CARDS[p];
+    if (token) openToken(token);
+    else openTerm(p);
+  };
   const parts = text.split(SPLIT).filter((p) => p !== "");
   // 文字位置をキーにする（同じ文が並んでも重ならない）
   let offset = 0;
@@ -21,7 +28,7 @@ export function EffectText({ text }: { text: string }) {
   return (
     <>
       {pieces.map(({ p, at }) =>
-        HELP[p] ? (
+        HELP[p] || TOKEN_CARDS[p] ? (
           // biome-ignore lint/a11y/useSemanticElements: カードの枠自体がボタンなので、ボタンを入れ子にできない
           <span
             className="kw kw-help"
