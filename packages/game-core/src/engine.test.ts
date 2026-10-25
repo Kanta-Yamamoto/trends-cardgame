@@ -864,8 +864,8 @@ describe("デッキの決まり", () => {
     expect(DECKS.solo_flame.filter((c) => real[c]?.attributes.length === 0)).toEqual(["c15", "c16"]);
     // 水デッキはライブ配信の2枚だけ（10月24日、docs/design-water.md）
     expect(DECKS.solo_heal.filter((c) => real[c]?.attributes.length === 0)).toEqual(["n17", "n17"]);
-    // 神デッキは『調停者』の1枚だけ（10月24日、docs/design-god.md）
-    expect(DECKS.solo_expert.filter((c) => real[c]?.attributes.length === 0)).toEqual(["c16"]);
+    // 神デッキは『調停者』の2枚だけ（10月25日、docs/design-god.md）
+    expect(DECKS.solo_expert.filter((c) => real[c]?.attributes.length === 0)).toEqual(["c16", "c16"]);
     // 自然の全体強化デッキは自然だけ、クサハミデッキはスクショと『フィクサー』『調停者』の5枚（10月25日、docs/design-nature.md）
     expect(DECKS.solo_meme.filter((c) => real[c]?.attributes.length === 0)).toEqual([]);
     expect(DECKS.fixer_meme.filter((c) => real[c]?.attributes.length === 0)).toEqual([
