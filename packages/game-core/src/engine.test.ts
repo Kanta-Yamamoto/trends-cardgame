@@ -1655,11 +1655,11 @@ describe("推し属性の作り直し（10月24日。docs/design-oshi.md）", ()
       keywords: ["注目"],
       effects: [{ on: "turnEnd", do: "draw", count: 1, if: { center: true } }],
     }),
-    // メン地下：隣に gk を出す。破壊するたび、自分の gk と sg すべてに攻撃力+1・体力+1
+    // メン地下：隣に gk を出す。破壊するたび、自分の gk すべてに攻撃力+1・体力+1（親衛隊は育たない）
     men: icon("men", 1, 2, 3, {
       effects: [
         { on: "play", do: "summon", card: "gk", count: 1, flank: true },
-        { on: "passive", do: "buffOnKill", cards: ["gk", "sg"], attack: 1, hp: 1 },
+        { on: "passive", do: "buffOnKill", cards: ["gk"], attack: 1, hp: 1 },
       ],
     }),
   };
@@ -1721,7 +1721,7 @@ describe("推し属性の作り直し（10月24日。docs/design-oshi.md）", ()
     expect(attackTargets(s, "p1", 1, local).some((t) => t.kind === "leader")).toBe(false);
   });
 
-  it("メン地下：相手のキャラクターを破壊するたび、自分のトークンと親衛隊すべてに攻撃力+1・体力+1。破壊できなければ何もしない", () => {
+  it("メン地下：相手のキャラクターを破壊するたび、自分のトークンすべてに攻撃力+1・体力+1。親衛隊は育たない。破壊できなければ何もしない", () => {
     let s = withFoe([], ["f", "wall"]);
     s.players.p1.hand = ["sg", "men", ...s.players.p1.hand];
     s = put(put(s, 0, 4), 0, 2);
@@ -1730,17 +1730,17 @@ describe("推し属性の作り直し（10月24日。docs/design-oshi.md）", ()
     // 破壊できない相手（wall 1/6）には働かない
     let t = go(s, { type: "attack", player: "p1", from: 2, target: { kind: "unit", slot: 1 } });
     expect(viewUnit(t, "p1", t.players.p1.field[4] as Unit, local)).toMatchObject({ attack: 1, hp: 3 });
-    // f（1/1）を破壊したら、gk と sg が育つ。メン地下自身は育たない
+    // f（1/1）を破壊したら、gk が育つ。sg とメン地下自身は育たない
     const r = applyAction(
       t,
       { type: "attack", player: "p1", from: 2, target: { kind: "unit", slot: 0 } },
       local,
     );
     t = r.state;
-    expect(viewUnit(t, "p1", t.players.p1.field[4] as Unit, local)).toMatchObject({ attack: 2, hp: 4 });
+    expect(viewUnit(t, "p1", t.players.p1.field[4] as Unit, local)).toMatchObject({ attack: 1, hp: 3 });
     expect(viewUnit(t, "p1", t.players.p1.field[1] as Unit, local)).toMatchObject({ attack: 3, hp: 2 });
     expect(viewUnit(t, "p1", t.players.p1.field[2] as Unit, local)).toMatchObject({ attack: 2 });
-    expect(r.events.filter((e) => e.type === "buffed")).toHaveLength(2);
+    expect(r.events.filter((e) => e.type === "buffed")).toHaveLength(1);
   });
 });
 
