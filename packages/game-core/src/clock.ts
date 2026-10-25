@@ -4,16 +4,16 @@ import type { Action, GameState, PlayerId, RuleCard } from "./types";
 
 /**
  * オンライン対戦の持ち時間。
- * - 個人の持ち時間は 1 試合で 5 分。自分のターンのあいだ、最初の 1 秒から減る
- * - 1 ターンは 30 秒まで。過ぎたら自動でターンを終える（差し出しを選ぶ番なら、先に自動で選ぶ）
+ * - 個人の持ち時間は 1 試合で 10 分。自分のターンのあいだ、最初の 1 秒から減る
+ * - 1 ターンは 60 秒まで。過ぎたら自動でターンを終える（差し出しを選ぶ番なら、先に自動で選ぶ）
  * - 持ち時間を使い切ったら、時間切れで負け
  * - 相手の手番の途中で差し出し（フィクサー）を選ぶ番になったら、手番の人の時計は止め、選ぶ人は 15 秒以内に選ぶ。
  *   過ぎたら自動で選ぶ（相手が選ばないせいで手番の人が時間切れにならないように）
  * 時刻はミリ秒（Date.now()）。サーバーが持ち、画面には clockFor で残りの時間だけ渡す。
  */
 export const CLOCK = {
-  turnMs: 30_000,
-  bankMs: 300_000,
+  turnMs: 60_000,
+  bankMs: 600_000,
   pickMs: 15_000,
   /** 対戦の始めだけ、時計が動き出すまで待つ（部屋に入る・オープニングの間） */
   startGraceMs: 5_000,
@@ -81,7 +81,7 @@ export function tickClock(clock: Clock, prev: GameState, next: GameState, now: n
   return settle({ bank, since: now, spent: 0, pickSince: null }, next, now);
 }
 
-/** このターンで使える時間（ターンの 30 秒か、残りの持ち時間の短いほう） */
+/** このターンで使える時間（ターンの 60 秒か、残りの持ち時間の短いほう） */
 const turnLimit = (clock: Clock, state: GameState) => Math.min(CLOCK.turnMs, clock.bank[state.active]);
 
 /** 次に時間が切れる時刻（ターンの終わり・持ち時間の切れ・差し出しの待ちの早いほう。決着していれば null） */
@@ -95,7 +95,7 @@ export function clockDeadline(clock: Clock, state: GameState): number | null {
 
 /**
  * 時間が過ぎていたら、サーバーが代わりに行う操作。差し出しの待ちの切れは自動で選ぶ。
- * 持ち時間を使い切ったら負け（timeout）。ターンの 30 秒を過ぎたらターンを終える（差し出しを選ぶ番なら、先に自動で選ぶ）。
+ * 持ち時間を使い切ったら負け（timeout）。ターンの 60 秒を過ぎたらターンを終える（差し出しを選ぶ番なら、先に自動で選ぶ）。
  * 何も過ぎていなければ null
  */
 export function clockAction(

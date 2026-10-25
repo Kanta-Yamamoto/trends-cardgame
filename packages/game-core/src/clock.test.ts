@@ -13,7 +13,7 @@ const GO = T0 + CLOCK.startGraceMs;
 const endTurn = (s: GameState) => applyAction(s, { type: "endTurn", player: s.active }, catalog).state;
 
 describe("持ち時間", () => {
-  it("始めは待ちのあとに時計が動き、1 ターンは 30 秒まで。過ぎたらサーバーがターンを終える", () => {
+  it("始めは待ちのあとに時計が動き、1 ターンは 60 秒まで。過ぎたらサーバーがターンを終える", () => {
     const s = game();
     const c = startClock(s, T0);
     expect(clockDeadline(c, s)).toBe(GO + CLOCK.turnMs);
@@ -37,7 +37,7 @@ describe("持ち時間", () => {
     expect(clockDeadline(c, next)).toBe(GO + 25_000 + CLOCK.turnMs);
   });
 
-  it("持ち時間を使い切ったら時間切れ負け。残りが 30 秒より少なければ、そこまでしか待たない", () => {
+  it("持ち時間を使い切ったら時間切れ負け。残りが 60 秒より少なければ、そこまでしか待たない", () => {
     const s = game();
     const c = { ...startClock(s, T0), bank: { p1: 10_000, p2: CLOCK.bankMs } };
     expect(clockDeadline(c, s)).toBe(GO + 10_000);
@@ -54,7 +54,7 @@ describe("持ち時間", () => {
     const s = game();
     const c = startClock(s, T0);
     const v1 = clockFor(c, s, GO + 12_000, "p1");
-    expect(v1).toMatchObject({ running: "p1", turnLeft: 18_000, pickLeft: null, holdMs: 0 });
+    expect(v1).toMatchObject({ running: "p1", turnLeft: CLOCK.turnMs - 12_000, pickLeft: null, holdMs: 0 });
     expect(v1.bank).toEqual({ p1: CLOCK.bankMs - 12_000, p2: CLOCK.bankMs });
     const v2 = clockFor(c, s, GO + 12_000, "p2");
     expect(v2.running).toBe("p2");
@@ -98,7 +98,7 @@ describe("持ち時間", () => {
     expect(clockDeadline(after, s)).toBe(GO + 20_000 + CLOCK.turnMs - 10_000);
   });
 
-  it("ターンの 30 秒が切れたとき、手番の人が差し出しを選ぶ番なら、先に自動で選んでからターンを終える", () => {
+  it("ターンの 60 秒が切れたとき、手番の人が差し出しを選ぶ番なら、先に自動で選んでからターンを終える", () => {
     const s = game();
     s.players.p1.field[0] = {
       uid: 91,
