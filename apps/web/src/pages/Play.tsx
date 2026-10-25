@@ -69,6 +69,7 @@ import {
   popDamage,
   popMaster,
   retireUnits,
+  summonCue,
 } from "../game/fx";
 import { MiniCard } from "../game/MiniCard";
 import { endReason } from "../game/result";
@@ -83,6 +84,43 @@ const gwait = (ms: number) => new Promise<void>((r) => gsap.delayedCall(ms / 100
 const SLOT_KEYS = Array.from({ length: SLOTS }, (_, i) => `slot-${i}`);
 const nameOf = (id: string) => CATALOG[id]?.name ?? id;
 const who = (p: string) => (p === ME ? "あなた" : useGame.getState().foeName);
+
+/**
+ * 効果で出たキャラクター（summoned）を、出す枠への合図（summonCue）のあとに1体ずつ置いていく。
+ * 出したカードと同時に出すと、何の効果で出たのか分からないため。置き終えた state を返す
+ */
+async function revealSummons(
+  shown: GameState,
+  events: GameEvent[],
+  next: GameState,
+  from: HTMLElement | { x: number; y: number } | null,
+  tint: string | undefined,
+  show: (g: GameState) => void,
+): Promise<GameState> {
+  let cur = shown;
+  for (const e of events) {
+    if (e.type !== "summoned") continue;
+    const unit = next.players[e.player].field[e.slot];
+    // 同じ操作のうちに倒れたなど、最後の state にいないものは置かない（あとの演出に任せる）
+    if (!unit || unit.cardId !== e.cardId || cur.players[e.player].field[e.slot]) continue;
+    await summonCue(
+      from,
+      document.querySelector<HTMLElement>(`[data-slot="${e.player}:${e.slot}"]`),
+      tint ?? "#fff3c4",
+    );
+    const p = cur.players[e.player];
+    cur = {
+      ...cur,
+      players: {
+        ...cur.players,
+        [e.player]: { ...p, field: p.field.map((u, i) => (i === e.slot ? unit : u)) },
+      },
+    };
+    show(cur);
+    await gwait(280);
+  }
+  return cur;
+}
 
 function describe(e: GameEvent): string {
   switch (e.type) {
@@ -992,7 +1030,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         });
       },
       turnIntro: 1100,
-      resolveEffects: async (shown, a, events, next) => {
+      resolveEffects: async (shown, a, events, next, show) => {
         const visible = hasVisibleEffects(events);
         const cardId = events.find((e) => e.type === "played" || e.type === "cast");
         const card = cardId && "cardId" in cardId ? CATALOG[cardId.cardId] : undefined;
@@ -1006,11 +1044,10 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             setTimeout(() => setReveal((r) => (r?.id === id ? null : r)), 1000);
             await wait(visible ? 620 : 900);
           }
-          if (visible) {
-            const f = frameRect();
-            const from = { x: f.left + f.width / 2, y: f.top + f.height / 2 };
-            await animateEffects(shown, events, next, { from, tint });
-          }
+          const f = frameRect();
+          const from = { x: f.left + f.width / 2, y: f.top + f.height / 2 };
+          shown = await revealSummons(shown, events, next, from, tint, show);
+          if (visible) await animateEffects(shown, events, next, { from, tint });
         } else if (a.type === "play") {
           const does = (x: string) => !!card?.effects.some((f) => f.do === x);
           const uid = next.players[a.player].field[a.slot]?.uid;
@@ -1046,10 +1083,17 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             setArbiter((x) => (x?.id === id ? { id, leaving: true } : x));
             return;
           }
+          // 出たキャラクターの要素（画面に描かれてから探す）
+          const self = () =>
+            uid !== undefined ? document.querySelector<HTMLElement>(`[data-uid="${uid}"]`) : null;
+          // 効果でキャラクター（トークンなど）を出すなら、出したキャラクターが着地してから、1体ずつ時間差で出す
+          if (events.some((e) => e.type === "summoned")) {
+            await touch();
+            shown = await revealSummons(shown, events, next, self(), tint, show);
+          }
           if (!visible) return;
           await wait(560); // 出たキャラクターが場に着いて弾むのを待ってから、効果を出す
-          const from = uid !== undefined ? document.querySelector<HTMLElement>(`[data-uid="${uid}"]`) : null;
-          await animateEffects(shown, events, next, { from, tint });
+          await animateEffects(shown, events, next, { from: self(), tint });
         } else if (a.type === "sacrifice") {
           // 差し出しが決まった：選ばれたキャラクターを、真上で溜めた黒い閃光で貫く（黒い場はターンが終わるまで残す）
           const uids = events.flatMap((e) =>
@@ -1400,6 +1444,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         ) : (
           <div
             key={key}
+            data-slot={`${CPU}:${slot}`}
             className={`slot ${slot === 2 ? "center" : ""} ${omenAt(CPU, slot) ? "omen-slot" : ""}`}
           >
             {omenAt(CPU, slot) && <OmenFlame />}
@@ -1420,6 +1465,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             key={key}
             type="button"
             data-drop={`slot:${slot}`}
+            data-slot={`${ME}:${slot}`}
             className={`slot ${slot === 2 ? "center" : ""} ${drop ? "droppable" : ""} ${drop && drag?.over === `slot:${slot}` ? "drop-over" : ""} ${omen ? "omen-slot" : ""}`}
             disabled={!drop}
             aria-label={`空き枠 ${slot + 1}${slot === 2 ? "（センター）" : ""}${omen ? `（闇の気配：${nameOf(omen.cardId)}）` : ""}`}

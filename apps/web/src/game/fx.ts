@@ -490,6 +490,40 @@ function glow(el: HTMLElement | null, color: string) {
   );
 }
 
+/**
+ * 効果でキャラクターを出す前の合図：出どころから、出す枠へ光の玉が飛び、枠に光が集まる。
+ * この Promise が終わってから、出たキャラクターを置く（出したカードと一緒に出すと、何の効果で出たか分からないため）
+ */
+export async function summonCue(
+  from: HTMLElement | Point | null,
+  slot: HTMLElement | null,
+  color: string,
+): Promise<void> {
+  if (!slot || !canAnimate() || reduced()) return;
+  const to = center(slot.getBoundingClientRect());
+  const source = from instanceof HTMLElement ? center(from.getBoundingClientRect()) : from;
+  if (source) await fly(source, to, color);
+  // 枠に光が集まる（大きな輪が、枠の大きさまで縮んで光る）
+  const ring = document.createElement("div");
+  ring.className = "fx-burst";
+  ring.style.left = `${to.x}px`;
+  ring.style.top = `${to.y}px`;
+  ring.style.setProperty("--c", color);
+  layer().appendChild(ring);
+  glow(slot, color);
+  await ring
+    .animate(
+      [
+        { transform: "translate(-50%,-50%) scale(2.2)", opacity: 0 },
+        { transform: "translate(-50%,-50%) scale(1.3)", opacity: 0.9, offset: 0.5 },
+        { transform: "translate(-50%,-50%) scale(0.5)", opacity: 0 },
+      ],
+      { duration: 360, easing: "cubic-bezier(.5,0,.8,.6)" },
+    )
+    .finished.catch(() => {});
+  ring.remove();
+}
+
 const STATUS_COLOR: Record<string, string> = {
   晒し: "#ff4f9a",
   眠り: "#8fb7ff",
