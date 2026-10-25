@@ -933,6 +933,18 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 /* 差し出し（『フィクサー』）：選べる自分のアイコンを白く光らせる（黒い場の上で、糸の白とそろえる） */
 .unit.targetable.sac { box-shadow: 0 0 0 2px #f2f1ee, 0 0 16px #ffffffaa; animation: sac-pulse 1.1s ease-in-out infinite; }
 @keyframes sac-pulse { 50% { box-shadow: 0 0 0 2px #f2f1ee, 0 0 28px #ffffff; } }
+/* 差し出しの案内：選ぶまで進めない場面なので、何の効果で何をするかを場と場の間に出し、選べる自分のアイコン以外を暗くして押せなくする（上の帯の「記録」「降参」は残す） */
+.pstage.sac-mode :is(.pbar, .peek-strip, .phand-zone, .foe-row),
+.pstage.sac-mode .pfield .row :is(.unit:not(.sac), .slot) { opacity: 0.22; pointer-events: none; transition: opacity 0.3s ease; }
+.sac-guide { position: absolute; left: 50%; top: 50%; z-index: 8; display: grid; justify-items: center; gap: 3px; width: max-content; max-width: 94%; padding: 9px 16px 10px; border-radius: 12px; background: #f2f1ee; color: #0e0d0c; text-align: center; box-shadow: 0 8px 24px #000c; transform: translate(-50%, calc(-100% - 4px)); animation: sac-guide-in 0.35s 0.2s ease both; }
+.sac-guide small { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; color: #6b6762; }
+.sac-guide strong { font-size: 14px; font-weight: 900; line-height: 1.35; }
+.sac-guide span { font-size: 10.5px; font-weight: 700; color: #4a4743; }
+/* 自分が選ぶときは、下（自分の場）を指す */
+.sac-guide.mine::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; background: inherit; transform: translateX(-50%) rotate(45deg); border-radius: 2px; }
+.sac-guide.wait { background: #1c1b19; color: #f2f1ee; box-shadow: 0 0 0 1px #f2f1ee55, 0 8px 24px #000c; transform: translate(-50%, -50%); }
+@keyframes sac-guide-in { from { opacity: 0; translate: 0 6px; } }
+@media (prefers-reduced-motion: reduce) { .sac-guide { animation-duration: 0.01s; } }
 
 /* 『フィクサー』の登場：バトル場が黒に滲む。ターンが終わるまで黒のまま（FixerField.tsx が滲みを動かす） */
 .board.field-fixer { isolation: isolate; }

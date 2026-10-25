@@ -1199,6 +1199,13 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   // 差し出し待ち（『フィクサー』）の間は、ほかの操作はできない
   const myTurn = game.active === ME && !game.winner && !cpuBusy && !animating && !game.pending;
   const sacSlots = game.pending?.waiting.includes(ME) ? sacrificeCandidates(game, ME) : [];
+  // 差し出しの案内：何の効果で、いま何をすればいいか。選べる自分のキャラクター以外は暗くして押せなくする
+  const sacGuide = (() => {
+    const pend = game.pending;
+    if (!pend || game.winner) return null;
+    const src = [...me.field, ...foe.field].find((u) => u?.uid === pend.sourceUid);
+    return { source: src ? nameOf(src.cardId) : null, mine: sacSlots.length > 0 };
+  })();
   const attacking = selection?.kind === "attacker";
   const selectedCard = selection?.kind === "hand" ? CATALOG[me.hand[selection.index] ?? ""] : undefined;
   const postSelected = selectedCard?.type === "post";
@@ -1384,7 +1391,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     </span>
   );
   const foeRow = (
-    <div className="row">
+    <div className="row foe-row">
       {SLOT_KEYS.map((key, slot) => {
         const u = foe.field[slot];
         return u ? (
@@ -1493,7 +1500,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     if (selection) select(null);
   };
   const field = fieldOf(game, CATALOG);
-  const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}${director !== null ? " field-director" : ""}${arbiter ? " field-arbiter" : ""}${fixer ? " field-fixer" : ""}`;
+  const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}${director !== null ? " field-director" : ""}${arbiter ? " field-arbiter" : ""}${fixer ? " field-fixer" : ""}${sacGuide ? " sac-mode" : ""}`;
   const fieldLayer = field ? <FieldLayer kind={field.kind} mine={field.owner === ME} /> : null;
 
   return (
@@ -1537,7 +1544,20 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           <div className="pfield">
             {throwHint && <div className={`post-zone ${throwOver ? "over" : ""}`} aria-hidden="true" />}
             {foeRow}
-            {/* 場と場の間には何も置かない（案内の文は出さない。反則のときだけ、短く知らせて消える） */}
+            {/* 場と場の間には何も置かない（反則のときだけ、短く知らせて消える）。例外は、差し出しのように選ぶまで進めない場面の案内 */}
+            {sacGuide && (
+              <div className={`sac-guide ${sacGuide.mine ? "mine" : "wait"}`} role="status">
+                {sacGuide.source && <small>{sacGuide.source}の効果</small>}
+                {sacGuide.mine ? (
+                  <>
+                    <strong>破壊する自分のキャラクターを1体選んでください</strong>
+                    <span>相手も1体選び、選ばれたキャラクターは同時に破壊されます</span>
+                  </>
+                ) : (
+                  <strong>相手が破壊するキャラクターを選んでいます</strong>
+                )}
+              </div>
+            )}
             {error && (
               <p key={error} className="ptoast" role="alert">
                 {error}
