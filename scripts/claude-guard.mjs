@@ -66,5 +66,4 @@ for (const part of command.split(/&&|\|\||;|\||\n/)) {
       );
     }
   }
-
 }
