@@ -111,7 +111,7 @@ function stats(attack: number, hp: number): string {
   return [attack ? `攻撃力${sign(attack)}` : "", hp ? `体力${sign(hp)}` : ""].filter(Boolean).join("・");
 }
 
-const kaiwaiOr = (k: Kaiwai | undefined, plain: string) => (k ? `${k}種族` : plain);
+const kaiwaiOr = (k: Kaiwai | undefined, plain: string) => (k ? `${k}界隈` : plain);
 
 /** 組み立てに使う、カードの情報 */
 interface Ctx {
@@ -151,7 +151,7 @@ function targetOf(e: CardEffect, ctx: Ctx): { key: string; noun: string } {
 
 /** 山札から探すものの書き方 */
 function tutorWhat(e: Extract<CardEffect, { do: "tutor" }>): string {
-  if (e.kaiwai) return `${e.kaiwai}種族のカード`;
+  if (e.kaiwai) return `${e.kaiwai}界隈のカード`;
   return `${e.guard ? "ガードを持つ" : ""}${e.attribute ? `${e.attribute}属性の` : ""}キャラクター`;
 }
 
@@ -161,7 +161,7 @@ function condition(e: CardEffect): string {
   const c = e.if;
   if (!c) return "";
   if ("center" in c) return "このキャラクターがセンターにいれば、";
-  const what = "kaiwai" in c ? `${c.kaiwai}種族` : `${c.allies}属性`;
+  const what = "kaiwai" in c ? `${c.kaiwai}界隈` : `${c.allies}属性`;
   return c.atLeast <= 1 ? `自分の場に${what}がいれば、` : `自分の場に${what}が${c.atLeast}体以上いれば、`;
 }
 
@@ -290,7 +290,7 @@ function sentence(e: CardEffect, ctx: Ctx, prev: CardEffect | undefined): string
       case "faceOnKill":
         return `このキャラクターが${ENEMY}を破壊するたび、相手のプレイヤーに${e.amount}ダメージ`;
       case "guardIfKaiwai":
-        return `場に${e.kaiwai}種族がいれば、ガードを得る`;
+        return `場に${e.kaiwai}界隈がいれば、ガードを得る`;
       case "healPerCard":
         return `自分の場の${ctx.nameOf(e.card)}1体につき、自分のライフを1回復する`;
       case "healBounce":

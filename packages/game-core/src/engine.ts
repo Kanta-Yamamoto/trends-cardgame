@@ -120,12 +120,12 @@ export function hasKeyword(u: Unit, k: Keyword, catalog: Catalog): boolean {
   return keywordsOf(u, catalog).includes(k);
 }
 
-/** その種族に入っているか（闇堕ちの姿でも元のカードの種族のまま） */
+/** その界隈に入っているか（闇堕ちの姿でも元のカードの界隈のまま） */
 export function inKaiwai(u: Unit, k: Kaiwai, catalog: Catalog): boolean {
   return must(catalog, u.cardId).kaiwai.includes(k);
 }
 
-/** 自分の場のキャラクターの数（種族で絞れる。except を渡すとそのキャラクターは数えない） */
+/** 自分の場のキャラクターの数（界隈で絞れる。except を渡すとそのキャラクターは数えない） */
 function countAllies(
   state: GameState,
   owner: PlayerId,
@@ -523,7 +523,7 @@ function countGuard(state: GameState, player: PlayerId, u: Unit | null, catalog:
   p.guardsPlayed = (p.guardsPlayed ?? 0) + 1;
 }
 
-/** 場（自分と相手）にその種族がいれば、ガードを得る（リスナー。出たときに一度だけ決まる） */
+/** 場（自分と相手）にその界隈がいれば、ガードを得る（リスナー。出たときに一度だけ決まる） */
 function grantGuardIfKaiwai(state: GameState, u: Unit, kaiwai: Kaiwai, catalog: Catalog) {
   const any = (["p1", "p2"] as const).some((pid) =>
     state.players[pid].field.some((o) => o && o.uid !== u.uid && inKaiwai(o, kaiwai, catalog)),

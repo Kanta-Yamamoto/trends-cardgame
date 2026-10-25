@@ -298,7 +298,7 @@
         "kaiwai": "配信者"
       }
     ],
-    "effect": "【場に出たとき】場に配信者種族がいれば、ガードを得る。",
+    "effect": "【場に出たとき】場に配信者界隈がいれば、ガードを得る。",
     "token": true,
     "art": "/assets/cards/t-listener-art.jpg"
   },
@@ -1741,7 +1741,7 @@
         "kaiwai": "アイドル"
       }
     ],
-    "effect": "【場に出たとき】自分のほかのアイドル種族すべてに攻撃力+2・体力+2。",
+    "effect": "【場に出たとき】自分のほかのアイドル界隈すべてに攻撃力+2・体力+2。",
     "art": "/assets/cards/m16-art.jpg",
     "original": "assets/original/m16.webp"
   },
@@ -1767,7 +1767,7 @@
         }
       }
     ],
-    "effect": "【場に出たとき】自分の場にアイドル種族がいれば、カードを1枚引く。",
+    "effect": "【場に出たとき】自分の場にアイドル界隈がいれば、カードを1枚引く。",
     "art": "/assets/cards/m17-art.jpg",
     "original": "assets/original/m17.webp"
   },
@@ -1902,7 +1902,7 @@
         }
       }
     ],
-    "effect": "相手のキャラクターすべてに1ダメージ。自分の場にアイドル種族がいれば、さらに1ダメージ。",
+    "effect": "相手のキャラクターすべてに1ダメージ。自分の場にアイドル界隈がいれば、さらに1ダメージ。",
     "art": "/assets/cards/m20-art.jpg",
     "original": "assets/original/m20.webp"
   },

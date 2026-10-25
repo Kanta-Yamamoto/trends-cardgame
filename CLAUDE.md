@@ -35,7 +35,7 @@ pnpm verify     # CI と同じ確かめ（先に pnpm db:up）。dev に取り�
 ## ルール
 
 - ゲームのルールは必ず `packages/game-core` に書き、テストを付ける。画面側にルールを書かない
-- **画面・効果文・docs の用語は `docs/glossary.md`（用語集・ユビキタス言語）の呼び名だけを使い、効果文は `docs/card-text.md` の文の型で書く**（プレイヤー・ライフ・コスト・キャラクター・呪文・墓地・破壊・種族・攻撃力・体力 など）。元は `packages/cards/src/glossary.ts` で、使わない呼び名が効果文・画面の文字に入るとテストで落ちる。新しい語は、用語集と `glossary.ts` に足してから使う。攻撃力は赤、体力は青で表示する
+- **画面・効果文・docs の用語は `docs/glossary.md`（用語集・ユビキタス言語）の呼び名だけを使い、効果文は `docs/card-text.md` の文の型で書く**（プレイヤー・ライフ・コスト・キャラクター・呪文・墓地・破壊・界隈・攻撃力・体力 など）。元は `packages/cards/src/glossary.ts` で、使わない呼び名が効果文・画面の文字に入るとテストで落ちる。新しい語は、用語集と `glossary.ts` に足してから使う。攻撃力は赤、体力は青で表示する
 - `applyAction` は元の state を変更しない。反則は `RuleError`（日本語のメッセージ）を投げる
 - 新しいカード：`packages/cards/src/cards.json` に追加（`effect` は `effects` から `effectText`（`packages/cards/src/text.ts`）で作った文と同じにする。違うとテストで落ちる。作れない動きは `text.ts` に型を足す。肩書き・フレーバーは書かない）→ 効果があれば `packages/game-core/src/abilities.ts` にカード ID で登録 → 表示は `apps/web/src/cards/faces/` にデザインを追加して `HoloCard.tsx` の `FACES` に登録
 - DB スキーマを変えたら `pnpm db:generate` でマイグレーションを作り、`apps/api/drizzle/` ごとコミットする

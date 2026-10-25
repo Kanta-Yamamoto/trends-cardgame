@@ -22,7 +22,7 @@ export const cards = pgTable("cards", {
   effects: jsonb("effects").$type<CardEffect[]>().notNull().default([]),
   /** 呪文の対象 */
   target: text("target"),
-  /** 呪文の対象を、自分のその種族だけに限る */
+  /** 呪文の対象を、自分のその界隈だけに限る */
   targetKaiwai: text("target_kaiwai"),
   effect: text("effect").notNull(),
   flavor: text("flavor").notNull(),

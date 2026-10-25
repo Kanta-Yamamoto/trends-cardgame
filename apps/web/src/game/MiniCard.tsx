@@ -83,7 +83,7 @@ export function MiniCard({
         label ??
         (isPost
           ? `${name}（呪文・コスト${cost ?? card.cost}）`
-          : `${name}（${[...card.attributes, ...card.kaiwai.map((k) => `${k}種族`)].join("・") || "ニュートラル"}・コスト${cost ?? card.cost}・攻撃${attack}・体力${hp}）`)
+          : `${name}（${[...card.attributes, ...card.kaiwai.map((k) => `${k}界隈`)].join("・") || "ニュートラル"}・コスト${cost ?? card.cost}・攻撃${attack}・体力${hp}）`)
       }
       onClick={() => {
         // 長押しで拡大したあとの指を離した操作は、選択として扱わない
@@ -137,7 +137,7 @@ export function MiniCard({
               </i>
             ))}
             {card.kaiwai.map((k) => (
-              <b key={k} className="mini-kaiwai" title={`${k}種族`}>
+              <b key={k} className="mini-kaiwai" title={`${k}界隈`}>
                 {KAIWAI_META[k].mark}
               </b>
             ))}
