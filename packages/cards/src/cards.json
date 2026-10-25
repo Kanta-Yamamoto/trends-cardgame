@@ -89,29 +89,6 @@
     "original": "assets/original/f3.webp"
   },
   {
-    "id": "f5",
-    "name": "大炎上",
-    "type": "post",
-    "rarity": 3,
-    "cost": 3,
-    "attributes": ["炎"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "damage",
-        "amount": 3
-      },
-      {
-        "do": "expose"
-      }
-    ],
-    "effect": "相手のキャラクター1体に3ダメージ。そのキャラクターを晒し状態にする。",
-    "target": "enemyIcon",
-    "art": "/assets/cards/f5-art.jpg",
-    "original": "assets/original/f5.webp"
-  },
-  {
     "id": "k1",
     "name": "猫ミーム",
     "type": "icon",
@@ -848,29 +825,6 @@
     "original": "assets/original/f8.webp"
   },
   {
-    "id": "f9",
-    "name": "まとめサイト管理人",
-    "type": "icon",
-    "rarity": 3,
-    "cost": 6,
-    "attack": 4,
-    "hp": 3,
-    "attributes": ["炎"],
-    "kaiwai": ["有識者"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "damage",
-        "to": "allEnemies",
-        "amount": 1
-      }
-    ],
-    "effect": "【場に出たとき】相手のキャラクターすべてに1ダメージ。",
-    "art": "/assets/cards/f9-art.jpg",
-    "original": "assets/original/f9.webp"
-  },
-  {
     "id": "f10",
     "name": "炎上系配信者",
     "type": "icon",
@@ -1156,29 +1110,6 @@
     "original": "assets/original/g9.webp"
   },
   {
-    "id": "x1",
-    "name": "論破系配信者",
-    "type": "icon",
-    "rarity": 3,
-    "cost": 3,
-    "attack": 2,
-    "hp": 2,
-    "attributes": ["炎"],
-    "kaiwai": ["配信者", "有識者"],
-    "keywords": [],
-    "effects": [
-      {
-        "on": "play",
-        "do": "damage",
-        "to": "strongestEnemy",
-        "amount": 2
-      }
-    ],
-    "effect": "【場に出たとき】攻撃力がいちばん高い相手のキャラクター1体に2ダメージ。",
-    "art": "/assets/cards/x1-art.jpg",
-    "original": "assets/original/x1.webp"
-  },
-  {
     "id": "x2",
     "name": "踊ってみた",
     "type": "icon",
@@ -1246,26 +1177,6 @@
     "effect": "自分のターンの終わりに、相手のプレイヤーに1ダメージ。",
     "art": "/assets/cards/f13-art.jpg",
     "original": "assets/original/f13.webp"
-  },
-  {
-    "id": "f14",
-    "name": "デジタルタトゥー",
-    "type": "post",
-    "rarity": 4,
-    "cost": 8,
-    "attributes": ["炎"],
-    "kaiwai": [],
-    "keywords": [],
-    "effects": [
-      {
-        "do": "damage",
-        "to": "allEnemies",
-        "amount": 5
-      }
-    ],
-    "effect": "相手のキャラクターすべてに5ダメージ。",
-    "art": "/assets/cards/f14-art.jpg",
-    "original": "assets/original/f14.webp"
   },
   {
     "id": "c9",
@@ -1763,28 +1674,6 @@
     "effect": "カードを1枚引く。手札が3枚以下なら、さらにカードを1枚引く。",
     "art": "/assets/cards/n11-art.jpg",
     "original": "assets/original/n11.webp"
-  },
-  {
-    "id": "f15",
-    "name": "コラボ配信",
-    "type": "icon",
-    "rarity": 3,
-    "cost": 8,
-    "attack": 5,
-    "hp": 4,
-    "attributes": ["炎"],
-    "kaiwai": ["配信者"],
-    "keywords": ["速攻"],
-    "effects": [
-      {
-        "on": "play",
-        "do": "attackPerAlly",
-        "kaiwai": "配信者"
-      }
-    ],
-    "effect": "速攻。【場に出たとき】自分の場のほかの配信者種族1体につき攻撃力+1。",
-    "art": "/assets/cards/f15-art.jpg",
-    "original": "assets/original/f15.webp"
   },
   {
     "id": "f16",
