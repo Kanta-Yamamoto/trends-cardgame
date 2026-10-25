@@ -97,7 +97,8 @@ export function createGame(input: NewGameInput): GameState {
 function keywordsOf(u: Unit, catalog: Catalog): Keyword[] {
   if (u.silenced) return [];
   const card = must(catalog, u.cardId);
-  const kw = u.dark && card.dark ? card.dark.keywords : card.keywords;
+  const base = u.dark && card.dark ? card.dark.keywords : card.keywords;
+  const kw: Keyword[] = u.gainedGuard && !base.includes("ガード") ? [...base, "ガード"] : base;
   return u.noGuard ? kw.filter((k) => k !== "ガード") : kw;
 }
 
@@ -499,8 +500,12 @@ function placeSummoned(
   emit: Emit,
   slot: number,
 ) {
-  state.players[player].field[slot] = newUnit(state, cardId, catalog, true);
-  countGuard(state, player, cardId, catalog);
+  const u = newUnit(state, cardId, catalog, true);
+  state.players[player].field[slot] = u;
+  // 出たときにガードを得るか（リスナー）。ほかの【場に出たとき】は、効果で出たトークンでは働かない
+  for (const e of must(catalog, cardId).effects)
+    if (e.do === "guardIfKaiwai" && triggerOf(e) === "play") grantGuardIfKaiwai(state, u, e.kaiwai, catalog);
+  countGuard(state, player, u, catalog);
   emit({ type: "summoned", player, cardId, slot });
 }
 
@@ -511,11 +516,19 @@ function useDiscount(me: PlayerState, cardId: string) {
   me.handDiscount = rest;
 }
 
-/** 出したキャラクターがガードなら数える（ネ申のコスト） */
-function countGuard(state: GameState, player: PlayerId, cardId: string, catalog: Catalog) {
-  if (!must(catalog, cardId).keywords.includes("ガード")) return;
+/** 出したキャラクターがガードなら数える（ネ申のコスト。リスナーのように、出たときにガードを得たものも数える） */
+function countGuard(state: GameState, player: PlayerId, u: Unit | null, catalog: Catalog) {
+  if (!u || !hasKeyword(u, "ガード", catalog)) return;
   const p = state.players[player];
   p.guardsPlayed = (p.guardsPlayed ?? 0) + 1;
+}
+
+/** 場（自分と相手）にその種族がいれば、ガードを得る（リスナー。出たときに一度だけ決まる） */
+function grantGuardIfKaiwai(state: GameState, u: Unit, kaiwai: Kaiwai, catalog: Catalog) {
+  const any = (["p1", "p2"] as const).some((pid) =>
+    state.players[pid].field.some((o) => o && o.uid !== u.uid && inKaiwai(o, kaiwai, catalog)),
+  );
+  if (any) u.gainedGuard = true;
 }
 
 function damageUnit(state: GameState, owner: PlayerId, slot: number, amount: number, emit: Emit) {
@@ -536,7 +549,7 @@ function resolveDeaths(
   config: Config = DEFAULT_CONFIG,
 ): string[] {
   const destroyed: string[] = [];
-  // 「破壊されたとき」の効果や、配信者がいなくなったリスナーで、さらに倒れることがある。落ち着くまで繰り返す
+  // 「破壊されたとき」の効果で、さらに倒れることがある。落ち着くまで繰り返す
   for (let round = 0; round < 10; round++) {
     const deaths: { owner: PlayerId; effects: CardEffect[] }[] = [];
     let removed = false;
@@ -544,13 +557,13 @@ function resolveDeaths(
       const p = state.players[owner];
       p.field.forEach((u, slot) => {
         if (!u) return;
-        if (viewUnit(state, owner, u, catalog).hp > 0 && !orphaned(state, owner, u, catalog)) return;
+        if (viewUnit(state, owner, u, catalog).hp > 0) return;
         removed = true;
         const onDeath = effectsOf(u, catalog).filter((e) => triggerOf(e) === "death");
         p.field[slot] = null;
-        // 闇堕ちの姿が破壊されたら、そのカードは消える（墓地にも行かない）
+        // 闇堕ちの姿が破壊されたら、そのカードは消える（墓地にも行かない）。トークンはふつうのカードと同じく墓地へ
         const vanished = u.dark && !u.token;
-        if (!u.token && !vanished) p.trash.push(u.cardId);
+        if (!vanished) p.trash.push(u.cardId);
         if (u.token) p.tokensLost = { ...p.tokensLost, [u.cardId]: (p.tokensLost?.[u.cardId] ?? 0) + 1 };
         destroyed.push(u.cardId);
         emit(
@@ -578,16 +591,6 @@ function resolveDeaths(
         runEffect(e, { state, player: d.owner, catalog, config, emit, playedBefore: 0 });
   }
   return destroyed;
-}
-
-/** 自分の場に、決まった種族のキャラクター（自分を除く）がいなくなったか（リスナー） */
-function orphaned(state: GameState, owner: PlayerId, u: Unit, catalog: Catalog): boolean {
-  return effectsOf(u, catalog).some(
-    (e) =>
-      e.do === "vanishWithout" &&
-      triggerOf(e) === "passive" &&
-      countAllies(state, owner, catalog, e.kaiwai, u.uid) === 0,
-  );
 }
 
 function strongestEnemy(state: GameState, player: PlayerId, catalog: Catalog): number {
@@ -624,6 +627,34 @@ interface Ctx {
  * 回復の効果を使ったあと（回復した量が0でも数える）：回数を数え、場の「回復するたびに」の効果を起こす。
  * 回復の効果を1つ使うごとに1回（キャラクターが何体回復しても1回）
  */
+/** キャラクターを持ち主の手札に戻す。トークンも手札に入る（0コストで出し直せる） */
+function bounceUnit(state: GameState, owner: PlayerId, slot: number, emit: Emit) {
+  const p = state.players[owner];
+  const u = p.field[slot];
+  if (!u) return;
+  p.field[slot] = null;
+  p.hand.push(u.cardId);
+  // 闇堕ちの姿（やTL浄化で戻った姿）が手札に戻ったら、そのカードの闇堕ちは使い終わり
+  if (u.darkUsed && !u.token) p.darkSpent = [...(p.darkSpent ?? []), u.cardId];
+  emit({ type: "bounced", player: owner, slot, cardId: u.cardId });
+}
+
+/** コストがいちばん高い相手のキャラクター（同じなら攻撃力が高い方）の枠。いなければ -1 */
+function costliestEnemy(state: GameState, player: PlayerId, catalog: Catalog): number {
+  const foeId = opponent(player);
+  let slot = -1;
+  let best = -1;
+  state.players[foeId].field.forEach((u, s) => {
+    if (!u) return;
+    const score = must(catalog, u.cardId).cost * 100 + viewUnit(state, foeId, u, catalog).attack;
+    if (score > best) {
+      best = score;
+      slot = s;
+    }
+  });
+  return slot;
+}
+
 function afterHeal(ctx: Ctx) {
   const { state, player, catalog, emit } = ctx;
   const me = state.players[player];
@@ -641,6 +672,9 @@ function afterHeal(ctx: Ctx) {
       } else if (e.do === "healStrike") {
         const at = strongestEnemy(state, player, catalog);
         if (at >= 0) damageUnit(state, opponent(player), at, e.amount, emit);
+      } else if (e.do === "healBounce") {
+        const at = costliestEnemy(state, player, catalog);
+        if (at >= 0) bounceUnit(state, opponent(player), at, emit);
       }
     }
   });
@@ -800,6 +834,16 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         if (e.to === "allAlliesAndMaster") healLeader(state, player, e.amount ?? 0, config, emit);
       }
       afterHeal(ctx);
+      break;
+    case "healPerCard": {
+      const n = me.field.filter((u) => u?.cardId === e.card).length;
+      if (n === 0) break;
+      healLeader(state, player, n, config, emit);
+      afterHeal(ctx);
+      break;
+    }
+    case "guardIfKaiwai":
+      if (self) grantGuardIfKaiwai(state, self, e.kaiwai, catalog);
       break;
     case "draw":
       if (e.ifHandAtMost === undefined || me.hand.length <= e.ifHandAtMost) {
@@ -1051,25 +1095,11 @@ function runEffect(e: CardEffect, ctx: Ctx) {
     case "bounce": {
       const foe = state.players[foeId];
       let slot = -1;
-      if (e.to === "costliestEnemy") {
-        let best = -1;
-        foe.field.forEach((u, s) => {
-          if (!u) return;
-          const v = viewUnit(state, foeId, u, catalog);
-          const score = must(catalog, u.cardId).cost * 100 + v.attack;
-          if (score > best) {
-            best = score;
-            slot = s;
-          }
-        });
-      } else if (ctx.target?.side === "enemy") slot = ctx.target.slot;
+      if (e.to === "costliestEnemy") slot = costliestEnemy(state, player, catalog);
+      else if (ctx.target?.side === "enemy") slot = ctx.target.slot;
       const u = slot >= 0 ? foe.field[slot] : null;
       if (!u) break;
-      foe.field[slot] = null;
-      if (!u.token) foe.hand.push(u.cardId);
-      // 闇堕ちの姿（やTL浄化で戻った姿）が手札に戻ったら、そのカードの闇堕ちは使い終わり
-      if (u.darkUsed && !u.token) foe.darkSpent = [...(foe.darkSpent ?? []), u.cardId];
-      emit({ type: "bounced", player: foeId, slot, cardId: u.cardId });
+      bounceUnit(state, foeId, slot, emit);
       break;
     }
     case "delayedDamage": {
@@ -1187,7 +1217,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
     case "extraAttackOnKill":
     case "buffOnKill":
     case "faceOnKill":
-    case "vanishWithout":
+    case "healBounce":
     case "focusAura":
     case "lullaby":
     case "cheaperPerAlly":
@@ -1368,13 +1398,18 @@ export function applyAction(
       me.mana -= cost;
       me.hand.splice(action.handIndex, 1);
       useDiscount(me, cardId);
-      // 手札に加えたトークン（伝説のコラ画像の写し）は、出してもトークンのまま（墓地に行かない）
-      me.field[action.slot] = newUnit(state, cardId, catalog, !!card.token);
-      countGuard(state, player, cardId, catalog);
+      // トークン（伝説のコラ画像の写しなど）は、出してもトークンのまま
+      const placed = newUnit(state, cardId, catalog, card.token === true);
+      me.field[action.slot] = placed;
       const playedBefore = me.playedThisTurn++;
       emit({ type: "played", player, cardId, slot: action.slot, cost });
       const ctx: Ctx = { state, player, catalog, config, emit, selfSlot: action.slot, playedBefore };
-      for (const e of card.effects) if (triggerOf(e) === "play") runEffect(e, ctx);
+      // 出たときにガードを得る効果（リスナー）を先に決めてから、ガードを数える
+      for (const e of card.effects)
+        if (e.do === "guardIfKaiwai" && triggerOf(e) === "play") runEffect(e, ctx);
+      countGuard(state, player, placed, catalog);
+      for (const e of card.effects)
+        if (triggerOf(e) === "play" && e.do !== "guardIfKaiwai") runEffect(e, ctx);
       // 「先に出した」数は、このキャラクターの効果のあとで数える
       me.played = { ...me.played, [cardId]: (me.played?.[cardId] ?? 0) + 1 };
       resolveDeaths(state, catalog, emit, config);
@@ -1431,8 +1466,7 @@ export function applyAction(
       me.mana -= cost;
       me.hand.splice(action.handIndex, 1);
       useDiscount(me, cardId);
-      // 呪文のトークン（盾など）は墓地に行かずに消える
-      if (!card.token) me.trash.push(cardId);
+      me.trash.push(cardId);
       me.postsUsed = (me.postsUsed ?? 0) + 1;
       const playedBefore = me.playedThisTurn++;
       emit({ type: "cast", player, cardId, cost, target: action.target });

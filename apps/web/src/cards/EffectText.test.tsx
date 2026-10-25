@@ -27,11 +27,11 @@ describe("HoloCard", () => {
 
 describe("イラストのないカード", () => {
   it("専用デザインがなければ共通デザインで表示する", () => {
-    const guard = CARDS.find((c) => c.id === "i3");
-    if (!guard) throw new Error("i3 not found");
+    const guard = CARDS.find((c) => c.id === "i8");
+    if (!guard) throw new Error("i8 not found");
     const { container } = render(<HoloCard card={guard} idle={false} />);
     expect(container.querySelector(".kg")).not.toBeNull();
-    expect(screen.getByText("柴犬")).toBeInTheDocument();
+    expect(screen.getByText("ASMR配信者")).toBeInTheDocument();
     expect(container.querySelector(".stat-atk")).toHaveTextContent(String(guard.attack));
     expect(container.querySelector(".stat-hp")).toHaveTextContent(String(guard.hp));
   });

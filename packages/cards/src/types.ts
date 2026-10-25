@@ -125,8 +125,12 @@ export type CardEffect = (
   | { do: "buffOnKill"; cards: string[]; attack: number; hp: number }
   /** passive：このキャラクターが攻撃して相手のキャラクターを破壊するたび、相手のプレイヤーにダメージ（ヒバナ） */
   | { do: "faceOnKill"; amount: number }
-  /** passive：自分の場に kaiwai のキャラクター（このキャラクターを除く）がいなくなったら破壊される（リスナー） */
-  | { do: "vanishWithout"; kaiwai: Kaiwai }
+  /** play：場（自分と相手）に kaiwai のキャラクターがいれば、ガードを得る（リスナー。出たときに一度だけ決まる） */
+  | { do: "guardIfKaiwai"; kaiwai: Kaiwai }
+  /** turnEnd など：自分の場の card のキャラクター1体につき、自分のライフを1回復する（ミナモ） */
+  | { do: "healPerCard"; card: string }
+  /** passive：自分が回復の効果を使うたび、コストがいちばん高い相手のキャラクター1体を持ち主の手札に戻す（不眠のルリ） */
+  | { do: "healBounce" }
   /** passive：センターにいる間、自分のほかのキャラクターも注目と同じく伸びる */
   | { do: "focusAura" }
   /** passive：相手のターンの始めに、相手の攻撃力がいちばん高いキャラクターを眠り状態にする */

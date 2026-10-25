@@ -52,7 +52,9 @@ export interface Unit {
   silenced: boolean;
   /** ガードだけ消されている */
   noGuard: boolean;
-  /** トークン（破壊されると消える） */
+  /** 効果でガードを得ている（リスナー） */
+  gainedGuard?: boolean;
+  /** トークン（効果で生まれたカード。デッキには入れられないが、ほかはふつうのカードと同じ） */
   token: boolean;
   /** このターンは相手のキャラクターにだけ攻撃できる（突進・闇堕ちした直後） */
   rushOnly?: boolean;
