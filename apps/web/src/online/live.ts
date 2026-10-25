@@ -47,7 +47,7 @@ export interface ClockLeft {
 export function leftAt(c: ClockView, at: number, now: number, who: PlayerId, active: PlayerId): ClockLeft {
   const running = c.running === who;
   const passed = running ? Math.max(0, now - at - c.holdMs) : 0;
-  // 持ち時間は、自分のターンのあいだずっと減る（ターンの 30 秒と同時に）
+  // 持ち時間は、自分のターンのあいだずっと減る（ターンの 60 秒と同時に）
   return {
     running,
     turn: running ? Math.max(0, c.turnLeft - passed) : 0,
