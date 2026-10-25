@@ -2130,12 +2130,17 @@
     "keywords": [],
     "effects": [
       {
+        "on": "play",
+        "do": "attackPerLostToken",
+        "card": "t-kusa"
+      },
+      {
         "on": "passive",
         "do": "growOnTokenLost",
         "card": "t-kusa"
       }
     ],
-    "effect": "自分の草が破壊されるたび、攻撃力+1。",
+    "effect": "【場に出たとき】このゲームで破壊された自分の草の数だけ攻撃力+1。自分の草が破壊されるたび、攻撃力+1。",
     "art": "/assets/cards/c14-art.jpg",
     "original": "assets/original/c14.webp",
     "subject": "/assets/cards/c14-subject.webp",
