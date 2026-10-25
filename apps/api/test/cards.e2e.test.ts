@@ -52,11 +52,11 @@ describe("cards API", () => {
     });
     expect(ren.dark).toMatchObject({ name: "闇堕ちレン", attack: def?.dark?.attack, hp: def?.dark?.hp });
     // 呪文は攻撃力・体力を持たない
-    expect(res.body.find((c: { id: string }) => c.id === "f5")).toMatchObject({
+    expect(res.body.find((c: { id: string }) => c.id === "f12")).toMatchObject({
       type: "post",
       attack: null,
       hp: null,
-      art: "/assets/cards/f5-art.jpg",
+      art: "/assets/cards/f12-art.jpg",
       dark: null,
       target: "enemyIcon",
     });
