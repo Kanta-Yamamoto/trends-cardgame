@@ -71,6 +71,7 @@ import {
   popDamage,
   popMaster,
   retireUnits,
+  showGrowth,
   showRiding,
   summonCue,
 } from "../game/fx";
@@ -1370,6 +1371,10 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         const uid = uidAt(e.player, e.slot);
         if (uid) setTimeout(() => markBuzzed(uid), t);
         buzzUid = uid;
+      } else if (e.type === "buffed" && !fx && e.cause === "tokenLost") {
+        // 攻撃で草が破壊されて強くなった（クサハミ）：草が消え終わってから「+N」を見せ、数字を上げる
+        const uid = uidAt(e.player, e.slot);
+        if (uid) showGrowth(uid, e, t + 450);
       } else if (e.type === "buffed" && !fx && buzzUid !== undefined) {
         // 便乗：バズしたキャラクターの数字が変わったあとに、便乗のキャラクターへ1体ずつ光を飛ばして数字を上げる
         const uid = uidAt(e.player, e.slot);

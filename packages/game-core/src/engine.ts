@@ -138,15 +138,11 @@ function countAllies(
   ).length;
 }
 
-/** キャラクターの攻撃力・体力・キーワードなど、効果を反映した今の値 */
-export function viewUnit(state: GameState, owner: PlayerId, unit: Unit, catalog: Catalog): UnitView {
+/** キャラクターの攻撃力・体力・キーワードなど、効果を反映した今の値（持ち主は今は使わないが、呼び出し側の形はそのまま） */
+export function viewUnit(state: GameState, _owner: PlayerId, unit: Unit, catalog: Catalog): UnitView {
   const card = must(catalog, unit.cardId);
   const base = unit.dark && card.dark ? card.dark : { attack: card.attack ?? 0, hp: card.hp ?? 1 };
-  let attack = base.attack + unit.atkBuff + (unit.tempAtk ?? 0);
-  for (const e of effectsOf(unit, catalog)) {
-    if (triggerOf(e) === "passive" && e.do === "attackPerLostToken")
-      attack += state.players[owner].tokensLost?.[e.card] ?? 0;
-  }
+  const attack = base.attack + unit.atkBuff + (unit.tempAtk ?? 0);
   const maxHp = base.hp + unit.hpBuff;
   const keywords = keywordsOf(unit, catalog);
   return {
@@ -558,6 +554,8 @@ function resolveDeaths(
   // 「破壊されたとき」の効果で、さらに倒れることがある。落ち着くまで繰り返す
   for (let round = 0; round < 10; round++) {
     const deaths: { owner: PlayerId; effects: CardEffect[] }[] = [];
+    // この回で破壊されたトークンの数（持ち主・カード ID ごと。クサハミの「破壊されるたび」に使う）
+    const lost: Record<PlayerId, Record<string, number>> = { p1: {}, p2: {} };
     let removed = false;
     for (const owner of ["p1", "p2"] as const) {
       const p = state.players[owner];
@@ -570,7 +568,10 @@ function resolveDeaths(
         // 闇堕ちの姿が破壊されたら、そのカードは消える（墓地にも行かない）。トークンはふつうのカードと同じく墓地へ
         const vanished = u.dark && !u.token;
         if (!vanished) p.trash.push(u.cardId);
-        if (u.token) p.tokensLost = { ...p.tokensLost, [u.cardId]: (p.tokensLost?.[u.cardId] ?? 0) + 1 };
+        if (u.token) {
+          p.tokensLost = { ...p.tokensLost, [u.cardId]: (p.tokensLost?.[u.cardId] ?? 0) + 1 };
+          lost[owner][u.cardId] = (lost[owner][u.cardId] ?? 0) + 1;
+        }
         destroyed.push(u.cardId);
         emit(
           vanished
@@ -592,6 +593,18 @@ function resolveDeaths(
       });
     }
     if (!removed) break;
+    // 自分のトークンが破壊されるたび、攻撃力+1（クサハミ）。同時に破壊された分はまとめて1回の強化にする
+    for (const owner of ["p1", "p2"] as const) {
+      state.players[owner].field.forEach((u, slot) => {
+        if (!u) return;
+        let n = 0;
+        for (const e of effectsOf(u, catalog))
+          if (e.do === "growOnTokenLost" && triggerOf(e) === "passive") n += lost[owner][e.card] ?? 0;
+        if (n === 0) return;
+        u.atkBuff += n;
+        emit({ type: "buffed", player: owner, slot, cardId: u.cardId, attack: n, hp: 0, cause: "tokenLost" });
+      });
+    }
     for (const d of deaths)
       for (const e of d.effects)
         runEffect(e, { state, player: d.owner, catalog, config, emit, playedBefore: 0 });
@@ -765,6 +778,15 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       if (!self || ctx.selfSlot === undefined) break;
       const n = countAllies(state, player, catalog, e.kaiwai, self.uid);
       if (n > 0) {
+        self.atkBuff += n;
+        emit({ type: "buffed", player, slot: ctx.selfSlot, cardId: self.cardId, attack: n, hp: 0 });
+      }
+      break;
+    }
+    case "attackPerLostToken": {
+      // 出たとき（闇堕ちしたとき）に、それまでに破壊された数を数えて強化する。あとから変わらない
+      const n = me.tokensLost?.[e.card] ?? 0;
+      if (n > 0 && self && ctx.selfSlot !== undefined) {
         self.atkBuff += n;
         emit({ type: "buffed", player, slot: ctx.selfSlot, cardId: self.cardId, attack: n, hp: 0 });
       }
@@ -1218,7 +1240,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         });
       }
       break;
-    case "attackPerLostToken":
+    case "growOnTokenLost":
     case "conspiracyWin":
     case "extraAttackOnKill":
     case "buffOnKill":

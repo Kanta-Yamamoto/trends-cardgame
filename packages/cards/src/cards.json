@@ -2131,11 +2131,11 @@
     "effects": [
       {
         "on": "passive",
-        "do": "attackPerLostToken",
+        "do": "growOnTokenLost",
         "card": "t-kusa"
       }
     ],
-    "effect": "自分の草が、このゲームで破壊された数だけ攻撃力+1。",
+    "effect": "自分の草が破壊されるたび、攻撃力+1。",
     "art": "/assets/cards/c14-art.jpg",
     "original": "assets/original/c14.webp",
     "subject": "/assets/cards/c14-subject.webp",
@@ -2149,7 +2149,7 @@
       "keywords": ["速攻"],
       "effects": [
         {
-          "on": "passive",
+          "on": "play",
           "do": "attackPerLostToken",
           "card": "t-kusa"
         },
@@ -2158,9 +2158,14 @@
           "do": "summon",
           "card": "t-kusa",
           "count": 2
+        },
+        {
+          "on": "passive",
+          "do": "growOnTokenLost",
+          "card": "t-kusa"
         }
       ],
-      "effect": "速攻。自分の草が、このゲームで破壊された数だけ攻撃力+1。【闇堕ちしたとき】草を2体出す。"
+      "effect": "速攻。【闇堕ちしたとき】このゲームで破壊された自分の草の数だけ攻撃力+1。草を2体出す。自分の草が破壊されるたび、攻撃力+1。"
     }
   },
   {
