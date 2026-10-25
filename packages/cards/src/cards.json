@@ -1463,11 +1463,11 @@
     "effects": [
       {
         "do": "damage",
+        "to": "allEnemies",
         "amount": 5
       }
     ],
-    "effect": "相手のキャラクター1体に5ダメージ。",
-    "target": "enemyIcon",
+    "effect": "相手のキャラクターすべてに5ダメージ。",
     "token": true,
     "art": "/assets/cards/t-ikazuchi-art.jpg",
     "original": "assets/original/t-ikazuchi.jpg"

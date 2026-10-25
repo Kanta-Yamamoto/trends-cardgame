@@ -60,7 +60,7 @@ describe("トークンの名前", () => {
     expect(names).toEqual(expect.arrayContaining(["盾", "裁きの雷", "天罰"]));
     fireEvent.click(screen.getByText("裁きの雷"));
     expect(screen.getByRole("dialog", { name: "裁きの雷 の効果" })).toHaveTextContent(
-      "相手のキャラクター1体に5ダメージ。",
+      "相手のキャラクターすべてに5ダメージ。",
     );
   });
 
