@@ -22,6 +22,11 @@ const canAnimate = () => typeof document !== "undefined" && typeof Element.proto
 const wait = (ms: number) => new Promise<void>((r) => gsap.delayedCall(ms / 1000, r));
 const q = (sel: string) => document.querySelector<HTMLElement>(sel);
 
+/** 画面座標で置く演出の層（#fx-layer） */
+export function fxLayer(): HTMLElement {
+  return layer();
+}
+
 function layer(): HTMLElement {
   let el = document.getElementById("fx-layer");
   if (!el) {

@@ -42,6 +42,7 @@ import { ATTR_META } from "../cards/meta";
 import { frameRect, frameSize } from "../frame";
 import { fieldEntry, landed } from "../fx/fieldEntry";
 import { GOD_DESCENT_CARDS, godDescent } from "../fx/godDescent";
+import { IDOL_LIVE, idolLive } from "../fx/idolLive";
 import { fxEnabled } from "../fx/stage";
 import { warmFx } from "../fx/warm";
 import { ArbiterField } from "../game/ArbiterField";
@@ -66,6 +67,7 @@ import {
   animateJudge,
   animateSacrifice,
   flipCard,
+  fxLayer,
   hasVisibleEffects,
   markBuzzed,
   popDamage,
@@ -975,7 +977,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [god, setGod] = useState<{ id: number; gifts: string[] } | null>(null);
   const godField = useRef<HTMLDivElement>(null);
   const godOver = useRef<HTMLDivElement>(null);
-  /** 降臨で場に出る神。ふつうの着地の代わりに、godDescent が見せる */
+  /** 降臨で場に出る神と、ライブ演出で出るアイドル。ふつうの着地の代わりに、godDescent・idolLive が見せる */
   const descending = useRef(new Set<number>());
   /** 降臨で神から手札へ飛ばし終えたカードの数。山札から引く演出を出さない */
   const handedOver = useRef(0);
@@ -1228,10 +1230,25 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             if (visible) await animateEffects(cur, events, next, { from: self(), tint });
             return;
           }
+          // ★5のアイドル：ふつうの着地の代わりにライブ演出（暗転・スポットライト・ペンライト）を見せる。
+          // 描かれる前に印を付けて、着地の演出を止めておく（この行より前に await を置かない）
+          let live = false;
+          if (card && uid !== undefined && IDOL_LIVE[card.id] && fxEnabled()) {
+            descending.current.add(uid);
+            await gwait(50);
+            const unitEl = self();
+            if (unitEl) {
+              await idolLive({ unit: unitEl, layer: fxLayer(), cardId: card.id });
+              unitEl.style.opacity = "";
+              live = true;
+            }
+            descending.current.delete(uid);
+          }
           // 効果でキャラクター（トークンなど）を出すなら、出したキャラクターが着地してから、1体ずつ時間差で出す
           const summons = events.some((e) => e.type === "summoned");
           if (!visible && !summons) return;
-          if (summons) await touch();
+          if (live) await wait(200);
+          else if (summons) await touch();
           else await wait(560); // 出たキャラクターが場に着いて弾むのを待ってから、効果を出す
           await presentPhased(shown, events, next, { from: self(), tint }, show);
         } else if (a.type === "sacrifice") {
@@ -1314,7 +1331,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       const card = CATALOG[u.cardId];
       const el = document.querySelector<HTMLElement>(`[data-uid="${u.uid}"]`);
       if (stagedAces.current.delete(u.uid) || descending.current.has(u.uid)) {
-        // 『演出家』で上がるエース・降臨するネ申は、描かれる前に隠して、それぞれの演出に任せる
+        // 『演出家』で上がるエース・降臨するネ申・ライブ演出で出るアイドルは、描かれる前に隠して、それぞれの演出に任せる
         if (el) el.style.opacity = "0";
       } else if (card) fieldEntry(el, card);
     }
