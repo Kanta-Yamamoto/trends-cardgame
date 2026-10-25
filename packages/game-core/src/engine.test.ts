@@ -173,7 +173,7 @@ const catalog: Record<string, RuleCard> = {
     keywords: ["突進"],
     effects: [{ on: "rush", do: "summon", card: "kusa", count: 1 }],
   }),
-  // 種族を読む効果のテスト用（配信者 s1/s2、アイドル idl、無所属 f）
+  // 界隈を読む効果のテスト用（配信者 s1/s2、アイドル idl、無所属 f）
   s1: icon("s1", 1, 1, 1, { kaiwai: ["配信者"] }),
   s2: icon("s2", 1, 1, 1, { kaiwai: ["配信者", "アイドル"] }),
   idl: icon("idl", 1, 1, 1, { kaiwai: ["アイドル"] }),
@@ -584,6 +584,16 @@ describe("調停（『調停者』）", () => {
     s = play(s, 0, 0);
     expect(s.players.p1.field[0]?.cardId).toBe("judge");
     expect(s.players.p2.field[0]).toBeNull();
+  });
+  it("裁きのダメージは出た直後に続けて出る。破壊されたキャラクターの【破壊されたとき】のダメージは、そのあと（画面の光線は前の分だけ）", () => {
+    const s = withFoe(["judge"], ["flare", "f"]);
+    const { state, events } = run(s, { type: "play", player: "p1", handIndex: 0, slot: 0 });
+    const types = events.map((e) => (e.type === "damaged" ? `damaged:${e.player}:${e.cardId}` : e.type));
+    expect(types.slice(0, 3)).toEqual(["played", "damaged:p2:flare", "destroyed"]);
+    // 炎上の 1 ダメージは『調停者』自身にも当たる（破壊はされない）
+    expect(types).toContain("damaged:p1:judge");
+    expect(types.indexOf("damaged:p1:judge")).toBeGreaterThan(types.indexOf("destroyed"));
+    expect(state.players.p1.field[0]?.damage).toBe(1);
   });
 });
 
@@ -1314,12 +1324,15 @@ describe("バズ（1試合2回・自分のキャラクター1体に+2/+2と突�
     });
   });
 
-  it("便乗：バズしたのが便乗を持つキャラクターなら、+2/+2 に便乗の +1/+1 も乗る", () => {
-    let s = atTurn(4, ["bin"]);
-    s = play(s, 0, 0);
-    s = buzz(s, 0).state;
-    const u = s.players.p1.field[0] as Unit;
-    expect([u.atkBuff, u.hpBuff]).toEqual([3, 3]);
+  it("便乗：バズしたキャラクター自身には乗らない（+2/+2 だけ）。ほかの便乗には乗る", () => {
+    let s = atTurn(4, ["bin", "bin"]);
+    s = play(play(s, 0, 0), 0, 1);
+    const r = buzz(s, 0);
+    s = r.state;
+    const [buzzed, other] = [s.players.p1.field[0] as Unit, s.players.p1.field[1] as Unit];
+    expect([buzzed.atkBuff, buzzed.hpBuff]).toEqual([2, 2]);
+    expect([other.atkBuff, other.hpBuff]).toEqual([1, 1]);
+    expect(r.events).not.toContainEqual(expect.objectContaining({ type: "buffed", player: "p1", slot: 0 }));
   });
 
   it("バズの強化は晒しで消える（強化として扱う）", () => {
@@ -1445,8 +1458,8 @@ describe("相手のプレイヤーに付与する時間差のダメージ（ミ�
   });
 });
 
-describe("種族を読む効果（自分の側だけ）", () => {
-  it("出たときに、自分の場のほかの配信者1体につき攻撃力+1。2種族のカードは両方に数え、ほかの種族は数えない。出たあとに増えても伸びない", () => {
+describe("界隈を読む効果（自分の側だけ）", () => {
+  it("出たときに、自分の場のほかの配信者1体につき攻撃力+1。2界隈のカードは両方に数え、ほかの界隈は数えない。出たあとに増えても伸びない", () => {
     let s = game(["collab"]);
     s.players.p1.hand = ["s1", "s2", "idl", "f", "collab", "s1"];
     s = play(play(play(play(s, 0, 0), 0, 1), 0, 2), 0, 3); // 配信者・配信者＋アイドル・アイドルだけ・無所属
@@ -1772,7 +1785,7 @@ describe("炎属性の作り直し（10月24日。docs/design-fire.md）", () =>
       effects: [{ on: "play", do: "summon", card: "lis", count: 2, flank: true }],
     }),
     st2: icon("st2", 1, 1, 1, { kaiwai: ["配信者"] }),
-    // リスナー：1/1。出たとき、場に配信者種族がいればガードを得る
+    // リスナー：1/1。出たとき、場に配信者界隈がいればガードを得る
     lis: icon("lis", 0, 1, 1, {
       token: true,
       effects: [{ on: "play", do: "guardIfKaiwai", kaiwai: "配信者" }],

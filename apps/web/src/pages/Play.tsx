@@ -71,6 +71,7 @@ import {
   retireUnits,
 } from "../game/fx";
 import { MiniCard } from "../game/MiniCard";
+import { endReason } from "../game/result";
 import { CATALOG, CPU, DECK_INFO, ME, openingMs, setPresenter, useGame } from "../game/store";
 import { useDragPlay } from "../game/useDragPlay";
 import { type ClockLeft, formatClock, useClockLeft, useLive } from "../online/live";
@@ -1199,6 +1200,13 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   // 差し出し待ち（『フィクサー』）の間は、ほかの操作はできない
   const myTurn = game.active === ME && !game.winner && !cpuBusy && !animating && !game.pending;
   const sacSlots = game.pending?.waiting.includes(ME) ? sacrificeCandidates(game, ME) : [];
+  // 差し出しの案内：何の効果で、いま何をすればいいか。選べる自分のキャラクター以外は暗くして押せなくする
+  const sacGuide = (() => {
+    const pend = game.pending;
+    if (!pend || game.winner) return null;
+    const src = [...me.field, ...foe.field].find((u) => u?.uid === pend.sourceUid);
+    return { source: src ? nameOf(src.cardId) : null, mine: sacSlots.length > 0 };
+  })();
   const attacking = selection?.kind === "attacker";
   const selectedCard = selection?.kind === "hand" ? CATALOG[me.hand[selection.index] ?? ""] : undefined;
   const postSelected = selectedCard?.type === "post";
@@ -1384,7 +1392,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     </span>
   );
   const foeRow = (
-    <div className="row">
+    <div className="row foe-row">
       {SLOT_KEYS.map((key, slot) => {
         const u = foe.field[slot];
         return u ? (
@@ -1493,7 +1501,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     if (selection) select(null);
   };
   const field = fieldOf(game, CATALOG);
-  const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}${director !== null ? " field-director" : ""}${arbiter ? " field-arbiter" : ""}${fixer ? " field-fixer" : ""}`;
+  const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}${director !== null ? " field-director" : ""}${arbiter ? " field-arbiter" : ""}${fixer ? " field-fixer" : ""}${sacGuide ? " sac-mode" : ""}`;
   const fieldLayer = field ? <FieldLayer kind={field.kind} mine={field.owner === ME} /> : null;
 
   return (
@@ -1537,7 +1545,20 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           <div className="pfield">
             {throwHint && <div className={`post-zone ${throwOver ? "over" : ""}`} aria-hidden="true" />}
             {foeRow}
-            {/* 場と場の間には何も置かない（案内の文は出さない。反則のときだけ、短く知らせて消える） */}
+            {/* 場と場の間には何も置かない（反則のときだけ、短く知らせて消える）。例外は、差し出しのように選ぶまで進めない場面の案内 */}
+            {sacGuide && (
+              <div className={`sac-guide ${sacGuide.mine ? "mine" : "wait"}`} role="status">
+                {sacGuide.source && <small>{sacGuide.source}の効果</small>}
+                {sacGuide.mine ? (
+                  <>
+                    <strong>破壊する自分のキャラクターを1体選んでください</strong>
+                    <span>相手も1体選び、選ばれたキャラクターは同時に破壊されます</span>
+                  </>
+                ) : (
+                  <strong>相手が破壊するキャラクターを選んでいます</strong>
+                )}
+              </div>
+            )}
             {error && (
               <p key={error} className="ptoast" role="alert">
                 {error}
@@ -1776,10 +1797,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           onAgain={online ? undefined : () => start(deck)}
           onQuit={quit}
           online={online}
-          endedBy={log
-            .map((l) => l.e.type)
-            .reverse()
-            .find((t) => t === "timedOut" || t === "resigned")}
+          events={log.map((l) => l.e)}
         />
       )}
     </div>
@@ -1867,35 +1885,28 @@ function Result({
   onAgain,
   onQuit,
   online,
-  endedBy,
+  events,
 }: {
   game: GameState;
   onAgain?: () => void;
   onQuit: () => void;
   online: boolean;
-  /** 降参・時間切れで決着したとき */
-  endedBy?: GameEvent["type"];
+  /** 対戦の記録（決着の原因を出すため） */
+  events: GameEvent[];
 }) {
   // ランダムマッチなら、レーティングの動き
   const rating = useLive((s) => s.rating);
   const won = game.winner === ME;
-  const why =
-    endedBy === "timedOut"
-      ? won
-        ? "相手の時間切れ"
-        : "時間切れ"
-      : endedBy === "resigned"
-        ? won
-          ? "相手の降参"
-          : "降参"
-        : null;
+  const why = endReason(events, ME, won);
   return (
     <div className="result" role="dialog" aria-modal="true" aria-label="対戦結果">
       <div className={`result-card ${won ? "win" : "lose"}`}>
         <strong>{won ? "勝利！" : "敗北…"}</strong>
-        <span>
-          {game.turn} ターン目で決着{why && `（${why}）`}
-        </span>
+        <p className="result-why">
+          <b>{why.title}</b>
+          {why.detail}
+        </p>
+        <span>{game.turn} ターン目で決着</span>
         {online && rating && (
           <p className="result-rating">
             レート {rating.before} → <b>{rating.after}</b>

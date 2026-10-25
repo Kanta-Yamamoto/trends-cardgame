@@ -5,7 +5,7 @@ import { EffectText } from "./EffectText";
 import { HoloCard } from "./HoloCard";
 
 describe("EffectText", () => {
-  it("〈種族〉とキーワードを強調する", () => {
+  it("〈界隈〉とキーワードを強調する", () => {
     const { container } = render(<EffectText text="速攻。〈蒼空〉カード1枚を手札に加える。" />);
     const kws = [...container.querySelectorAll(".kw")].map((e) => e.textContent);
     expect(kws).toEqual(["速攻", "〈蒼空〉"]);

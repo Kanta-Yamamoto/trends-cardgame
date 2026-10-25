@@ -62,7 +62,7 @@ export const TERMS: Record<string, Term> = {
   },
   便乗: {
     title: "便乗",
-    text: "自分か相手がバズを使うたび、攻撃力+1・体力+1。上がった分は強化なので、晒し状態で消える。",
+    text: "自分か相手がほかのキャラクターにバズを使うたび、攻撃力+1・体力+1。上がった分は強化なので、晒し状態で消える。",
     kind: "keyword",
   },
   コンボ: {
@@ -128,10 +128,10 @@ export const TERMS: Record<string, Term> = {
   ),
   ...Object.fromEntries(
     (Object.entries(KAIWAI_MARK) as [Kaiwai, string][]).map(([k, mark]) => [
-      `${k}種族`,
+      `${k}界隈`,
       {
-        title: `${k}種族`,
-        text: `種族が「${k}」のキャラクター。カードの属性の丸の横にある黒い四角の「${mark}」が目印。2つの種族に入るカードは、どちらの仲間にも数える。種族を読む効果は、自分の側のキャラクターだけを見る。`,
+        title: `${k}界隈`,
+        text: `界隈が「${k}」のキャラクター。カードの属性の丸の横にある黒い四角の「${mark}」が目印。2つの界隈に入るカードは、どちらの仲間にも数える。界隈を読む効果は、自分の側のキャラクターだけを見る。`,
         kind: "word" as const,
       },
     ]),
@@ -152,7 +152,7 @@ export const BANNED_TERMS: readonly { word: string | RegExp; use: string }[] = [
   { word: "マスター", use: "プレイヤー" },
   { word: "話題力", use: "コスト" },
   { word: "マナ", use: "コスト" },
-  { word: "界隈", use: "種族" },
+  { word: "種族", use: "界隈" },
   { word: "凸", use: "突進" },
   { word: "ノリ", use: "コンボ" },
   { word: "訂正", use: "沈黙状態" },

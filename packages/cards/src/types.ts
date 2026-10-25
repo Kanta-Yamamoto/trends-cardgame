@@ -1,6 +1,6 @@
 /** 属性：その話題に人がどう反応したか */
 export type Attribute = "炎" | "推し" | "水" | "自然" | "神";
-/** 種族：そのカードが何者か（いわゆる種族）。属性をまたいで付け、場で手を組む相手を決める軸。2種族は★3以上の少数だけ */
+/** 界隈：そのカードが何者か（いわゆる種族）。属性をまたいで付け、場で手を組む相手を決める軸。2界隈は★3以上の少数だけ */
 export type Kaiwai = "ミーム" | "アイドル" | "配信者" | "有識者" | "動物";
 /**
  * キーワード能力。
@@ -9,7 +9,7 @@ export type Kaiwai = "ミーム" | "アイドル" | "配信者" | "有識者" | 
  * - 突進：場に出たターンに、相手のキャラクターにだけ攻撃できる（キーワード自体でステータスは上がらない。「突進で攻撃したとき」の効果はカードごと）
  * - 連撃：1ターンに2回攻撃できる
  * - 注目：自分のターンの始めに攻撃力+1（センターなら+2）
- * - 便乗：自分と相手のどちらかがバズを使うたび、攻撃力+1・体力+1（10月25日。バズった曲にアイドルが乗る）
+ * - 便乗：自分と相手のどちらかがほかのキャラクターにバズを使うたび、攻撃力+1・体力+1（10月25日。バズった曲にアイドルが乗る）
  */
 export type Keyword = "ガード" | "速攻" | "突進" | "連撃" | "注目" | "便乗";
 /** キャラクター：場に出て戦う／呪文：使い切りの効果 */
@@ -50,7 +50,7 @@ export type CardEffect = (
   | { do: "buffSelfPerPlayed"; attack: number }
   | { do: "buffRandomAlly"; attack: number; hp: number }
   /** 自分の場のほかのキャラクターすべて */
-  /** 自分のほかのキャラクターすべてに。kaiwai を付けると、その種族だけ */
+  /** 自分のほかのキャラクターすべてに。kaiwai を付けると、その界隈だけ */
   /** cards を付けると、そのカード（トークンの ID など）のキャラクターだけ（草の女王） */
   | { do: "buffAllies"; attack: number; hp: number; kaiwai?: Kaiwai; cards?: string[]; thisTurn?: boolean }
   /** play：このゲームで自分が先に手札から出した cards のキャラクター1体につき、このキャラクターに強化（伝説のコラ画像） */
@@ -61,8 +61,8 @@ export type CardEffect = (
   /** to が無ければ呪文の対象に */
   | { do: "damage"; to?: "strongestEnemy" | "allEnemies" | "enemyMaster"; amount: number }
   /** passive：自分の場のほかのキャラクター1体につき攻撃力+1 */
-  /** 自分の場のほかのキャラクター1体につき攻撃力+1。kaiwai を付けると、その種族だけ数える */
-  /** play：出たときに、自分の場のほかのキャラクター（kaiwai があればその種族）1体につき攻撃力+1。強化なので、あとで仲間が減っても下がらない */
+  /** 自分の場のほかのキャラクター1体につき攻撃力+1。kaiwai を付けると、その界隈だけ数える */
+  /** play：出たときに、自分の場のほかのキャラクター（kaiwai があればその界隈）1体につき攻撃力+1。強化なので、あとで仲間が減っても下がらない */
   | { do: "attackPerAlly"; kaiwai?: Kaiwai }
   /** 晒し状態にする（ガードを失い、それまでの強化がすべて消える。ずっと続く）。to が無ければ呪文の対象を */
   | { do: "expose"; to?: "strongestEnemy" | "allEnemies" }
@@ -137,8 +137,8 @@ export type CardEffect = (
   | { do: "lullaby" }
   /** hand：自分の場のキャラクター1体につきコスト-1 */
   | { do: "cheaperPerAlly"; kaiwai?: Kaiwai }
-  /** 山札から、その種族のカードを上から count 枚探して手札に（足りない分は普通に引く） */
-  /** play：山札から探して手札に加える。kaiwai の種族のカード、または guard（ガードを持つ）・attribute の属性のキャラクター。なければ引く */
+  /** 山札から、その界隈のカードを上から count 枚探して手札に（足りない分は普通に引く） */
+  /** play：山札から探して手札に加える。kaiwai の界隈のカード、または guard（ガードを持つ）・attribute の属性のキャラクター。なければ引く */
   | { do: "tutor"; kaiwai?: Kaiwai; guard?: boolean; attribute?: Attribute; count: number }
   /** hand：このゲームで自分が回復の効果を使った回数だけコスト-1 */
   | { do: "cheaperPerHeal" }
@@ -180,7 +180,7 @@ export type CardEffect = (
 ) & {
   on?: EffectTrigger;
   /**
-   * 条件：自分の場（このキャラクターを含む）に、その属性（または種族）のキャラクターが atLeast 体以上いるときだけ／
+   * 条件：自分の場（このキャラクターを含む）に、その属性（または界隈）のキャラクターが atLeast 体以上いるときだけ／
    * center：このキャラクターがセンターにいるときだけ
    */
   if?: { allies: Attribute; atLeast: number } | { kaiwai: Kaiwai; atLeast: number } | { center: true };
@@ -217,18 +217,18 @@ export interface CardDef {
   hp?: number;
   /** 0〜1個。0個はニュートラルのカード（どのデッキにも入れられる）。勝ち方とデッキの決まりを担う軸 */
   attributes: Attribute[];
-  /** 0〜2個。場で手を組む相手（仲間）を決める軸。2種族は★3以上の少数だけ */
+  /** 0〜2個。場で手を組む相手（仲間）を決める軸。2界隈は★3以上の少数だけ */
   kaiwai: Kaiwai[];
   keywords: Keyword[];
   effects: CardEffect[];
   /** 呪文の対象 */
   target?: PostTarget;
-  /** 呪文の対象を、自分のその種族のキャラクターだけに限る（target が allyIcon のとき） */
+  /** 呪文の対象を、自分のその界隈のキャラクターだけに限る（target が allyIcon のとき） */
   targetKaiwai?: Kaiwai;
   /** 呪文の対象を絞る：ダメージを受けているキャラクターだけ／攻撃力が N 以下だけ */
   targetFilter?: { damaged?: boolean; maxAttack?: number };
   /**
-   * カードに書く効果文。カードに載せる文字は、名前・コスト・攻撃力・体力・属性・種族・★・種類・効果文・闇堕ちの札だけ
+   * カードに書く効果文。カードに載せる文字は、名前・コスト・攻撃力・体力・属性・界隈・★・種類・効果文・闇堕ちの札だけ
    * （肩書き・フレーバー・通し番号・飾りの文字は載せない。10月24日、docs/card-text.md）
    */
   effect: string;

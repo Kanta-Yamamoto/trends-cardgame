@@ -6,7 +6,7 @@ import { stars, typeLabel } from "./meta";
 
 /**
  * カードに載せてよい文字は、カードを成り立たせるものだけ（docs/card-text.md「カードに載せる文字」）。
- * 名前・コスト・攻撃力・体力・★・種類・属性・種族・効果文・闇堕ちの札と、数字の見出し（攻撃・体力）。
+ * 名前・コスト・攻撃力・体力・★・種類・属性・界隈・効果文・闇堕ちの札と、数字の見出し（攻撃・体力）。
  * 肩書き・フレーバー・通し番号・飾りの文字（「LIVE」「依頼状」など）は、★に関係なく載せない
  */
 function allowed(
@@ -27,7 +27,7 @@ function allowed(
     typeLabel(card),
     "ニュートラル",
     ...card.attributes,
-    ...card.kaiwai.map((k) => `${k}種族`),
+    ...card.kaiwai.map((k) => `${k}界隈`),
     "闇堕ち",
     "攻撃",
     "体力",
