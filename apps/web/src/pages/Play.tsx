@@ -1257,6 +1257,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             e.type === "sacrificed" ? [shown.players[e.player].field[e.slot]?.uid ?? -1] : [],
           );
           if (uids.length === 0) return;
+          // 選んだら、案内が消えて盤面が明るく戻るのを見せてから貫く
+          await gwait(320);
           const pierced = await animateSacrifice(shown, events, ME);
           // 貫いたキャラクターは墓地へ送り終えているので、残りのいなくなるキャラクターだけを送る
           const left: GameState = pierced
@@ -1416,11 +1418,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const foe = game.players[CPU];
   // 差し出し待ち（『フィクサー』）の間は、ほかの操作はできない
   const myTurn = game.active === ME && !game.winner && !cpuBusy && !animating && !game.pending;
-  const sacSlots = game.pending?.waiting.includes(ME) ? sacrificeCandidates(game, ME) : [];
-  // 差し出しの案内：何の効果で、いま何をすればいいか。選べる自分のキャラクター以外は暗くして押せなくする
+  const sacSlots = game.pending?.waiting.includes(ME) && !animating ? sacrificeCandidates(game, ME) : [];
+  // 差し出しの案内：何の効果で、いま何をすればいいか。選べる自分のキャラクター以外は暗くして押せなくする。
+  // 選び終えて破壊の演出をしている間（animating）は、案内も暗さも消す（案内を消してから貫く）
   const sacGuide = (() => {
     const pend = game.pending;
-    if (!pend || game.winner) return null;
+    if (!pend || game.winner || animating) return null;
     const src = [...me.field, ...foe.field].find((u) => u?.uid === pend.sourceUid);
     return { source: src ? nameOf(src.cardId) : null, mine: sacSlots.length > 0 };
   })();
