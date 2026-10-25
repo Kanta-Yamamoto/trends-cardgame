@@ -81,7 +81,7 @@ export interface PlayerState {
   postsUsed: number;
   /** このゲームで回復の効果を使った回数（癒しの「回復するたびに」で使う） */
   heals: number;
-  /** このゲームで、自分のトークンが破壊された数（カード ID ごと。クサハミで使う） */
+  /** このゲームで、自分のトークンが破壊された数（カード ID ごと。クサハミの闇の姿が闇堕ちしたときに数える） */
   tokensLost?: Record<string, number>;
   /** このターンのあとに続けて行うターンの数 */
   extraTurns: number;
@@ -206,7 +206,16 @@ export type GameEvent =
   /** 付いていた効果が働いた（player は付けられた人。このあとプレイヤーへのダメージが続く） */
   | { type: "delayedDamageFired"; player: PlayerId; cardId: string; amount: number }
   | { type: "extraTurn"; player: PlayerId }
-  | { type: "buffed"; player: PlayerId; slot: number; cardId: string; attack: number; hp: number }
+  | {
+      type: "buffed";
+      player: PlayerId;
+      slot: number;
+      cardId: string;
+      attack: number;
+      hp: number;
+      /** tokenLost：自分のトークンが破壊されたことで強くなった（クサハミ）。画面は、破壊を見せ終えてから「+N」を出す */
+      cause?: "tokenLost";
+    }
   | { type: "healed"; player: PlayerId; slot: number; cardId: string; amount: number }
   | { type: "leaderDamaged"; player: PlayerId; amount: number; lp: number }
   | { type: "leaderHealed"; player: PlayerId; amount: number; lp: number }

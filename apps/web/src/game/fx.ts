@@ -430,6 +430,38 @@ export function showRiding(
   })();
 }
 
+/** 強化の「+N/+N」 */
+const buffText = (e: { attack: number; hp: number }) =>
+  `${e.attack >= 0 ? "+" : ""}${e.attack}/${e.hp >= 0 ? "+" : ""}${e.hp}`;
+
+/** 草が破壊されて強くなった（クサハミ）：光って「+N/+0」を出す */
+function landGrowth(el: HTMLElement, add: { attack: number; hp: number }) {
+  glow(el, "#ffd76a");
+  popLabel(el, buffText(add), "#ffd76a");
+}
+
+/**
+ * 攻撃で草が破壊されて強くなった（クサハミ）：草が消え終わったころに「+N/+0」を出し、そこで攻撃力の数字を上げる。
+ * state はもう進んでいるので、出すまでは数字を元の値で見せておく（便乗の showRiding と同じやり方）
+ */
+export function showGrowth(uid: number, add: { attack: number; hp: number }, delay: number) {
+  const target = q(`[data-uid="${uid}"]`);
+  if (!target || !canAnimate() || reduced()) return;
+  const atk = target.querySelector<HTMLElement>(".mini-atk");
+  const shift = (d: number) => {
+    const t = atk?.firstChild;
+    if (t?.nodeType === Node.TEXT_NODE && d !== 0) t.nodeValue = String(Number(t.nodeValue) + d);
+  };
+  shift(-add.attack);
+  void (async () => {
+    await wait(delay);
+    landGrowth(target, add);
+    await wait(400);
+    shift(add.attack);
+    atk?.animate([{ transform: "scale(1.7)" }, { transform: "none" }], { duration: 360, easing: "ease-out" });
+  })();
+}
+
 /** 突進の強化：攻撃するキャラクターを光らせて「+1/+1」を出し、攻撃力の数字を先に上げる。見せ終わってから突進する */
 async function showRushBoost(
   atk: HTMLElement | null,
@@ -717,6 +749,8 @@ export async function animateEffects(
   const masterEl = (p: PlayerId) => q(`[data-master="${p}"]`);
 
   const hits: { el: HTMLElement | null; color: string; land: (el: HTMLElement) => void }[] = [];
+  // 草が破壊されて強くなった分（クサハミ）は、破壊されたキャラクターが消え終わってから「+N」を出す
+  const late: { el: HTMLElement | null; land: (el: HTMLElement) => void }[] = [];
   events.forEach((e, idx) => {
     switch (e.type) {
       case "damaged":
@@ -770,8 +804,12 @@ export async function animateEffects(
         });
         break;
       case "buffed": {
+        if (e.cause === "tokenLost") {
+          late.push({ el: unitEl(e.player, e.slot), land: (el) => landGrowth(el, e) });
+          break;
+        }
         const up = e.attack >= 0 && e.hp >= 0;
-        const text = `${e.attack >= 0 ? "+" : ""}${e.attack}/${e.hp >= 0 ? "+" : ""}${e.hp}`;
+        const text = buffText(e);
         hits.push({
           el: unitEl(e.player, e.slot),
           color: up ? "#ffd76a" : "#b06bff",
@@ -851,6 +889,12 @@ export async function animateEffects(
   // 当たったところを少し見せてから
   if (hits.length > 0) await wait(520);
   const gone = retireUnits(shown, events, next, opts.skip);
+  if (late.length > 0) {
+    await gone;
+    for (const h of late) if (h.el) h.land(h.el);
+    await wait(640);
+    return;
+  }
   await (opts.untilGone ? gone : wait(hits.length > 0 ? 460 : 0));
 }
 

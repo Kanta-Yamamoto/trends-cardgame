@@ -103,7 +103,20 @@ const catalog: Record<string, RuleCard> = {
   plotter: icon("plotter", 1, 4, 4, { effects: [{ on: "passive", do: "conspiracyWin" }] }),
   burner: icon("burner", 1, 1, 1, { effects: [{ on: "death", do: "draw", count: 1 }] }),
   popper: icon("popper", 2, 1, 1, { effects: [{ on: "death", do: "damage", to: "allEnemies", amount: 1 }] }),
-  eater: icon("eater", 3, 1, 3, { effects: [{ on: "passive", do: "attackPerLostToken", card: "kusa" }] }),
+  eater: icon("eater", 3, 1, 3, {
+    effects: [{ on: "passive", do: "growOnTokenLost", card: "kusa" }],
+    dark: {
+      name: "毒草喰らい",
+      attack: 1,
+      hp: 3,
+      keywords: ["速攻"],
+      effects: [
+        { on: "play", do: "attackPerLostToken", card: "kusa" },
+        { on: "passive", do: "growOnTokenLost", card: "kusa" },
+      ],
+      effect: "",
+    },
+  }),
   fixer: icon("fixer", 4, 2, 3, { effects: [{ do: "sacrifice" }] }),
   judge: icon("judge", 5, 2, 5, { effects: [{ do: "judge" }] }),
   director: icon("director", 5, 2, 4, { effects: [{ do: "stageAces" }] }),
@@ -507,14 +520,57 @@ describe("★5 の作り直し（ヒバナ・カグラ・陰謀論者・クサ�
     expect(s.players.p1.trash).toContain("burner");
     expect(s.players.p1.hand.length).toBeGreaterThan(hand);
   });
-  it("クサハミ：自分の草が破壊された数だけ攻撃力+1", () => {
+  it("クサハミ：自分の草が破壊されるたび攻撃力+1。同時に破壊された分は、まとめて1回の強化にする", () => {
     let s = game(["eater", "cat"]);
     s = play(s, 0, 0);
     s = play(s, 0, 1);
     for (const u of s.players.p1.field) if (u?.cardId === "kusa") u.damage = 1;
-    s = end(s);
+    const r = run(s, { type: "endTurn", player: "p1" });
+    s = r.state;
     expect(s.players.p1.tokensLost).toEqual({ kusa: 2 });
-    expect(viewUnit(s, "p1", s.players.p1.field[0] as Unit, catalog).attack).toBe(3);
+    const ups = r.events.filter((e) => e.type === "buffed");
+    expect(ups).toEqual([
+      { type: "buffed", player: "p1", slot: 0, cardId: "eater", attack: 2, hp: 0, cause: "tokenLost" },
+    ]);
+    const eater = s.players.p1.field[0] as Unit;
+    expect(eater.atkBuff).toBe(2);
+    expect(viewUnit(s, "p1", eater, catalog).attack).toBe(3);
+  });
+  it("クサハミ：場に出る前に破壊された草は数えない。強化なので、数字はあとから勝手に動かない", () => {
+    let s = play(game(["cat", "eater"]), 0, 0);
+    const grass = s.players.p1.field.findIndex((u) => u?.cardId === "kusa");
+    (s.players.p1.field[grass] as Unit).damage = 1;
+    s = end(end(s), "p2");
+    expect(s.players.p1.tokensLost).toEqual({ kusa: 1 });
+    s = play(
+      s,
+      s.players.p1.hand.indexOf("eater"),
+      s.players.p1.field.findIndex((u) => !u),
+    );
+    const at = s.players.p1.field.findIndex((u) => u?.cardId === "eater");
+    expect(viewUnit(s, "p1", s.players.p1.field[at] as Unit, catalog).attack).toBe(1);
+    // 破壊された数をあとから書き換えても、攻撃力は変わらない（数字の元は強化だけ）
+    s.players.p1.tokensLost = { kusa: 9 };
+    expect(viewUnit(s, "p1", s.players.p1.field[at] as Unit, catalog).attack).toBe(1);
+  });
+  it("クサハミの闇の姿：闇堕ちしたときに、それまでに破壊された草の数を数えて攻撃力に足す", () => {
+    let s = play(game(["eater"]), 0, 0);
+    s.players.p1.tokensLost = { kusa: 3 };
+    (s.players.p1.field[0] as Unit).damage = 3;
+    s = end(s);
+    expect(s.players.p1.field[0]).toBeNull();
+    const r = run(s, { type: "endTurn", player: "p2" });
+    const dark = r.state.players.p1.field[0] as Unit;
+    expect(dark.dark).toBe(true);
+    expect(r.events).toContainEqual({
+      type: "buffed",
+      player: "p1",
+      slot: 0,
+      cardId: "eater",
+      attack: 3,
+      hp: 0,
+    });
+    expect(viewUnit(r.state, "p1", dark, catalog).attack).toBe(4);
   });
 });
 
