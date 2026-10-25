@@ -3,7 +3,14 @@
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!legacy", "!apps/web/public/prototypes", "!apps/api/drizzle/meta", "!**/*.css"]
+    "includes": [
+      "**",
+      "!!.claude",
+      "!legacy",
+      "!apps/web/public/prototypes",
+      "!apps/api/drizzle/meta",
+      "!**/*.css"
+    ]
   },
   "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 110 },
   "linter": {

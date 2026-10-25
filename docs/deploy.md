@@ -9,7 +9,7 @@
 - 画面も API と同じサーバーで配る（`apps/api/src/web.ts`）。同じ場所なので CORS も要らない
 - 使わないときは0台になる。少人数ならほぼ無料（Cloud Run の無料枠の範囲）
 - GCP の変更は GitHub Actions が Terraform で行う（`.github/workflows/infra.yml`）。鍵ファイルは使わない。設定（プロジェクト ID・番号・クライアント ID。どれも秘密ではない）は `infra/gcp.env`
-- main にマージすると、CI が通ったあと `.github/workflows/deploy.yml` が自動でデプロイする
+- main にマージすると、CI が通ったあと `.github/workflows/deploy.yml` が自動でデプロイする。10月25日から、main へのマージは 1 日 1 回（`dev` → main。[working-agreement.md](working-agreement.md)）。docs だけの変更では CI もデプロイも動かない（ci.yml の `paths-ignore`。入れるのはオーナーが GitHub のログインに `workflow` の権限を足してから）
 - ログインのトークンに署名する鍵は、アプリが初回起動時に作って DB に保存する（人は扱わない）
 
 ## 最初の1回だけの準備

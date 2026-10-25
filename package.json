@@ -12,6 +12,8 @@
     "typecheck": "turbo run typecheck",
     "lint": "biome check .",
     "format": "biome check --write .",
+    "verify": "pnpm lint && pnpm turbo run build --filter=./packages/* && pnpm db:migrate && pnpm typecheck && pnpm test && pnpm build",
+    "verify:image": "docker build -f apps/api/Dockerfile -t trends-api .",
     "db:up": "docker compose up -d db",
     "db:migrate": "pnpm --filter @trends/api db:migrate",
     "db:seed": "pnpm --filter @trends/api db:seed",
