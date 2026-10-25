@@ -1203,7 +1203,9 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     s.players.p2.mana = 30;
     s.players.p2.hand = ["kill", ...s.players.p2.hand];
     const r = run(s, { type: "cast", player: "p2", handIndex: 0 });
-    expect(r.events).toContainEqual({ type: "destroyed", player: "p1", cardId: "ren", vanished: true });
+    expect(r.events).toContainEqual(
+      expect.objectContaining({ type: "destroyed", player: "p1", cardId: "ren", vanished: true }),
+    );
   });
 
   it("TL浄化で元の姿に戻ったカードは、破壊されたら墓地へ行くが、もう闇堕ちしない", () => {

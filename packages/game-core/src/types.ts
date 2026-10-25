@@ -181,8 +181,8 @@ export type GameEvent =
       destroyed: string[];
     }
   | { type: "damaged"; player: PlayerId; slot: number; cardId: string; amount: number }
-  /** 破壊された。vanished は闇堕ちの姿が破壊されて消えた（墓地に行かない） */
-  | { type: "destroyed"; player: PlayerId; cardId: string; vanished?: boolean }
+  /** 破壊された。slot はいた枠。vanished は闇堕ちの姿が破壊されて消えた（墓地に行かない） */
+  | { type: "destroyed"; player: PlayerId; cardId: string; slot: number; vanished?: boolean }
   /** 闇の気配：闇堕ちを持つカードが破壊され、次の自分のターンの始めに闇堕ちして戻ってくる */
   | { type: "darkOmen"; player: PlayerId; slot: number; cardId: string }
   | { type: "darkFall"; player: PlayerId; slot: number; cardId: string }
