@@ -1,9 +1,11 @@
 name: CI
 
+# 確かめは手元の pnpm verify が本番（Actions の分数を使い切らないように。docs/working-agreement.md「開発の回し方」）。
+# ここは PR を作ったときと、手で動かしたときだけ回る。分数は 1 ジョブごとに分単位で切り上げて数えるので、1 ジョブにまとめる
 on:
-  push:
-    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 # CI は読むだけ（GitHub のトークンで書き込みはさせない）
 permissions:
@@ -31,6 +33,18 @@ jobs:
       DATABASE_URL: postgresql://trends:trends@localhost:5432/trends
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: 変わったところを調べる（Docker と Terraform は、関係するところが変わったときだけ確かめる）
+        id: changed
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -z "$BASE" ]; then
+            echo "docker=true" >> "$GITHUB_OUTPUT"; echo "terraform=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          git fetch --depth=1 origin "$BASE"
+          FILES=$(git diff --name-only "$BASE" HEAD)
+          if echo "$FILES" | grep -qE '(^|/)(Dockerfile|package\.json)$|^pnpm-lock\.yaml$|^\.dockerignore$'; then echo "docker=true" >> "$GITHUB_OUTPUT"; fi
+          if echo "$FILES" | grep -q '^infra/terraform/'; then echo "terraform=true" >> "$GITHUB_OUTPUT"; fi
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -49,22 +63,15 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
-
-  api-image:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Build API image (push はしない)
+        if: steps.changed.outputs.docker == 'true'
         run: docker build -f apps/api/Dockerfile -t trends-api .
-
-  terraform:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: infra/terraform
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
-      - run: terraform fmt -check -recursive
-      - run: terraform init -backend=false
-      - run: terraform validate
+        if: steps.changed.outputs.terraform == 'true'
+      - name: Terraform
+        if: steps.changed.outputs.terraform == 'true'
+        working-directory: infra/terraform
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false
+          terraform validate

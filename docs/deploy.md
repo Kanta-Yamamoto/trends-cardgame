@@ -9,7 +9,7 @@
 - 画面も API と同じサーバーで配る（`apps/api/src/web.ts`）。同じ場所なので CORS も要らない
 - 使わないときは0台になる。少人数ならほぼ無料（Cloud Run の無料枠の範囲）
 - GCP の変更は GitHub Actions が Terraform で行う（`.github/workflows/infra.yml`）。鍵ファイルは使わない。設定（プロジェクト ID・番号・クライアント ID。どれも秘密ではない）は `infra/gcp.env`
-- main にマージすると、CI が通ったあと `.github/workflows/deploy.yml` が自動でデプロイする。10月25日から、main へのマージは 1 日 1 回（`dev` → main。[working-agreement.md](working-agreement.md)）。docs だけの変更では CI もデプロイも動かない（ci.yml の `paths-ignore`。入れるのはオーナーが GitHub のログインに `workflow` の権限を足してから）
+- main に入ると `.github/workflows/deploy.yml` が自動でデプロイする（1 回およそ 3 分）。10月25日から、確かめは手元の `pnpm verify` で済ませ、PR を作らずに `git push origin dev:main` で出す（[working-agreement.md](working-agreement.md)）。docs だけの変更ではデプロイも動かない（deploy.yml の `paths-ignore`）。Infra も変わった push では、Infra が通ってから出す
 - ログインのトークンに署名する鍵は、アプリが初回起動時に作って DB に保存する（人は扱わない）
 
 ## 最初の1回だけの準備
@@ -30,7 +30,7 @@
 
 ## ふだん
 
-- main にマージ → CI → 自動デプロイ。`infra/terraform` を変えたときは Infra も自動で動く。結果は GitHub の Actions に出る
+- main に入る → 自動デプロイ。`infra/terraform` を変えたときは Infra も自動で動く。結果は GitHub の Actions に出る
 - 失敗したら、Actions のログと Cloud Run のログを見る。前のリビジョンに戻すのは Cloud Run の画面の「リビジョン」から
 
 ## 公開前の守り（10月23日）
@@ -73,5 +73,5 @@
 
 ### GitHub
 
-- 非公開リポジトリの main の保護（ブランチ保護・ルールセット）は GitHub Free では使えない（GitHub Pro が要る）。代わりに、本番に出せるのは「main で CI が通った版」だけで、GCP の権限を借りられるのも main の実行だけにしてある
+- 非公開リポジトリの main の保護（ブランチ保護・ルールセット）は GitHub Free では使えない（GitHub Pro が要る）。代わりに、main に push できるのは手元で `pnpm verify` を通した版だけ（git のフック `.githooks/pre-push`）で、GCP の権限を借りられるのも main の実行だけにしてある
 - いちばん大事なのは、オーナーの GitHub アカウントの 2 段階認証（パスキーなど）。オーナーが GitHub の Settings → Password and authentication で確かめる

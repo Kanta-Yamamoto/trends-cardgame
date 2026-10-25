@@ -2,7 +2,7 @@
 
 AIで描いたイラストを立体感のあるキラカードにして遊ぶ、オリジナルカードゲーム。Web とスマホアプリ（Capacitor）で出す予定。
 
-作業の前に [`docs/working-agreement.md`](docs/working-agreement.md)（オーナーからの指示・進め方）と [`docs/history.md`](docs/history.md)（経緯）を読む。何を作るか・どの順でやるかを決めるときは [`docs/product.md`](docs/product.md)（プロダクトの考え方）に沿う。カード・属性・闇堕ちの設計を決めるときは [`docs/design-mainline.md`](docs/design-mainline.md)（10月24日の決定事項と理由。王道＝推し属性・闇堕ちの決まり・ほかの属性を作るときの前提）を読む。カード面・演出を触るときは [`docs/design-standard-director.md`](docs/design-standard-director.md)（カード面の基準）と [`docs/attack-motion-standard.md`](docs/attack-motion-standard.md)（攻撃モーションの基準）も読み、新しい演出は入れる前に動くモックで見せる。変更は手元で `pnpm verify` を通して `dev` ブランチに溜め、1 日 1 回キリのいいところで `dev` → main の PR を作る（GitHub Actions の分数を節約するため。1 つずつ PR は作らない）。公開前のあいだは、その PR の CI が通ったら Claude が自分でマージする（オーナーの許可は要らない。公開したら、オーナーの一言でマージする形に戻す）。オーナーや友人が対戦中と分かっているときは本番に出さない。
+作業の前に [`docs/working-agreement.md`](docs/working-agreement.md)（オーナーからの指示・進め方）と [`docs/history.md`](docs/history.md)（経緯）を読む。何を作るか・どの順でやるかを決めるときは [`docs/product.md`](docs/product.md)（プロダクトの考え方）に沿う。カード・属性・闇堕ちの設計を決めるときは [`docs/design-mainline.md`](docs/design-mainline.md)（10月24日の決定事項と理由。王道＝推し属性・闇堕ちの決まり・ほかの属性を作るときの前提）を読む。カード面・演出を触るときは [`docs/design-standard-director.md`](docs/design-standard-director.md)（カード面の基準）と [`docs/attack-motion-standard.md`](docs/attack-motion-standard.md)（攻撃モーションの基準）も読み、新しい演出は入れる前に動くモックで見せる。変更は手元で `pnpm verify` を通して `dev` ブランチに溜め、キリのいいところ・オーナーが遊びたいときに `git push origin dev:main` で本番に出す（PR は作らない。GitHub Actions の分数を節約するため。git と Claude Code のフックが、verify を通していない版の push や PR を止める）。公開前のあいだは、Claude が自分で出す（オーナーの許可は要らない。公開したら、オーナーの一言で出す形に戻す）。オーナーや友人が対戦中と分かっているときは本番に出さない。
 
 ## 構成（pnpm workspaces + Turborepo）
 
@@ -39,4 +39,4 @@ pnpm verify     # CI と同じ確かめ（先に pnpm db:up）。dev に取り�
 - DB スキーマを変えたら `pnpm db:generate` でマイグレーションを作り、`apps/api/drizzle/` ごとコミットする
 - 画像は `apps/web/public/assets/cards/` に `cN-art.jpg`（背景）と `cN-subject.webp`（切り抜き）を置く。イラストの依頼は `docs/card-art-prompt.md`（★が低いほどシンプルに）のフォーマットを使い、カードごとの注文は `docs/card-art-orders.md` に残す
 - リント・整形は Biome。コミット前に `pnpm lint` を通す
-- CI（`.github/workflows/ci.yml`）はリント・型・テスト（実 PostgreSQL）・ビルド・API の Docker ビルド・Terraform の検証を行う。main で CI が通ると `deploy.yml` が Cloud Run にデプロイする（GitHub の Variables が登録されているときだけ）
+- CI（`.github/workflows/ci.yml`）は PR と手動のときだけ、リント・型・テスト（実 PostgreSQL）・ビルド・API の Docker ビルド・Terraform の検証を 1 ジョブで行う。確かめの本番は手元の `pnpm verify`。main に入ると `deploy.yml` が Cloud Run にデプロイする（docs だけの変更では動かない）

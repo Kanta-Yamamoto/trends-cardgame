@@ -1,0 +1,36 @@
+#!/bin/sh
+# 決まりを守らせる（docs/working-agreement.md「開発の回し方」）。
+# dev と main に push できるのは、手元で pnpm verify を通した版だけ（scripts/mark-verified.sh が覚えた版）。
+# main には dev を早送りで入れる（git push origin dev:main）。強制の push はしない
+zero=0000000000000000000000000000000000000000
+stamps="$(git rev-parse --git-common-dir)/verified"
+
+# verify は、コミットしていないファイル（AGENTS.md など）も置いたまま通すので、
+# その版の中身に、今コミットしていないファイルを足した中身でも照らし合わせる
+verified() {
+  [ -f "$stamps/$(git rev-parse "$1^{tree}")" ] && return 0
+  index="$(git rev-parse --git-path pre-push-index)"
+  GIT_INDEX_FILE=$index git read-tree "$1"
+  git ls-files -z --others --exclude-standard | GIT_INDEX_FILE=$index xargs -0 git add -- >/dev/null 2>&1
+  tree=$(GIT_INDEX_FILE=$index git write-tree)
+  rm -f "$index"
+  [ -f "$stamps/$tree" ]
+}
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue # ブランチを消す push
+  case "$remote_ref" in
+    refs/heads/dev | refs/heads/main) ;;
+    *) continue ;;
+  esac
+  if ! verified "$local_sha"; then
+    echo "push を止めました：${remote_ref#refs/heads/} に入れる版（$(git log -1 --format='%h %s' "$local_sha")）は、まだ pnpm verify を通していません。" >&2
+    echo "先に pnpm db:up && pnpm verify を通してください。" >&2
+    exit 1
+  fi
+  if [ "$remote_ref" = refs/heads/main ] && [ "$remote_sha" != "$zero" ] && ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+    echo "push を止めました：main を書き換える push です。dev に main を取り込んでから、早送りで入れてください。" >&2
+    exit 1
+  fi
+done
+exit 0

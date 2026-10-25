@@ -1,11 +1,16 @@
 name: Deploy
 
-# main の CI（または Infra）が通ったら、Cloud Run に自動でデプロイする。
+# main に入ったら（または Infra が通ったら）、Cloud Run に自動でデプロイする。
+# 確かめは手元の pnpm verify で済ませてから main に入れる（.githooks/pre-push が、通っていない版を止める）。
 # 設定は infra/gcp.env（GCP_PROJECT_NUMBER が空なら何もしない）。
 # ログインは Terraform が作った連携とデプロイ用サービスアカウント（鍵ファイルなし）。
 on:
+  push:
+    branches: [main]
+    # docs だけの変更では出さない（入れ替えると対戦が切れるうえ、Actions の分数も使う）
+    paths-ignore: ["docs/**", "**/*.md"]
   workflow_run:
-    workflows: [CI, Infra]
+    workflows: [Infra]
     types: [completed]
     branches: [main]
   workflow_dispatch:
@@ -21,7 +26,7 @@ concurrency:
 jobs:
   deploy:
     if: >-
-      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     env:
       SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
@@ -29,12 +34,22 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ env.SHA }}
+          fetch-depth: 2
       - name: 設定を読む（infra/gcp.env）
         id: cfg
+        env:
+          EVENT: ${{ github.event_name }}
         run: |
           grep -E '^[A-Z_]+=' infra/gcp.env >> "$GITHUB_ENV"
           . infra/gcp.env
-          if [ -n "$GCP_PROJECT_NUMBER" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "GCP_PROJECT_NUMBER が未設定なので何もしません" >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -z "$GCP_PROJECT_NUMBER" ]; then
+            echo "GCP_PROJECT_NUMBER が未設定なので何もしません" >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$EVENT" = "push" ] && git diff --name-only HEAD^ HEAD | grep -qE '^infra/(terraform/|gcp\.env$)|^\.github/workflows/infra\.yml$'; then
+            # 同じ push で Infra も動く。GCP の設定が変わってから出したいので、Infra が通ったあとの呼び出しに任せる
+            echo "Infra が変わったので、Infra が通ってから出します" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
         if: steps.cfg.outputs.ok == 'true'
         with:
@@ -49,7 +64,7 @@ jobs:
           if ! CURRENT=$(gcloud run services describe trends-api --region "$GCP_REGION" --project "${GCP_PROJECT_ID}" --format 'value(spec.template.spec.containers[0].image)' 2>/dev/null); then
             echo "まだ Cloud Run がありません。Infra が終わると自動でもう一度動きます" >> "$GITHUB_STEP_SUMMARY"
           elif [[ "$CURRENT" == *":$SHA" ]]; then
-            # CI と Infra の両方から呼ばれるので、同じ版を二重にデプロイしない
+            # push・Infra・手動のどれからも呼ばれるので、同じ版を二重にデプロイしない
             echo "この版（$SHA）はデプロイ済みです" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "ok=true" >> "$GITHUB_OUTPUT"

@@ -11,3 +11,6 @@ __pycache__/
 apps/web/ios/
 apps/web/android/
 *.tsbuildinfo
+# Claude Code の作業机と個人の設定（.claude/settings.json は共有する）
+.claude/*
+!.claude/settings.json
