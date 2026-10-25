@@ -9,6 +9,7 @@ import {
   buzzLeft,
   castTargets,
   createGame,
+  damageCutOn,
   darkOmens,
   delayedDamageOn,
   effectiveCost,
@@ -1906,6 +1907,7 @@ describe("神属性の作り直し（10月24日。docs/design-god.md）", () => 
   it("盾：次の相手のターンの終わりまで、受けるダメージを1回ごとに5減らす。大きい一撃は差だけ通る", () => {
     let s = withFoe(["tate"], ["f", "big"]);
     s = go(s, { type: "cast", player: "p1", handIndex: 0 }).state;
+    expect(damageCutOn(s, "p1")).toBe(5);
     s = fin(s);
     for (const u of s.players.p2.field) if (u) Object.assign(u, { canAttack: true, attacksLeft: 1 });
     const lp = s.players.p1.lp;
@@ -1913,9 +1915,11 @@ describe("神属性の作り直し（10月24日。docs/design-god.md）", () => 
     expect(s.players.p1.lp).toBe(lp);
     s = go(s, { type: "attack", player: "p2", from: 1, target: { kind: "leader" } }).state;
     expect(s.players.p1.lp).toBe(lp - 1);
+    expect(damageCutOn(s, "p1")).toBe(5);
     // 相手のターンが終わったら消える
     s = fin(s, "p2");
     expect(s.turn > (s.players.p1.cutUntil ?? 0)).toBe(true);
+    expect(damageCutOn(s, "p1")).toBe(0);
   });
 
   it("雑学博士：手札でいちばんコストが高い神属性のカード1枚のコスト-1。出すと消える", () => {
