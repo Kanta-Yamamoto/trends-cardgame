@@ -585,6 +585,16 @@ describe("調停（『調停者』）", () => {
     expect(s.players.p1.field[0]?.cardId).toBe("judge");
     expect(s.players.p2.field[0]).toBeNull();
   });
+  it("裁きのダメージは出た直後に続けて出る。破壊されたキャラクターの【破壊されたとき】のダメージは、そのあと（画面の光線は前の分だけ）", () => {
+    const s = withFoe(["judge"], ["flare", "f"]);
+    const { state, events } = run(s, { type: "play", player: "p1", handIndex: 0, slot: 0 });
+    const types = events.map((e) => (e.type === "damaged" ? `damaged:${e.player}:${e.cardId}` : e.type));
+    expect(types.slice(0, 3)).toEqual(["played", "damaged:p2:flare", "destroyed"]);
+    // 炎上の 1 ダメージは『調停者』自身にも当たる（破壊はされない）
+    expect(types).toContain("damaged:p1:judge");
+    expect(types.indexOf("damaged:p1:judge")).toBeGreaterThan(types.indexOf("destroyed"));
+    expect(state.players.p1.field[0]?.damage).toBe(1);
+  });
 });
 
 describe("演出（『演出家』）", () => {

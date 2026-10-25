@@ -519,12 +519,13 @@ export function hasVisibleEffects(events: GameEvent[]) {
  * 呪文・登場時・ターンの始めと終わりの効果を見せる。
  * shown は今画面に出ている state（効果を受ける前の姿）。next はすべて終わったあとの state。
  * from は効果の出どころ（呪文なら画面の真ん中、登場なら出たキャラクター）。null なら飛ばさずに当たるだけ。
+ * skip のキャラクターは、別の演出で墓地へ送り終えているので送らない。
  */
 export async function animateEffects(
   shown: GameState,
   events: GameEvent[],
   next: GameState,
-  opts: { from: Point | HTMLElement | null; tint?: string },
+  opts: { from: Point | HTMLElement | null; tint?: string; skip?: ReadonlySet<number> },
 ): Promise<void> {
   if (!canAnimate() || reduced()) return;
   const source = opts.from instanceof HTMLElement ? center(opts.from.getBoundingClientRect()) : opts.from;
@@ -652,7 +653,7 @@ export async function animateEffects(
   await Promise.all(flights);
   // 当たったところを少し見せてから
   if (hits.length > 0) await wait(520);
-  retireUnits(shown, events, next);
+  retireUnits(shown, events, next, opts.skip);
   await wait(hits.length > 0 ? 460 : 0);
 }
 
@@ -689,6 +690,10 @@ export function retireUnits(
 /**
  * 『調停者』の裁き：『調停者』から対象へ光線で突き、当たった瞬間に時が止まる（fx/thrust.ts）。
  * 当たってから 0.5 秒後に、対象をふだんの消え方で墓地へ送る。arbiterUid は出た『調停者』
+ *
+ * 光線で突くのは、出た直後の裁きのダメージ（played のすぐあとに続く damaged）だけ。
+ * そのあとの出来事（裁かれたキャラクターの【破壊されたとき】のダメージなど）は、突きのあとにふだんの効果の見せ方で見せる。
+ * 炎上中のアイドルの「相手のキャラクターすべてに1ダメージ」が『調停者』自身にも当たり、自分を真下へ突いていたため
  */
 export async function animateJudge(
   shown: GameState,
@@ -698,10 +703,14 @@ export async function animateJudge(
 ): Promise<void> {
   if (!canAnimate() || reduced()) return;
   const board = q(".board");
-  const targets = events.flatMap((e) => {
+  const start = events.findIndex((e) => e.type === "played") + 1;
+  let end = start;
+  while (events[end]?.type === "damaged") end++;
+  const rest = events.slice(end);
+  const targets = events.slice(start, end).flatMap((e) => {
     if (e.type !== "damaged") return [];
     const u = shown.players[e.player].field[e.slot];
-    const el = u ? q(`[data-uid="${u.uid}"]`) : null;
+    const el = u && u.uid !== arbiterUid ? q(`[data-uid="${u.uid}"]`) : null;
     return u && el ? [{ el, uid: u.uid, owner: e.player }] : [];
   });
   if (!board || targets.length === 0) {
@@ -716,10 +725,14 @@ export async function animateJudge(
   await thrust(board, arbiter, targets, (uid) => {
     // その対象を、いつもの消え方で墓地へ（残る対象はそのまま）
     const t = targets.find((x) => x.uid === uid);
-    if (t && !alive.has(uid)) toTrash(t.el, t.owner);
+    if (t && !alive.has(uid)) {
+      toTrash(t.el, t.owner);
+      // 抜け殻が消えたあと、続きの効果を見せている間に元のカードが見えないように
+      t.el.style.visibility = "hidden";
+    }
   });
-  // 対象以外にいなくなるキャラクターがいれば、まとめて送る
-  retireUnits(shown, events, next, all);
+  // 続きの効果（【破壊されたとき】のダメージなど）を見せて、対象以外にいなくなるキャラクターをまとめて送る
+  await animateEffects(shown, rest, next, { from: null, skip: all });
   await wait(300);
 }
 
