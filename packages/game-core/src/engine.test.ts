@@ -1314,12 +1314,15 @@ describe("バズ（1試合2回・自分のキャラクター1体に+2/+2と突�
     });
   });
 
-  it("便乗：バズしたのが便乗を持つキャラクターなら、+2/+2 に便乗の +1/+1 も乗る", () => {
-    let s = atTurn(4, ["bin"]);
-    s = play(s, 0, 0);
-    s = buzz(s, 0).state;
-    const u = s.players.p1.field[0] as Unit;
-    expect([u.atkBuff, u.hpBuff]).toEqual([3, 3]);
+  it("便乗：バズしたキャラクター自身には乗らない（+2/+2 だけ）。ほかの便乗には乗る", () => {
+    let s = atTurn(4, ["bin", "bin"]);
+    s = play(play(s, 0, 0), 0, 1);
+    const r = buzz(s, 0);
+    s = r.state;
+    const [buzzed, other] = [s.players.p1.field[0] as Unit, s.players.p1.field[1] as Unit];
+    expect([buzzed.atkBuff, buzzed.hpBuff]).toEqual([2, 2]);
+    expect([other.atkBuff, other.hpBuff]).toEqual([1, 1]);
+    expect(r.events).not.toContainEqual(expect.objectContaining({ type: "buffed", player: "p1", slot: 0 }));
   });
 
   it("バズの強化は晒しで消える（強化として扱う）", () => {
