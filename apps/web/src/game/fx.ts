@@ -289,6 +289,44 @@ export function markBuzzed(uid: number) {
   }
 }
 
+/**
+ * 便乗：バズしたキャラクターから便乗のキャラクターへ光の玉が飛び、当たった瞬間に光って「便乗 +1/+1」を出し、
+ * 攻撃力・体力の数字をそこで上げる。state はもう進んでいるので、当たるまでは数字を元の値で見せておく
+ * （React が持つ文字のノードの値だけを変える。次に描き直されると正しい値に戻る）
+ */
+export function showRiding(
+  fromUid: number,
+  toUid: number,
+  add: { attack: number; hp: number },
+  delay: number,
+) {
+  const target = q(`[data-uid="${toUid}"]`);
+  if (!target || !canAnimate() || reduced()) return;
+  const atk = target.querySelector<HTMLElement>(".mini-atk");
+  const hp = target.querySelector<HTMLElement>(".mini-hp");
+  const shift = (el: HTMLElement | null, d: number) => {
+    const t = el?.firstChild;
+    if (t?.nodeType === Node.TEXT_NODE && d !== 0) t.nodeValue = String(Number(t.nodeValue) + d);
+  };
+  shift(atk, -add.attack);
+  shift(hp, -add.hp);
+  void (async () => {
+    await wait(delay);
+    const src = q(`[data-uid="${fromUid}"]`);
+    if (src)
+      await fly(center(src.getBoundingClientRect()), center(target.getBoundingClientRect()), "#ffd76a");
+    glow(target, "#ffd76a");
+    popLabel(target, `便乗 +${add.attack}/+${add.hp}`, "#ffd76a");
+    shift(atk, add.attack);
+    shift(hp, add.hp);
+    for (const el of [atk, hp])
+      el?.animate([{ transform: "scale(1.7)" }, { transform: "none" }], {
+        duration: 360,
+        easing: "ease-out",
+      });
+  })();
+}
+
 /** 突進の強化：攻撃するキャラクターを光らせて「+1/+1」を出し、攻撃力の数字を先に上げる。見せ終わってから突進する */
 async function showRushBoost(
   atk: HTMLElement | null,
@@ -488,6 +526,40 @@ function glow(el: HTMLElement | null, color: string) {
     ],
     { duration: 700, easing: "ease-out" },
   );
+}
+
+/**
+ * 効果でキャラクターを出す前の合図：出どころから、出す枠へ光の玉が飛び、枠に光が集まる。
+ * この Promise が終わってから、出たキャラクターを置く（出したカードと一緒に出すと、何の効果で出たか分からないため）
+ */
+export async function summonCue(
+  from: HTMLElement | Point | null,
+  slot: HTMLElement | null,
+  color: string,
+): Promise<void> {
+  if (!slot || !canAnimate() || reduced()) return;
+  const to = center(slot.getBoundingClientRect());
+  const source = from instanceof HTMLElement ? center(from.getBoundingClientRect()) : from;
+  if (source) await fly(source, to, color);
+  // 枠に光が集まる（大きな輪が、枠の大きさまで縮んで光る）
+  const ring = document.createElement("div");
+  ring.className = "fx-burst";
+  ring.style.left = `${to.x}px`;
+  ring.style.top = `${to.y}px`;
+  ring.style.setProperty("--c", color);
+  layer().appendChild(ring);
+  glow(slot, color);
+  await ring
+    .animate(
+      [
+        { transform: "translate(-50%,-50%) scale(2.2)", opacity: 0 },
+        { transform: "translate(-50%,-50%) scale(1.3)", opacity: 0.9, offset: 0.5 },
+        { transform: "translate(-50%,-50%) scale(0.5)", opacity: 0 },
+      ],
+      { duration: 360, easing: "cubic-bezier(.5,0,.8,.6)" },
+    )
+    .finished.catch(() => {});
+  ring.remove();
 }
 
 const STATUS_COLOR: Record<string, string> = {

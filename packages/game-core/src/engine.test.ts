@@ -1864,7 +1864,7 @@ describe("神属性の作り直し（10月24日。docs/design-god.md）", () => 
       ],
     }),
     tate: post("tate", 0, { token: true, effects: [{ do: "damageCut", amount: 5 }] }),
-    rai: post("rai", 0, { token: true, target: "enemyIcon", effects: [{ do: "damage", amount: 5 }] }),
+    rai: post("rai", 0, { token: true, effects: [{ do: "damage", to: "allEnemies", amount: 5 }] }),
     ten: post("ten", 0, { token: true, effects: [{ do: "damage", to: "enemyMaster", amount: 5 }] }),
     // ミコト：山札からガードを持つ神属性のキャラクターを1枚探す
     seek: icon("seek", 1, 2, 6, {
@@ -1894,6 +1894,13 @@ describe("神属性の作り直し（10月24日。docs/design-god.md）", () => 
     s = go(s, { type: "cast", player: "p1", handIndex: s.players.p1.hand.indexOf("ten") }).state;
     expect(s.players.p2.lp).toBe(lp - 5);
     expect(s.players.p1.trash).toContain("ten");
+  });
+
+  it("裁きの雷：相手のキャラクターすべてに5ダメージ", () => {
+    let s = withFoe(["rai"], ["f", "big"]);
+    s = go(s, { type: "cast", player: "p1", handIndex: 0 }).state;
+    expect(s.players.p2.field[0]).toBeNull();
+    expect(s.players.p2.field[1]?.damage).toBe(5);
   });
 
   it("盾：次の相手のターンの終わりまで、受けるダメージを1回ごとに5減らす。大きい一撃は差だけ通る", () => {

@@ -145,9 +145,16 @@ export interface Presenter {
   turnIntro: number;
   /**
    * 出す・呪文・ターン終了の効果を見せる（state を進める前）。
-   * shown は今画面に出ている state（出したキャラクターは場に置いた姿）、next は効果がすべて済んだ state
+   * shown は今画面に出ている state（出したキャラクターは場に置いた姿）、next は効果がすべて済んだ state。
+   * show で、途中の state を画面に出せる（効果で出たキャラクターを、合図のあとに1体ずつ置くため）
    */
-  resolveEffects?: (shown: GameState, action: Action, events: GameEvent[], next: GameState) => Promise<void>;
+  resolveEffects?: (
+    shown: GameState,
+    action: Action,
+    events: GameEvent[],
+    next: GameState,
+    show: (g: GameState) => void,
+  ) => Promise<void>;
   /** 相手がカードを出す・呪文を使う前に、そのカードを大きく見せる */
   revealFoe?: (
     game: GameState,
@@ -224,7 +231,7 @@ export const useGame = create<GameStore>((set, get) => {
   const present = async (game: GameState, a: Action, events: GameEvent[], next: GameState) => {
     const shown = isPlace(a) ? placedOnly(game, a, next) : game;
     if (shown !== game) set({ game: shown });
-    await presenter?.resolveEffects?.(shown, a, events, next);
+    await presenter?.resolveEffects?.(shown, a, events, next, (g) => set({ game: g }));
   };
 
   const drain = async () => {
