@@ -9,7 +9,7 @@
 - 画面も API と同じサーバーで配る（`apps/api/src/web.ts`）。同じ場所なので CORS も要らない
 - 使わないときは0台になる。少人数ならほぼ無料（Cloud Run の無料枠の範囲）
 - GCP の変更は GitHub Actions が Terraform で行う（`.github/workflows/infra.yml`）。鍵ファイルは使わない。設定（プロジェクト ID・番号・クライアント ID。どれも秘密ではない）は `infra/gcp.env`
-- main に入ると `.github/workflows/deploy.yml` が自動でデプロイする（1 回およそ 3 分）。10月25日から、確かめは手元の `pnpm verify` で済ませ、PR を作らずに `git push origin dev:main` で出す（[working-agreement.md](working-agreement.md)）。docs だけの変更ではデプロイも動かない（deploy.yml の `paths-ignore`）。Infra も変わった push では、Infra が通ってから出す
+- main に入ると `.github/workflows/deploy.yml` が自動でデプロイする（1 回およそ 3 分）。10月25日から、作業は手元の `pnpm verify` を通して `dev` に溜め、出すときは dev → main の PR を作って CI が通ったらマージする（[working-agreement.md](working-agreement.md)。main への直接の push はフックが止める）。docs だけの変更ではデプロイも動かない（deploy.yml の `paths-ignore`）。Infra も変わった push では、Infra が通ってから出す
 - ログインのトークンに署名する鍵は、アプリが初回起動時に作って DB に保存する（人は扱わない）
 
 ## 最初の1回だけの準備
