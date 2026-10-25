@@ -190,9 +190,33 @@ function burst(at: { x: number; y: number }, color: string) {
   ).onfinish = () => b.remove();
 }
 
-/** 破壊されたキャラクターの抜け殻を作り、トラッシュへ飛ばす（本体は React がすぐ消すため） */
-function toTrash(el: HTMLElement | null, owner: PlayerId, to: "trash" | "hand" = "trash") {
-  if (!el) return;
+/** 抜け殻を作った本体と、その抜け殻が消え終わるまでの Promise */
+const trashing = new WeakMap<HTMLElement, Promise<void>>();
+
+/**
+ * 破壊されたキャラクターの抜け殻を作り、トラッシュへ飛ばす（本体は React がすぐ消すため）。消え終わったら resolve する。
+ * 抜け殻を作った本体には印（data-trashed）を付け、二重に抜け殻を作らない（2回目は、1回目の消え終わりを返す）。
+ * hide なら本体を隠す（いなくなると決まっているとき。消え終わるのを待つ間に、本体が見えないように）
+ */
+function toTrash(
+  el: HTMLElement | null,
+  owner: PlayerId,
+  to: "trash" | "hand" = "trash",
+  hide = false,
+): Promise<void> {
+  if (!el) return Promise.resolve();
+  if (el.dataset.trashed) {
+    if (hide) el.style.visibility = "hidden";
+    return trashing.get(el) ?? Promise.resolve();
+  }
+  el.dataset.trashed = "1";
+  const done = ghostToTrash(el, owner, to);
+  trashing.set(el, done);
+  if (hide) el.style.visibility = "hidden";
+  return done;
+}
+
+function ghostToTrash(el: HTMLElement, owner: PlayerId, to: "trash" | "hand"): Promise<void> {
   const from = el.getBoundingClientRect();
   const pile = q(
     to === "hand" ? `[data-hand="${owner}"]` : `[data-pile="trash-${owner}"]`,
@@ -210,14 +234,11 @@ function toTrash(el: HTMLElement | null, owner: PlayerId, to: "trash" | "hand" =
   });
   layer().appendChild(ghost);
   // 墓地へ行くキャラクターは、黒く染まって溶けるように消える
-  if (to === "trash") {
-    void dissolve(ghost);
-    return;
-  }
+  if (to === "trash") return dissolve(ghost);
   const dx = pile ? center(pile).x - center(from).x : 0;
   const dy = pile ? center(pile).y - center(from).y : 40;
   const s = pile ? pile.width / from.width : 0.5;
-  ghost.animate(
+  const move = ghost.animate(
     [
       { transform: "none", filter: "grayscale(0) brightness(1)", opacity: 1 },
       {
@@ -233,7 +254,11 @@ function toTrash(el: HTMLElement | null, owner: PlayerId, to: "trash" | "hand" =
       },
     ],
     { duration: 620, easing: "cubic-bezier(.5,0,.7,1)" },
-  ).onfinish = () => ghost.remove();
+  );
+  return move.finished.then(
+    () => ghost.remove(),
+    () => ghost.remove(),
+  );
 }
 
 /**
@@ -348,8 +373,8 @@ export async function animateAttack(
   atkEl.style.zIndex = "";
 
   // 倒れるものはトラッシュへ
-  if (def && dv && dmg >= dv.hp && goesToTrash(def)) toTrash(defEl, foeId);
-  if (def && counter >= av.hp && goesToTrash(atk)) toTrash(atkEl, player);
+  if (def && dv && dmg >= dv.hp && goesToTrash(def)) void toTrash(defEl, foeId);
+  if (def && counter >= av.hp && goesToTrash(atk)) void toTrash(atkEl, player);
   await wait(60);
 }
 
@@ -675,7 +700,13 @@ export async function animateEffects(
   shown: GameState,
   events: GameEvent[],
   next: GameState,
-  opts: { from: Point | HTMLElement | null; tint?: string; skip?: ReadonlySet<number> },
+  opts: {
+    from: Point | HTMLElement | null;
+    tint?: string;
+    skip?: ReadonlySet<number>;
+    /** いなくなるキャラクターが消え終わるまで待つ（このあとに、効果で出るキャラクターを置くとき） */
+    untilGone?: boolean;
+  },
 ): Promise<void> {
   if (!canAnimate() || reduced()) return;
   const source = opts.from instanceof HTMLElement ? center(opts.from.getBoundingClientRect()) : opts.from;
@@ -819,21 +850,21 @@ export async function animateEffects(
   await Promise.all(flights);
   // 当たったところを少し見せてから
   if (hits.length > 0) await wait(520);
-  retireUnits(shown, events, next, opts.skip);
-  await wait(hits.length > 0 ? 460 : 0);
+  const gone = retireUnits(shown, events, next, opts.skip);
+  await (opts.untilGone ? gone : wait(hits.length > 0 ? 460 : 0));
 }
 
 /**
  * 場からいなくなるキャラクター（次の state にいないもの）を、墓地へ（手札に戻ったものは手札へ）飛ばす。
- * skip のキャラクターは、別の演出で消し終えているので飛ばさない
+ * skip のキャラクターは、別の演出で消し終えているので飛ばさない。すべて消え終わったら resolve する
  */
 export function retireUnits(
   shown: GameState,
   events: GameEvent[],
   next: GameState,
   skip?: ReadonlySet<number>,
-) {
-  if (!canAnimate() || reduced()) return;
+): Promise<void> {
+  if (!canAnimate() || reduced()) return Promise.resolve();
   // 手札に戻ったキャラクターは手札へ
   const bounced = new Set(
     events.flatMap((e) => {
@@ -845,12 +876,14 @@ export function retireUnits(
   const alive = new Set(
     (["p1", "p2"] as const).flatMap((p) => next.players[p].field.flatMap((u) => (u ? [u.uid] : []))),
   );
+  const gone: Promise<void>[] = [];
   for (const p of ["p1", "p2"] as const) {
     for (const u of shown.players[p].field) {
       if (u && !alive.has(u.uid) && !skip?.has(u.uid))
-        toTrash(q(`[data-uid="${u.uid}"]`), p, bounced.has(u.uid) ? "hand" : "trash");
+        gone.push(toTrash(q(`[data-uid="${u.uid}"]`), p, bounced.has(u.uid) ? "hand" : "trash", true));
     }
   }
+  return Promise.all(gone).then(() => {});
 }
 
 /**
@@ -858,7 +891,7 @@ export function retireUnits(
  * 当たってから 0.5 秒後に、対象をふだんの消え方で墓地へ送る。arbiterUid は出た『調停者』
  *
  * 光線で突くのは、出た直後の裁きのダメージ（played のすぐあとに続く damaged）だけ。
- * そのあとの出来事（裁かれたキャラクターの【破壊されたとき】のダメージなど）は、突きのあとにふだんの効果の見せ方で見せる。
+ * そのあとの出来事（裁かれたキャラクターの【破壊されたとき】のダメージなど）は、突きのあとにふだんの効果の見せ方（rest）で見せる。
  * 炎上中のアイドルの「相手のキャラクターすべてに1ダメージ」が『調停者』自身にも当たり、自分を真下へ突いていたため
  */
 export async function animateJudge(
@@ -866,13 +899,15 @@ export async function animateJudge(
   events: GameEvent[],
   next: GameState,
   arbiterUid?: number,
+  rest: (shown: GameState, events: GameEvent[], skip: ReadonlySet<number>) => Promise<void> = (g, ev, skip) =>
+    animateEffects(g, ev, next, { from: null, skip }),
 ): Promise<void> {
   if (!canAnimate() || reduced()) return;
   const board = q(".board");
   const start = events.findIndex((e) => e.type === "played") + 1;
   let end = start;
   while (events[end]?.type === "damaged") end++;
-  const rest = events.slice(end);
+  const after = events.slice(end);
   const targets = events.slice(start, end).flatMap((e) => {
     if (e.type !== "damaged") return [];
     const u = shown.players[e.player].field[e.slot];
@@ -880,7 +915,7 @@ export async function animateJudge(
     return u && el ? [{ el, uid: u.uid, owner: e.player }] : [];
   });
   if (!board || targets.length === 0) {
-    retireUnits(shown, events, next);
+    void retireUnits(shown, events, next);
     return;
   }
   const arbiter = arbiterUid !== undefined ? q(`[data-uid="${arbiterUid}"]`) : null;
@@ -892,13 +927,12 @@ export async function animateJudge(
     // その対象を、いつもの消え方で墓地へ（残る対象はそのまま）
     const t = targets.find((x) => x.uid === uid);
     if (t && !alive.has(uid)) {
-      toTrash(t.el, t.owner);
-      // 抜け殻が消えたあと、続きの効果を見せている間に元のカードが見えないように
-      t.el.style.visibility = "hidden";
+      // 抜け殻が消えたあと、続きの効果を見せている間に元のカードが見えないように隠す
+      void toTrash(t.el, t.owner, "trash", true);
     }
   });
   // 続きの効果（【破壊されたとき】のダメージなど）を見せて、対象以外にいなくなるキャラクターをまとめて送る
-  await animateEffects(shown, rest, next, { from: null, skip: all });
+  await rest(shown, after, all);
   await wait(300);
 }
 
@@ -924,7 +958,7 @@ export async function animateSacrifice(
   if (!board || targets.length === 0) return false;
   await blackFlash(board, targets, (uid) => {
     const t = targets.find((x) => x.uid === uid);
-    if (t) toTrash(t.el, t.owner);
+    if (t) void toTrash(t.el, t.owner);
   });
   return true;
 }

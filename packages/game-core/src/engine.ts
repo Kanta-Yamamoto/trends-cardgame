@@ -574,8 +574,8 @@ function resolveDeaths(
         destroyed.push(u.cardId);
         emit(
           vanished
-            ? { type: "destroyed", player: owner, cardId: u.cardId, vanished: true }
-            : { type: "destroyed", player: owner, cardId: u.cardId },
+            ? { type: "destroyed", player: owner, cardId: u.cardId, slot, vanished: true }
+            : { type: "destroyed", player: owner, cardId: u.cardId, slot },
         );
         // 闇堕ちを持つカードが元の姿で破壊されたら、闇の気配（次の自分のターンの始めに闇堕ちして戻る）
         if (!u.token && !u.dark && catalog[u.cardId]?.dark) {

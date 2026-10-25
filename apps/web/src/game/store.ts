@@ -216,9 +216,16 @@ async function showDarkFalls(events: GameEvent[]) {
   for (const e of events)
     if (e.type === "darkFall" && presenter?.darkFall) await presenter.darkFall(e.cardId, e.player);
 }
-/** 演出を見せてから state を進める操作（差し出しは、選ばれたキャラクターが糸で引き抜かれるのを見せる） */
-const hasEffects = (a: Action) =>
-  isPlace(a) || a.type === "cast" || a.type === "endTurn" || a.type === "sacrifice";
+/**
+ * 演出を見せてから state を進める操作（差し出しは、選ばれたキャラクターが糸で引き抜かれるのを見せる）。
+ * 攻撃は、倒れたキャラクターの【破壊されたとき】などでキャラクターが出るときだけ（倒れて消えてから出すため）
+ */
+const hasEffects = (a: Action, events: GameEvent[]) =>
+  isPlace(a) ||
+  a.type === "cast" ||
+  a.type === "endTurn" ||
+  a.type === "sacrifice" ||
+  (a.type === "attack" && events.some((e) => e.type === "summoned"));
 
 export const useGame = create<GameStore>((set, get) => {
   const appendLog = (events: GameEvent[], fx = false) => {
@@ -267,7 +274,7 @@ export const useGame = create<GameStore>((set, get) => {
           if (my !== runId) break;
         }
       }
-      if (hasEffects(a) && presenter?.resolveEffects && g) {
+      if (hasEffects(a, u.events) && presenter?.resolveEffects && g) {
         set({ animating: true });
         await present(g, a, u.events, u.state);
         if (my !== runId) break;
@@ -317,7 +324,7 @@ export const useGame = create<GameStore>((set, get) => {
    */
   const commit = (a: Action): boolean | Promise<boolean> => {
     const game = get().game;
-    if (!game || get().mode === "online" || !presenter?.resolveEffects || !hasEffects(a)) return dispatch(a);
+    if (!game || get().mode === "online" || !presenter?.resolveEffects) return dispatch(a);
     let res: ReturnType<typeof applyAction>;
     try {
       res = applyAction(game, a, CATALOG);
@@ -329,6 +336,7 @@ export const useGame = create<GameStore>((set, get) => {
       throw e;
     }
     const { state, events } = res;
+    if (!hasEffects(a, events)) return dispatch(a);
     const my = runId;
     set({ animating: true, selection: null, error: null });
     return showDarkFalls(events)
@@ -516,8 +524,9 @@ export const useGame = create<GameStore>((set, get) => {
       set({ animating: true, selection: null });
       presenter.beforeAttack(game, a).then(() => {
         if (my !== runId) return;
-        dispatch(a);
-        set({ animating: false });
+        then(commit(a), () => {
+          if (my === runId) set({ animating: false });
+        });
       });
     },
     buzz: (slot) => {

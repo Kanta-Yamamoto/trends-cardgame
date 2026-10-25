@@ -88,35 +88,103 @@ const SLOT_KEYS = Array.from({ length: SLOTS }, (_, i) => `slot-${i}`);
 const nameOf = (id: string) => CATALOG[id]?.name ?? id;
 const who = (p: string) => (p === ME ? "あなた" : useGame.getState().foeName);
 
+type Point = { x: number; y: number };
+
+/** その出来事で場からいなくなったキャラクター（破壊・手札に戻る・差し出し）を、cur から除いた state */
+function withoutGone(cur: GameState, events: GameEvent[], alive: ReadonlySet<number>): GameState {
+  let out = cur;
+  for (const e of events) {
+    if (e.type !== "destroyed" && e.type !== "bounced" && e.type !== "sacrificed") continue;
+    const p = out.players[e.player];
+    const u = p.field[e.slot];
+    if (!u || alive.has(u.uid)) continue;
+    out = {
+      ...out,
+      players: {
+        ...out.players,
+        [e.player]: { ...p, field: p.field.map((x, i) => (i === e.slot ? null : x)) },
+      },
+    };
+  }
+  return out;
+}
+
+/** そのカードが【破壊されたとき】に出すキャラクターの数（闇の姿の効果も見る） */
+const summonsOnDeath = (from: string) => {
+  const c = CATALOG[from];
+  return [...(c?.effects ?? []), ...(c?.dark?.effects ?? [])].reduce(
+    (n, f) => (f.on === "death" && f.do === "summon" ? n + (f.sides ? 2 : f.count) : n),
+    0,
+  );
+};
+
 /**
- * 効果で出たキャラクター（summoned）を、出す枠への合図（summonCue）のあとに1体ずつ置いていく。
- * 出したカードと同時に出すと、何の効果で出たのか分からないため。置き終えた state を返す
+ * 出来事を、効果でキャラクターが出たところ（summoned）で区切って、前から順に見せる。
+ * 区切りの前の出来事（出たこと・効果が当たる・破壊されたキャラクターが消える）を見せ終えてから、
+ * 出す枠への合図（summonCue）のあとに、出たキャラクターを1体ずつ置く。
+ * だから【場に出たとき】に出すものは出したキャラクターの着地のあと、【破壊されたとき】に出すものは破壊されて消えたあとに出る。
+ * 合図は from（効果の出どころ）から飛ばし、【破壊されたとき】に出すものは、破壊されたキャラクターがいた所から飛ばす。
+ * 見せ終えた state を返す
  */
-async function revealSummons(
+async function presentPhased(
   shown: GameState,
   events: GameEvent[],
   next: GameState,
-  from: HTMLElement | { x: number; y: number } | null,
-  tint: string | undefined,
+  opts: { from: HTMLElement | Point | null; tint?: string; skip?: ReadonlySet<number> },
   show: (g: GameState) => void,
 ): Promise<GameState> {
+  const alive = new Set(
+    (["p1", "p2"] as const).flatMap((p) => next.players[p].field.flatMap((u) => (u ? [u.uid] : []))),
+  );
   let cur = shown;
-  for (const e of events) {
-    if (e.type !== "summoned") continue;
+  // 直前に破壊されたキャラクターのいた所と、【破壊されたとき】に出す残りの数（合図の出どころ。破壊された順に出る）
+  let fell: { player: PlayerId; left: number; at: Point }[] = [];
+  let i = 0;
+  while (i < events.length) {
+    if (events[i]?.type !== "summoned") {
+      let j = i;
+      while (j < events.length && events[j]?.type !== "summoned") j++;
+      const part = events.slice(i, j);
+      const after = withoutGone(cur, part, alive);
+      fell = part.flatMap((e) => {
+        if (e.type !== "destroyed") return [];
+        const left = summonsOnDeath(e.cardId);
+        const u = cur.players[e.player].field[e.slot];
+        const el = u ? document.querySelector<HTMLElement>(`[data-uid="${u.uid}"]`) : null;
+        if (!el || left === 0) return [];
+        const r = el.getBoundingClientRect();
+        return [{ player: e.player, left, at: { x: r.left + r.width / 2, y: r.top + r.height / 2 } }];
+      });
+      const more = j < events.length;
+      if (hasVisibleEffects(part)) await animateEffects(cur, part, after, { ...opts, untilGone: more });
+      else if (more) await retireUnits(cur, part, after, opts.skip);
+      else void retireUnits(cur, part, after, opts.skip);
+      // このあとにキャラクターが出るなら、いなくなったキャラクターを画面から除いて、空いた枠を見せる
+      if (more && after !== cur) {
+        cur = after;
+        show(cur);
+        await gwait(120);
+      }
+      i = j;
+      continue;
+    }
+    const e = events[i++] as Extract<GameEvent, { type: "summoned" }>;
     const unit = next.players[e.player].field[e.slot];
     // 同じ操作のうちに倒れたなど、最後の state にいないものは置かない（あとの演出に任せる）
     if (!unit || unit.cardId !== e.cardId || cur.players[e.player].field[e.slot]) continue;
+    const source = fell.find((f) => f.player === e.player && f.left > 0);
+    if (source) source.left--;
     await summonCue(
-      from,
+      source?.at ?? opts.from,
       document.querySelector<HTMLElement>(`[data-slot="${e.player}:${e.slot}"]`),
-      tint ?? "#fff3c4",
+      opts.tint ?? "#fff3c4",
     );
     const p = cur.players[e.player];
     cur = {
       ...cur,
       players: {
         ...cur.players,
-        [e.player]: { ...p, field: p.field.map((u, i) => (i === e.slot ? unit : u)) },
+        [e.player]: { ...p, field: p.field.map((u, k) => (k === e.slot ? unit : u)) },
       },
     };
     show(cur);
@@ -1069,8 +1137,13 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           }
           const f = frameRect();
           const from = { x: f.left + f.width / 2, y: f.top + f.height / 2 };
-          shown = await revealSummons(shown, events, next, from, tint, show);
-          if (visible) await animateEffects(shown, events, next, { from, tint });
+          await presentPhased(shown, events, next, { from, tint }, show);
+        } else if (a.type === "attack") {
+          // 攻撃で倒れて、【破壊されたとき】にキャラクターが出るとき（攻撃の演出は beforeAttack で見せ終えている）。
+          // 倒れたキャラクターが消え終わってから出す
+          const atk = shown.players[a.player].field[a.from];
+          const from = atk ? document.querySelector<HTMLElement>(`[data-uid="${atk.uid}"]`) : null;
+          await presentPhased(shown, events, next, { from, tint: undefined }, show);
         } else if (a.type === "play") {
           const does = (x: string) => !!card?.effects.some((f) => f.do === x);
           const uid = next.players[a.player].field[a.slot]?.uid;
@@ -1102,7 +1175,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             await touch();
             const id = Date.now();
             setArbiter({ id, leaving: false });
-            await animateJudge(shown, events, next, uid);
+            await animateJudge(shown, events, next, uid, async (g, rest) => {
+              await presentPhased(g, rest, next, { from: null }, show);
+            });
             setArbiter((x) => (x?.id === id ? { id, leaving: true } : x));
             return;
           }
@@ -1153,13 +1228,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             return;
           }
           // 効果でキャラクター（トークンなど）を出すなら、出したキャラクターが着地してから、1体ずつ時間差で出す
-          if (events.some((e) => e.type === "summoned")) {
-            await touch();
-            shown = await revealSummons(shown, events, next, self(), tint, show);
-          }
-          if (!visible) return;
-          await wait(560); // 出たキャラクターが場に着いて弾むのを待ってから、効果を出す
-          await animateEffects(shown, events, next, { from: self(), tint });
+          const summons = events.some((e) => e.type === "summoned");
+          if (!visible && !summons) return;
+          if (summons) await touch();
+          else await wait(560); // 出たキャラクターが場に着いて弾むのを待ってから、効果を出す
+          await presentPhased(shown, events, next, { from: self(), tint }, show);
         } else if (a.type === "sacrifice") {
           // 差し出しが決まった：選ばれたキャラクターを、真上で溜めた黒い閃光で貫く（黒い場はターンが終わるまで残す）
           const uids = events.flatMap((e) =>
@@ -1183,10 +1256,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                 },
               }
             : shown;
-          if (visible) await animateEffects(left, events, next, { from: null });
-          else retireUnits(left, events, next);
-        } else if (visible) {
-          await animateEffects(shown, events, next, { from: null });
+          await presentPhased(left, events, next, { from: null }, show);
+        } else {
+          await presentPhased(shown, events, next, { from: null }, show);
         }
       },
       buzz: (g, a) => {
