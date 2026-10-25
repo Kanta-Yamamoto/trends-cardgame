@@ -289,6 +289,44 @@ export function markBuzzed(uid: number) {
   }
 }
 
+/**
+ * 便乗：バズしたキャラクターから便乗のキャラクターへ光の玉が飛び、当たった瞬間に光って「便乗 +1/+1」を出し、
+ * 攻撃力・体力の数字をそこで上げる。state はもう進んでいるので、当たるまでは数字を元の値で見せておく
+ * （React が持つ文字のノードの値だけを変える。次に描き直されると正しい値に戻る）
+ */
+export function showRiding(
+  fromUid: number,
+  toUid: number,
+  add: { attack: number; hp: number },
+  delay: number,
+) {
+  const target = q(`[data-uid="${toUid}"]`);
+  if (!target || !canAnimate() || reduced()) return;
+  const atk = target.querySelector<HTMLElement>(".mini-atk");
+  const hp = target.querySelector<HTMLElement>(".mini-hp");
+  const shift = (el: HTMLElement | null, d: number) => {
+    const t = el?.firstChild;
+    if (t?.nodeType === Node.TEXT_NODE && d !== 0) t.nodeValue = String(Number(t.nodeValue) + d);
+  };
+  shift(atk, -add.attack);
+  shift(hp, -add.hp);
+  void (async () => {
+    await wait(delay);
+    const src = q(`[data-uid="${fromUid}"]`);
+    if (src)
+      await fly(center(src.getBoundingClientRect()), center(target.getBoundingClientRect()), "#ffd76a");
+    glow(target, "#ffd76a");
+    popLabel(target, `便乗 +${add.attack}/+${add.hp}`, "#ffd76a");
+    shift(atk, add.attack);
+    shift(hp, add.hp);
+    for (const el of [atk, hp])
+      el?.animate([{ transform: "scale(1.7)" }, { transform: "none" }], {
+        duration: 360,
+        easing: "ease-out",
+      });
+  })();
+}
+
 /** 突進の強化：攻撃するキャラクターを光らせて「+1/+1」を出し、攻撃力の数字を先に上げる。見せ終わってから突進する */
 async function showRushBoost(
   atk: HTMLElement | null,

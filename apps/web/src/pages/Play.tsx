@@ -69,6 +69,7 @@ import {
   popDamage,
   popMaster,
   retireUnits,
+  showRiding,
   summonCue,
 } from "../game/fx";
 import { MiniCard } from "../game/MiniCard";
@@ -1193,6 +1194,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     const g = useGame.getState().game;
     const uidAt = (p: PlayerId, slot: number) => g?.players[p].field[slot]?.uid;
     let t = 0;
+    // この中でバズしたキャラクター（続く buffed は便乗）と、便乗を見せた数
+    let buzzUid: number | undefined;
+    let riders = 0;
     for (const { id, e, fx } of fresh) {
       // 効果の演出で見せ終わった数字は出さない
       if (fx && (e.type === "damaged" || e.type === "leaderDamaged" || e.type === "leaderHealed")) continue;
@@ -1223,6 +1227,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         // バズで数字が変わった瞬間に、攻撃力・体力の丸を軽く弾ませる
         const uid = uidAt(e.player, e.slot);
         if (uid) setTimeout(() => markBuzzed(uid), t);
+        buzzUid = uid;
+      } else if (e.type === "buffed" && !fx && buzzUid !== undefined) {
+        // 便乗：バズしたキャラクターの数字が変わったあとに、便乗のキャラクターへ1体ずつ光を飛ばして数字を上げる
+        const uid = uidAt(e.player, e.slot);
+        if (uid) showRiding(buzzUid, uid, e, t + 320 + riders++ * 240);
       } else if (e.type === "darkFall" || e.type === "restored") {
         const uid = uidAt(e.player, e.slot);
         if (uid) setTimeout(() => flipCard(uid, e.type === "darkFall" ? "dark" : "restore"), t + 80);
