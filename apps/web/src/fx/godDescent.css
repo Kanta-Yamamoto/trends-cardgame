@@ -1,0 +1,94 @@
+/* ネ申の降臨（fx/godDescent.ts）。場の後ろの層は .god-field、画面座標の層は .god-over */
+.god-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+.god-field > * {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.gd-veil {
+  background: #04060e;
+  opacity: 0;
+}
+/* 神の場：白金（中心が白、ふちが金。神の絵の雲と光に近い） */
+.gd-ground {
+  opacity: 0;
+  background: radial-gradient(
+    125% 80% at var(--gx, 50%) var(--gy, 46%),
+    #fffdf5 0%,
+    #fbf0cf 30%,
+    #ead08c 60%,
+    #a8842f 100%
+  );
+}
+.gd-tex {
+  opacity: 0;
+  inset: -30%;
+  background: repeating-conic-gradient(
+    from 0deg at var(--gx, 50%) var(--gy, 46%),
+    #ffffff3a 0deg 3deg,
+    #ffffff00 3deg 11deg
+  );
+  mask-image: radial-gradient(60% 45% at var(--gx, 50%) var(--gy, 46%), #000 20%, transparent 75%);
+  -webkit-mask-image: radial-gradient(60% 45% at var(--gx, 50%) var(--gy, 46%), #000 20%, transparent 75%);
+}
+
+.god-over {
+  pointer-events: none;
+}
+.gd-over {
+  position: absolute;
+  pointer-events: none;
+  overflow: hidden;
+}
+.gd-over-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+}
+.gd-backdrop {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  z-index: 0;
+  background: radial-gradient(70% 34% at 50% var(--gd-up, 40%), #05080ed9, #05080e66 70%, transparent);
+}
+/* 神の場（白金）の上でも、プレイヤーの帯の文字が読めるように */
+.board.field-god .pb-main {
+  background: #0d1222e6;
+}
+.gd-flash {
+  position: absolute;
+  inset: 0;
+  background: #fffdf4;
+  opacity: 0;
+  z-index: 3;
+}
+/* 大きく見せる、手札に加えるカード */
+.gd-gift {
+  position: absolute;
+  z-index: 1;
+  opacity: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+.gd-gift .holo {
+  width: 100%;
+}
+.gd-sheen {
+  position: absolute;
+  inset: -20% -60%;
+  background: linear-gradient(105deg, #fff0 40%, #fffbe8cc 50%, #fff0 60%);
+  transform: translateX(-120%);
+  pointer-events: none;
+  z-index: 2;
+}

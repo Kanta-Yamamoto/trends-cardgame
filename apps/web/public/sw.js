@@ -6,7 +6,7 @@
  * - API・ログイン・オンライン対戦（Socket.IO）：いつもネット（保存しない）
  * 中身を変えたら VERSION を上げる（古い保存は消える）。今ある絵を同じ名前で差し替えたときも上げる（すぐ届くように）
  */
-const VERSION = "v7";
+const VERSION = "v8";
 const PAGES = `trends-pages-${VERSION}`;
 const BUILD = `trends-build-${VERSION}`;
 const ART = `trends-art-${VERSION}`;

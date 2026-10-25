@@ -365,7 +365,8 @@
     ],
     "effect": "注目。自分のターンの終わりに、このキャラクターがセンターにいれば、カードを1枚引く。",
     "art": "/assets/cards/m2-art.jpg",
-    "original": "assets/original/m2.webp"
+    "original": "assets/original/m2.webp",
+    "subject": "/assets/cards/m2-subject.webp"
   },
   {
     "id": "m3",

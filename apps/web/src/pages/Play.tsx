@@ -9,6 +9,7 @@ import {
   canUnitAttack,
   castTargets,
   DEFAULT_CONFIG,
+  damageCutOn,
   darkOmens,
   delayedDamageOn,
   effectiveCost,
@@ -40,6 +41,7 @@ import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { frameRect, frameSize } from "../frame";
 import { fieldEntry, landed } from "../fx/fieldEntry";
+import { GOD_DESCENT_CARDS, godDescent } from "../fx/godDescent";
 import { fxEnabled } from "../fx/stage";
 import { warmFx } from "../fx/warm";
 import { ArbiterField } from "../game/ArbiterField";
@@ -900,6 +902,14 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [director, setDirector] = useState<{ id: number; aces: StagedAce[] } | null>(null);
   /** 『演出家』で舞台に上がるエース。ふつうの着地の代わりに、血の滴とクラウンで見せる（DirectorField が動かす） */
   const stagedAces = useRef(new Set<number>());
+  /** ネ申の降臨：手札に加えるカード（画面の真ん中に大きく見せる）。場の後ろの層と画面座標の層を出す */
+  const [god, setGod] = useState<{ id: number; gifts: string[] } | null>(null);
+  const godField = useRef<HTMLDivElement>(null);
+  const godOver = useRef<HTMLDivElement>(null);
+  /** 降臨で場に出る神。ふつうの着地の代わりに、godDescent が見せる */
+  const descending = useRef(new Set<number>());
+  /** 降臨で神から手札へ飛ばし終えたカードの数。山札から引く演出を出さない */
+  const handedOver = useRef(0);
   const [trashView, setTrashView] = useState<PlayerId | null>(null);
   /** 対戦の記録（縦の舞台では下から出る一覧） */
   const [logOpen, setLogOpen] = useState(false);
@@ -1015,14 +1025,26 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         // プレイヤーへの攻撃は、当たった瞬間にライフの表示を減らす（演出のあとでもう一度減ったように見せない）
         const foeId: PlayerId = a.player === ME ? CPU : ME;
         let lp: number | undefined;
+        let leaderHit: { dealt: number; blocked: boolean } | undefined;
         if (a.target.kind === "leader") {
           try {
-            lp = applyAction(g, a, CATALOG).state.players[foeId].lp;
+            const res = applyAction(g, a, CATALOG);
+            lp = res.state.players[foeId].lp;
+            // 守り（盾・無敵）に当たったら、攻撃力ではなく実際に通ったダメージを出す（止めたら金の 0）
+            const blocked = res.events.some(
+              (e) => e.type === "shield" && e.kind === "blocked" && e.player === foeId,
+            );
+            const dealt = res.events.reduce(
+              (n, e) => (e.type === "leaderDamaged" && e.player === foeId ? n + e.amount : n),
+              0,
+            );
+            leaderHit = { dealt, blocked };
           } catch {
             lp = undefined;
           }
         }
         return animateAttack(g, a.player, a.from, a.target, CATALOG, {
+          leaderHit,
           onImpact: () => {
             if (lp === undefined || lp === g.players[foeId].lp) return;
             hitShown.current = { player: foeId, lp };
@@ -1087,6 +1109,49 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           // 出たキャラクターの要素（画面に描かれてから探す）
           const self = () =>
             uid !== undefined ? document.querySelector<HTMLElement>(`[data-uid="${uid}"]`) : null;
+          if (card && uid !== undefined && GOD_DESCENT_CARDS.has(card.id) && fxEnabled()) {
+            // ネ申：ふつうの着地の代わりに降臨を見せ、手札に加えるカードは山札からではなく神から出す。
+            // 描かれる前に印を付けて、着地の演出を止めておく（この行より前に await を置かない）
+            descending.current.add(uid);
+            const gifts = events.flatMap((e) =>
+              e.type === "drew" && e.player === a.player ? [e.cardId] : [],
+            );
+            setGod({ id: Date.now(), gifts });
+            await gwait(50);
+            const unitEl = self();
+            const field = godField.current;
+            const over = godOver.current;
+            let cur = shown;
+            if (unitEl && field && over) {
+              handedOver.current += gifts.length;
+              await godDescent({
+                unit: unitEl,
+                field,
+                over,
+                gifts: [...over.querySelectorAll<HTMLElement>(".gd-gift")],
+                mine: a.player === ME,
+                toHand: async (i) => {
+                  const id = gifts[i];
+                  if (!id) return null;
+                  const p = cur.players[a.player];
+                  cur = { ...cur, players: { ...cur.players, [a.player]: { ...p, hand: [...p.hand, id] } } };
+                  show(cur);
+                  await gwait(20);
+                  if (a.player !== ME) return document.querySelector<HTMLElement>(`[data-hand="${CPU}"]`);
+                  const cards = document.querySelectorAll<HTMLElement>(
+                    `[data-hand="${ME}"] [data-hand-card]`,
+                  );
+                  const el = cards[cards.length - 1] ?? null;
+                  if (el) el.style.opacity = "0";
+                  return el;
+                },
+              });
+            }
+            descending.current.delete(uid);
+            setGod(null);
+            if (visible) await animateEffects(cur, events, next, { from: self(), tint });
+            return;
+          }
           // 効果でキャラクター（トークンなど）を出すなら、出したキャラクターが着地してから、1体ずつ時間差で出す
           if (events.some((e) => e.type === "summoned")) {
             await touch();
@@ -1175,8 +1240,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     for (const u of fresh) {
       const card = CATALOG[u.cardId];
       const el = document.querySelector<HTMLElement>(`[data-uid="${u.uid}"]`);
-      if (stagedAces.current.delete(u.uid)) {
-        // 『演出家』で上がるエースは、描かれる前に隠して、血の滴とクラウンに任せる
+      if (stagedAces.current.delete(u.uid) || descending.current.has(u.uid)) {
+        // 『演出家』で上がるエース・降臨するネ申は、描かれる前に隠して、それぞれの演出に任せる
         if (el) el.style.opacity = "0";
       } else if (card) fieldEntry(el, card);
     }
@@ -1206,6 +1271,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         setBanner({ id, mine: e.player === ME, turn: e.turn });
         t += 950;
       } else if (e.type === "drew") {
+        // ネ申の降臨で、神から手札へ飛ばし終えたカード
+        if (fx && handedOver.current > 0) {
+          handedOver.current--;
+          continue;
+        }
         void animateDraw(e.player, t);
         t += 180;
       } else if (e.type === "leaderHealed") {
@@ -1413,6 +1483,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       active={game.active === CPU}
       guarded={foeGuarded}
       shielded={isShielded(game, CPU)}
+      cut={damageCutOn(game, CPU)}
       delayed={delayedDamageOn(game, CPU)}
       targetable={attacking && canHit({ kind: "leader" })}
       dropOver={drag?.over === "leader" && attacking && canHit({ kind: "leader" })}
@@ -1433,6 +1504,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       buzz={me.buzzLeft ?? 0}
       active={game.active === ME}
       shielded={isShielded(game, ME)}
+      cut={damageCutOn(game, ME)}
       delayed={delayedDamageOn(game, ME)}
       piles={<Piles owner={ME} deck={me.deck.length} trash={me.trash} onTrash={() => setTrashView(ME)} />}
       clock={online && myClock && !game.winner ? <ClockChip left={myClock} mine /> : null}
@@ -1556,7 +1628,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     if (selection) select(null);
   };
   const field = fieldOf(game, CATALOG);
-  const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}${director !== null ? " field-director" : ""}${arbiter ? " field-arbiter" : ""}${fixer ? " field-fixer" : ""}${sacGuide ? " sac-mode" : ""}`;
+  const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}${director !== null ? " field-director" : ""}${arbiter ? " field-arbiter" : ""}${fixer ? " field-fixer" : ""}${god ? " field-god" : ""}${sacGuide ? " sac-mode" : ""}`;
   const fieldLayer = field ? <FieldLayer kind={field.kind} mine={field.owner === ME} /> : null;
 
   return (
@@ -1586,6 +1658,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             <ArbiterField key={arbiter.id} leaving={arbiter.leaving} onDone={() => setArbiter(null)} />
           )}
           {fixer && <FixerField key={fixer.id} ref={fixerApi} onDone={() => setFixer(null)} />}
+          {god && <div key={god.id} className="god-field" ref={godField} aria-hidden="true" />}
           <div className="ptop">
             {quitBtn}
             {turnPill}
@@ -1666,6 +1739,22 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
               閉じる
             </button>
           </div>
+        </div>
+      )}
+
+      {god && (
+        // ネ申の降臨：光の玉・閃光と、手札に加えるカード（画面座標で置く。動きは fx/godDescent.ts）
+        <div key={god.id} className="vp-layer god-over" ref={godOver} aria-hidden="true">
+          {god.gifts.map((id, i) => {
+            const card = CATALOG[id];
+            return card ? (
+              // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが並ぶこともあり、並びの位置そのものが目印
+              <div key={i} className="gd-gift">
+                <HoloCard card={card} idle={false} />
+                <i className="gd-sheen" />
+              </div>
+            ) : null;
+          })}
         </div>
       )}
 
@@ -2051,6 +2140,8 @@ interface BarProps {
   guarded?: boolean;
   /** プレイヤーが守られていて、ダメージを受けない */
   shielded?: boolean;
+  /** 盾：受けるダメージを1回ごとに減らす数（0 なら無し）。帯の表面に金の膜を張る */
+  cut?: number;
   /** このプレイヤーに付いている「次の自分のターンの終わりに受けるダメージ」（0 なら無し） */
   delayed?: number;
   targetable?: boolean;
@@ -2109,6 +2200,7 @@ function PlayerBar({
   active,
   guarded,
   shielded,
+  cut = 0,
   delayed = 0,
   targetable,
   dropOver,
@@ -2128,6 +2220,7 @@ function PlayerBar({
         {active && <i className="turn-dot" title="この人のターン" />}
         {guarded && <span className="pb-guard">ガードで守られている</span>}
         {shielded && <span className="pb-shield">無敵（次の相手のターンまで）</span>}
+        {cut > 0 && <span className="pb-cut">ダメージ-{cut}</span>}
         {delayed > 0 && <span className="pb-delayed">ターンの終わりに{delayed}ダメージ</span>}
         {clock}
       </span>
@@ -2161,6 +2254,7 @@ function PlayerBar({
         )}
       </span>
       {preview && <AttackBadge pv={preview} leader />}
+      {cut > 0 && <i className="pb-film" aria-hidden="true" />}
     </>
   );
   return (

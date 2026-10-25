@@ -386,6 +386,12 @@ export function isShielded(state: GameState, player: PlayerId): boolean {
   return state.turn <= (state.players[player].shieldUntil ?? 0);
 }
 
+/** 盾：プレイヤーが受けるダメージを1回ごとに減らす数（効いていなければ 0） */
+export function damageCutOn(state: GameState, player: PlayerId): number {
+  const p = state.players[player];
+  return state.turn <= (p.cutUntil ?? 0) ? (p.cutAmount ?? 0) : 0;
+}
+
 function damageLeader(state: GameState, player: PlayerId, amount: number, emit: Emit) {
   const p = state.players[player];
   if (amount <= 0) return;
@@ -394,7 +400,7 @@ function damageLeader(state: GameState, player: PlayerId, amount: number, emit: 
     return;
   }
   // 盾：1回ごとに決まった数だけ減らす
-  if (state.turn <= (p.cutUntil ?? 0) && (p.cutAmount ?? 0) > 0) {
+  if (damageCutOn(state, player) > 0) {
     const cut = Math.min(amount, p.cutAmount ?? 0);
     emit({ type: "shield", player, kind: "blocked", amount: cut });
     amount -= cut;

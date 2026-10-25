@@ -753,6 +753,29 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 /* マスターに付いた時間差のダメージ（ミコト）：神の金と白 */
 .pb-delayed { margin-left: 6px; font-size: 10.5px; padding: 1px 6px; border-radius: 999px; color: #3a2a00; background: linear-gradient(90deg, #fff6d6, #f2c94c); font-weight: 800; box-shadow: 0 0 6px rgba(242, 201, 76, 0.7); }
 .pb-shield { margin-left: 6px; font-size: 10.5px; padding: 1px 6px; border-radius: 999px; color: #08202e; background: #9fd8ff; font-weight: 800; }
+/* 盾（受けるダメージを1回ごとに減らす）が効いている間：帯の表面に六角の金の膜が張り、光が横に流れ続ける（10月25日、オーナーがモックの案 A を選んだ） */
+.pb-cut { margin-left: 6px; font-size: 10.5px; padding: 1px 7px; border-radius: 999px; color: #ffe39a; background: #f2c14e2a; border: 1px solid #f2c14e88; font-weight: 800; white-space: nowrap; }
+.pstage .pb-cut { font-size: 9.5px; padding: 0 6px; margin: 0; }
+.pb-film {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none; overflow: hidden;
+  background:
+    linear-gradient(100deg, transparent 0 40%, #fff6d0aa 50%, transparent 60% 100%) -200px 0 / 200px 100% no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='41.6' viewBox='0 0 24 41.6'%3E%3Cpath d='M12 0 L24 6.93 L24 20.8 L12 27.73 L0 20.8 L0 6.93 Z M12 27.73 L12 41.6 M0 20.8 L0 34.67 M24 20.8 L24 34.67' fill='none' stroke='%23ffd977' stroke-opacity='.55' stroke-width='1'/%3E%3C/svg%3E") 0 0 / 16px 27.7px,
+    linear-gradient(180deg, #f2c14e40, #f2c14e18);
+  box-shadow: inset 0 0 0 1px #f2c14e99, inset 0 0 18px #ffd56a88;
+  animation: pb-film-sweep 3.9s linear infinite, pb-film-in 0.5s ease-out;
+}
+@keyframes pb-film-sweep { from { background-position: -200px 0, 0 0, 0 0; } to { background-position: calc(100% + 200px) 0, 0 0, 0 0; } }
+@keyframes pb-film-in { from { opacity: 0; } }
+/* 守りで止めたとき：盾の形を背にした金の「0」 */
+.fx-zero { position: fixed; font: 400 58px/1 var(--f-mark); color: #fff7da; -webkit-text-stroke: 3px #5a3f05; paint-order: stroke fill; text-shadow: 0 0 16px #ffd56a, 0 0 34px #ffcf5a99, 0 3px 0 #5a3f05; pointer-events: none; }
+.fx-zero::before {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 76px; height: 86px; transform: translate(-50%, -52%); z-index: -1;
+  clip-path: polygon(50% 0, 100% 14%, 96% 58%, 50% 100%, 4% 58%, 0 14%);
+  background: radial-gradient(70% 60% at 50% 40%, #fff3c4 0%, #f2c14e 55%, #a37a14 100%); opacity: 0.55;
+}
+.fx-hex { position: fixed; pointer-events: none; overflow: visible; }
+.fx-hex path { fill: none; stroke: #ffe896; filter: drop-shadow(0 0 6px #ffd56a); }
 
 /* ---------- デッキ構築 ---------- */
 .deck-section { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 22px; }

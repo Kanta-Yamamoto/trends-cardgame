@@ -26,6 +26,7 @@ export {
   canUnitAttack,
   castTargets,
   createGame,
+  damageCutOn,
   darkOmens,
   delayedDamageOn,
   effectiveCost,

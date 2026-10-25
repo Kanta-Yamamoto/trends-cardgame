@@ -71,6 +71,75 @@ export function popNumber(target: HTMLElement | null, text: string, kind: "dmg" 
   ).onfinish = () => n.remove();
 }
 
+/**
+ * 守り（盾・無敵）でダメージを全部止めたとき：当たったところに六角の波紋が広がり、帯の金の膜が光って、
+ * 盾の形を背にした金の「0」を大きく出す（ダメージの数字を出すとライフが減らないのに違和感があるため。10月25日）
+ */
+export function popShieldZero(target: HTMLElement | null) {
+  if (!target || !canAnimate()) return;
+  shieldRipple(target, 1);
+  const r = target.getBoundingClientRect();
+  const n = document.createElement("div");
+  n.className = "fx-zero";
+  n.textContent = "0";
+  const x = r.left + r.width / 2;
+  n.style.left = `${x}px`;
+  n.style.top = `${r.top + r.height * 0.15}px`;
+  layer().appendChild(n);
+  keepInside(n, x);
+  n.animate(
+    [
+      { transform: "translate(-50%, -50%) scale(2.6)", opacity: 0 },
+      { transform: "translate(-50%, -50%) scale(0.92)", opacity: 1, offset: 0.16 },
+      { transform: "translate(-50%, -50%) scale(1)", opacity: 1, offset: 0.24 },
+      { transform: "translate(-50%, -50%) scale(1)", opacity: 1, offset: 0.76 },
+      { transform: "translate(-50%, -70%) scale(1)", opacity: 0 },
+    ],
+    { duration: reduced() ? 900 : 1300, easing: "cubic-bezier(.2,.8,.3,1)" },
+  ).onfinish = () => n.remove();
+}
+
+/** 守りに当たった：当たったところ（帯の上のふち）に六角の波紋。帯の金の膜も光らせる */
+function shieldRipple(target: HTMLElement, power: number) {
+  const film = target.querySelector<HTMLElement>(".pb-film");
+  film?.animate([{ filter: `brightness(${1 + 1.6 * power})` }, { filter: "brightness(1)" }], {
+    duration: 450,
+    easing: "ease-out",
+  });
+  if (reduced()) return;
+  const r = target.getBoundingClientRect();
+  for (const delay of [0, 90]) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "fx-hex");
+    svg.setAttribute("viewBox", "-100 -100 200 200");
+    const size = 180;
+    Object.assign(svg.style, {
+      left: `${r.left + r.width / 2 - size / 2}px`,
+      top: `${r.top + 4 - size / 4}px`,
+      width: `${size}px`,
+      height: `${size / 2}px`,
+    });
+    svg.setAttribute("preserveAspectRatio", "none");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    const pts = Array.from({ length: 6 }, (_, j) => {
+      const a = (j / 6) * Math.PI * 2 + Math.PI / 6;
+      return `${(Math.cos(a) * 90).toFixed(1)} ${(Math.sin(a) * 90).toFixed(1)}`;
+    });
+    path.setAttribute("d", `M${pts.join(" L")} Z`);
+    path.setAttribute("stroke-width", "6");
+    path.setAttribute("vector-effect", "non-scaling-stroke");
+    svg.appendChild(path);
+    layer().appendChild(svg);
+    svg.animate(
+      [
+        { transform: "scale(0.1)", opacity: power },
+        { transform: "scale(1)", opacity: 0 },
+      ],
+      { duration: 480, delay, easing: "cubic-bezier(.1,.7,.3,1)", fill: "backwards" },
+    ).onfinish = () => svg.remove();
+  }
+}
+
 /** 被弾：白く光って小刻みに揺れる */
 function shake(el: HTMLElement | null, power = 1) {
   if (!el || reduced()) return;
@@ -177,8 +246,11 @@ export async function animateAttack(
   from: number,
   target: AttackTarget,
   catalog: Record<string, RuleCard>,
-  /** onImpact：当たった瞬間に呼ぶ（プレイヤーのライフの表示を、当たったのと同時に減らすため） */
-  opts: { onImpact?: () => void } = {},
+  /**
+   * onImpact：当たった瞬間に呼ぶ（プレイヤーのライフの表示を、当たったのと同時に減らすため）。
+   * leaderHit：プレイヤーへの攻撃で、守り（盾・無敵）に当たったとき、実際に通ったダメージ
+   */
+  opts: { onImpact?: () => void; leaderHit?: { dealt: number; blocked: boolean } } = {},
 ): Promise<void> {
   if (!canAnimate() || reduced()) {
     opts.onImpact?.();
@@ -256,7 +328,13 @@ export async function animateAttack(
   // ヒットストップ：当たった瞬間に一瞬だけ止めて、重さを出す
   lunge.pause();
   opts.onImpact?.();
-  popNumber(defEl, `-${dmg}`);
+  const guard = !def ? opts.leaderHit : undefined;
+  if (guard?.blocked && guard.dealt <= 0) popShieldZero(defEl);
+  else if (guard?.blocked) {
+    // 守りで減らした残りだけ通った：通った数を出し、守りも光らせる
+    shieldRipple(defEl, 0.6);
+    popNumber(defEl, `-${guard.dealt}`);
+  } else popNumber(defEl, `-${dmg}`);
   if (def && defCard) {
     shake(defEl, 1);
     if (counter > 0) popNumber(atkEl, `-${counter}`);
@@ -608,7 +686,7 @@ export async function animateEffects(
   const masterEl = (p: PlayerId) => q(`[data-master="${p}"]`);
 
   const hits: { el: HTMLElement | null; color: string; land: (el: HTMLElement) => void }[] = [];
-  for (const e of events) {
+  events.forEach((e, idx) => {
     switch (e.type) {
       case "damaged":
         hits.push({
@@ -621,11 +699,15 @@ export async function animateEffects(
           },
         });
         break;
-      case "leaderDamaged":
+      case "leaderDamaged": {
+        // 盾で減らした残りが通った（すぐ前に、同じプレイヤーの守りの出来事がある）
+        const prev = events[idx - 1];
+        const guarded = prev?.type === "shield" && prev.kind === "blocked" && prev.player === e.player;
         hits.push({
           el: masterEl(e.player),
           color: opts.tint ?? "#ff6a3d",
           land: (el) => {
+            if (guarded) shieldRipple(el, 0.6);
             burst(center(el.getBoundingClientRect()), "#ff5a4a");
             popNumber(el, `-${e.amount}`);
             shake(el, 0.6);
@@ -633,6 +715,7 @@ export async function animateEffects(
           },
         });
         break;
+      }
       case "healed":
         hits.push({
           el: unitEl(e.player, e.slot),
@@ -691,16 +774,27 @@ export async function animateEffects(
           },
         });
         break;
-      case "shield":
+      case "shield": {
+        if (e.kind === "blocked") {
+          // 盾で減らして残りが通ったなら、通ったダメージ（続く leaderDamaged）の方で見せる
+          const nextEv = events[idx + 1];
+          if (nextEv?.type === "leaderDamaged" && nextEv.player === e.player) break;
+          // 守りで全部止めた：金の 0
+          hits.push({ el: masterEl(e.player), color: "#ffd76a", land: (el) => popShieldZero(el) });
+          break;
+        }
+        // 守りが付いた（盾は受けるダメージを減らす数、無敵は「無敵」）
+        const cut = e.amount > 0;
         hits.push({
           el: masterEl(e.player),
-          color: "#9fd8ff",
+          color: cut ? "#ffd76a" : "#9fd8ff",
           land: (el) => {
-            glow(el, "#9fd8ff");
-            popLabel(el, e.kind === "blocked" ? "無効" : "無敵", "#cfeeff");
+            glow(el, cut ? "#ffd76a" : "#9fd8ff");
+            popLabel(el, cut ? `ダメージ-${e.amount}` : "無敵", cut ? "#ffe39a" : "#cfeeff");
           },
         });
         break;
+      }
       case "stolen":
         hits.push({
           el: unitEl(e.player === "p1" ? "p2" : "p1", e.from),
@@ -712,7 +806,7 @@ export async function animateEffects(
         });
         break;
     }
-  }
+  });
 
   // 1つずつ少しずらして飛ばす（全体攻撃はほぼ同時に）
   const gap = hits.length > 3 ? 90 : 170;
