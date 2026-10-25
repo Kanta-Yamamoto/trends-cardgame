@@ -13,6 +13,7 @@ import {
   RuleError,
 } from "@trends/game-core";
 import { create } from "zustand";
+import { abandonCpuLog, beginCpuLog, logMove, logThought, watchPageHide } from "./cpuLog";
 import type { DeckSel } from "./decks";
 
 export const CATALOG: Record<string, CardDef> = Object.fromEntries(CARDS.map((c) => [c.id, c]));
@@ -308,6 +309,7 @@ export const useGame = create<GameStore>((set, get) => {
       let id = log.at(-1)?.id ?? 0;
       const added = events.map((e) => ({ id: ++id, e }));
       set({ game: state, log: [...log, ...added].slice(-60), error: null });
+      logMove(a, state);
       return true;
     } catch (e) {
       if (e instanceof RuleError) {
@@ -344,6 +346,7 @@ export const useGame = create<GameStore>((set, get) => {
       .then(() => {
         if (my !== runId) return false;
         set({ game: state, log: appendLog(events, true), animating: false, error: null });
+        logMove(a, state);
         return true;
       });
   };
@@ -380,7 +383,7 @@ export const useGame = create<GameStore>((set, get) => {
       return;
     }
     const my = runId;
-    const actions = planTurnSearch(game, CPU, CATALOG);
+    const actions = planTurnSearch(game, CPU, CATALOG, { onThink: logThought });
     set({ cpuBusy: true, selection: null });
     const delay = get().cpuDelay;
     const finish = () => {
@@ -444,6 +447,18 @@ export const useGame = create<GameStore>((set, get) => {
         seed,
         first,
       });
+      // CPU を強くするための記録（一手ずつ。終わったらサーバーへ送る）
+      abandonCpuLog(get().game);
+      beginCpuLog({
+        catalog: CATALOG,
+        human: ME,
+        cpu: CPU,
+        humanDeck: { ref: deck.ref, name: deck.name, cards: deck.cards },
+        cpuDeck: { ref: cpuDeck, cards: [...DECKS[cpuDeck]] },
+        seed,
+        first,
+        initial: game,
+      });
       openingEnds = Date.now() + openingMs();
       set({
         mode: "cpu",
@@ -464,6 +479,7 @@ export const useGame = create<GameStore>((set, get) => {
       else runCpu();
     },
     quit: () => {
+      abandonCpuLog(get().game);
       runId++;
       link = null;
       inbox = [];
@@ -562,6 +578,7 @@ export const useGame = create<GameStore>((set, get) => {
       });
     },
     startOnline: ({ deck, foeName, foeDeckRef, state, link: l }) => {
+      if (get().mode === "cpu") abandonCpuLog(get().game);
       const same = get().mode === "online" && get().deck?.ref === deck.ref && link === l;
       if (!same) runId++;
       // 始まったばかりの対戦に入ったときだけオープニングを見せる（途中からの再接続では見せない）
@@ -593,6 +610,9 @@ export const useGame = create<GameStore>((set, get) => {
     resign: () => link?.resign(),
   };
 });
+
+// CPU 対戦の途中で画面を閉じたら、そこまでの記録を送る
+watchPageHide(() => (useGame.getState().mode === "cpu" ? useGame.getState().game : null));
 
 // 開発中だけ、ブラウザから対戦の状態を触れるようにする（演出の確認用）
 if (import.meta.env.DEV && typeof window !== "undefined") {

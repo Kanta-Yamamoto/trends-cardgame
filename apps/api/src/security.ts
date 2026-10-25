@@ -105,7 +105,7 @@ export const defaultLimits = (): Limits => ({
   invite: new RateLimiter(10, 10 * 60_000),
 });
 
-const API_PREFIXES = ["/cards", "/health", "/auth", "/matches", "/me", "/rankings", "/socket.io"];
+const API_PREFIXES = ["/cards", "/health", "/auth", "/matches", "/me", "/rankings", "/logs", "/socket.io"];
 const isApiPath = (path: string) => API_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
 
 const ROBOTS = "User-agent: *\nDisallow: /\n";

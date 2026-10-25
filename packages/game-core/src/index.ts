@@ -42,7 +42,8 @@ export {
   withRushBoost,
 } from "./engine";
 export { expectedScore, RATING, rateGame } from "./rating";
+export { type CpuGameRecord, cardsStamp, replayRecord } from "./record";
 export { nextRandom } from "./rng";
-export { DEFAULT_SEARCH, evaluate, planTurnSearch, type SearchOptions } from "./search";
+export { type CpuThought, DEFAULT_SEARCH, evaluate, planTurnSearch, type SearchOptions } from "./search";
 export * from "./types";
 export { actionFor, actionFrom, eventsFor, HIDDEN_CARD, stateFor } from "./view";

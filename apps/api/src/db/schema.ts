@@ -1,5 +1,5 @@
 import type { CardEffect, DarkSide } from "@trends/cards";
-import type { Clock, GameState } from "@trends/game-core";
+import type { Clock, CpuGameRecord, GameState } from "@trends/game-core";
 import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 /** カードの定義。元データは packages/cards/src/cards.json で、seed で取り込む */
@@ -120,3 +120,21 @@ export interface SavedDeck {
   /** 保存した時刻（ミリ秒） */
   updated: number;
 }
+
+/**
+ * CPU 対戦の記録（人と CPU の対戦を一手ずつ）。あとで見返して CPU を強くし、カードのバランス調整に使う（docs/cpu-logs.md）。
+ * 名前・メールは残さない。client は端末ごとの印（同じ人の対戦をまとめて見るため）
+ */
+export const cpuGames = pgTable("cpu_games", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  client: text("client").notNull(),
+  /** カードのデータの印（game-core の cardsStamp） */
+  cards: text("cards").notNull(),
+  humanDeck: text("human_deck").notNull(),
+  cpuDeck: text("cpu_deck").notNull(),
+  /** human（人の勝ち）/ cpu（CPU の勝ち）/ null（途中でやめた） */
+  winner: text("winner"),
+  turns: integer("turns").notNull(),
+  record: jsonb("record").$type<CpuGameRecord>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

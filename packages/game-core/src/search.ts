@@ -33,7 +33,26 @@ export interface SearchOptions {
   finalists: number;
   /** 考える時間の上限（ミリ秒）。遅いスマホでも画面が固まりすぎないように */
   timeLimitMs: number;
+  /** 考えた中身を受け取る（対戦の記録に残して、あとで CPU の悪手を調べるため） */
+  onThink?: (t: CpuThought) => void;
 }
+
+/** CPU が1ターン分を考えた中身：最後に比べた候補（点数の高い順）と、選んだ候補 */
+export interface CpuThought {
+  /** 構え（大きいほど相手のプレイヤーを攻める） */
+  bias: number;
+  /** 試した操作の数 */
+  nodes: number;
+  /** 比べた候補。now はそのターンの終わりの盤面の点数、reply は相手の殴り返しまで読んだ点数、total は比べた値 */
+  options: { actions: Action[]; now: number; reply: number; total: number }[];
+  /** 選んだ候補（options の何番目か）。勝ちが見えて先に決めたときは -1 */
+  chosen: number;
+  /** 勝ちが見えて先に決めた手 */
+  win?: Action[];
+}
+
+/** 記録に残す候補の数（多すぎると記録が重くなる） */
+const THOUGHT_OPTIONS = 5;
 
 export const DEFAULT_SEARCH: SearchOptions = { beam: 20, maxNodes: 8000, finalists: 30, timeLimitMs: 400 };
 
@@ -275,7 +294,10 @@ export function planTurnSearch(
           score: evaluate(state.pending ? settle(state, catalog) : state, player, catalog, bias),
         };
         all.set(sig, child);
-        if (state.winner === player) return [...child.actions];
+        if (state.winner === player) {
+          opt.onThink?.({ bias, nodes, options: [], chosen: -1, win: [...child.actions] });
+          return [...child.actions];
+        }
         next.push(child);
       }
     }
@@ -286,12 +308,28 @@ export function planTurnSearch(
   const finalists = [...all.values()].sort((a, b) => b.score - a.score).slice(0, opt.finalists);
   let best = finalists[0] ?? root;
   let bestScore = Number.NEGATIVE_INFINITY;
+  const compared: CpuThought["options"] = [];
   for (const n of finalists) {
-    const s = scoreAfterReply(n, player, catalog, bias) + n.score * WEIGHTS.now;
+    const reply = scoreAfterReply(n, player, catalog, bias);
+    const s = reply + n.score * WEIGHTS.now;
+    compared.push({ actions: n.actions, now: n.score, reply, total: s });
     if (s > bestScore) {
       bestScore = s;
       best = n;
     }
+  }
+  if (opt.onThink) {
+    const ranked = compared.map((c, i) => ({ c, i })).sort((a, b) => b.c.total - a.c.total);
+    const chosen = finalists.indexOf(best);
+    const top = ranked.slice(0, THOUGHT_OPTIONS);
+    if (chosen >= 0 && !top.some((r) => r.i === chosen))
+      top.push(ranked.find((r) => r.i === chosen) as (typeof ranked)[number]);
+    opt.onThink({
+      bias,
+      nodes,
+      options: top.map((r) => ({ ...r.c, actions: [...r.c.actions] })),
+      chosen: top.findIndex((r) => r.i === chosen),
+    });
   }
   // 相手の差し出しを待つところで終わる手なら、ターン終了は付けない（相手が選んだあとに考え直す）
   if (best.state.pending) return [...best.actions];

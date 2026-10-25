@@ -10,6 +10,8 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   // 公開前の守り（招待リンク・回数の制限・安全のヘッダー）。ほかより先に差し込む
   protect(app);
+  // CPU 対戦の記録（一手ずつ・CPU が考えた中身つき）は 100KB を超えることがあるので、受け取れる大きさを広げる
+  app.useBodyParser("json", { limit: "2mb" });
   app.enableCors({ origin: process.env.CORS_ORIGIN?.split(",") ?? true });
   // 本番ではビルドした Web も同じサーバーで配る
   serveWeb(app);
