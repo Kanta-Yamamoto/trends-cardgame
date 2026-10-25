@@ -217,10 +217,42 @@ function signature(state: GameState): string {
   return `${state.players.p1.lp}|${state.players.p2.lp}|${me.mana}|${me.hand.join(",")}|${me.trash.length}|${f("p1")}|${f("p2")}|${state.winner}`;
 }
 
+/**
+ * 置いた枠の場所だけが違う盤面をまとめる目印（場のキャラクターを並べ替えて比べる）。
+ * 2枚出すと、場所と出す順の組み合わせで同じ中身の盤面がいくつもでき、残す候補がそれで埋まっていた（10月26日、docs/cpu-logs.md）
+ */
+function looseSignature(state: GameState): string {
+  const f = (p: PlayerId) =>
+    state.players[p].field
+      .flatMap((u) =>
+        u
+          ? [`${u.cardId}.${u.damage}.${u.attacksLeft}.${u.atkBuff}.${u.hpBuff}.${+u.dark}.${+!!u.exposed}`]
+          : [],
+      )
+      .sort()
+      .join(",");
+  const me = state.players[state.active];
+  return `${state.players.p1.lp}|${state.players.p2.lp}|${me.mana}|${me.hand.join(",")}|${me.trash.length}|${f("p1")}|${f("p2")}|${state.winner}`;
+}
+
 interface Node {
   state: GameState;
   actions: Action[];
   score: number;
+}
+
+/** 点数の高い順に n 個。中身が同じ盤面（置いた場所だけが違う）は、いちばん点数の高い1つだけ */
+function distinctBest(list: Iterable<Node>, n: number): Node[] {
+  const seen = new Set<string>();
+  const out: Node[] = [];
+  for (const x of [...list].sort((a, b) => b.score - a.score)) {
+    const k = looseSignature(x.state);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(x);
+    if (out.length >= n) break;
+  }
+  return out;
 }
 
 /** ターンを終えて、相手が場のキャラクターだけで殴り返したあとの盤面の点数 */
@@ -301,11 +333,10 @@ export function planTurnSearch(
         next.push(child);
       }
     }
-    next.sort((a, b) => b.score - a.score);
-    frontier = next.slice(0, opt.beam);
+    frontier = distinctBest(next, opt.beam);
   }
 
-  const finalists = [...all.values()].sort((a, b) => b.score - a.score).slice(0, opt.finalists);
+  const finalists = distinctBest(all.values(), opt.finalists);
   let best = finalists[0] ?? root;
   let bestScore = Number.NEGATIVE_INFINITY;
   const compared: CpuThought["options"] = [];
