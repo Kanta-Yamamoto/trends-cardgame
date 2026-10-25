@@ -2,7 +2,7 @@ import { CARDS, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
 import { autoSacrifice, planTurn } from "./ai";
 import { applyAction, createGame } from "./engine";
-import { planTurnSearch } from "./search";
+import { type CpuThought, planTurnSearch } from "./search";
 import type { GameState, RuleCard } from "./types";
 
 const real = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string, RuleCard>;
@@ -51,6 +51,28 @@ describe("先読みする CPU（planTurnSearch）", () => {
       }
     // 5 デッキ × 5 = 25 試合
   }, 180_000);
+
+  it("比べる候補に、置いた場所だけが違う同じ中身の手を並べない", () => {
+    const s = createGame({ decks: { p1: DECKS.solo_flame, p2: DECKS.solo_idol }, seed: 5, first: "p1" });
+    const me = s.players.p1;
+    me.hand = ["f1", "f6", "f13"];
+    me.mana = 5;
+    let thought: CpuThought | undefined;
+    planTurnSearch(s, "p1", real, { ...LIGHT, onThink: (t) => (thought = t) });
+    expect(thought?.options.length).toBeGreaterThan(1);
+    // 終わりの盤面の中身（場のキャラクターは並べ替えて、場所を見ない）で見分ける
+    const content = (thought?.options ?? []).map((o) => {
+      let cur = s;
+      for (const a of o.actions) cur = applyAction(cur, a, real).state;
+      const units = (p: "p1" | "p2") =>
+        cur.players[p].field
+          .flatMap((u) => (u ? [`${u.cardId}.${u.damage}.${u.attacksLeft}.${u.atkBuff}.${u.hpBuff}`] : []))
+          .sort()
+          .join(",");
+      return `${cur.players.p2.lp}|${cur.players.p1.hand.join(",")}|${units("p1")}|${units("p2")}`;
+    });
+    expect(new Set(content).size).toBe(content.length);
+  });
 
   it("とどめを刺せるときは刺す", () => {
     let s = createGame({

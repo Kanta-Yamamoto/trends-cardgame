@@ -37,10 +37,12 @@ async function fetchAll() {
       );
     const { games } = await res.json();
     for (const g of games) {
-      writeFileSync(join(DIR, `${g.createdAt.replace(/[:.]/g, "-")}_${g.id}.json`), JSON.stringify(g));
+      // DB の時刻はミリ秒より細かいので、前回の最後の1件がもう一度来ることがある（同じファイルに上書きし、数えない）
+      const file = join(DIR, `${g.createdAt.replace(/[:.]/g, "-")}_${g.id}.json`);
+      if (!existsSync(file)) total++;
+      writeFileSync(file, JSON.stringify(g));
       after = g.createdAt;
     }
-    total += games.length;
     if (after) writeFileSync(CURSOR, after);
     if (games.length < 100) break;
   }
