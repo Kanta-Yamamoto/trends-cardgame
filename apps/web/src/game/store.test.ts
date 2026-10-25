@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { cpuLogForTest } from "./cpuLog";
 import { builtinDeck } from "./decks";
 import { CATALOG, CPU, ME, setPresenter, useGame } from "./store";
 
@@ -34,6 +35,25 @@ describe("対戦ストア", () => {
     expect(s.game?.turn).toBe(3);
     expect(s.cpuBusy).toBe(false);
     expect(s.log.some((l) => l.e.type === "turnStarted" && l.e.player === CPU)).toBe(true);
+  });
+
+  it("CPU 対戦を一手ずつ記録し（CPU が考えた中身つき）、途中でやめたらそこまでを送る", () => {
+    useGame.getState().endTurn();
+    const cur = cpuLogForTest().current;
+    expect(cur?.human).toBe(ME);
+    expect(cur?.cpu).toBe(CPU);
+    expect(cur?.humanDeck.ref).toBe("solo_idol");
+    expect(cur?.moves[0]?.action).toEqual({ type: "endTurn", player: ME });
+    // CPU の手も入る（CPU のターンの最後はターン終了）
+    expect(cur?.moves.some((m) => m.action.type === "endTurn" && m.action.player === CPU)).toBe(true);
+    expect(cur?.thoughts.length).toBeGreaterThan(0);
+    expect(cur?.thoughts[0]?.move).toBe(1);
+    const moves = cur?.moves.length ?? 0;
+    useGame.getState().quit();
+    const sent = cpuLogForTest().last;
+    expect(sent?.moves).toHaveLength(moves);
+    expect(sent?.end.winner).toBeNull();
+    expect(cpuLogForTest().current).toBeNull();
   });
 
   it("CPU が先攻ならすぐ CPU が1ターン動く", () => {

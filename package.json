@@ -18,7 +18,8 @@
     "db:up": "docker compose up -d db",
     "db:migrate": "pnpm --filter @trends/api db:migrate",
     "db:seed": "pnpm --filter @trends/api db:seed",
-    "db:generate": "pnpm --filter @trends/api db:generate"
+    "db:generate": "pnpm --filter @trends/api db:generate",
+    "logs:cpu": "node tools/cpu-logs.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
