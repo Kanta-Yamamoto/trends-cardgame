@@ -232,6 +232,10 @@ button.pb-main:disabled { cursor: default; }
 .result-card.win strong { color: var(--gold); }
 .result-card.lose strong { color: var(--foe); }
 .result-card span { color: var(--muted); font-size: 13px; }
+.result-why { margin: 0; display: grid; gap: 4px; justify-items: center; max-width: 280px; text-align: center; font-size: 13px; line-height: 1.5; }
+.result-why b { font-size: 18px; }
+.result-card.win .result-why b { color: var(--gold); }
+.result-card.lose .result-why b { color: var(--foe); }
 .result-actions { display: flex; gap: 10px; margin-top: 8px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 .holo-btn { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 4.4% / 3.2%; }

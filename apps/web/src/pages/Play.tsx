@@ -71,6 +71,7 @@ import {
   retireUnits,
 } from "../game/fx";
 import { MiniCard } from "../game/MiniCard";
+import { endReason } from "../game/result";
 import { CATALOG, CPU, DECK_INFO, ME, openingMs, setPresenter, useGame } from "../game/store";
 import { useDragPlay } from "../game/useDragPlay";
 import { type ClockLeft, formatClock, useClockLeft, useLive } from "../online/live";
@@ -1796,10 +1797,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           onAgain={online ? undefined : () => start(deck)}
           onQuit={quit}
           online={online}
-          endedBy={log
-            .map((l) => l.e.type)
-            .reverse()
-            .find((t) => t === "timedOut" || t === "resigned")}
+          events={log.map((l) => l.e)}
         />
       )}
     </div>
@@ -1887,35 +1885,28 @@ function Result({
   onAgain,
   onQuit,
   online,
-  endedBy,
+  events,
 }: {
   game: GameState;
   onAgain?: () => void;
   onQuit: () => void;
   online: boolean;
-  /** 降参・時間切れで決着したとき */
-  endedBy?: GameEvent["type"];
+  /** 対戦の記録（決着の原因を出すため） */
+  events: GameEvent[];
 }) {
   // ランダムマッチなら、レーティングの動き
   const rating = useLive((s) => s.rating);
   const won = game.winner === ME;
-  const why =
-    endedBy === "timedOut"
-      ? won
-        ? "相手の時間切れ"
-        : "時間切れ"
-      : endedBy === "resigned"
-        ? won
-          ? "相手の降参"
-          : "降参"
-        : null;
+  const why = endReason(events, ME, won);
   return (
     <div className="result" role="dialog" aria-modal="true" aria-label="対戦結果">
       <div className={`result-card ${won ? "win" : "lose"}`}>
         <strong>{won ? "勝利！" : "敗北…"}</strong>
-        <span>
-          {game.turn} ターン目で決着{why && `（${why}）`}
-        </span>
+        <p className="result-why">
+          <b>{why.title}</b>
+          {why.detail}
+        </p>
+        <span>{game.turn} ターン目で決着</span>
         {online && rating && (
           <p className="result-rating">
             レート {rating.before} → <b>{rating.after}</b>
