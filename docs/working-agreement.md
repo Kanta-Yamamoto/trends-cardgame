@@ -20,6 +20,7 @@
   - 通ったら、`dev` ブランチに取り込む。ブランチは push してよい（PR を作らなければ CI は動かない）。1 つずつ PR は作らない
   - **本番に出すのは、キリのいいところ・オーナーが出先で遊びたいときに何度でも**（10月25日。オーナー：「今はまだ本番公開の段階ではなく、多くの調整を素早くやりたいフェーズ」「本来は俺が出先でプレイしたいってだけで先行デプロイしちゃった」）。PR は作らず、`git push origin dev:main`（早送り）で出す。動くのはデプロイだけ（1 回およそ 3 分）。docs だけの変更ではデプロイも動かない
   - GitHub の CI は、PR を作ったときと手で動かしたときだけ（1 ジョブにまとめ、Docker と Terraform は関係するところが変わったときだけ確かめる）。確かめの本番は手元の `pnpm verify`
+  - **リポジトリは 11 月まで公開**（10月25日。オーナー：「11月になったら閉じます」）。公開のあいだは Actions が無料。11 月に非公開に戻したら、月 2,000 分の枠に戻る
 - **決まりは仕組みで守らせる**（10月25日）。Claude が決まりを抜かすことが多かったため
   - git のフック（`.githooks/pre-push`。`pnpm install` で有効になる）：`dev`・main に push できるのは `pnpm verify` を通した版だけ（`scripts/mark-verified.sh` が覚える）。main を巻き戻す push も止める
   - Claude Code のフック（`.claude/settings.json` → `scripts/claude-guard.mjs`）：`--no-verify`、main への強制の push、`dev` → main 以外の PR、GitHub での CI の手動実行を止める。会話が要約されたら、抜けやすい決まり（`scripts/after-compact.md`）を Claude に読ませる
