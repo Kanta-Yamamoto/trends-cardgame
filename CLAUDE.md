@@ -2,7 +2,7 @@
 
 AIで描いたイラストを立体感のあるキラカードにして遊ぶ、オリジナルカードゲーム。Web とスマホアプリ（Capacitor）で出す予定。
 
-作業の前に [`docs/working-agreement.md`](docs/working-agreement.md)（オーナーからの指示・進め方）と [`docs/history.md`](docs/history.md)（経緯）を読む。何を作るか・どの順でやるかを決めるときは [`docs/product.md`](docs/product.md)（プロダクトの考え方）に沿う。カード・属性・闇堕ちの設計を決めるときは [`docs/design-mainline.md`](docs/design-mainline.md)（10月24日の決定事項と理由。王道＝推し属性・闇堕ちの決まり・ほかの属性を作るときの前提）を読む。カード面・演出を触るときは [`docs/design-standard-director.md`](docs/design-standard-director.md)（カード面の基準）と [`docs/attack-motion-standard.md`](docs/attack-motion-standard.md)（攻撃モーションの基準）も読み、新しい演出は入れる前に動くモックで見せる。変更は手元で `pnpm verify` を通して `dev` ブランチに溜め、キリのいいところ・オーナーが遊びたいときに `git push origin dev:main` で本番に出す（PR は作らない。GitHub Actions の分数を節約するため。git と Claude Code のフックが、verify を通していない版の push や PR を止める）。公開前のあいだは、Claude が自分で出す（オーナーの許可は要らない。公開したら、オーナーの一言で出す形に戻す）。オーナーや友人が対戦中と分かっているときは本番に出さない。
+作業の前に [`docs/working-agreement.md`](docs/working-agreement.md)（オーナーからの指示・進め方）と [`docs/history.md`](docs/history.md)（経緯）を読む。何を作るか・どの順でやるかを決めるときは [`docs/product.md`](docs/product.md)（プロダクトの考え方）に沿う。カード・属性・闇堕ちの設計を決めるときは [`docs/design-mainline.md`](docs/design-mainline.md)（10月24日の決定事項と理由。王道＝推し属性・闇堕ちの決まり・ほかの属性を作るときの前提）を読む。カード面・演出を触るときは [`docs/design-standard-director.md`](docs/design-standard-director.md)（カード面の基準）と [`docs/attack-motion-standard.md`](docs/attack-motion-standard.md)（攻撃モーションの基準）も読み、新しい演出は入れる前に動くモックで見せる。変更は手元で `pnpm verify` を通して `dev` ブランチに溜め、キリのいいところ・オーナーが遊びたいときに **`dev` → main の PR を作り、GitHub の CI が通ったらマージして**本番に出す（この流れは外さない。作業ごとの PR は作らない。git と Claude Code のフックが、verify を通していない dev への push・main への直接の push・dev → main 以外の PR・CI が通っていない PR のマージを止める）。公開前のあいだは、Claude が自分で出す（オーナーの許可は要らない。公開したら、オーナーの一言で出す形に戻す）。オーナーや友人が対戦中と分かっているときは本番に出さない。
 
 ## 構成（pnpm workspaces + Turborepo）
 

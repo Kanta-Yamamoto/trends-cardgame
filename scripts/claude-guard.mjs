@@ -39,12 +39,10 @@ for (const part of command.split(/&&|\|\||;|\||\n/)) {
     );
   }
 
-  if (
-    /^git\s+push\b/.test(cmd) &&
-    /(\s|:)main(\s|$)/.test(cmd) &&
-    /\s(-f|--force|--force-with-lease)(\s|=|$)|\s\+/.test(cmd)
-  ) {
-    block("main への強制の push はしない。main には dev を早送りで入れる（git push origin dev:main）");
+  if (/^git\s+push\b/.test(cmd) && /(\s|:)(refs\/heads\/)?main(\s|$)/.test(cmd)) {
+    block(
+      "main には push しない。dev → main の PR を作り、GitHub の CI が通ったらマージする（gh pr create --base main --head dev。docs/working-agreement.md）",
+    );
   }
 
   if (/^gh\s+pr\s+create\b/.test(cmd)) {
@@ -52,12 +50,21 @@ for (const part of command.split(/&&|\|\||;|\||\n/)) {
     const head = cmd.match(/(?:--head|-H)[\s=]+(\S+)/)?.[1] ?? currentBranch();
     if (base !== "main" || head !== "dev") {
       block(
-        "PR は作らない。手元で pnpm verify を通して dev に入れ、出すときは git push origin dev:main（docs/working-agreement.md）。どうしても PR にするときは dev → main（--base main --head dev）だけ",
+        "PR は dev → main だけ（--base main --head dev）。作業は手元で pnpm verify を通して dev に入れる（docs/working-agreement.md）",
       );
     }
   }
 
-  if (/^gh\s+workflow\s+run\s+(ci|ci\.yml)(\s|$)/i.test(cmd)) {
-    block("CI を GitHub で回すと Actions の分数を使う。確かめは手元の pnpm verify で行う");
+  // マージは、GitHub の CI がすべて通った PR だけ（gh pr checks は、落ちた・終わっていないものがあると 0 以外で終わる）
+  if (/^gh\s+pr\s+merge\b/.test(cmd)) {
+    const pr = cmd.replace(/^gh\s+pr\s+merge\b/, "").match(/(?:^|\s)(\d+|https:\/\/\S+)(?=\s|$)/)?.[1];
+    try {
+      execFileSync("gh", ["pr", "checks", ...(pr ? [pr] : [])], { cwd: input.cwd, stdio: "pipe" });
+    } catch {
+      block(
+        "CI が通っていない（落ちた・まだ終わっていない）PR はマージしない。gh pr checks --watch で終わるのを待ち、落ちたら直してから",
+      );
+    }
   }
+
 }

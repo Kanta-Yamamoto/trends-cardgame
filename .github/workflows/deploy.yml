@@ -1,7 +1,7 @@
 name: Deploy
 
 # main に入ったら（または Infra が通ったら）、Cloud Run に自動でデプロイする。
-# 確かめは手元の pnpm verify で済ませてから main に入れる（.githooks/pre-push が、通っていない版を止める）。
+# main には dev → main の PR を CI が通ってからマージして入れる（main への直接の push はフックが止める）。
 # 設定は infra/gcp.env（GCP_PROJECT_NUMBER が空なら何もしない）。
 # ログインは Terraform が作った連携とデプロイ用サービスアカウント（鍵ファイルなし）。
 on:
