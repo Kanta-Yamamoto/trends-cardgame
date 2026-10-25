@@ -1411,7 +1411,7 @@
     "name": "ネ申",
     "type": "icon",
     "rarity": 5,
-    "cost": 15,
+    "cost": 13,
     "attack": 5,
     "hp": 10,
     "attributes": ["神"],
@@ -1444,10 +1444,10 @@
     "effects": [
       {
         "do": "damageCut",
-        "amount": 5
+        "amount": 7
       }
     ],
-    "effect": "次の相手のターンの終わりまで、自分のプレイヤーが受けるダメージを1回ごとに5減らす。",
+    "effect": "次の相手のターンの終わりまで、自分のプレイヤーが受けるダメージを1回ごとに7減らす。",
     "token": true,
     "art": "/assets/cards/t-tate-art.jpg",
     "original": "assets/original/t-tate.jpg"
@@ -1465,10 +1465,10 @@
       {
         "do": "damage",
         "to": "allEnemies",
-        "amount": 5
+        "amount": 7
       }
     ],
-    "effect": "相手のキャラクターすべてに5ダメージ。",
+    "effect": "相手のキャラクターすべてに7ダメージ。",
     "token": true,
     "art": "/assets/cards/t-ikazuchi-art.jpg",
     "original": "assets/original/t-ikazuchi.jpg"
@@ -1486,10 +1486,10 @@
       {
         "do": "damage",
         "to": "enemyMaster",
-        "amount": 5
+        "amount": 7
       }
     ],
-    "effect": "相手のプレイヤーに5ダメージ。",
+    "effect": "相手のプレイヤーに7ダメージ。",
     "token": true,
     "art": "/assets/cards/t-tenbatsu-art.jpg",
     "original": "assets/original/t-tenbatsu.jpg"
