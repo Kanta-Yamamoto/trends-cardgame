@@ -1,0 +1,242 @@
+/* ---------- ホーム画面（pages/Home.tsx）：配色は ①ソーダ（app.css の :root）。部品の名前は hm- で始め、ほかの画面とぶつけない ---------- */
+.hm {
+  position: fixed; inset: 0; z-index: 1; overflow: hidden; isolation: isolate;
+  display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto;
+  padding-top: max(12px, env(safe-area-inset-top, 0px));
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 46%, var(--bg-bot) 100%);
+  color: var(--ink); -webkit-tap-highlight-color: transparent; user-select: none;
+}
+.hm a { color: inherit; text-decoration: none; }
+.hm-glass {
+  background: var(--glass); -webkit-backdrop-filter: blur(14px) saturate(1.5); backdrop-filter: blur(14px) saturate(1.5);
+  border: 1px solid var(--glass-line); box-shadow: 0 6px 18px var(--shadow), inset 0 1px 0 #fff;
+}
+
+/* 地：ふわっと動く色の玉、キャラクターの絵をぼかした背景、白い点の模様 */
+.hm-blob { position: absolute; z-index: -1; border-radius: 50%; filter: blur(36px); pointer-events: none; }
+.hm-blob.b1 { left: -90px; top: 14%; width: 300px; height: 300px; background: #82cdff99; animation: hm-drift 14s ease-in-out infinite; }
+.hm-blob.b2 { right: -100px; top: 40%; width: 320px; height: 320px; background: #afeedca6; animation: hm-drift 18s ease-in-out infinite reverse; }
+.hm-bg { position: absolute; inset: -28px; z-index: -1; transition: transform 0.5s ease-out; pointer-events: none; }
+.hm-bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(18px) saturate(1.3) brightness(1.15); transform: scale(1.15); opacity: 0.38; animation: hm-fade-to 0.7s ease both; }
+@keyframes hm-fade-to { from { opacity: 0; } }
+.hm-veil { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, var(--bg-top) 0%, #fff0 24%, #fff0 52%, var(--bg-bot) 78%); }
+.hm-dots {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0.55;
+  background-image: radial-gradient(#ffffffF2 1.2px, transparent 1.6px); background-size: 20px 20px;
+  -webkit-mask-image: linear-gradient(#000, transparent 60%); mask-image: linear-gradient(#000, transparent 60%);
+}
+
+/* 上の段：自分の名前とレート（押すとランキング）、お知らせ、メニュー */
+.hm-top { position: relative; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px; }
+.hm-plate { display: flex; align-items: center; gap: 10px; min-width: 0; height: 48px; padding: 0 16px 0 4px; border-radius: 24px; }
+.hm-avatar {
+  flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--chara); color: #fff; font-weight: 900; font-size: 16px; box-shadow: 0 0 0 3px #fff, 0 3px 8px var(--shadow);
+  transition: background 0.5s;
+}
+.hm-plate-text { display: grid; min-width: 0; line-height: 1.15; }
+.hm-pname { font-size: 14px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hm-prate { font-size: 11px; font-weight: 700; color: var(--ink-2); }
+.hm-prate b { margin-left: 4px; font: 400 16px/1 var(--f-mark); letter-spacing: 0.03em; color: var(--pri-3); }
+.hm-top-actions { display: flex; gap: 8px; flex: none; }
+.hm-icon-btn { position: relative; width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; padding: 0; color: var(--ink); cursor: pointer; }
+.hm-icon-btn svg { width: 22px; height: 22px; }
+.hm-badge {
+  position: absolute; right: -3px; top: -3px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--badge); color: #fff; font-size: 10px; font-weight: 800; line-height: 18px; text-align: center; box-shadow: 0 0 0 2px #fff;
+}
+
+/* お知らせの帯：新しいものから順に切り替わる */
+.hm-news {
+  position: relative; z-index: 3; display: flex; align-items: center; gap: 10px; min-width: 0; height: 42px;
+  margin: 10px 14px 0; padding: 0 10px 0 8px; border-radius: 14px; color: var(--ink); text-align: left; cursor: pointer; overflow: hidden;
+}
+.hm-tag { flex: none; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 800; }
+.hm-tag.up { background: var(--pri-3); color: #fff; }
+.hm-tag.info { background: var(--acc-deep); color: #fff; }
+.hm-news-text { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: hm-up-in 0.5s ease-out; }
+@keyframes hm-up-in { from { opacity: 0; transform: translateY(8px); } }
+.hm-news-go { flex: none; width: 18px; height: 18px; color: var(--ink-2); }
+
+/* 真ん中の舞台：光の筋、TRENDS の透かし、ガラスの円、泡、キャラクター */
+.hm-stage-wrap { position: relative; z-index: 1; min-height: 0; }
+.hm-rays {
+  position: absolute; left: 50%; top: 50%; width: 900px; height: 900px; margin: -450px 0 0 -450px; pointer-events: none; opacity: 0.55;
+  background: repeating-conic-gradient(from 0deg, #ffffffbf 0deg 6deg, transparent 6deg 18deg);
+  -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 52%); mask-image: radial-gradient(circle, #000 0%, transparent 52%);
+  animation: hm-spin 90s linear infinite;
+}
+.hm-mark {
+  position: absolute; left: 0; right: 0; top: 4%; text-align: center; pointer-events: none;
+  font: 400 min(116px, 29vw)/1 var(--f-mark); letter-spacing: 0.04em; color: #ffffffb8; text-shadow: 0 10px 30px var(--shadow);
+  transition: transform 0.5s ease-out;
+}
+.hm-disc, .hm-ring { position: absolute; left: 50%; top: 52%; aspect-ratio: 1; border-radius: 50%; translate: -50% -50%; pointer-events: none; }
+.hm-disc {
+  height: min(72%, 320px);
+  background: radial-gradient(circle at 50% 38%, #ffffffe6 0%, #ffffff59 58%, #ffffff1f 100%);
+  border: 1.5px solid #fffffff2; box-shadow: 0 24px 60px var(--shadow), inset 0 0 50px var(--chara-soft);
+  animation: hm-pulse 5.2s ease-in-out infinite;
+}
+.hm-ring { height: min(90%, 396px); border: 1.5px dashed #fffffff2; animation: hm-spin 50s linear infinite; }
+.hm-ring::after {
+  content: ""; position: absolute; left: 50%; top: -6px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%;
+  background: #fff; box-shadow: 0 0 0 3px var(--chara-soft), 0 0 16px var(--chara);
+}
+.hm-bubbles { position: absolute; inset: 0; pointer-events: none; }
+.hm-bubbles i {
+  position: absolute; bottom: 18%; width: 12px; height: 12px; border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle at 32% 30%, #fff 0 16%, #ffffff4d 36%, #ffffff14 70%);
+  border: 1px solid #fffffff2; box-shadow: 0 2px 8px var(--shadow); animation: hm-rise 10s linear infinite;
+}
+.hm-bubbles i:nth-child(1) { left: 9%; animation-duration: 9s; }
+.hm-bubbles i:nth-child(2) { left: 21%; animation-delay: 2.6s; animation-duration: 11s; width: 8px; height: 8px; }
+.hm-bubbles i:nth-child(3) { left: 33%; animation-delay: 5.2s; width: 16px; height: 16px; }
+.hm-bubbles i:nth-child(4) { left: 52%; animation-delay: 1.4s; animation-duration: 12s; width: 7px; height: 7px; }
+.hm-bubbles i:nth-child(5) { left: 64%; animation-delay: 3.8s; animation-duration: 9.5s; width: 14px; height: 14px; }
+.hm-bubbles i:nth-child(6) { left: 76%; animation-delay: 6.4s; animation-duration: 11s; width: 9px; height: 9px; }
+.hm-bubbles i:nth-child(7) { left: 88%; animation-delay: 0.8s; animation-duration: 10.5s; }
+.hm-bubbles i:nth-child(8) { left: 44%; animation-delay: 7.6s; animation-duration: 12s; width: 10px; height: 10px; }
+@keyframes hm-rise {
+  0% { transform: translate(0, 0); opacity: 0; }
+  12% { opacity: 1; }
+  50% { transform: translate(10px, -200px); }
+  85% { opacity: 0.8; }
+  100% { transform: translate(-6px, -400px); opacity: 0; }
+}
+
+/* キャラクター：舞台の高さに合わせて大きく（切り抜きはカードの絵と同じ大きさで、人物は上の 7 割にいる） */
+.hm-stage { position: absolute; inset: 0; padding: 0; margin: 0; border: 0; background: none; cursor: pointer; perspective: 900px; }
+.hm-stage:focus-visible { outline: 2px solid var(--pri-2); outline-offset: -6px; border-radius: 20px; }
+.hm-tilt, .hm-hop, .hm-float { position: absolute; inset: 0; display: block; }
+.hm-tilt { transition: transform 0.35s ease-out; }
+.hm-hop.a { animation: hm-hop-a 0.62s cubic-bezier(.3, 1.5, .5, 1); }
+.hm-hop.b { animation: hm-hop-b 0.62s cubic-bezier(.3, 1.5, .5, 1); }
+.hm-float { animation: hm-float 5.4s ease-in-out infinite; }
+.hm-chara {
+  position: absolute; left: 50%; top: 1%; height: 128%; display: block; translate: -50% 0;
+  transform-origin: 50% 70%; animation: hm-breath 3.6s ease-in-out infinite, hm-chara-in 0.55s ease-out;
+  -webkit-mask-image: linear-gradient(#000 64%, transparent 77%); mask-image: linear-gradient(#000 64%, transparent 77%);
+}
+.hm-chara img { display: block; height: 100%; width: auto; max-width: none; filter: drop-shadow(0 12px 20px var(--shadow)) drop-shadow(0 0 14px var(--chara-soft)); }
+.hm-shine {
+  position: absolute; inset: 0; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; mix-blend-mode: screen;
+  background: linear-gradient(112deg, transparent 38%, #beebff73 46%, #ffffffcc 50%, #ffc8e673 54%, transparent 62%) 0 0 / 320% 100%;
+  animation: hm-shine 6.5s ease-in-out infinite;
+}
+@keyframes hm-chara-in { from { opacity: 0; transform: translateY(12px); } }
+.hm-burst { position: absolute; left: 50%; top: 45%; width: 0; height: 0; pointer-events: none; }
+.hm-burst i {
+  position: absolute; left: -8px; top: -8px; width: 16px; height: 16px; opacity: 0; background: #fff;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 5px var(--chara));
+}
+.hm-burst b { position: absolute; left: -60px; top: -60px; width: 120px; height: 120px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 12px var(--chara-soft); opacity: 0; }
+.hm-burst.a i { animation: hm-spark-a 0.75s ease-out; }
+.hm-burst.b i { animation: hm-spark-b 0.75s ease-out; }
+.hm-burst.a b { animation: hm-ring-a 0.7s ease-out; }
+.hm-burst.b b { animation: hm-ring-b 0.7s ease-out; }
+
+/* キャラクターの名前と「キャラを変える」（舞台の下のふち） */
+.hm-name {
+  position: absolute; left: 14px; bottom: 14px; z-index: 2; display: flex; align-items: center; gap: 8px; max-width: calc(100% - 180px);
+  height: 42px; padding: 0 16px 0 8px; border-radius: 21px; pointer-events: none;
+}
+.hm-star { flex: none; padding: 2px 7px; border-radius: 8px; background: #ffe9a8; color: #7a5200; font: 400 13px/1.2 var(--f-mark); letter-spacing: 0.06em; }
+.hm-name-text { min-width: 0; font: 400 18px/1 var(--f-head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: hm-up-in 0.5s ease-out; }
+.hm-swap {
+  position: absolute; right: 14px; bottom: 14px; z-index: 2; display: flex; align-items: center; gap: 6px;
+  height: 42px; padding: 0 14px 0 10px; border-radius: 21px; color: var(--ink); font-size: 12px; font-weight: 800; cursor: pointer;
+}
+.hm-swap svg { width: 18px; height: 18px; color: var(--pri-3); }
+
+/* 下の台：対戦の大きなボタン 2 つと、3 つの入口 */
+.hm-dock {
+  position: relative; z-index: 2; display: grid; gap: 10px; margin-top: -6px;
+  padding: 16px 16px max(16px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+  border-radius: 30px 30px 0 0; background: #ffffff80; -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6);
+  border-top: 1px solid #fff; box-shadow: 0 -12px 32px var(--shadow), inset 0 1px 0 #fff;
+}
+.hm-battle { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hm-bb {
+  position: relative; height: 98px; border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 0 14px 13px; transition: transform 0.12s;
+}
+.hm-bb.cpu { background: var(--glass-hi); border: 1px solid #fff; box-shadow: 0 6px 16px var(--shadow), inset 0 1px 0 #fff; }
+.hm-bb.online {
+  color: #fff; background: linear-gradient(200deg, var(--pri-1) 0%, var(--pri-2) 46%, var(--pri-3) 100%);
+  border: 1px solid #ffffffd9; box-shadow: 0 10px 22px var(--pri-shadow), inset 0 1px 0 #ffffffb3;
+}
+.hm-bb-ic { position: absolute; right: 10px; top: 10px; width: 34px; height: 34px; border-radius: 12px; display: grid; place-items: center; }
+.hm-bb-ic svg { width: 21px; height: 21px; }
+.hm-bb.cpu .hm-bb-ic { background: var(--pri-soft); color: var(--pri-3); }
+.hm-bb.online .hm-bb-ic { background: #ffffff38; color: #fff; }
+.hm-bb-sub { position: relative; margin-bottom: 2px; font-size: 11px; font-weight: 700; }
+.hm-bb.cpu .hm-bb-sub { color: var(--ink-2); }
+.hm-bb-label { position: relative; font-size: 18px; font-weight: 800; line-height: 1.2; white-space: nowrap; }
+.hm-bb.online .hm-bb-sub, .hm-bb.online .hm-bb-label { text-shadow: 0 1px 3px #00285040; }
+.hm-sheen {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, #ffffff99 50%, transparent 65%) 0 0 / 300% 100%;
+  animation: hm-sheen 3.8s ease-in-out infinite;
+}
+.hm-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.hm-tile {
+  position: relative; height: 78px; border-radius: 20px; display: grid; place-content: center; justify-items: center; gap: 6px;
+  background: var(--glass-hi); border: 1px solid #fff; box-shadow: 0 6px 16px var(--shadow), inset 0 1px 0 #fff;
+  font-size: 13px; font-weight: 800; white-space: nowrap; transition: transform 0.12s;
+}
+.hm-tile-ic { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; }
+.hm-tile-ic svg { width: 22px; height: 22px; }
+.hm-tile-ic.pri { background: var(--pri-soft); color: var(--pri-3); }
+.hm-tile-ic.sub { background: var(--sub-soft); color: var(--sub-deep); }
+.hm-tile-ic.acc { background: var(--acc-soft); color: var(--acc-deep); }
+/* ガチャは、ふちに虹色が流れる */
+.hm-tile.gacha {
+  border: 2px solid transparent;
+  background: linear-gradient(#ffffffe0, #ffffffe0) padding-box, linear-gradient(120deg, #ffb3d9, #b5ccff, #9ef0dc, #ffe7a3, #ffb3d9) border-box;
+  background-size: 100% 100%, 300% 100%; animation: hm-iri 6s linear infinite;
+}
+.hm-bb:active, .hm-tile:active, .hm-swap:active, .hm-icon-btn:active { transform: scale(0.95); }
+.hm :is(a, button):focus-visible { outline: 2px solid var(--pri-2); outline-offset: 3px; }
+
+/* 下から出る一覧（お知らせ・メニュー） */
+.hm-sheet-wrap { position: fixed; inset: 0; z-index: 30; }
+.hm-sheet-bg { position: absolute; inset: 0; padding: 0; border: 0; background: #283c5a38; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); cursor: pointer; animation: fade 0.25s ease; }
+.hm-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; max-height: 72%; overflow: auto;
+  padding: 8px 16px max(24px, calc(env(safe-area-inset-bottom, 0px) + 12px)); border-radius: 28px 28px 0 0;
+  background: #ffffffe6; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-top: 1px solid #fff; box-shadow: 0 -12px 32px var(--shadow);
+  animation: hm-sheet-up 0.32s cubic-bezier(.2, .9, .3, 1);
+}
+@keyframes hm-sheet-up { from { transform: translateY(100%); } }
+.hm-grip { width: 40px; height: 5px; margin: 0 auto 4px; border-radius: 3px; background: #1f2d4426; }
+.hm-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 6px; }
+.hm-sheet-head h2 { margin: 0; font-size: 18px; font-weight: 800; }
+.hm-news-list { list-style: none; margin: 0; padding: 0; }
+.hm-news-list li { display: grid; gap: 4px; padding: 14px 4px; border-bottom: 1px solid var(--line); }
+.hm-news-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; color: var(--ink-2); }
+.hm-news-meta .hm-tag { font-size: 10px; padding: 1px 7px; }
+.hm-news-title { font-size: 14px; font-weight: 700; line-height: 1.5; }
+.hm-menu { display: grid; }
+.hm-menu button {
+  display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 4px; border: 0; border-bottom: 1px solid var(--line);
+  background: none; color: var(--ink); font-size: 15px; font-weight: 700; text-align: left; cursor: pointer;
+}
+.hm-menu button svg { width: 22px; height: 22px; color: var(--pri-3); }
+.hm-menu button.dim { color: var(--ink-2); font-weight: 500; }
+.hm-menu button.dim svg { color: var(--ink-2); }
+
+@keyframes hm-spin { to { rotate: 360deg; } }
+@keyframes hm-drift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(30px, -24px); } }
+@keyframes hm-pulse { 0%, 100% { scale: 1; } 50% { scale: 1.04; } }
+@keyframes hm-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes hm-breath { 0%, 100% { scale: 1 1; } 50% { scale: 1.012 1.02; } }
+@keyframes hm-hop-a { 0% { transform: none; } 28% { transform: translateY(-30px) scale(1.03, 0.97); } 52% { transform: translateY(0) scale(1.02, 0.97); } 72% { transform: translateY(-7px); } 100% { transform: none; } }
+@keyframes hm-hop-b { 0% { transform: none; } 28% { transform: translateY(-30px) scale(1.03, 0.97); } 52% { transform: translateY(0) scale(1.02, 0.97); } 72% { transform: translateY(-7px); } 100% { transform: none; } }
+@keyframes hm-spark-a { 0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(0.4); } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-150px) scale(1.1); } }
+@keyframes hm-spark-b { 0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(0.4); } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-150px) scale(1.1); } }
+@keyframes hm-ring-a { 0% { opacity: 1; transform: scale(0.3); } 100% { opacity: 0; transform: scale(2.4); } }
+@keyframes hm-ring-b { 0% { opacity: 1; transform: scale(0.3); } 100% { opacity: 0; transform: scale(2.4); } }
+@keyframes hm-shine { 0%, 50% { background-position: 100% 0; } 82%, 100% { background-position: 0% 0; } }
+@keyframes hm-sheen { 0%, 55% { background-position: 100% 0; } 90%, 100% { background-position: 0% 0; } }
+@keyframes hm-iri { to { background-position: 0 0, 300% 0; } }
