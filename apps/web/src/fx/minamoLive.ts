@@ -7,8 +7,9 @@ import "./minamoLive.css";
  * 1. アップ（0〜0.35 秒）：場が暗くなり、カードが枠から浮いて画面の片側でアップになる。着いたところに波紋。
  *    その間にカードの絵からミナモが消えて水だけになる（泡が昇る。最初からカードの中にいるように見せないため）
  * 2. コメント欄（0.42 秒〜）：カードの横に配信のコメント欄が開き、あいさつのコメントが下から入って上へ流れる
- * 3. ひょこっ（1.0〜1.18 秒）：カードの上の縁から、ミナモが顔を出す（行き過ぎて戻る。見えるのはカードの幅の中だけ）。
- *    縁に白い閃光としぶき、カードが少し沈む。コメントが一気に増え、ハートが昇り、視聴者数が増える
+ * 3. ひょこっ（1.0〜1.18 秒）：カードの中の上の縁から、ミナモが顔だけ出す（行き過ぎて戻る）。切り抜きは上下逆の構図なので
+ *    上下を反転して顔を上向きにし、髪から下はカードの外（枠で切り取られて映らない）。しぶきと白い閃光、カードが少し沈む。
+ *    コメントが一気に増え、ハートが昇り、視聴者数が増える
  * 4. 余韻（1.18〜2.3 秒）：ゆらゆら揺れながら、泡が昇り、コメントが流れ続ける
  * 5. 引っ込む（2.3〜2.46 秒）：ひょこっと引っ込み、コメント欄が閉じる。カードの絵が元に戻る
  * 6. 戻る（2.5〜2.8 秒）：カードが枠へ戻って着地。足もとに輪としぶき、小さな揺れ
@@ -67,8 +68,8 @@ const END = T_LAND + 340;
 /** モックの盤面の幅（360）とアップのカードの幅（150）。画面の幅に合わせて縮める */
 const MW = 360;
 const UP_W = 150;
-/** 顔を出す高さ（絵の高さの割合） */
-const SHOW = 0.36;
+/** 顔を出す深さ（カードの高さの割合。顔と手だけ） */
+const SHOW = 0.3;
 
 /** コメント（出る時刻・文・目立たせるか）。名前と色は順に当てる */
 const MSGS: readonly [number, string, boolean?][] = [
@@ -193,13 +194,6 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
     width: `${ur.width}px`,
     height: `${ur.height}px`,
   });
-  const win = document.createElement("div");
-  win.className = "ml-win";
-  const peek = document.createElement("div");
-  peek.className = "ml-peek";
-  peek.style.setProperty("--ml-subject", `url("${subject}")`);
-  win.appendChild(peek);
-  up.appendChild(win);
   const card = unit.cloneNode(true) as HTMLElement;
   // 場に出たときの落ちてくる動き（.enter）を写しでやり直さないように外す
   card.classList.remove("enter");
@@ -209,6 +203,11 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
   const bgEl = document.createElement("div");
   bgEl.className = "ml-bg";
   bgEl.style.setProperty("--ml-bg", `url("${bg}")`);
+  // 顔を出すミナモ（カードの中。枠で切り取られる）
+  const peek = document.createElement("div");
+  peek.className = "ml-subj";
+  peek.style.setProperty("--ml-subject", `url("${subject}")`);
+  card.prepend(peek);
   card.prepend(bgEl);
   up.appendChild(card);
   root.appendChild(up);
@@ -365,28 +364,18 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
     return { x, y, w, h: (w * 88) / 63 };
   };
 
-  /** 窓の中のミナモ。0 = カードの後ろに隠れている、1 = 顔を出している */
+  /** カードの中のミナモ。-1 = 上の縁の外に隠れている、-1+SHOW = 顔だけ出している（上下を反転してあるので、顔が上向きで下りてくる） */
   const peekPose = (t: number) => {
-    let p = 0;
-    let rot = 0;
+    let y = -1;
     let sway = 0;
-    if (t < T_PEEK) p = 0;
-    else if (t < T_PEEK_END) {
-      p = backOut(seg(t, T_PEEK, T_PEEK_END), 2.6);
-      rot = -10 * (1 - seg(t, T_PEEK, T_PEEK_END));
-    } else if (t < T_HIDE) {
-      p = 1;
+    if (t < T_PEEK) y = -1;
+    else if (t < T_PEEK_END) y = -1 + SHOW * backOut(seg(t, T_PEEK, T_PEEK_END), 2.6);
+    else if (t < T_HIDE) {
       const ts = (t - T_PEEK_END) / 1000;
-      sway = Math.sin(ts * 2.6) * 3.5;
-      rot = Math.sin(ts * 1.8) * 2.5;
-    } else if (t < T_HIDE_END) {
-      const q = seg(t, T_HIDE, T_HIDE_END);
-      p = 1 - ei3(q);
-      rot = -6 * q;
-    }
-    peek.style.transform = `translateX(-50%) translateY(${(1 - p * SHOW) * 100}%) rotate(${rot + sway * 0.4}deg)`;
-    peek.style.opacity = p > 0.001 ? "1" : "0";
-    return p;
+      y = -1 + SHOW + Math.sin(ts * 1.8) * 0.012;
+      sway = Math.sin(ts * 2.6) * 2.2;
+    } else if (t < T_HIDE_END) y = -1 + SHOW * (1 - ei3(seg(t, T_HIDE, T_HIDE_END)));
+    peek.style.transform = `translate(${sway}%, ${y * 100}%) scaleY(-1)`;
   };
 
   /** コメント欄：開いて、行が下から入り、閉じる */
@@ -442,7 +431,8 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
     }
     const dt = prevT < 0 ? 16 : Math.max(0, t - prevT);
     // しぶき：ひょこっの瞬間（カードの上の縁）と着地の瞬間（足もと）
-    if (prevT < T_PEEK_END - 120 && t >= T_PEEK_END - 120) spawnDrops(cd.x, cd.y - cd.h, cd.w, 22, 1.9);
+    if (prevT < T_PEEK_END - 120 && t >= T_PEEK_END - 120)
+      spawnDrops(cd.x, cd.y - cd.h * (1 - SHOW), cd.w * 0.8, 18, 2.4);
     if (prevT < T_LAND && t >= T_LAND) spawnDrops(cd.x, cd.y, cd.w, 16, 2.6);
     if (prevT < ART_OUT[0] && t >= ART_OUT[0]) spawnBubbles(cd.x, cd.y - cd.h * 0.5, cd.w, ART_OUT[0], 8);
     if (prevT < T_PEEK_END && t >= T_PEEK_END) {
@@ -502,7 +492,7 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
     const fl = t >= T_PEEK_END - 40 ? 1 - seg(t, T_PEEK_END - 40, T_PEEK_END + 220) : 0;
     if (fl > 0) {
       const cx = cd.x - ox;
-      const cy = cd.y - oy - cd.h;
+      const cy = cd.y - oy - cd.h * (1 - SHOW);
       const g = gF.createRadialGradient(cx, cy, 0, cx, cy, cd.w * 0.6);
       g.addColorStop(0, `rgba(255,255,255,${fl * 0.8})`);
       g.addColorStop(1, "rgba(120,210,255,0)");
