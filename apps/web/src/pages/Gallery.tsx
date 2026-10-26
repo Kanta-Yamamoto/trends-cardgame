@@ -134,7 +134,7 @@ export function Gallery() {
               f && f !== "ニュートラル"
                 ? {
                     borderColor: ATTR_META[f].color,
-                    color: filter === f ? "#fff" : ATTR_META[f].color,
+                    color: filter === f ? "#fff" : ATTR_META[f].deep,
                     background: filter === f ? ATTR_META[f].deep : undefined,
                   }
                 : undefined
