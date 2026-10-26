@@ -845,6 +845,46 @@ function EndTurnConfirm({
   );
 }
 
+/** 対戦の途中で「戻る」「ロビーへ」を押したときの確認（押し間違いで対戦から抜けないように） */
+function QuitConfirm({
+  question,
+  notes,
+  onYes,
+  onNo,
+}: {
+  question: string;
+  notes: string[];
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onNo();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onNo]);
+  return (
+    <div className="zoom-sheet end-confirm" role="alertdialog" aria-modal="true" aria-label="退出の確認">
+      <button type="button" className="zoom-sheet-bg" aria-label="やめる" onClick={onNo} />
+      <div className="end-confirm-body">
+        <p className="end-confirm-q">{question}</p>
+        {notes.map((n) => (
+          <p key={n} className="end-confirm-note">
+            {n}
+          </p>
+        ))}
+        <div className="end-confirm-actions">
+          <button type="button" className="btn ghost" onClick={onNo}>
+            いいえ
+          </button>
+          <button type="button" className="btn" onClick={onYes}>
+            退出する
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** バズの確認：対象のキャラクターと、バズしたあとの攻撃力・体力・残りの回数を見せる */
 function BuzzConfirm({
   card,
@@ -1010,11 +1050,14 @@ function PostThrowArrow({ from }: { from: { x: number; y: number } | null }) {
   );
 }
 
-/** 対戦の画面。CPU 戦とオンライン対戦で共通（onQuit を渡すと「戻る」でそれを呼ぶ） */
 /** 見せ終わったオープニングの番号（store の opening） */
 let openingSeen = 0;
 
-export function Board({ onQuit }: { onQuit?: () => void } = {}) {
+/**
+ * 対戦の画面。CPU 戦とオンライン対戦で共通（onQuit を渡すと「戻る」でそれを呼ぶ）。
+ * 決着の前に「戻る」を押したら、確認を出してから抜ける。quitNotes はその確認に添える説明（オンライン対戦の、抜けたあとどうなるか）
+ */
+export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: string[] } = {}) {
   const {
     game,
     deck,
@@ -1048,6 +1091,13 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     onQuit?.();
   };
   const [resignAsk, setResignAsk] = useState(false);
+  /** 「戻る」の確認を出しているか */
+  const [quitAsk, setQuitAsk] = useState(false);
+  // 確認を出している間に決着したら閉じる（「もう一度」の次の対戦で出し直さない）
+  const decided = !!game?.winner;
+  useEffect(() => {
+    if (decided) setQuitAsk(false);
+  }, [decided]);
   /** 相手が出した・使ったカードを大きく見せる */
   const [reveal, setReveal] = useState<{
     id: number;
@@ -1896,7 +1946,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     </button>
   );
   const quitBtn = (
-    <button type="button" className="btn ghost quit" onClick={quit}>
+    <button
+      type="button"
+      className="btn ghost quit"
+      onClick={() => (game.winner ? quit() : setQuitAsk(true))}
+    >
       {online ? "ロビーへ" : "戻る"}
     </button>
   );
@@ -2134,6 +2188,17 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             endTurn();
           }}
           onNo={() => setConfirmEnd(false)}
+        />
+      )}
+      {quitAsk && !game.winner && (
+        <QuitConfirm
+          question={online ? "ロビーに戻りますか？" : "デッキ選びに戻りますか？"}
+          notes={online ? (quitNotes ?? []) : ["この対戦は終わります（続きからは遊べません）"]}
+          onYes={() => {
+            setQuitAsk(false);
+            quit();
+          }}
+          onNo={() => setQuitAsk(false)}
         />
       )}
       {openingOn && deck && (
