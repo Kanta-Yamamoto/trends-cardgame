@@ -85,12 +85,18 @@ export function InstallGuide({ onClose }: { onClose: (forever: boolean) => void 
   );
 }
 
+/** ホームのメニューに「アプリとして入れる」を出すか（入れられる端末で、まだ入れていないとき） */
+export function useCanInstall() {
+  const install = useInstall();
+  if (install.kind === "installed") return false;
+  return install.kind === "prompt" || isIos() || isAndroid();
+}
+
 /**
- * ナビの「アプリにする」と、初めての人への案内。
+ * 初めての人への案内（開いて少ししたら自動で出す）。
  * 対戦中の画面では自動では出さない。アプリとして開いているときは何も出さない
  */
-export function InstallButton() {
-  const install = useInstall();
+export function InstallAutoGuide() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const inGame = pathname.startsWith("/play") || /^\/online\/.+/.test(pathname);
@@ -101,23 +107,13 @@ export function InstallButton() {
     return () => clearTimeout(t);
   }, [inGame]);
 
-  if (install.kind === "installed") return null;
-  const show = install.kind === "prompt" || isIos() || isAndroid();
+  if (!open) return null;
   return (
-    <>
-      {show && (
-        <button type="button" className="btn small install-btn" onClick={() => setOpen(true)}>
-          アプリにする
-        </button>
-      )}
-      {open && (
-        <InstallGuide
-          onClose={(forever) => {
-            dismissGuide(forever);
-            setOpen(false);
-          }}
-        />
-      )}
-    </>
+    <InstallGuide
+      onClose={(forever) => {
+        dismissGuide(forever);
+        setOpen(false);
+      }}
+    />
   );
 }
