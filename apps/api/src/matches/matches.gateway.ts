@@ -161,6 +161,7 @@ export class MatchesGateway
   async enqueue(@ConnectedSocket() client: Client, @MessageBody() body: { deck?: string }): Promise<Ack> {
     return this.guard(client, async (user) => {
       deckCards(body?.deck);
+      await this.matches.assertFree(user.id);
       const { rating } = await this.ranking.ratingOf(user.id);
       this.queue.add({
         userId: user.id,

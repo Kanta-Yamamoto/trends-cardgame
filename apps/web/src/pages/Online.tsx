@@ -71,6 +71,47 @@ function connect(token: string): Socket {
   return API_URL ? io(API_URL, opts) : io(opts);
 }
 
+/* ---------- 通信が切れた対戦に戻る ---------- */
+
+/**
+ * 自分の決着していない対戦（無ければ null、確かめている途中は undefined）。
+ * 確かめられなかったときは null（ふつうのロビーを出す。ほかの部屋に入ろうとしても、サーバーが断る）
+ */
+function useCurrentMatch(token: string | null) {
+  const [current, setCurrent] = useState<MatchInfo | null | undefined>(undefined);
+  useEffect(() => {
+    if (!token) return;
+    let alive = true;
+    api<{ match: MatchInfo | null }>("/me/match", {}, token)
+      .then((r) => alive && setCurrent(r.match))
+      .catch(() => alive && setCurrent(null));
+    return () => {
+      alive = false;
+    };
+  }, [token]);
+  return current;
+}
+
+/** 決着していない対戦があるあいだは、ロビーにこれだけを出す（ほかの対戦は始めず、その部屋に戻ってもらう） */
+function ResumeMatch({ match }: { match: MatchInfo }) {
+  const { user } = useSession();
+  const navigate = useNavigate();
+  const foe = match.players.p1?.id === user?.id ? match.players.p2 : match.players.p1;
+  return (
+    <div className="online-card resume">
+      <h2>対戦が続いています</h2>
+      <p>{match.kind === "cpu" ? "CPU" : `${foe?.name ?? "相手"} さん`}との対戦の途中です。</p>
+      <p className="muted">
+        戻るまでのあいだも、あなたのターンは 60
+        秒で終わり、持ち時間が減っていきます（使い切ると負け）。決着するまで、ほかの対戦はできません。
+      </p>
+      <button type="button" className="btn" onClick={() => navigate(`/online/${match.code}`)}>
+        対戦に戻る
+      </button>
+    </div>
+  );
+}
+
 /* ---------- ランダムマッチ ---------- */
 
 /** 待ち始めてからの時間を 1 秒ごとに数える */
@@ -183,6 +224,7 @@ function RandomMatch() {
 export function OnlineLobby() {
   const { user, token } = useSession();
   const navigate = useNavigate();
+  const current = useCurrentMatch(user ? token : null);
   const [tab, setTab] = useState<"random" | "friend">("random");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -221,6 +263,8 @@ export function OnlineLobby() {
       </header>
       {!user ? (
         <Login />
+      ) : current === undefined ? null : current ? (
+        <ResumeMatch match={current} />
       ) : (
         <>
           <div className="online-tabs" role="tablist" aria-label="対戦のしかた">
@@ -295,6 +339,9 @@ export function OnlineRoom() {
 
   const member = !!user && !!info && (info.players.p1?.id === user.id || info.players.p2?.id === user.id);
   const ready = member || !!deck;
+  const current = useCurrentMatch(token);
+  /** ほかの部屋で続いている対戦（あれば、この部屋には入らずそちらに戻ってもらう） */
+  const elsewhere = info && !member && current && current.code !== info.code ? current : null;
 
   // 部屋の様子を取る（参加者か、空きがあるか）
   useEffect(() => {
@@ -397,6 +444,8 @@ export function OnlineRoom() {
             ロビーに戻る
           </button>
         </div>
+      ) : elsewhere ? (
+        <ResumeMatch match={elsewhere} />
       ) : full ? (
         <div className="online-card">
           <p className="notice">この部屋はもう2人そろっています。</p>

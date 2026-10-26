@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import { randomUUID } from "node:crypto";
 import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { DECKS } from "@trends/cards";
@@ -159,6 +160,67 @@ describe("ログインとオンライン対戦", () => {
     expect((await end).state.winner).toBe("p1");
     const done = await request(app.getHttpServer()).get("/health").expect(200);
     expect(done.body.liveMatches).toBe(0);
+  });
+
+  it("通信が切れても、決着していない対戦は続き、その部屋に戻れる。戻るまではほかの部屋に入れない", async () => {
+    // DB は消さないので、名前は毎回変える
+    const tag = randomUUID().slice(0, 6);
+    const [ta, tb, tc] = [await login(`もどる${tag}`), await login(`まつ${tag}`), await login(`べつ${tag}`)];
+    const current = async (t: string) =>
+      (await request(app.getHttpServer()).get("/me/match").set("Authorization", `Bearer ${t}`).expect(200))
+        .body as { match: { code: string; status: string; players: { p2: { name: string } | null } } | null };
+    const created = await request(app.getHttpServer())
+      .post("/matches")
+      .set("Authorization", `Bearer ${ta}`)
+      .send({ deck: "solo_flame" })
+      .expect(201);
+    const code = created.body.code as string;
+    // 相手を待っているあいだは、まだ対戦ではない
+    expect((await current(ta)).match).toBeNull();
+
+    const a = await connect(ta);
+    await emit(a, "join", { code });
+    const b = await connect(tb);
+    const started = next<MatchMsg>(b, "match");
+    await emit(b, "join", { code, deck: "solo_idol" });
+    await started;
+    const mine = await current(ta);
+    expect(mine.match?.code).toBe(code);
+    expect(mine.match?.players.p2?.name).toBe(`まつ${tag}`);
+    expect((await current(tc)).match).toBeNull();
+
+    // 通信が切れても、対戦は続いている
+    a.disconnect();
+    expect((await current(ta)).match?.code).toBe(code);
+
+    // 戻るまでは、ほかの部屋を作る・入る・ランダムマッチに並ぶことはできない
+    const busy = await request(app.getHttpServer())
+      .post("/matches")
+      .set("Authorization", `Bearer ${ta}`)
+      .send({ deck: "solo_flame" })
+      .expect(409);
+    expect(busy.body.message).toContain("対戦中の部屋があります");
+    const other = await request(app.getHttpServer())
+      .post("/matches")
+      .set("Authorization", `Bearer ${tc}`)
+      .send({ deck: "solo_meme" })
+      .expect(201);
+    const back = await connect(ta);
+    expect(await emit(back, "join", { code: other.body.code, deck: "solo_flame" })).toMatchObject({
+      ok: false,
+      error: "対戦中の部屋があります。先にその対戦に戻ってください",
+    });
+    expect((await emit(back, "queue", { deck: "solo_flame" })).ok).toBe(false);
+
+    // 同じ部屋には戻れる。決着すると、戻る対戦は無くなる
+    const resumed = next<MatchMsg>(back, "match");
+    expect(await emit(back, "join", { code })).toEqual({ ok: true });
+    expect((await resumed).status).toBe("playing");
+    const end = next<UpdateMsg>(b, "update");
+    await emit(back, "resign", { code });
+    expect((await end).state.winner).toBe("p1");
+    expect((await current(ta)).match).toBeNull();
+    expect((await current(tb)).match).toBeNull();
   });
 
   it("招待リンクの守りが効いているときは、招待済みのクッキーが無い接続を断る", async () => {

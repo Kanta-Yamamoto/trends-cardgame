@@ -1,6 +1,7 @@
 import { randomInt } from "node:crypto";
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -27,7 +28,7 @@ import {
   tickClock,
   validateDeck,
 } from "@trends/game-core";
-import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
 import { type MatchRatings, type MatchRow, matches, users } from "../db/schema";
@@ -95,6 +96,7 @@ export class MatchesService {
   /** 部屋を作る（作った人が p1） */
   async create(userId: string, deck: unknown) {
     deckCards(deck);
+    await this.assertFree(userId);
     return this.info(await this.insert({ p1Id: userId, p1Deck: deck as string }));
   }
 
@@ -193,6 +195,32 @@ export class MatchesService {
     throw new Error("合言葉を作れませんでした");
   }
 
+  /**
+   * そのユーザーの、決着していない対戦（いちばん新しいもの）。通信が切れた人が戻るのに使う。
+   * 持ち時間の無い古い対戦は数えない（時間切れで決着しないので、ずっと残ってしまう）
+   */
+  async current(userId: string): Promise<MatchRow | null> {
+    const [row] = await this.db
+      .select()
+      .from(matches)
+      .where(
+        and(
+          eq(matches.status, "playing"),
+          isNotNull(matches.clock),
+          or(eq(matches.p1Id, userId), eq(matches.p2Id, userId)),
+        ),
+      )
+      .orderBy(desc(matches.createdAt))
+      .limit(1);
+    return row ?? null;
+  }
+
+  /** 決着していない対戦があれば、ほかの部屋には入れない（先にその対戦に戻ってもらう） */
+  async assertFree(userId: string) {
+    if (await this.current(userId))
+      throw new ConflictException("対戦中の部屋があります。先にその対戦に戻ってください");
+  }
+
   async find(code: string) {
     const [row] = await this.db.select().from(matches).where(eq(matches.code, code.toUpperCase()));
     if (!row) throw new NotFoundException("その合言葉の部屋はありません");
@@ -206,6 +234,7 @@ export class MatchesService {
       if (row.p1Id === userId || row.p2Id === userId) return row;
       if (row.p2Id) throw new ForbiddenException("この部屋はもう2人そろっています");
       deckCards(deck);
+      await this.assertFree(userId);
       const { state, clock } = newGame(row.p1Deck, deck as string);
       const [next] = await this.db
         .update(matches)
