@@ -56,10 +56,26 @@ export function CardZoom({
   }, [onClose, nav]);
 
   return (
-    <div className="zoom-sheet" role="dialog" aria-modal="true" aria-label={`${name} を拡大`}>
-      <button type="button" className="zoom-sheet-bg" aria-label="閉じる" onClick={onClose} />
+    <div className="zoom-sheet card-zoom" role="dialog" aria-modal="true" aria-label={`${name} を拡大`}>
+      {/* 地はカードの絵をぼかして、明るい幕を重ねる */}
+      <button type="button" className="zoom-sheet-bg card-zoom-bg" aria-label="閉じる" onClick={onClose}>
+        {card.art && <span className="card-zoom-art" style={{ backgroundImage: `url(${card.art})` }} />}
+      </button>
+      <button type="button" className="card-zoom-close g1" aria-label="閉じる" onClick={onClose}>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
       <div className="zoom-sheet-body">
         <div className="zoom-sheet-card">
+          <span className="card-zoom-halo" aria-hidden="true" />
           <HoloCard
             darkForm={dark}
             card={card}
@@ -80,10 +96,15 @@ export function CardZoom({
           <AttrChips card={card} />
           {card.type === "icon" && (
             <p className="zs-stats">
-              攻撃力 <b className="t-atk">{live?.attack ?? (dark ? card.dark?.attack : card.attack)}</b>
-              <span>・</span>
-              体力 <b className="t-hp">{live ? live.hp : dark ? card.dark?.hp : card.hp}</b>
-              {live && live.hp < live.maxHp && <span className="zs-max">／{live.maxHp}</span>}
+              <span className="zs-st">
+                <b className="zs-ball atk">{live?.attack ?? (dark ? card.dark?.attack : card.attack)}</b>
+                攻撃力
+              </span>
+              <span className="zs-st">
+                <b className="zs-ball hp">{live ? live.hp : dark ? card.dark?.hp : card.hp}</b>
+                体力
+                {live && live.hp < live.maxHp && <span className="zs-max">（最大 {live.maxHp}）</span>}
+              </span>
             </p>
           )}
           {effect && (
@@ -130,9 +151,6 @@ export function CardZoom({
             </button>
           )}
           <p className="zs-note">カードを押すと、文字を隠して絵だけを見られます</p>
-          <button type="button" className="btn" onClick={onClose}>
-            閉じる
-          </button>
         </div>
       </div>
       {nav && (

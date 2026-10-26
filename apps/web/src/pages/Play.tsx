@@ -48,11 +48,14 @@ import { fieldEntry, landed } from "../fx/fieldEntry";
 import { GOD_DESCENT_CARDS, godDescent } from "../fx/godDescent";
 import { IDOL_LIVE, idolLive } from "../fx/idolLive";
 import { KUSAHAMI_AMBUSH, kusahamiAmbush, kusahamiWither } from "../fx/kusahamiAmbush";
+import { MINAMO_LIVE, minamoLive } from "../fx/minamoLive";
 import { fxEnabled } from "../fx/stage";
 import { warmFx } from "../fx/warm";
 import { ArbiterField } from "../game/ArbiterField";
 import { CardZoom } from "../game/CardZoom";
+import { CostStrip } from "../game/CostStrip";
 import { type DarkCut, DarkCutscene } from "../game/DarkCutscene";
+import { AttrDots, aceSubject, DeckAce, deckGradient } from "../game/DeckArt";
 import { DirectorField, type StagedAce } from "../game/DirectorField";
 import { useDecksChanged } from "../game/deckSync";
 import {
@@ -371,14 +374,12 @@ function DeckSelect() {
   useEffect(() => warmFx(600), []);
   return (
     <>
-      <header className="page-head">
-        <h1>CPU と対戦</h1>
-        <p className="muted">
-          デッキを選んでください。CPU はほかのデッキから1つを使います。先攻・後攻はランダムです。
-        </p>
-      </header>
-      <DeckGrid onPick={start} />
-      <details className="rules">
+      <p className="deck-facts">
+        <span className="tag">先攻・後攻はランダム</span>
+        <span className="tag">CPU はほかのデッキから1つ</span>
+      </p>
+      <DeckGrid onPick={start} cta="対戦する" />
+      <details className="rules g2">
         <summary>ルール（かんたん版）</summary>
         <ul>
           <li>相手のプレイヤーのライフ（20）を 0 にすれば勝ち。山札が引けなくなっても負け</li>
@@ -500,35 +501,6 @@ function OpeningSide({ side, sel, who }: { side: "me" | "foe"; sel: DeckSel; who
   );
 }
 
-/** エースの切り抜き。専用のカード面を持つ★5は、カードデータに切り抜きの指定が無い（面の CSS が直接読む）ので、同じ名前の切り抜きを使う */
-function aceSubject(card: CardDef): string | undefined {
-  return card.subject ?? (card.rarity === 5 ? card.art?.replace(/-art\.jpg$/, "-subject.webp") : undefined);
-}
-
-function DeckAce({ id }: { id?: string }) {
-  const card = id ? CATALOG[id] : undefined;
-  if (!card?.art) return null;
-  const subject = aceSubject(card);
-  return (
-    <span className="deck-ace" aria-hidden="true">
-      <span className="deck-ace-bg" style={{ backgroundImage: `url(${card.art})` }} />
-      {subject ? (
-        <img
-          className="deck-ace-subject"
-          src={subject}
-          alt=""
-          loading="lazy"
-          draggable={false}
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
-        />
-      ) : null}
-      <span className="deck-ace-shade" />
-    </span>
-  );
-}
-
 /**
  * 盤面の背景。闇堕ちを持つカードが墓地にされると「予兆」（持ち主の側から紫に染まる）、
  * 闇堕ちの姿が場にいる間は「闇」（盤面全体が暗い闇のフィールドになる）
@@ -644,34 +616,37 @@ function OmenFlame() {
   );
 }
 
-/** エースで決まるデッキの色。『フィクサー』（c15）は白から黒へ滲む二色、『演出家』（c17）は真紅と黒を斜線で分ける */
-const ACE_GRADIENT: Record<string, string> = {
-  c15: "linear-gradient(160deg, #f2f1ee 18%, #0e0d0c 82%)",
-  // 『演出家』（c17）：真紅と黒の二色。斜線で分ける
-  c17: "linear-gradient(160deg, #cf1b10 0 46%, #1c171c 46%)",
-};
-
-/** デッキの色（単属性なら左右とも同じ色） */
-function deckGradient(attrs: readonly string[], ace?: string) {
-  if (ace && ACE_GRADIENT[ace]) return ACE_GRADIENT[ace];
-  const [a, b = a] = attrs.map((x) => ATTR_META[x as keyof typeof ATTR_META]);
-  if (!a) return "linear-gradient(125deg, #6b7280, #374151)";
-  return `linear-gradient(125deg, ${a.color}, ${a.deep} 50%, ${b?.deep} 50%, ${b?.color})`;
-}
+const CHECK = (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="3"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M5 12l5 5 9-10" />
+  </svg>
+);
 
 /**
- * デッキを選ぶ（CPU 戦とオンライン対戦で共通）。構築済みデッキと、自分で組んで保存したデッキを並べる。
- * confirmLabel を渡すと、押してすぐには決めず、中身を見せて確かめてから onPick する
- * （オンライン対戦は選んだらすぐ部屋ができるので、押し間違いを防ぐ）
+ * デッキを選ぶ（CPU 戦とオンライン対戦で共通）。構築済みデッキと、自分で組んで保存したデッキを縦長のタイルで並べる。
+ * confirmLabel が無ければ、押したデッキを選んだ状態にし、下の台のボタン（cta）で決める。
+ * confirmLabel を渡すと、押したら中身を見せて確かめてから onPick する
+ * （オンライン対戦は選んだらすぐ部屋ができる・相手を探すので、押し間違いを防ぐ）
  */
 export function DeckGrid({
   onPick,
   confirmLabel,
+  cta = "対戦する",
 }: {
   onPick: (deck: DeckSel) => void;
   confirmLabel?: string;
+  cta?: string;
 }) {
   const [pending, setPending] = useState<DeckSel | null>(null);
+  const [chosen, setChosen] = useState<DeckSel | null>(null);
   // 決まりを守れていない自分のデッキ（属性が2つの、前に組んだデッキなど）は選べない。デッキ構築で直してもらう
   const readMine = useCallback(() => {
     const all = loadCustomDecks();
@@ -681,65 +656,99 @@ export function DeckGrid({
   const [{ mine, broken }, setMine] = useState(readMine);
   // アカウントとそろえ終わったら、自分のデッキを読み直す
   useDecksChanged(useCallback(() => setMine(readMine()), [readMine]));
-  const pick = (sel: DeckSel) => (confirmLabel ? setPending(sel) : onPick(sel));
-  const button = (sel: DeckSel) => (
-    <button
-      key={sel.ref}
-      type="button"
-      className="deck-pick"
-      style={{ background: deckGradient(sel.attrs, sel.ace) }}
-      onClick={() => pick(sel)}
-    >
-      <DeckAce id={sel.ace} />
-      <span className="deck-attrs">{sel.attrs.length > 0 ? sel.attrs.join(" × ") : "ニュートラル"}</span>
-      <strong>{sel.name}</strong>
-      <span>{sel.text}</span>
-    </button>
-  );
+  const pick = (sel: DeckSel) => (confirmLabel ? setPending(sel) : setChosen(sel));
+  const builtins = (Object.keys(DECK_INFO) as DeckId[]).map((id) => builtinDeck(id));
+  const tile = (sel: DeckSel, i: number) => {
+    const on = chosen?.ref === sel.ref;
+    return (
+      <button
+        key={sel.ref}
+        type="button"
+        className={`deck-pick ${on ? "on" : ""}`}
+        style={{ background: deckGradient(sel.attrs, sel.ace), animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+        aria-pressed={confirmLabel ? undefined : on}
+        onClick={() => pick(sel)}
+      >
+        <DeckAce id={sel.ace} />
+        <span className="deck-dots">
+          <AttrDots attrs={sel.attrs} />
+        </span>
+        <span className="deck-check">{CHECK}</span>
+        <strong className="deck-name">{sel.name}</strong>
+      </button>
+    );
+  };
   return (
     <>
-      <div className="deck-section">
+      <div className="sec">
         <h2>自分のデッキ</h2>
-        <Link to="/decks" className="btn ghost small">
-          デッキを組む
+        {mine.length > 0 ? (
+          <Link to="/decks" className="btn ghost small">
+            デッキを組む
+          </Link>
+        ) : (
+          <small>まだありません</small>
+        )}
+      </div>
+      {mine.length > 0 && <div className="decks">{mine.map((d) => customDeckSel(d)).map(tile)}</div>}
+      {broken > 0 && (
+        <p className="muted deck-empty">
+          決まり（属性は1つ＋ニュートラルのカード）を守れていないデッキが {broken}{" "}
+          個あります。「デッキを組む」で直すと選べます
+        </p>
+      )}
+      {mine.length === 0 && (
+        <Link to="/decks" className="deck-new">
+          <span aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </span>
+          デッキを組む（20枚）
         </Link>
-      </div>
-      <div className="decks">
-        {mine.map((d) => customDeckSel(d)).map(button)}
-        {broken > 0 && (
-          <p className="muted deck-empty">
-            決まり（属性は1つ＋ニュートラルのカード）を守れていないデッキが {broken}{" "}
-            個あります。「デッキを組む」で直すと選べます
-          </p>
-        )}
-        {mine.length === 0 && broken === 0 && (
-          <p className="muted deck-empty">
-            まだありません。「デッキを組む」から、20枚のデッキを自由に作れます
-          </p>
-        )}
-      </div>
-      <div className="deck-section">
+      )}
+      <div className="sec">
         <h2>構築済みデッキ</h2>
+        <small>{builtins.length}個</small>
       </div>
-      <div className="decks">
-        {(Object.keys(DECK_INFO) as DeckId[]).map((id) => builtinDeck(id)).map(button)}
-        {pending && confirmLabel && (
-          <DeckConfirm
-            deck={pending}
-            label={confirmLabel}
-            onConfirm={() => {
-              setPending(null);
-              onPick(pending);
-            }}
-            onCancel={() => setPending(null)}
-          />
-        )}
-      </div>
+      <div className="decks">{builtins.map(tile)}</div>
+      {!confirmLabel && (
+        <>
+          <div className="deck-dock-pad" />
+          <div className="deck-dock g3">
+            <div className="deck-dock-text">
+              <b>{chosen?.name ?? "デッキを選んでください"}</b>
+              {chosen && <span>{chosen.text}</span>}
+            </div>
+            <button type="button" className="btn" disabled={!chosen} onClick={() => chosen && onPick(chosen)}>
+              {cta}
+            </button>
+          </div>
+        </>
+      )}
+      {pending && confirmLabel && (
+        <DeckConfirm
+          deck={pending}
+          label={confirmLabel}
+          onConfirm={() => {
+            setPending(null);
+            onPick(pending);
+          }}
+          onCancel={() => setPending(null)}
+        />
+      )}
     </>
   );
 }
 
-/** デッキの確認（名前・属性・説明と、入っているカード） */
+/** デッキの確認（下から出る小窓。名前・属性・説明と、コストごとの枚数・入っているカード） */
 function DeckConfirm({
   deck,
   label,
@@ -763,16 +772,24 @@ function DeckConfirm({
     .filter((x): x is { card: CardDef; n: number } => !!x.card)
     .sort((x, y) => y.card.rarity - x.card.rarity || x.card.cost - y.card.cost);
   return (
-    <div className="zoom-sheet deck-confirm" role="dialog" aria-modal="true" aria-label="デッキの確認">
-      <button type="button" className="zoom-sheet-bg" aria-label="選び直す" onClick={onCancel} />
-      <div className="deck-confirm-body">
-        <div className="deck-confirm-head" style={{ background: deckGradient(deck.attrs, deck.ace) }}>
-          <span className="deck-attrs">
-            {deck.attrs.length > 0 ? deck.attrs.join(" × ") : "ニュートラル"}
+    <div className="deck-confirm" role="dialog" aria-modal="true" aria-label="デッキの確認">
+      <button type="button" className="deck-confirm-bg" aria-label="選び直す" onClick={onCancel} />
+      <section className="deck-confirm-body">
+        <div className="deck-confirm-hero" style={{ background: deckGradient(deck.attrs, deck.ace) }}>
+          <DeckAce id={deck.ace} />
+          <span className="deck-confirm-attr">
+            <AttrDots attrs={deck.attrs} />
+            {deck.attrs.length > 0 ? deck.attrs.join("×") : "ニュートラル"}
           </span>
-          <strong>{deck.name}</strong>
-          <span>{deck.text}</span>
+          <div className="deck-confirm-text">
+            <b>{deck.name}</b>
+            <span>{deck.text}</span>
+          </div>
         </div>
+        <CostStrip cards={deck.cards} />
+        <p className="deck-confirm-lh">
+          入っているカード<small>{deck.cards.length}枚</small>
+        </p>
         <ul className="deck-confirm-list">
           {list.map(({ card, n }) => (
             <li key={card.id}>
@@ -784,14 +801,14 @@ function DeckConfirm({
           ))}
         </ul>
         <div className="deck-confirm-actions">
-          <button type="button" className="btn ghost" onClick={onCancel}>
+          <button type="button" className="btn ghost lg" onClick={onCancel}>
             選び直す
           </button>
-          <button type="button" className="btn" onClick={onConfirm}>
+          <button type="button" className="btn lg" onClick={onConfirm}>
             {label}
           </button>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
@@ -1129,7 +1146,7 @@ export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: 
   const ambushField = useRef<HTMLDivElement>(null);
   /** 毒の茨の演出で場に出した闇の姿の uid。出来事に合わせた裏返し（flipCard）は出さない */
   const withered = useRef(new Set<number>());
-  /** 降臨で場に出る神・ライブ演出で出るアイドル・茂みから飛び出すクサハミ・貼り重ねで出る伝説のコラ画像。ふつうの着地の代わりに、godDescent・idolLive・kusahamiAmbush・collagePaste が見せる */
+  /** 降臨で場に出る神・ライブ演出で出るアイドル・茂みから飛び出すクサハミ・貼り重ねで出る伝説のコラ画像・顔を出すミナモ。ふつうの着地の代わりに、godDescent・idolLive・kusahamiAmbush・collagePaste・minamoLive が見せる */
   const descending = useRef(new Set<number>());
   /** 降臨で神から手札へ飛ばし終えたカードの数。山札から引く演出を出さない */
   const handedOver = useRef(0);
@@ -1406,6 +1423,27 @@ export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: 
             }
             descending.current.delete(uid);
           }
+          // ミナモ：ふつうの着地の代わりに、カードを画面の中央で大きくアップにして（絵は水だけになる）上の縁からひょこっと顔を出し、真下に配信のコメント欄を流す。
+          // 描かれる前に印を付けて、着地の演出を止めておく（この行より前に await を置かない）
+          const minamo = card ? MINAMO_LIVE[card.id] : undefined;
+          if (card && uid !== undefined && minamo && card.subject && fxEnabled()) {
+            descending.current.add(uid);
+            await gwait(50);
+            const unitEl = self();
+            if (unitEl) {
+              await minamoLive({
+                unit: unitEl,
+                layer: fxLayer(),
+                subject: card.subject,
+                bg: minamo.bg,
+                name: card.name,
+                epithet: minamo.epithet,
+              });
+              unitEl.style.opacity = "";
+              live = true;
+            }
+            descending.current.delete(uid);
+          }
           // クサハミ：ふつうの着地の代わりに、茂みから飛び出して斬る演出（草原は場の後ろの層に描く）。
           // 描かれる前に印を付けて、着地の演出を止めておく（この行より前に await を置かない）
           if (card && uid !== undefined && KUSAHAMI_AMBUSH.has(card.id) && fxEnabled()) {
@@ -1540,7 +1578,7 @@ export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: 
       const card = CATALOG[u.cardId];
       const el = document.querySelector<HTMLElement>(`[data-uid="${u.uid}"]`);
       if (stagedAces.current.delete(u.uid) || descending.current.has(u.uid)) {
-        // 『演出家』で上がるエース・降臨するネ申・ライブ演出で出るアイドル・茂みから飛び出すクサハミ・伝説のコラ画像は、描かれる前に隠して、それぞれの演出に任せる
+        // 『演出家』で上がるエース・降臨するネ申・ライブ演出で出るアイドル・茂みから飛び出すクサハミ・伝説のコラ画像・顔を出すミナモは、描かれる前に隠して、それぞれの演出に任せる
         if (el) el.style.opacity = "0";
       } else if (card) fieldEntry(el, card);
     }
@@ -2400,33 +2438,50 @@ function Result({
   const won = game.winner === ME;
   const why = endReason(events, ME, won);
   return (
-    <div className="result" role="dialog" aria-modal="true" aria-label="対戦結果">
-      <div className={`result-card ${won ? "win" : "lose"}`}>
-        <strong>{won ? "勝利！" : "敗北…"}</strong>
+    <div className={`result ${won ? "win" : "lose"}`} role="dialog" aria-modal="true" aria-label="対戦結果">
+      <section className="result-body">
+        <strong className="result-title">{won ? "勝利！" : "敗北…"}</strong>
         <p className="result-why">
           <b>{why.title}</b>
           {why.detail}
         </p>
-        <span>{game.turn} ターン目で決着</span>
+        <span className="result-turn">{game.turn} ターン目で決着</span>
         {online && rating && (
-          <p className="result-rating">
-            レート {rating.before} → <b>{rating.after}</b>
-            <em className={rating.after >= rating.before ? "up" : "down"}>
-              {rating.after >= rating.before ? "+" : ""}
-              {rating.after - rating.before}
-            </em>
-          </p>
+          <div className="result-rating g2">
+            <p className="result-rating-h">
+              <span>ランダムマッチのレート</span>
+              <em className={rating.after >= rating.before ? "up" : "down"}>
+                {rating.after >= rating.before ? "+" : "−"}
+                {Math.abs(rating.after - rating.before)}
+              </em>
+            </p>
+            <p className="result-rating-r">
+              <span>{rating.before}</span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+              <b>{rating.after}</b>
+            </p>
+          </div>
         )}
-        <div className="result-actions">
-          {onAgain && (
-            <button type="button" className="btn" onClick={onAgain}>
-              もう一度
-            </button>
-          )}
-          <button type="button" className={onAgain ? "btn ghost" : "btn"} onClick={onQuit}>
-            {online ? "ロビーに戻る" : "デッキを選び直す"}
+      </section>
+      <div className="result-actions">
+        {onAgain && (
+          <button type="button" className="btn lg" onClick={onAgain}>
+            もう一度
           </button>
-        </div>
+        )}
+        <button type="button" className={onAgain ? "btn ghost lg" : "btn lg"} onClick={onQuit}>
+          {online ? "ロビーに戻る" : "デッキを選び直す"}
+        </button>
       </div>
     </div>
   );

@@ -1,0 +1,58 @@
+/* ミナモが場に出たときの演出（fx/minamoLive.ts）。水だけになるカードのアップ・カードの中で上の縁から顔だけ出すミナモ・配信のコメント欄 */
+
+.ml-root { position: absolute; inset: 0; pointer-events: none; }
+.ml-veil { position: absolute; background: #030b16; opacity: 0; }
+.ml-cv { position: absolute; left: 0; top: 0; }
+.ml-cv.front { z-index: 4; }
+
+/* カードの写し（足もとを軸に動かす） */
+.ml-up { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; will-change: transform; z-index: 2; }
+.ml-up > .mini { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; animation: none; box-shadow: 0 20px 50px -14px #000, 0 0 40px -8px #5cc8f066; z-index: 1; }
+/* 演出の間はスタッツ・キーワードを出さない（カードが浮くときに消え、枠へ戻るときに戻る） */
+.ml-up .mini-stats, .ml-up .mini-kws { opacity: var(--ml-st, 1); }
+/* 水だけの背景（絵の上に重ねて、ミナモが消えたように見せる）。下は効果の帯の黒 */
+.ml-bg { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, #000a 100%), var(--ml-bg) center 30% / cover; opacity: 0; }
+/* カードの中のミナモ（切り抜き）。カードの絵と同じ向き・同じ切り方で、切り抜き全体（顔・手・髪）をそのまま見せる。
+   上の縁の外から下りてきて、絵と同じ位置に止まる。カードの枠の外には映らない */
+.ml-subj {
+  position: absolute; inset: 0; background: var(--ml-subject) center 30% / cover no-repeat;
+  transform: translateY(-106%); will-change: transform; filter: drop-shadow(0 4px 8px #0008);
+}
+
+/* 名前（カード面のミナモの名前札と同じ形：白い丸い札に、水色とピンクのグラデーションの丸ゴシック）。顔を出したときにポンと出る。
+   カードの写しは transform で拡大しているので、文字の大きさは拡大率（--ml-k）で割って 20px 相当にする */
+.ml-name {
+  position: absolute; left: 50%; bottom: 9%; z-index: 2; white-space: nowrap; opacity: 0;
+  display: flex; align-items: baseline; gap: 0.5em;
+  transform: translate(-50%, 0) scale(0); padding: 0.38em 1.1em 0.32em; border-radius: 2em;
+  background: linear-gradient(100deg, #ffffff, #eaf8ff); box-shadow: 0 0 0 1.5px #5cc8f0, 0 6px 14px -6px #1f8fc4aa;
+  font: 800 calc(20px / var(--ml-k, 1)) / 1.05 "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+  letter-spacing: 0.06em;
+}
+/* 二つ名（試作のカード面の .epi と同じ：小さく、字間を広く、淡い青） */
+.ml-name small { font: 700 0.6em / 1 var(--f-ui); letter-spacing: 0.1em; color: #4d7c96; }
+.ml-name b {
+  font-weight: 800; color: transparent;
+  background: linear-gradient(100deg, #1f8fc4, #5cc8f0 30%, #ff8fbf 50%, #5cc8f0 70%, #1f8fc4);
+  background-size: 250% 100%; background-position: 30% 0;
+  /* background の一括指定のあとに書く（前に書くと打ち消されて、文字が帯になる） */
+  -webkit-background-clip: text; background-clip: text;
+}
+
+/* 配信のコメント欄（下から新しいものが入り、古いものが上へ流れる） */
+.ml-chat {
+  position: absolute; display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; z-index: 3;
+  background: #0d1620e6; border: 1px solid #ffffff14; opacity: 0; font-family: var(--f-ui);
+}
+.ml-chat-hd { display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 10px; color: #8e9bb1; border-bottom: 1px solid #ffffff10; flex: none; }
+.ml-chat-hd i { width: 7px; height: 7px; border-radius: 50%; background: #ff4d5e; box-shadow: 0 0 8px #ff4d5e; }
+.ml-chat-hd em { font-style: normal; margin-left: auto; font: 10px var(--f-mark); color: #c9d4e4; font-variant-numeric: tabular-nums; }
+.ml-chat-body { position: relative; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.ml-chat-fade { position: absolute; left: 0; right: 0; top: 0; height: 30px; background: linear-gradient(180deg, #0d1620, transparent); z-index: 2; }
+.ml-chat-ls { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 4px 8px 6px; gap: 5px; min-height: 0; will-change: transform; }
+.ml-msg { display: flex; align-items: flex-start; gap: 6px; font-size: 11.5px; line-height: 1.35; flex: none; color: #f1f5fb; }
+.ml-msg[hidden] { display: none; }
+.ml-msg i { width: 20px; height: 20px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 9px; font-style: normal; font-weight: 800; color: #07212f; margin-top: 1px; }
+.ml-msg b { color: #9fb0c6; font-size: 10px; margin-right: 5px; font-weight: 700; }
+.ml-msg b.member { color: #5cc8f0; }
+.ml-msg span.sup { color: #ffd36a; font-weight: 800; }

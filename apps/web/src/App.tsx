@@ -52,16 +52,18 @@ export function App() {
   );
 }
 
+/** ログインの画面：★5 のキャラクターを真ん中に、下にすりガラスの台（Google でログイン） */
 function LoginScreen() {
   return (
-    <div className="shell login-screen">
-      <main>
-        <section className="page">
-          <header className="page-head">
-            <h1 className="login-brand">TRENDS</h1>
-          </header>
-          <Login />
-        </section>
+    <div className="login-screen">
+      <div className="login-bg" aria-hidden="true">
+        <span style={{ backgroundImage: "url(/assets/cards/c13-art.jpg)" }} />
+      </div>
+      <span className="login-rays" aria-hidden="true" />
+      <img className="login-chara" src="/assets/cards/c13-subject.webp" alt="" draggable={false} />
+      <h1 className="login-brand">TRENDS</h1>
+      <main className="login-box g3">
+        <Login />
       </main>
       <UpdateBar />
     </div>

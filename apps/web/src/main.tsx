@@ -10,6 +10,8 @@ import "@fontsource/m-plus-1/700.css";
 import "@fontsource/m-plus-1/800.css";
 import "@fontsource/m-plus-1/900.css";
 import "@fontsource/lilita-one/400.css";
+// ★5 ミナモの名前（カード面と、場に出たときの演出）
+import "@fontsource/m-plus-rounded-1c/800.css";
 import "@fontsource/dela-gothic-one/400.css";
 // 闇堕ちの演出の大きな文字（重いアンティーク明朝。文字の範囲ごとに分かれていて、使う字の分だけ読み込まれる）
 import "@fontsource/zen-antique/400.css";
