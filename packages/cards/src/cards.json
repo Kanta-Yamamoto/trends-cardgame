@@ -320,7 +320,7 @@
       "attack": 5,
       "hp": 4,
       "keywords": ["突進", "注目"],
-      "effect": "突進。注目。【闇堕ちしたとき】左右の空いている枠に、親衛隊を1体ずつ出す。出した親衛隊に攻撃力+2・体力+2。",
+      "effect": "突進。注目。【闇堕ちしたとき】隣に親衛隊を2体出す。出した親衛隊に攻撃力+2・体力+2。",
       "art": "/assets/cards/m1-dark-art.jpg",
       "subject": "/assets/cards/m1-dark-subject.webp",
       "original": "assets/original/m1-dark.webp",
@@ -330,7 +330,7 @@
           "do": "summon",
           "card": "m4",
           "count": 2,
-          "sides": true,
+          "flank": true,
           "buff": {
             "attack": 2,
             "hp": 2
@@ -2159,18 +2159,12 @@
           "card": "t-kusa"
         },
         {
-          "on": "play",
-          "do": "summon",
-          "card": "t-kusa",
-          "count": 2
-        },
-        {
           "on": "passive",
           "do": "growOnTokenLost",
           "card": "t-kusa"
         }
       ],
-      "effect": "速攻。【闇堕ちしたとき】このゲームで破壊された自分の草の数だけ攻撃力+1。草を2体出す。自分の草が破壊されるたび、攻撃力+1。"
+      "effect": "速攻。【闇堕ちしたとき】このゲームで破壊された自分の草の数だけ攻撃力+1。自分の草が破壊されるたび、攻撃力+1。"
     }
   },
   {

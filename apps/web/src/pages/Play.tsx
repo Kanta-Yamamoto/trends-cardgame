@@ -44,6 +44,7 @@ import { COLLAGE_PASTE, collagePaste } from "../fx/collagePaste";
 import { fieldEntry, landed } from "../fx/fieldEntry";
 import { GOD_DESCENT_CARDS, godDescent } from "../fx/godDescent";
 import { IDOL_LIVE, idolLive } from "../fx/idolLive";
+import { KUSAHAMI_AMBUSH, kusahamiAmbush, kusahamiWither } from "../fx/kusahamiAmbush";
 import { fxEnabled } from "../fx/stage";
 import { warmFx } from "../fx/warm";
 import { ArbiterField } from "../game/ArbiterField";
@@ -117,7 +118,7 @@ function withoutGone(cur: GameState, events: GameEvent[], alive: ReadonlySet<num
 const summonsOnDeath = (from: string) => {
   const c = CATALOG[from];
   return [...(c?.effects ?? []), ...(c?.dark?.effects ?? [])].reduce(
-    (n, f) => (f.on === "death" && f.do === "summon" ? n + (f.sides ? 2 : f.count) : n),
+    (n, f) => (f.on === "death" && f.do === "summon" ? n + f.count : n),
     0,
   );
 };
@@ -978,7 +979,12 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [god, setGod] = useState<{ id: number; gifts: string[] } | null>(null);
   const godField = useRef<HTMLDivElement>(null);
   const godOver = useRef<HTMLDivElement>(null);
-  /** 降臨で場に出る神・ライブ演出で出るアイドル・貼り重ねで出る伝説のコラ画像。ふつうの着地の代わりに、godDescent・idolLive・collagePaste が見せる */
+  /** クサハミの召喚（通常の姿・闇の姿）：場の後ろの層（草原）。描いている間だけ置く */
+  const [ambush, setAmbush] = useState<number | null>(null);
+  const ambushField = useRef<HTMLDivElement>(null);
+  /** 毒の茨の演出で場に出した闇の姿の uid。出来事に合わせた裏返し（flipCard）は出さない */
+  const withered = useRef(new Set<number>());
+  /** 降臨で場に出る神・ライブ演出で出るアイドル・茂みから飛び出すクサハミ・貼り重ねで出る伝説のコラ画像。ふつうの着地の代わりに、godDescent・idolLive・kusahamiAmbush・collagePaste が見せる */
   const descending = useRef(new Set<number>());
   /** 降臨で神から手札へ飛ばし終えたカードの数。山札から引く演出を出さない */
   const handedOver = useRef(0);
@@ -1252,6 +1258,22 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             }
             descending.current.delete(uid);
           }
+          // クサハミ：ふつうの着地の代わりに、茂みから飛び出して斬る演出（草原は場の後ろの層に描く）。
+          // 描かれる前に印を付けて、着地の演出を止めておく（この行より前に await を置かない）
+          if (card && uid !== undefined && KUSAHAMI_AMBUSH.has(card.id) && fxEnabled()) {
+            descending.current.add(uid);
+            setAmbush(Date.now());
+            await gwait(50);
+            const unitEl = self();
+            const field = ambushField.current;
+            if (unitEl && field) {
+              await kusahamiAmbush({ unit: unitEl, field, layer: fxLayer() });
+              unitEl.style.opacity = "";
+              live = true;
+            }
+            descending.current.delete(uid);
+            setAmbush(null);
+          }
           // 効果でキャラクター（トークンなど）を出すなら、出したキャラクターが着地してから、1体ずつ時間差で出す
           const summons = events.some((e) => e.type === "summoned");
           if (!visible && !summons) return;
@@ -1286,7 +1308,36 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             : shown;
           await presentPhased(left, events, next, { from: null }, show);
         } else {
-          await presentPhased(shown, events, next, { from: null }, show);
+          // 闇堕ちで戻る毒草喰らいのクサハミ：全画面の演出のあと、枯れた草原が毒の茨になる演出で場に出す
+          // （ふつうの着地・裏返しの代わり）。描かれる前に印を付けて、着地の演出を止めておく
+          let cur = shown;
+          for (const e of events) {
+            if (e.type !== "darkFall" || !KUSAHAMI_AMBUSH.has(e.cardId) || !fxEnabled()) continue;
+            const unit = next.players[e.player].field[e.slot];
+            if (!unit || unit.cardId !== e.cardId) continue;
+            descending.current.add(unit.uid);
+            withered.current.add(unit.uid);
+            setAmbush(Date.now());
+            const p = cur.players[e.player];
+            cur = {
+              ...cur,
+              players: {
+                ...cur.players,
+                [e.player]: { ...p, field: p.field.map((u, k) => (k === e.slot ? unit : u)) },
+              },
+            };
+            show(cur);
+            await gwait(50);
+            const unitEl = document.querySelector<HTMLElement>(`[data-uid="${unit.uid}"]`);
+            const field = ambushField.current;
+            if (unitEl && field) {
+              await kusahamiWither({ unit: unitEl, field, layer: fxLayer() });
+              unitEl.style.opacity = "";
+            }
+            descending.current.delete(unit.uid);
+            setAmbush(null);
+          }
+          await presentPhased(cur, events, next, { from: null }, show);
         }
       },
       buzz: (g, a) => {
@@ -1341,7 +1392,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       const card = CATALOG[u.cardId];
       const el = document.querySelector<HTMLElement>(`[data-uid="${u.uid}"]`);
       if (stagedAces.current.delete(u.uid) || descending.current.has(u.uid)) {
-        // 『演出家』で上がるエース・降臨するネ申・ライブ演出で出るアイドル・伝説のコラ画像は、描かれる前に隠して、それぞれの演出に任せる
+        // 『演出家』で上がるエース・降臨するネ申・ライブ演出で出るアイドル・茂みから飛び出すクサハミ・伝説のコラ画像は、描かれる前に隠して、それぞれの演出に任せる
         if (el) el.style.opacity = "0";
       } else if (card) fieldEntry(el, card);
     }
@@ -1408,6 +1459,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         if (uid) showRiding(buzzUid, uid, e, t + 320 + riders++ * 240);
       } else if (e.type === "darkFall" || e.type === "restored") {
         const uid = uidAt(e.player, e.slot);
+        // 毒の茨の演出で出した闇の姿は、もう場に出ているので裏返さない
+        if (uid && withered.current.delete(uid)) continue;
         if (uid) setTimeout(() => flipCard(uid, e.type === "darkFall" ? "dark" : "restore"), t + 80);
       }
     }
@@ -1764,6 +1817,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           )}
           {fixer && <FixerField key={fixer.id} ref={fixerApi} onDone={() => setFixer(null)} />}
           {god && <div key={god.id} className="god-field" ref={godField} aria-hidden="true" />}
+          {ambush !== null && (
+            <div key={ambush} className="kusa-field" ref={ambushField} aria-hidden="true" />
+          )}
           <div className="ptop">
             {quitBtn}
             {turnPill}
