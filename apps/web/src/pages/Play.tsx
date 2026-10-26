@@ -1265,6 +1265,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
                 subject: card.subject,
                 bg: minamo.bg,
                 name: card.name,
+                epithet: minamo.epithet,
               });
               unitEl.style.opacity = "";
               live = true;

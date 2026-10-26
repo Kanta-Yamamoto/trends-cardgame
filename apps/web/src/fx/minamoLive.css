@@ -23,11 +23,14 @@
    カードの写しは transform で拡大しているので、文字の大きさは拡大率（--ml-k）で割って 20px 相当にする */
 .ml-name {
   position: absolute; left: 50%; bottom: 9%; z-index: 2; white-space: nowrap; opacity: 0;
+  display: flex; align-items: baseline; gap: 0.5em;
   transform: translate(-50%, 0) scale(0); padding: 0.38em 1.1em 0.32em; border-radius: 2em;
   background: linear-gradient(100deg, #ffffff, #eaf8ff); box-shadow: 0 0 0 1.5px #5cc8f0, 0 6px 14px -6px #1f8fc4aa;
   font: 800 calc(20px / var(--ml-k, 1)) / 1.05 "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
   letter-spacing: 0.06em;
 }
+/* 二つ名（試作のカード面の .epi と同じ：小さく、字間を広く、淡い青） */
+.ml-name small { font: 700 0.6em / 1 var(--f-ui); letter-spacing: 0.1em; color: #4d7c96; }
 .ml-name b {
   font-weight: 800; color: transparent; -webkit-background-clip: text; background-clip: text;
   background: linear-gradient(100deg, #1f8fc4, #5cc8f0 30%, #ff8fbf 50%, #5cc8f0 70%, #1f8fc4);

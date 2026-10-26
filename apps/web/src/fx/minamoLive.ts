@@ -1,3 +1,4 @@
+import { MINAMO_EPITHET } from "@trends/cards";
 import { gsap } from "gsap";
 import { frameRect } from "../frame";
 import "./minamoLive.css";
@@ -9,7 +10,7 @@ import "./minamoLive.css";
  * 2. コメント欄（0.42 秒〜）：カードの真下に配信のコメント欄が開き、あいさつのコメントが下から入って上へ流れる
  * 3. ひょこっ（1.0〜1.18 秒）：カードの中の上の縁から、ミナモ（切り抜き全体）がひょこっと下りてきて、カードの絵と同じ向き・
  *    同じ位置に止まる（行き過ぎて戻る）。カードの枠の外には映らない。しぶきと白い閃光、カードが少し沈む。
- *    同時に、カードの下のほうに名前の札（カード面の名前札と同じ形）がポンと出る（引っ込むときに消える）。
+ *    同時に、カードの下のほうに名前の札（カード面の名前札と同じ形。二つ名「癒し系VTuber」を小さく添える）がポンと出る（引っ込むときに消える）。
  *    コメントが一気に増え、ハートが昇り、視聴者数が増える
  * 4. 余韻（1.18〜2.3 秒）：ゆらゆら揺れながら、泡が昇り、コメントが流れ続ける
  * 5. 引っ込む（2.3〜2.46 秒）：ひょこっと引っ込み、コメント欄が閉じる。カードの絵が元に戻る
@@ -20,9 +21,9 @@ import "./minamoLive.css";
  * 時間は GSAP で数える（開発中に __gsap で遅くしても、全部が同じ速さで遅くなる）
  */
 
-/** この演出で場に出るカードと、ミナモが消えたあとの水だけの背景の絵（仮にコードで作ったもの。描いた絵に差し替えられる） */
-export const MINAMO_LIVE: Readonly<Record<string, { bg: string }>> = {
-  c3: { bg: "/assets/cards/c3-bg.jpg" },
+/** この演出で場に出るカードと、ミナモが消えたあとの水だけの背景の絵（仮にコードで作ったもの。描いた絵に差し替えられる）、名前の札に添える二つ名 */
+export const MINAMO_LIVE: Readonly<Record<string, { bg: string; epithet: string }>> = {
+  c3: { bg: "/assets/cards/c3-bg.jpg", epithet: MINAMO_EPITHET },
 };
 
 export interface MinamoLiveOpts {
@@ -36,6 +37,8 @@ export interface MinamoLiveOpts {
   bg: string;
   /** カードの名前（顔を出したときに札で出す） */
   name: string;
+  /** 名前の札に小さく添える二つ名 */
+  epithet: string;
 }
 
 const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
@@ -155,7 +158,7 @@ function canvasAt(parent: HTMLElement, left: number, top: number, w: number, h: 
 }
 
 export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
-  const { unit, layer, subject, bg, name } = o;
+  const { unit, layer, subject, bg, name, epithet } = o;
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const f = frameRect();
   const ur = unit.getBoundingClientRect();
@@ -213,9 +216,11 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
   // 名前の札（カード面の名前札と同じ形。顔を出したときにポンと出る）
   const nameEl = document.createElement("div");
   nameEl.className = "ml-name";
+  const nameS = document.createElement("small");
+  nameS.textContent = epithet;
   const nameB = document.createElement("b");
   nameB.textContent = name;
-  nameEl.appendChild(nameB);
+  nameEl.append(nameS, nameB);
   card.appendChild(nameEl);
   up.appendChild(card);
   root.appendChild(up);
