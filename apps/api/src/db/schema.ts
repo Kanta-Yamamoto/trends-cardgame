@@ -64,7 +64,7 @@ export type UserRow = typeof users.$inferSelect;
 export const matches = pgTable("matches", {
   id: uuid("id").primaryKey().defaultRandom(),
   code: text("code").notNull().unique(),
-  /** waiting（相手待ち）/ playing / finished */
+  /** waiting（相手待ち）/ playing / finished / closed（2 人とも抜けたので、決着なしで閉じた） */
   status: text("status").notNull().default("waiting"),
   /** friend（合言葉の部屋）/ random（ランダムマッチ。レーティングが動く）/ cpu（人と組めなかったときの CPU と。レーティングは動かない） */
   kind: text("kind").notNull().default("friend"),

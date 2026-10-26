@@ -1,6 +1,7 @@
 import { randomInt } from "node:crypto";
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -27,7 +28,7 @@ import {
   tickClock,
   validateDeck,
 } from "@trends/game-core";
-import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
 import { type MatchRatings, type MatchRow, matches, users } from "../db/schema";
@@ -36,6 +37,8 @@ const CATALOG = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string
 /** 読み間違えやすい文字（0/O・1/I など）を除いた合言葉の文字 */
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const newCode = () => Array.from({ length: 6 }, () => CODE_CHARS[randomInt(CODE_CHARS.length)]).join("");
+/** 2 人とも抜けて閉じた対戦に、操作が届いたときの文 */
+export const CLOSED_MESSAGE = "この対戦は、2人とも抜けたので閉じました";
 
 /** 対戦を1手進めた結果（両者に送る） */
 export interface Step {
@@ -95,6 +98,7 @@ export class MatchesService {
   /** 部屋を作る（作った人が p1） */
   async create(userId: string, deck: unknown) {
     deckCards(deck);
+    await this.assertFree(userId);
     return this.info(await this.insert({ p1Id: userId, p1Deck: deck as string }));
   }
 
@@ -193,6 +197,44 @@ export class MatchesService {
     throw new Error("合言葉を作れませんでした");
   }
 
+  /**
+   * そのユーザーの、決着していない対戦（いちばん新しいもの）。通信が切れた人が戻るのに使う。
+   * 持ち時間の無い古い対戦は数えない（時間切れで決着しないので、ずっと残ってしまう）
+   */
+  async current(userId: string): Promise<MatchRow | null> {
+    const [row] = await this.db
+      .select()
+      .from(matches)
+      .where(
+        and(
+          eq(matches.status, "playing"),
+          isNotNull(matches.clock),
+          or(eq(matches.p1Id, userId), eq(matches.p2Id, userId)),
+        ),
+      )
+      .orderBy(desc(matches.createdAt))
+      .limit(1);
+    return row ?? null;
+  }
+
+  /** 決着していない対戦があれば、ほかの部屋には入れない（先にその対戦に戻ってもらう） */
+  async assertFree(userId: string) {
+    if (await this.current(userId))
+      throw new ConflictException("対戦中の部屋があります。先にその対戦に戻ってください");
+  }
+
+  /** 2 人とも抜けた対戦を閉じる（決着なし。レーティングは動かない）。対戦中でなければ何もせず null */
+  close(code: string) {
+    return this.serial(code, async () => {
+      const [row] = await this.db
+        .update(matches)
+        .set({ status: "closed" })
+        .where(and(eq(matches.code, code.toUpperCase()), eq(matches.status, "playing")))
+        .returning();
+      return row ?? null;
+    });
+  }
+
   async find(code: string) {
     const [row] = await this.db.select().from(matches).where(eq(matches.code, code.toUpperCase()));
     if (!row) throw new NotFoundException("その合言葉の部屋はありません");
@@ -206,6 +248,7 @@ export class MatchesService {
       if (row.p1Id === userId || row.p2Id === userId) return row;
       if (row.p2Id) throw new ForbiddenException("この部屋はもう2人そろっています");
       deckCards(deck);
+      await this.assertFree(userId);
       const { state, clock } = newGame(row.p1Deck, deck as string);
       const [next] = await this.db
         .update(matches)
@@ -226,6 +269,7 @@ export class MatchesService {
       const row = await this.find(code);
       const pid = this.seat(row, userId);
       if (!row.state) throw new BadRequestException("まだ対戦が始まっていません");
+      if (row.status === "closed") throw new RuleError("closed", CLOSED_MESSAGE);
       const now = Date.now();
       const steps = await this.catchUp(row, now);
       const last = steps.at(-1)?.row ?? row;
@@ -261,7 +305,7 @@ export class MatchesService {
     const steps: Step[] = [];
     let cur = row;
     // 自動の差し出しのあと、手番の人も時間切れ…と続くことがあるので、何回か見る
-    for (let i = 0; i < 4 && cur.state && cur.clock; i++) {
+    for (let i = 0; i < 4 && cur.status === "playing" && cur.state && cur.clock; i++) {
       const due = clockAction(cur.clock, cur.state, now, CATALOG);
       if (!due) break;
       const step = await this.advance(cur, due, now);

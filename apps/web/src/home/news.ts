@@ -11,6 +11,12 @@ export interface NewsItem {
 }
 
 export const NEWS: readonly NewsItem[] = [
+  {
+    id: "2026-10-26-resume",
+    date: "10/26",
+    tag: "更新",
+    title: "オンライン対戦で通信が切れても、対戦に戻れるようになりました",
+  },
   { id: "2026-10-26-home", date: "10/26", tag: "更新", title: "ホーム画面ができました" },
   { id: "2026-10-26-dark", date: "10/26", tag: "更新", title: "闇堕ちのしかたが変わりました" },
   {
