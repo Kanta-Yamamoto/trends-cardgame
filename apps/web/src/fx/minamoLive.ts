@@ -9,6 +9,7 @@ import "./minamoLive.css";
  * 2. コメント欄（0.42 秒〜）：カードの真下に配信のコメント欄が開き、あいさつのコメントが下から入って上へ流れる
  * 3. ひょこっ（1.0〜1.18 秒）：カードの中の上の縁から、ミナモ（切り抜き全体）がひょこっと下りてきて、カードの絵と同じ向き・
  *    同じ位置に止まる（行き過ぎて戻る）。カードの枠の外には映らない。しぶきと白い閃光、カードが少し沈む。
+ *    同時に、カードの下のほうに名前の札（カード面の名前札と同じ形）がポンと出る（引っ込むときに消える）。
  *    コメントが一気に増え、ハートが昇り、視聴者数が増える
  * 4. 余韻（1.18〜2.3 秒）：ゆらゆら揺れながら、泡が昇り、コメントが流れ続ける
  * 5. 引っ込む（2.3〜2.46 秒）：ひょこっと引っ込み、コメント欄が閉じる。カードの絵が元に戻る
@@ -33,6 +34,8 @@ export interface MinamoLiveOpts {
   subject: string;
   /** 水だけの背景の絵の URL */
   bg: string;
+  /** カードの名前（顔を出したときに札で出す） */
+  name: string;
 }
 
 const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
@@ -152,7 +155,7 @@ function canvasAt(parent: HTMLElement, left: number, top: number, w: number, h: 
 }
 
 export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
-  const { unit, layer, subject, bg } = o;
+  const { unit, layer, subject, bg, name } = o;
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const f = frameRect();
   const ur = unit.getBoundingClientRect();
@@ -207,6 +210,13 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
   peek.style.setProperty("--ml-subject", `url("${subject}")`);
   card.prepend(peek);
   card.prepend(bgEl);
+  // 名前の札（カード面の名前札と同じ形。顔を出したときにポンと出る）
+  const nameEl = document.createElement("div");
+  nameEl.className = "ml-name";
+  const nameB = document.createElement("b");
+  nameB.textContent = name;
+  nameEl.appendChild(nameB);
+  card.appendChild(nameEl);
   up.appendChild(card);
   root.appendChild(up);
 
@@ -355,6 +365,7 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
     }
     const k = w / ur.width;
     up.style.transform = `translate(${x - slotCx}px, ${y - slotBottom}px) scale(${k * sx}, ${k * sy})`;
+    card.style.setProperty("--ml-k", k.toFixed(4));
     // 演出の間はスタッツを出さない（浮くときに消え、枠へ戻るときに戻る）
     const st = t < T_BACK ? 1 - seg(t, 0, T_UP_END * 0.6) : seg(t, T_BACK + (T_LAND - T_BACK) * 0.6, T_LAND);
     card.style.setProperty("--ml-st", st.toFixed(3));
@@ -377,6 +388,22 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
       sway = Math.sin(ts * 2.6) * 2.2;
     } else if (t < T_HIDE_END) y = HIDE_Y * ei3(seg(t, T_HIDE, T_HIDE_END));
     peek.style.transform = `translate(${sway}%, ${y * 100}%)`;
+  };
+
+  /** 名前の札：顔を出した瞬間にポンと出て、引っ込むときに消える */
+  const namePose = (t: number) => {
+    let sc = 0;
+    let op = 0;
+    if (t >= T_PEEK_END && t < T_HIDE) {
+      sc = backOut(seg(t, T_PEEK_END, T_PEEK_END + 260), 2.4);
+      op = seg(t, T_PEEK_END, T_PEEK_END + 120);
+    } else if (t >= T_HIDE) {
+      const q = seg(t, T_HIDE, T_HIDE + 200);
+      sc = 1 - 0.2 * q;
+      op = 1 - q;
+    }
+    nameEl.style.transform = `translate(-50%, 0) scale(${sc})`;
+    nameEl.style.opacity = String(op);
   };
 
   /** コメント欄：開いて、行が下から入り、閉じる */
@@ -528,6 +555,7 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
     veil.style.opacity = String(dark);
     const cd = cardPose(t);
     peekPose(t);
+    namePose(t);
     chatPose(t);
     drawFx(t, cd);
     // 着地の小さな揺れ

@@ -1259,7 +1259,13 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             await gwait(50);
             const unitEl = self();
             if (unitEl) {
-              await minamoLive({ unit: unitEl, layer: fxLayer(), subject: card.subject, bg: minamo.bg });
+              await minamoLive({
+                unit: unitEl,
+                layer: fxLayer(),
+                subject: card.subject,
+                bg: minamo.bg,
+                name: card.name,
+              });
               unitEl.style.opacity = "";
               live = true;
             }

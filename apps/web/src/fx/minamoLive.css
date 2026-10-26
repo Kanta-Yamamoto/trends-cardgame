@@ -19,6 +19,21 @@
   transform: translateY(-106%); will-change: transform; filter: drop-shadow(0 4px 8px #0008);
 }
 
+/* 名前（カード面のミナモの名前札と同じ形：白い丸い札に、水色とピンクのグラデーションの丸ゴシック）。顔を出したときにポンと出る。
+   カードの写しは transform で拡大しているので、文字の大きさは拡大率（--ml-k）で割って 20px 相当にする */
+.ml-name {
+  position: absolute; left: 50%; bottom: 9%; z-index: 2; white-space: nowrap; opacity: 0;
+  transform: translate(-50%, 0) scale(0); padding: 0.38em 1.1em 0.32em; border-radius: 2em;
+  background: linear-gradient(100deg, #ffffff, #eaf8ff); box-shadow: 0 0 0 1.5px #5cc8f0, 0 6px 14px -6px #1f8fc4aa;
+  font: 800 calc(20px / var(--ml-k, 1)) / 1.05 "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+  letter-spacing: 0.06em;
+}
+.ml-name b {
+  font-weight: 800; color: transparent; -webkit-background-clip: text; background-clip: text;
+  background: linear-gradient(100deg, #1f8fc4, #5cc8f0 30%, #ff8fbf 50%, #5cc8f0 70%, #1f8fc4);
+  background-size: 250% 100%; background-position: 30% 0;
+}
+
 /* 配信のコメント欄（下から新しいものが入り、古いものが上へ流れる） */
 .ml-chat {
   position: absolute; display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; z-index: 3;
