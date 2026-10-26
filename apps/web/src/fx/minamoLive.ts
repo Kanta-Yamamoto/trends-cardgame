@@ -355,6 +355,9 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
     }
     const k = w / ur.width;
     up.style.transform = `translate(${x - slotCx}px, ${y - slotBottom}px) scale(${k * sx}, ${k * sy})`;
+    // 演出の間はスタッツを出さない（浮くときに消え、枠へ戻るときに戻る）
+    const st = t < T_BACK ? 1 - seg(t, 0, T_UP_END * 0.6) : seg(t, T_BACK + (T_LAND - T_BACK) * 0.6, T_LAND);
+    card.style.setProperty("--ml-st", st.toFixed(3));
     // 絵：ミナモが消えて水だけになり、引っ込んだあとに戻る
     const out = eo2(seg(t, ART_OUT[0], ART_OUT[1]));
     const back = eo2(seg(t, ART_IN[0], ART_IN[1]));
