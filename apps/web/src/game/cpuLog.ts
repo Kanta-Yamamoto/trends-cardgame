@@ -2,8 +2,10 @@ import {
   type Action,
   type CpuGameRecord,
   type CpuThought,
+  cardSnapshot,
   cardsStamp,
   type GameState,
+  moveCards,
   type PlayerId,
 } from "@trends/game-core";
 import { API_URL } from "../api/client";
@@ -48,6 +50,7 @@ export function beginCpuLog(o: {
   rec = {
     v: 1,
     cards: cardsStamp(o.catalog),
+    cardData: cardSnapshot(o.catalog, [...o.humanDeck.cards, ...o.cpuDeck.cards]),
     human: o.human,
     cpu: o.cpu,
     humanDeck: { ...o.humanDeck, cards: [...o.humanDeck.cards] },
@@ -63,10 +66,10 @@ export function beginCpuLog(o: {
   sent = false;
 }
 
-/** 盤面に反映した操作を残す。決着したら送る */
-export function logMove(action: Action, after: GameState) {
+/** 盤面に反映した操作を残す（使ったカードの ID も。before は手を当てる前の盤面）。決着したら送る */
+export function logMove(action: Action, before: GameState, after: GameState) {
   if (!rec || sent) return;
-  rec.moves.push({ action, at: Date.now() - rec.startedAt });
+  rec.moves.push({ action, at: Date.now() - rec.startedAt, ...moveCards(before, action) });
   if (after.winner) finish(after, false);
 }
 

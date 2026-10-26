@@ -48,6 +48,12 @@ describe("対戦ストア", () => {
     expect(cur?.moves.some((m) => m.action.type === "endTurn" && m.action.player === CPU)).toBe(true);
     expect(cur?.thoughts.length).toBeGreaterThan(0);
     expect(cur?.thoughts[0]?.move).toBe(1);
+    // CPU が出したカードには ID が付き、デッキのカードのそのときのデータも残る（出すまで何ターンか進める）
+    for (let i = 0; i < 6 && !cur?.moves.some((m) => m.action.type === "play"); i++)
+      useGame.getState().endTurn();
+    const play = cur?.moves.find((m) => m.action.type === "play");
+    expect(play?.card).toBeTypeOf("string");
+    expect(cur?.cardData?.[play?.card ?? ""]?.cost).toBeTypeOf("number");
     const moves = cur?.moves.length ?? 0;
     useGame.getState().quit();
     const sent = cpuLogForTest().last;

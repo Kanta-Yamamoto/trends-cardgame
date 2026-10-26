@@ -42,7 +42,15 @@ export {
   withRushBoost,
 } from "./engine";
 export { expectedScore, RATING, rateGame } from "./rating";
-export { type CpuGameRecord, cardsStamp, replayRecord } from "./record";
+export {
+  type CardSnapshot,
+  type CpuGameRecord,
+  cardSnapshot,
+  cardsStamp,
+  type MoveCards,
+  moveCards,
+  replayRecord,
+} from "./record";
 export { nextRandom } from "./rng";
 export { type CpuThought, DEFAULT_SEARCH, evaluate, planTurnSearch, type SearchOptions } from "./search";
 export * from "./types";
