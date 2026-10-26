@@ -903,7 +903,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 @keyframes field-mist { 0%, 100% { transform: translateX(-6%); } 50% { transform: translateX(6%); } }
 @keyframes field-omen-in { from { opacity: 0; } }
 @keyframes field-dark-in { from { opacity: 0; } }
-/* 闇の気配：倒れたエースの枠に灯る紫の炎 */
+/* 裏向きのカードに灯る紫の炎 */
 .slot.omen-slot { position: relative; border-color: #b06bffaa; background: radial-gradient(60% 60% at 50% 65%, #8a2bd044, transparent 75%); overflow: visible; }
 .omen-flame { position: absolute; left: 50%; bottom: 16%; width: 46%; height: 62%; transform: translateX(-50%); pointer-events: none; }
 .omen-flame i {
@@ -916,6 +916,27 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .omen-flame i:nth-child(2) { width: 40%; left: 32%; height: 70%; animation-delay: -0.4s; opacity: 0.7; }
 .omen-flame i:nth-child(3) { width: 40%; left: 68%; height: 60%; animation-delay: -0.8s; opacity: 0.6; }
 @keyframes omen-flicker { 0%, 100% { transform: translateX(-50%) scale(1, 1); } 50% { transform: translateX(-50%) scale(0.9, 1.12); } }
+/* 裏向きのカード：闇堕ちを持つキャラクターが破壊された枠に残る（その枠には出せない）。押すと説明。闇堕ちさせられるときは光る */
+.slot.omen-slot { cursor: pointer; }
+.omen-card {
+  position: absolute; inset: -1.5px; border-radius: inherit; overflow: hidden;
+  border: 1.5px solid #d6a8ff;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 20%, #d6a8ff55 21% 23%, transparent 24%),
+    repeating-linear-gradient(45deg, #3b1258 0 6px, #2a0d3f 6px 12px);
+  box-shadow: 0 0 12px #b06bff77, inset 0 0 12px #000a;
+}
+.omen-card .omen-flame { bottom: 22%; height: 52%; }
+.slot.omen-ready .omen-card { animation: omen-ready 1.6s ease-in-out infinite; }
+@keyframes omen-ready { 50% { box-shadow: 0 0 0 2px #f1dcff, 0 0 22px #b06bffcc, inset 0 0 12px #000a; } }
+.dark-confirm .end-confirm-body { border-color: #b06bff99; box-shadow: 0 20px 50px #000c, 0 0 30px #b06bff55; }
+.dkc-state { margin: 0; font-size: 13px; line-height: 1.6; color: var(--text); }
+.dkc-wait { margin: 0; font-size: 12.5px; font-weight: 800; color: var(--gold); }
+.dkc-dark { padding-top: 10px; border-top: 1px solid var(--line); }
+.dkc-label { margin: 0 0 2px; font-size: 11px; font-weight: 800; color: #cdb4e6; }
+.dkc-effect { margin: 0; font-size: 12.5px; line-height: 1.55; color: #e7d6f5; }
+.dkc-go { color: #fff; background: linear-gradient(180deg, #8a2bd0, #5a1590); border-color: #d6a8ff; }
+.end-confirm-actions.one { grid-template-columns: 1fr; }
 /* 『演出家』の登場：バトル場全体の背景を真紅と黒の二色が支配する（形は DirectorField.tsx が毎フレーム切る） */
 .board.field-director { isolation: isolate; }
 .director-field {
@@ -928,7 +949,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .director-field .df-crown, .director-crown { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .director-crown { z-index: 3; border-radius: inherit; }
 @keyframes director-in { from { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .field-mist, .omen-flame i, .field-dark.field-layer, .field-omen.field-layer { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .field-mist, .omen-flame i, .field-dark.field-layer, .field-omen.field-layer, .slot.omen-ready .omen-card { animation: none; } }
 
 /* バズ：ボタン（残りの玉）、マスターの帯の残り、カットイン、盤面での対象の強調 */
 /* バズの色：ホログラム（シアン→紫→ピンク）。キラカードの光と同じ系統で、属性の色・闇の紫・ターン終了の金と重ならない */

@@ -6,6 +6,7 @@ import {
   type CastTarget,
   CENTER_SLOT,
   type Config,
+  type DarkOmen,
   DEFAULT_CONFIG,
   type GameEvent,
   type GameState,
@@ -174,9 +175,33 @@ export function effectiveCost(state: GameState, player: PlayerId, cardId: string
   return Math.max(0, cost);
 }
 
-/** 闇の気配（破壊されて、次の自分のターンの始めに闇堕ちして戻ってくるカード） */
-export function darkOmens(state: GameState, player: PlayerId): { cardId: string; slot: number }[] {
+/** 裏向きのカード（破壊された枠に裏向きで残り、自分のターンに闇堕ちさせられるカード） */
+export function darkOmens(state: GameState, player: PlayerId): DarkOmen[] {
   return state.players[player].darkOmens ?? [];
+}
+
+/** その枠が空いているか（キャラクターも裏向きのカードもない）。裏向きのカードは枠をふさぐ */
+export function slotOpen(state: GameState, player: PlayerId, slot: number): boolean {
+  const p = state.players[player];
+  return (
+    slot >= 0 &&
+    slot < p.field.length &&
+    !p.field[slot] &&
+    !darkOmens(state, player).some((o) => o.slot === slot)
+  );
+}
+
+/** 空いている枠（左から） */
+export function openSlots(state: GameState, player: PlayerId): number[] {
+  return state.players[player].field.flatMap((_, slot) => (slotOpen(state, player, slot) ? [slot] : []));
+}
+
+/** いま闇堕ちさせられる裏向きのカードの枠（自分のターンで、裏向きのカードが残ったターンより後） */
+export function darkFallSlots(state: GameState, player: PlayerId): number[] {
+  if (state.winner || state.pending || state.active !== player) return [];
+  return darkOmens(state, player)
+    .filter((o) => o.turn < state.turn)
+    .map((o) => o.slot);
 }
 
 /** バズの残り回数 */
@@ -436,7 +461,7 @@ export function sacrificeCandidates(state: GameState, player: PlayerId): number[
 
 /**
  * 今のフィールド（画面の背景）。闇堕ちの姿が場にいれば「闇」（持ち主は、いれば手番の人を先に）。
- * いなくても闇の気配があれば「予兆」
+ * いなくても裏向きのカードがあれば「予兆」
  */
 export function fieldOf(
   state: GameState,
@@ -483,11 +508,9 @@ function summon(
   emit: Emit,
   near?: number,
 ): number {
-  const field = state.players[player].field;
-  // 両隣を先に（左、右の順）。どちらも埋まっていれば、左から空いた枠へ
-  const flank =
-    near === undefined ? [] : [near - 1, near + 1].filter((s) => s >= 0 && s < field.length && !field[s]);
-  const slot = flank[0] ?? field.findIndex((u) => !u);
+  // 両隣を先に（左、右の順）。どちらも埋まっていれば、左から空いた枠へ（裏向きのカードの枠には出せない）
+  const flank = near === undefined ? [] : [near - 1, near + 1].filter((s) => slotOpen(state, player, s));
+  const slot = flank[0] ?? openSlots(state, player)[0] ?? -1;
   if (slot < 0) return -1;
   placeSummoned(state, player, cardId, catalog, emit, slot);
   return slot;
@@ -578,14 +601,14 @@ function resolveDeaths(
             ? { type: "destroyed", player: owner, cardId: u.cardId, slot, vanished: true }
             : { type: "destroyed", player: owner, cardId: u.cardId, slot },
         );
-        // 闇堕ちを持つカードが元の姿で破壊されたら、闇の気配（次の自分のターンの始めに闇堕ちして戻る）
+        // 闇堕ちを持つカードが元の姿で破壊されたら、裏向きのカード（その枠に裏向きで残る。自分のターンに闇堕ちさせられる）
         if (!u.token && !u.dark && catalog[u.cardId]?.dark) {
           const spent = (p.darkSpent ?? []).indexOf(u.cardId);
           if (u.darkUsed || spent >= 0) {
             // TL浄化で戻った姿や、闇堕ちの姿のまま手札に戻されたカードは、もう闇堕ちしない
             if (!u.darkUsed && spent >= 0) p.darkSpent = p.darkSpent.filter((_, i) => i !== spent);
           } else {
-            p.darkOmens = [...(p.darkOmens ?? []), { cardId: u.cardId, slot }];
+            p.darkOmens = [...(p.darkOmens ?? []), { cardId: u.cardId, slot, turn: state.turn }];
             emit({ type: "darkOmen", player: owner, slot, cardId: u.cardId });
           }
         }
@@ -943,14 +966,14 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       // 舞台に上げるだけなので、場に出たときの効果は働かない。出したキャラクターには突進を付ける
       // （相手側にも付くが、攻撃は自分のターンにしかできず、相手のターンの始めに突進は外れるので、相手が得をすることはない）
       const sides = [player, foeId] as const;
-      if (sides.some((pid) => !state.players[pid].field.some((u) => !u))) break;
+      if (sides.some((pid) => openSlots(state, pid).length === 0)) break;
       for (const pid of sides) {
         const p = state.players[pid];
         const found = p.deck.flatMap((id, i) => (catalog[id]?.dark ? [i] : []));
         if (found.length === 0) continue;
         const at = found[Math.floor(random(state) * found.length)] as number;
         const [cardId] = p.deck.splice(at, 1);
-        const slot = p.field.findIndex((u) => !u);
+        const slot = openSlots(state, pid)[0] ?? -1;
         if (cardId === undefined || slot < 0) continue;
         const u = newUnit(state, cardId, catalog, false);
         if (!u.canAttack) {
@@ -1034,7 +1057,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       }
       break;
     case "steal": {
-      const to = me.field.findIndex((u) => !u);
+      const to = openSlots(state, player)[0] ?? -1;
       if (to < 0) break;
       const foeField = state.players[foeId].field;
       let from = -1;
@@ -1060,7 +1083,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       break;
     }
     case "revive": {
-      const slot = me.field.findIndex((u) => !u);
+      const slot = openSlots(state, player)[0] ?? -1;
       if (slot < 0) break;
       // 墓地の中で、コストが maxCost 以下のキャラクターのうち、いちばんコストが高いもの（同じなら、あとに破壊されたもの）
       let at = -1;
@@ -1200,7 +1223,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       else if (ctx.target?.side === "enemy") slot = ctx.target.slot;
       const u = slot >= 0 ? foe.field[slot] : null;
       if (!u) break;
-      // 元のカードは消える（墓地に行かないので、闇の気配も出ない）
+      // 元のカードは消える（墓地に行かないので、裏向きにもならない）
       const into = newUnit(state, e.card, catalog, true);
       Object.assign(into, { canAttack: false, attacksLeft: 0, rushOnly: false });
       foe.field[slot] = into;
@@ -1298,20 +1321,6 @@ function startTurn(state: GameState, pid: PlayerId, catalog: Catalog, config: Co
       emit({ type: "buffed", player: pid, slot, cardId: u.cardId, attack: n, hp: 0 });
     }
   });
-  // 闇の気配：破壊された闇堕ちを持つカードが、闇堕ちの姿で戻ってくる（破壊された枠。埋まっていればほかの空き枠。なければ待つ）
-  const waiting: { cardId: string; slot: number }[] = [];
-  for (const omen of p.darkOmens ?? []) {
-    const slot = p.field[omen.slot] ? p.field.findIndex((u) => !u) : omen.slot;
-    const at = p.trash.lastIndexOf(omen.cardId);
-    if (at < 0) continue; // 墓地から無くなっていたら（蘇生などで）、闇の気配も消える
-    if (slot < 0) {
-      waiting.push(omen);
-      continue;
-    }
-    p.trash.splice(at, 1);
-    darkRise(state, pid, omen.cardId, slot, catalog, config, emit);
-  }
-  p.darkOmens = waiting;
   // 子守唄：相手の場にいれば、攻撃力がいちばん高いキャラクターがこのターン眠る
   if (state.players[other].field.some((u) => u && hasPassive(u, "lullaby", catalog))) {
     const slot = strongestEnemy(state, other, catalog);
@@ -1410,6 +1419,8 @@ export function applyAction(
       if (card.type !== "icon") throw new RuleError("not_icon", "呪文は場に出せません");
       if (action.slot < 0 || action.slot >= SLOTS) throw new RuleError("bad_slot", "その場所には出せません");
       if (me.field[action.slot]) throw new RuleError("slot_taken", "その場所にはすでにキャラクターがいます");
+      if (!slotOpen(state, player, action.slot))
+        throw new RuleError("slot_omen", "裏向きのカードがある場所には出せません");
       const cost = effectiveCost(state, player, cardId, catalog);
       if (cost > me.mana)
         throw new RuleError("no_mana", `コストが足りません（必要 ${cost}・残り ${me.mana}）`);
@@ -1608,7 +1619,33 @@ export function applyAction(
       startTurn(state, next, catalog, config, emit);
       break;
     }
+    case "darkFall": {
+      const omen = darkOmens(state, player).find((o) => o.slot === action.slot);
+      if (!omen) throw new RuleError("no_omen", "その場所に裏向きのカードはありません");
+      if (omen.turn >= state.turn) throw new RuleError("omen_fresh", "破壊されたターンは、闇堕ちできません");
+      me.darkOmens = darkOmens(state, player).filter((o) => o !== omen);
+      const at = me.trash.lastIndexOf(omen.cardId);
+      if (at >= 0) me.trash.splice(at, 1);
+      darkRise(state, player, omen.cardId, omen.slot, catalog, config, emit);
+      break;
+    }
   }
+  pruneOmens(state);
   checkWinner(state, player, emit);
   return { state, events };
+}
+
+/** 墓地から無くなったカード（蘇生などで）の裏向きのカードを消す */
+function pruneOmens(state: GameState) {
+  for (const pid of ["p1", "p2"] as const) {
+    const p = state.players[pid];
+    if (!p.darkOmens?.length) continue;
+    const left = new Map<string, number>();
+    for (const id of p.trash) left.set(id, (left.get(id) ?? 0) + 1);
+    p.darkOmens = p.darkOmens.filter((o) => {
+      const n = left.get(o.cardId) ?? 0;
+      left.set(o.cardId, n - 1);
+      return n > 0;
+    });
+  }
 }
