@@ -48,6 +48,7 @@ import { fieldEntry, landed } from "../fx/fieldEntry";
 import { GOD_DESCENT_CARDS, godDescent } from "../fx/godDescent";
 import { IDOL_LIVE, idolLive } from "../fx/idolLive";
 import { KUSAHAMI_AMBUSH, kusahamiAmbush, kusahamiWither } from "../fx/kusahamiAmbush";
+import { endCue, type LifeBreak, lifeBreak } from "../fx/lifeBreak";
 import { MINAMO_LIVE, minamoLive } from "../fx/minamoLive";
 import { fxEnabled } from "../fx/stage";
 import { warmFx } from "../fx/warm";
@@ -96,8 +97,8 @@ const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 /** 演出（GSAP）と同じ時計で待つ。着地などの GSAP の動きに間合いを合わせたいところで使う */
 const gwait = (ms: number) => new Promise<void>((r) => gsap.delayedCall(ms / 1000, r));
 const SLOT_KEYS = Array.from({ length: SLOTS }, (_, i) => `slot-${i}`);
-/** 決着した state が画面に出てから、結果を出すまでの最短の間（最後の一撃のダメージの数字とライフが 0 になるのを見せる） */
-const END_SETTLE = 900;
+/** 決着した state が画面に出てから、負けた側の帯が砕け始めるまでの最短の間（最後の一撃のダメージの数字とライフが 0 になるのを見せる） */
+const END_SETTLE = 450;
 const nameOf = (id: string) => CATALOG[id]?.name ?? id;
 const who = (p: string) => (p === ME ? "あなた" : useGame.getState().foeName);
 
@@ -1166,8 +1167,8 @@ export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: 
   const hitShown = useRef<{ player: PlayerId; lp: number } | null>(null);
   /** 出来事に合わせて出した演出（数字・バナーなど）が見え終わる時刻（performance.now()） */
   const fxUntil = useRef(0);
-  /** 決着したあと、結果を出したか（最後の一撃を見せ終えてから出す） */
-  const [resultOpen, setResultOpen] = useState(false);
+  /** 決着したあと、結果を出したか（最後の一撃を見せ終えてから出す）。"broke" は、帯が砕けて暗転したあと（明けるのと同時に見せる） */
+  const [resultOpen, setResultOpen] = useState<false | "plain" | "broke">(false);
   // 攻撃のあと state が進んだら、本当のライフの表示に戻す
   // biome-ignore lint/correctness/useExhaustiveDependencies: game が変わったときだけ戻す
   useEffect(() => setLpHit(null), [game]);
@@ -1676,23 +1677,50 @@ export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: 
     if (until > 0) fxUntil.current = Math.max(fxUntil.current, performance.now() + until);
   }, [log, openingOn]);
 
-  // 決着：最後の一撃（ダメージの数字・ライフが 0 になるところ）やターン開始のバナーを見せ終えてから、結果を出す。
-  // それまでは盤面を見せたまま（結果がすぐ出ると、なぜ決着したのかが分からないため）
+  // 決着：最後の一撃（ダメージの数字・ライフが 0 になるところ）やターン開始のバナーを見せ終えてから、
+  // 負けた側のプレイヤーの帯が砕け、破片がこちらへ飛んできて暗転し、明けたら結果（fx/lifeBreak.ts）。
+  // 山札切れ・特殊勝利は、砕ける前にきっかけ（空の山札・勝ったカード）を光らせる。降参・時間切れも同じ流れ
   const winner = game?.winner ?? null;
   useEffect(() => {
     setResultOpen(false);
     if (!winner) return;
     if (typeof Element === "undefined" || typeof Element.prototype.animate !== "function") {
-      setResultOpen(true);
+      setResultOpen("plain");
       return;
     }
     let live = true;
-    const left = Math.max(END_SETTLE, fxUntil.current - performance.now());
-    void gwait(left).then(() => {
-      if (live) setResultOpen(true);
-    });
+    let fx: LifeBreak | null = null;
+    const loser: PlayerId = winner === ME ? CPU : ME;
+    const s = useGame.getState();
+    const end = [...s.log].reverse().find((l) => l.e.type === "deckOut" || l.e.type === "specialWin")?.e;
+    void (async () => {
+      // 動きを減らす設定のときは砕けず、少し長く盤面を見せてから結果を出す
+      const motion = fxEnabled();
+      await gwait(Math.max(motion ? END_SETTLE : END_SETTLE * 2, fxUntil.current - performance.now()));
+      if (!live) return;
+      if (!motion) return setResultOpen("plain");
+      if (end?.type === "deckOut") {
+        await endCue(document.querySelector<HTMLElement>(`[data-pile="deck-${end.player}"]`), "deckOut");
+      } else if (end?.type === "specialWin") {
+        const u = s.game?.players[end.player].field.find((x) => x?.cardId === end.cardId);
+        await endCue(u ? document.querySelector<HTMLElement>(`[data-uid="${u.uid}"]`) : null, "specialWin");
+      }
+      const bar = document.querySelector<HTMLElement>(`[data-master="${loser}"]`);
+      if (!live) return;
+      if (!bar) return setResultOpen("plain");
+      fx = lifeBreak(bar, {
+        layer: fxLayer(),
+        frame: frameRect(),
+        board: document.querySelector<HTMLElement>(".pstage"),
+        gauge: bar.querySelector<HTMLElement>(".lp-bar"),
+        onCovered: () => {
+          if (live) setResultOpen("broke");
+        },
+      });
+    })();
     return () => {
       live = false;
+      fx?.cancel();
     };
   }, [winner]);
 
@@ -2378,6 +2406,7 @@ export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: 
         <Result
           game={game}
           onAgain={online ? undefined : () => start(deck)}
+          broke={resultOpen === "broke"}
           onQuit={quit}
           online={online}
           events={log.map((l) => l.e)}
@@ -2469,8 +2498,11 @@ function Result({
   onQuit,
   online,
   events,
+  broke,
 }: {
   game: GameState;
+  /** 帯が砕けて暗転したあとに出す（画面そのものはじわっと出さず、暗転が明けるのと同時に見せる） */
+  broke?: boolean;
   onAgain?: () => void;
   onQuit: () => void;
   online: boolean;
@@ -2482,7 +2514,12 @@ function Result({
   const won = game.winner === ME;
   const why = endReason(events, ME, won);
   return (
-    <div className={`result ${won ? "win" : "lose"}`} role="dialog" aria-modal="true" aria-label="対戦結果">
+    <div
+      className={`result ${won ? "win" : "lose"}${broke ? " after-break" : ""}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="対戦結果"
+    >
       <section className="result-body">
         <strong className="result-title">{won ? "勝利！" : "敗北…"}</strong>
         <p className="result-why">
