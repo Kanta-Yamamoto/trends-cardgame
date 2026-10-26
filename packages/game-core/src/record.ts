@@ -124,6 +124,9 @@ export function moveCards(before: GameState, action: Action): MoveCards {
     case "sacrifice":
       out.card = me.field[action.slot]?.cardId;
       break;
+    case "darkFall":
+      out.card = (me.darkOmens ?? []).find((o) => o.slot === action.slot)?.cardId;
+      break;
   }
   if (out.card === undefined) delete out.card;
   if (out.target === undefined) delete out.target;

@@ -10,6 +10,7 @@ import {
   castTargets,
   DEFAULT_CONFIG,
   damageCutOn,
+  darkFallSlots,
   darkOmens,
   delayedDamageOn,
   effectiveCost,
@@ -17,10 +18,12 @@ import {
   type GameEvent,
   type GameState,
   isShielded,
+  openSlots,
   type PlayerId,
   previewAttack,
   SLOTS,
   sacrificeCandidates,
+  slotOpen,
   type Unit,
   type UnitView,
   viewUnit,
@@ -40,6 +43,7 @@ import { EffectText, HelpTerm } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { frameRect, frameSize } from "../frame";
+import { COLLAGE_PASTE, collagePaste } from "../fx/collagePaste";
 import { fieldEntry, landed } from "../fx/fieldEntry";
 import { GOD_DESCENT_CARDS, godDescent } from "../fx/godDescent";
 import { IDOL_LIVE, idolLive } from "../fx/idolLive";
@@ -221,7 +225,7 @@ function describe(e: GameEvent): string {
         ? `${who(e.player)}の ${nameOf(e.cardId)}（闇堕ちの姿）が消えた`
         : `${who(e.player)}の ${nameOf(e.cardId)} が破壊された`;
     case "darkOmen":
-      return `${who(e.player)}の ${nameOf(e.cardId)} が破壊された……闇の気配。次の${who(e.player)}のターンの始めに闇堕ちして戻ってくる`;
+      return `${who(e.player)}の ${nameOf(e.cardId)} が破壊されて裏向きになった。破壊された次のターンから、${who(e.player)}のターンに闇堕ちの姿で出せる`;
     case "darkFall":
       return `${who(e.player)}の ${nameOf(e.cardId)} が、闇堕ちして戻ってきた！`;
     case "buzz":
@@ -393,7 +397,7 @@ function DeckSelect() {
           </li>
           <li>相手の場にガードがいる間は、ガードしか攻撃できない。晒し状態になるとガードを失う</li>
           <li>
-            闇堕ちを持つ★5は、破壊されたら次の自分のターンの始めに、闇堕ちの姿で自動で戻ってくる（出たターンは相手のキャラクターにだけ攻撃できる）。闇堕ちの姿が破壊されたら消える
+            闇堕ちを持つ★5は、破壊されたらその枠でカードが裏向きになる（その枠にはキャラクターを出せない）。破壊された次のターンから、自分のターンの好きなときに、裏向きのカードを押して闇堕ちの姿で出せる（出たターンは相手のキャラクターにだけ攻撃できる）。闇堕ちの姿が破壊されたら消える
           </li>
           <li>
             バズ：1試合に2回（自分の4ターン目から。後攻は3ターン目から）、自分のキャラクター1体に攻撃力+2・体力+2と突進
@@ -539,7 +543,98 @@ function FieldLayer({ kind, mine }: { kind: "dark" | "omen"; mine: boolean }) {
   );
 }
 
-/** 闇の気配：破壊されたエースの枠に灯る紫の炎 */
+/** 闇堕ちを持つキャラクターが破壊された枠に残る、裏向きのカード（紫の炎が灯る）。名前も案内も載せず、押すと説明の小窓を出す */
+function OmenCard() {
+  return (
+    <span className="omen-card" aria-hidden="true">
+      <OmenFlame />
+    </span>
+  );
+}
+
+/**
+ * 裏向きのカードを押したときの説明。どういう状態かと、闇堕ちの姿（名前・攻撃力・体力・効果）を見せる。
+ * 自分のカードで今闇堕ちさせられるときだけ「闇堕ちさせる」を出す
+ */
+function OmenSheet({
+  card,
+  owner,
+  ready,
+  onFall,
+  onClose,
+}: {
+  card: CardDef;
+  /** 持ち主の呼び方（自分なら null） */
+  owner: string | null;
+  ready: boolean;
+  onFall: () => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  const dark = card.dark;
+  if (!dark) return null;
+  const rush = dark.keywords?.includes("速攻") ? "速攻" : "出たターンは突進";
+  const state =
+    owner === null
+      ? "闇堕ちを持つキャラクターが破壊されました。破壊された次のターンから、自分のターンに闇堕ちの姿で出せます。裏向きのカードがある枠には、キャラクターを出せません。"
+      : `${owner}の闇堕ちを持つキャラクターが破壊されました。${owner}は、破壊された次のターンから、自分のターンに闇堕ちの姿で出せます。`;
+  return (
+    <div
+      className="zoom-sheet end-confirm buzz-confirm dark-confirm"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`裏向きの${card.name}`}
+    >
+      <button type="button" className="zoom-sheet-bg" aria-label="閉じる" onClick={onClose} />
+      <div className="end-confirm-body">
+        <p className="end-confirm-q">{card.name}</p>
+        <p className="dkc-state">{state}</p>
+        {owner === null && !ready && <p className="dkc-wait">いまは出せません</p>}
+        <div className="bzc-head dkc-dark">
+          {(dark.art ?? card.art) && (
+            <span className="bzc-art" style={{ backgroundImage: `url(${dark.art ?? card.art})` }} />
+          )}
+          <div>
+            <p className="dkc-label">闇堕ちの姿</p>
+            <p className="bzc-stats">
+              <span>{dark.name}</span>
+              <span className="atk">
+                攻撃力 <b>{dark.attack}</b>
+              </span>
+              <span className="hp">
+                体力 <b>{dark.hp}</b>
+              </span>
+              <span>{rush}</span>
+            </p>
+          </div>
+        </div>
+        {dark.effect && <p className="dkc-effect">{dark.effect}</p>}
+        {ready ? (
+          <div className="end-confirm-actions">
+            <button type="button" className="btn ghost" onClick={onClose}>
+              やめる
+            </button>
+            <button type="button" className="btn dkc-go" onClick={onFall}>
+              闇堕ちさせる
+            </button>
+          </div>
+        ) : (
+          <div className="end-confirm-actions one">
+            <button type="button" className="btn ghost" onClick={onClose}>
+              閉じる
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** 裏向きのカードに灯る紫の炎 */
 function OmenFlame() {
   return (
     <span className="omen-flame" aria-hidden="true">
@@ -751,6 +846,46 @@ function EndTurnConfirm({
   );
 }
 
+/** 対戦の途中で「戻る」「ロビーへ」を押したときの確認（押し間違いで対戦から抜けないように） */
+function QuitConfirm({
+  question,
+  notes,
+  onYes,
+  onNo,
+}: {
+  question: string;
+  notes: string[];
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onNo();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onNo]);
+  return (
+    <div className="zoom-sheet end-confirm" role="alertdialog" aria-modal="true" aria-label="退出の確認">
+      <button type="button" className="zoom-sheet-bg" aria-label="やめる" onClick={onNo} />
+      <div className="end-confirm-body">
+        <p className="end-confirm-q">{question}</p>
+        {notes.map((n) => (
+          <p key={n} className="end-confirm-note">
+            {n}
+          </p>
+        ))}
+        <div className="end-confirm-actions">
+          <button type="button" className="btn ghost" onClick={onNo}>
+            いいえ
+          </button>
+          <button type="button" className="btn" onClick={onYes}>
+            退出する
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** バズの確認：対象のキャラクターと、バズしたあとの攻撃力・体力・残りの回数を見せる */
 function BuzzConfirm({
   card,
@@ -916,11 +1051,14 @@ function PostThrowArrow({ from }: { from: { x: number; y: number } | null }) {
   );
 }
 
-/** 対戦の画面。CPU 戦とオンライン対戦で共通（onQuit を渡すと「戻る」でそれを呼ぶ） */
 /** 見せ終わったオープニングの番号（store の opening） */
 let openingSeen = 0;
 
-export function Board({ onQuit }: { onQuit?: () => void } = {}) {
+/**
+ * 対戦の画面。CPU 戦とオンライン対戦で共通（onQuit を渡すと「戻る」でそれを呼ぶ）。
+ * 決着の前に「戻る」を押したら、確認を出してから抜ける。quitNotes はその確認に添える説明（オンライン対戦の、抜けたあとどうなるか）
+ */
+export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: string[] } = {}) {
   const {
     game,
     deck,
@@ -936,6 +1074,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     endTurn,
     sacrifice,
     buzz,
+    darkFall,
     start,
     quit: quitGame,
     mode,
@@ -953,6 +1092,13 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     onQuit?.();
   };
   const [resignAsk, setResignAsk] = useState(false);
+  /** 「戻る」の確認を出しているか */
+  const [quitAsk, setQuitAsk] = useState(false);
+  // 確認を出している間に決着したら閉じる（「もう一度」の次の対戦で出し直さない）
+  const decided = !!game?.winner;
+  useEffect(() => {
+    if (decided) setQuitAsk(false);
+  }, [decided]);
   /** 相手が出した・使ったカードを大きく見せる */
   const [reveal, setReveal] = useState<{
     id: number;
@@ -984,7 +1130,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const ambushField = useRef<HTMLDivElement>(null);
   /** 毒の茨の演出で場に出した闇の姿の uid。出来事に合わせた裏返し（flipCard）は出さない */
   const withered = useRef(new Set<number>());
-  /** 降臨で場に出る神・ライブ演出で出るアイドル・茂みから飛び出すクサハミ・顔を出すミナモ。ふつうの着地の代わりに、godDescent・idolLive・kusahamiAmbush・minamoLive が見せる */
+  /** 降臨で場に出る神・ライブ演出で出るアイドル・茂みから飛び出すクサハミ・貼り重ねで出る伝説のコラ画像・顔を出すミナモ。ふつうの着地の代わりに、godDescent・idolLive・kusahamiAmbush・collagePaste・minamoLive が見せる */
   const descending = useRef(new Set<number>());
   /** 降臨で神から手札へ飛ばし終えたカードの数。山札から引く演出を出さない */
   const handedOver = useRef(0);
@@ -1008,6 +1154,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [confirmEnd, setConfirmEnd] = useState(false);
   /** バズの確認を出している自分のキャラクターの枠（キャラクターを選んでからバズを押すと出る） */
   const [buzzAsk, setBuzzAsk] = useState<number | null>(null);
+  // 説明を出している裏向きのカード（持ち主と枠）
+  const [omenAsk, setOmenAsk] = useState<{ owner: PlayerId; slot: number } | null>(null);
   /** バズが使えるようになった回数。増えるたびに、ボタンの枠の光を右回りに走らせる */
   const [buzzWake, setBuzzWake] = useState(0);
   const buzzWas = useRef(false);
@@ -1020,7 +1168,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     return (
       effectiveCost(g, ME, id, CATALOG) <= p.mana &&
       (card.type === "icon"
-        ? p.field.some((u) => !u)
+        ? openSlots(g, ME).length > 0
         : !card.target || castTargets(g, ME, id, CATALOG).length > 0)
     );
   };
@@ -1052,7 +1200,8 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       if (src.kind === "hand") {
         const card = CATALOG[g.players[ME].hand[src.index] ?? ""];
         if (!card) return select(null);
-        if (card.type === "icon") return where === "slot" ? play(slot) : select(null);
+        if (card.type === "icon")
+          return where === "slot" && slotOpen(g, ME, slot) ? play(slot) : select(null);
         if (card.target) {
           const ok = castTargets(g, ME, card.id, CATALOG).some(
             (t) =>
@@ -1238,14 +1387,21 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             return;
           }
           // ★5のアイドル：ふつうの着地の代わりにライブ演出（暗転・スポットライト・ペンライト）を見せる。
+          // 伝説のコラ画像：ふつうの着地の代わりに、紙がめくれるたびに切れ端が場を貼り埋める演出を見せる。
           // 描かれる前に印を付けて、着地の演出を止めておく（この行より前に await を置かない）
           let live = false;
-          if (card && uid !== undefined && IDOL_LIVE[card.id] && fxEnabled()) {
+          if (
+            card &&
+            uid !== undefined &&
+            (IDOL_LIVE[card.id] || COLLAGE_PASTE.has(card.id)) &&
+            fxEnabled()
+          ) {
             descending.current.add(uid);
             await gwait(50);
             const unitEl = self();
             if (unitEl) {
-              await idolLive({ unit: unitEl, layer: fxLayer(), cardId: card.id });
+              if (IDOL_LIVE[card.id]) await idolLive({ unit: unitEl, layer: fxLayer(), cardId: card.id });
+              else await collagePaste({ unit: unitEl, layer: fxLayer(), art: card.art });
               unitEl.style.opacity = "";
               live = true;
             }
@@ -1406,7 +1562,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       const card = CATALOG[u.cardId];
       const el = document.querySelector<HTMLElement>(`[data-uid="${u.uid}"]`);
       if (stagedAces.current.delete(u.uid) || descending.current.has(u.uid)) {
-        // 『演出家』で上がるエース・降臨するネ申・ライブ演出で出るアイドル・茂みから飛び出すクサハミ・顔を出すミナモは、描かれる前に隠して、それぞれの演出に任せる
+        // 『演出家』で上がるエース・降臨するネ申・ライブ演出で出るアイドル・茂みから飛び出すクサハミ・伝説のコラ画像・顔を出すミナモは、描かれる前に隠して、それぞれの演出に任せる
         if (el) el.style.opacity = "0";
       } else if (card) fieldEntry(el, card);
     }
@@ -1537,7 +1693,10 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const omenAt = (owner: PlayerId, slot: number) => darkOmens(game, owner).find((o) => o.slot === slot);
   const canHit = (t: AttackTarget) =>
     targets.some((x) => (x.kind === "leader" ? t.kind === "leader" : t.kind === "unit" && t.slot === x.slot));
-  const freeSlot = me.field.findIndex((u) => !u);
+  const freeSlot = openSlots(game, ME)[0] ?? -1;
+  // いま闇堕ちさせられる自分の裏向きのカードの枠（破壊されたターンは闇堕ちできない）
+  const fallSlots = myTurn ? darkFallSlots(game, ME) : [];
+  const askedOmen = omenAsk ? omenAt(omenAsk.owner, omenAsk.slot) : undefined;
   const preview = (t: AttackTarget) =>
     attacking && canHit(t) ? previewAttack(game, ME, selection.slot, t, CATALOG) : null;
   const foeGuarded = foe.field.some((u) => u && viewUnit(game, CPU, u, CATALOG).guard);
@@ -1694,14 +1853,19 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
         const u = foe.field[slot];
         return u ? (
           unitCard(CPU, slot, u)
-        ) : (
-          <div
+        ) : omenAt(CPU, slot) ? (
+          <button
             key={key}
+            type="button"
             data-slot={`${CPU}:${slot}`}
-            className={`slot ${slot === 2 ? "center" : ""} ${omenAt(CPU, slot) ? "omen-slot" : ""}`}
+            className={`slot omen-slot ${slot === 2 ? "center" : ""}`}
+            aria-label={`裏向きの${nameOf(omenAt(CPU, slot)?.cardId ?? "")}（押すと説明）`}
+            onClick={() => setOmenAsk({ owner: CPU, slot })}
           >
-            {omenAt(CPU, slot) && <OmenFlame />}
-          </div>
+            <OmenCard />
+          </button>
+        ) : (
+          <div key={key} data-slot={`${CPU}:${slot}`} className={`slot ${slot === 2 ? "center" : ""}`} />
         );
       })}
     </div>
@@ -1711,21 +1875,34 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       {SLOT_KEYS.map((key, slot) => {
         const u = me.field[slot];
         if (u) return unitCard(ME, slot, u);
-        const drop = myTurn && selection?.kind === "hand" && !postSelected;
         const omen = omenAt(ME, slot);
+        if (omen) {
+          const ready = fallSlots.includes(slot);
+          return (
+            <button
+              key={key}
+              type="button"
+              data-slot={`${ME}:${slot}`}
+              className={`slot omen-slot ${slot === 2 ? "center" : ""} ${ready ? "omen-ready" : ""}`}
+              aria-label={`裏向きの${nameOf(omen.cardId)}（押すと説明${ready ? "。闇堕ちさせられる" : ""}）`}
+              onClick={() => setOmenAsk({ owner: ME, slot })}
+            >
+              <OmenCard />
+            </button>
+          );
+        }
+        const drop = myTurn && selection?.kind === "hand" && !postSelected;
         return (
           <button
             key={key}
             type="button"
             data-drop={`slot:${slot}`}
             data-slot={`${ME}:${slot}`}
-            className={`slot ${slot === 2 ? "center" : ""} ${drop ? "droppable" : ""} ${drop && drag?.over === `slot:${slot}` ? "drop-over" : ""} ${omen ? "omen-slot" : ""}`}
+            className={`slot ${slot === 2 ? "center" : ""} ${drop ? "droppable" : ""} ${drop && drag?.over === `slot:${slot}` ? "drop-over" : ""}`}
             disabled={!drop}
-            aria-label={`空き枠 ${slot + 1}${slot === 2 ? "（センター）" : ""}${omen ? `（闇の気配：${nameOf(omen.cardId)}）` : ""}`}
+            aria-label={`空き枠 ${slot + 1}${slot === 2 ? "（センター）" : ""}`}
             onClick={() => play(slot)}
-          >
-            {omen && <OmenFlame />}
-          </button>
+          />
         );
       })}
     </div>
@@ -1791,7 +1968,11 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
     </button>
   );
   const quitBtn = (
-    <button type="button" className="btn ghost quit" onClick={quit}>
+    <button
+      type="button"
+      className="btn ghost quit"
+      onClick={() => (game.winner ? quit() : setQuitAsk(true))}
+    >
       {online ? "ロビーへ" : "戻る"}
     </button>
   );
@@ -2031,6 +2212,17 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           onNo={() => setConfirmEnd(false)}
         />
       )}
+      {quitAsk && !game.winner && (
+        <QuitConfirm
+          question={online ? "ロビーに戻りますか？" : "デッキ選びに戻りますか？"}
+          notes={online ? (quitNotes ?? []) : ["この対戦は終わります（続きからは遊べません）"]}
+          onYes={() => {
+            setQuitAsk(false);
+            quit();
+          }}
+          onNo={() => setQuitAsk(false)}
+        />
+      )}
       {openingOn && deck && (
         <Opening
           key={opening}
@@ -2057,6 +2249,18 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             setBuzzAsk(null);
             if (buzzing) select(null);
           }}
+        />
+      )}
+      {omenAsk && askedOmen && CATALOG[askedOmen.cardId] && (
+        <OmenSheet
+          card={CATALOG[askedOmen.cardId] as CardDef}
+          owner={omenAsk.owner === ME ? null : foeName}
+          ready={omenAsk.owner === ME && fallSlots.includes(omenAsk.slot)}
+          onFall={() => {
+            setOmenAsk(null);
+            darkFall(omenAsk.slot);
+          }}
+          onClose={() => setOmenAsk(null)}
         />
       )}
       {cut && CATALOG[cut.cardId] && (

@@ -18,7 +18,7 @@ function GoogleButton({ clientId }: { clientId: string }) {
           client_id: clientId,
           callback: (r) => loginWithGoogle(r.credential).catch((e: Error) => setError(e.message)),
         });
-        g.renderButton(ref.current, { theme: "filled_black", size: "large", shape: "pill", locale: "ja" });
+        g.renderButton(ref.current, { theme: "filled_blue", size: "large", shape: "pill", locale: "ja" });
       })
       .catch((e: Error) => setError(e.message));
     return () => {

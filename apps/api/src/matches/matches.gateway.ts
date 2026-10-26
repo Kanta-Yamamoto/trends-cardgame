@@ -27,7 +27,7 @@ import { deckCards, MatchesService, type Step } from "./matches.service";
 import { MatchQueue } from "./matchmaking";
 
 type Ack = { ok: true } | { ok: false; error: string };
-type Client = Socket & { data: { user?: PublicUser } };
+type Client = Socket & { data: { user?: PublicUser; room?: string } };
 
 const corsOrigin = () => process.env.CORS_ORIGIN?.split(",") ?? true;
 /** ランダムマッチの待ち行列を見直す間隔（待つほど組める幅が広がるので、定期的に見る） */
@@ -35,6 +35,8 @@ const QUEUE_SWEEP_MS = 2000;
 /** CPU が 1 手ごとに置く間（画面が相手の手の演出を見せる分）。ターンの最初の 1 手は長めに */
 const CPU_STEP_MS = 1200;
 const CPU_TURN_START_MS = 2200;
+/** 2 人とも部屋からいなくなってから、対戦を閉じるまでの間（リロード・アプリの切り替えくらいでは閉じないように） */
+export const EMPTY_CLOSE_MS = 60_000;
 
 /**
  * オンライン対戦の通信。
@@ -43,6 +45,7 @@ const CPU_TURN_START_MS = 2200;
  * - queue / unqueue：ランダムマッチの待ち行列に入る・出る。組めたら "matched"（合言葉）を送り、画面はその部屋に入る。
  *   しばらく待っても人と組めなければ、待機している CPU と組む（CPU は待ち行列に並ばないので、CPU どうしでは組まない）
  * 持ち時間はサーバーが持ち、時間が過ぎたらサーバーが代わりに操作する（自動の差し出し・時間切れ負け）。
+ * 2 人とも抜けたまま（部屋にだれもつないでいない）EMPTY_CLOSE_MS たったら、決着なしで対戦を閉じる（CPU は人の数に入れない）。
  * どちらの人にも、その人から見た形（自分が p1、相手の手札は隠す）で送る。
  */
 @WebSocketGateway({ cors: { origin: corsOrigin() } })
@@ -60,6 +63,10 @@ export class MatchesGateway
   /** CPU が最後に手を打った通算ターン（ターンの最初の 1 手だけ間を長くする） */
   private cpuTurn = new Map<string, number>();
   private sweep: NodeJS.Timeout | null = null;
+  /** だれもつないでいない部屋を閉じる時刻とタイマー（部屋ごと） */
+  private closing = new Map<string, { at: number; timer: NodeJS.Timeout }>();
+  /** 2 人とも抜けてから閉じるまでの間（テストで短くする） */
+  closeAfterMs = EMPTY_CLOSE_MS;
 
   constructor(
     private readonly auth: AuthService,
@@ -80,6 +87,8 @@ export class MatchesGateway
         for (const row of rows) {
           this.schedule(row);
           void this.driveCpu(row);
+          // 起動し直した直後はだれもつないでいない。時間内に戻らなければ閉じる
+          this.watchEmpty(row.code);
         }
       })
       .catch((e) => console.error(e));
@@ -88,8 +97,10 @@ export class MatchesGateway
   onModuleDestroy() {
     if (this.sweep) clearInterval(this.sweep);
     for (const t of [...this.timers.values(), ...this.cpuTimers.values()]) clearTimeout(t);
+    for (const c of this.closing.values()) clearTimeout(c.timer);
     this.timers.clear();
     this.cpuTimers.clear();
+    this.closing.clear();
   }
 
   /** いま人がつないでいる、決着していない対戦の数（デプロイで対戦を切らないように、/health で出す） */
@@ -121,6 +132,66 @@ export class MatchesGateway
 
   handleDisconnect(client: Client) {
     this.queue.removeSocket(client.id);
+    // 部屋から最後の 1 人がいなくなったら、閉じるまでの時間を数え始める
+    if (client.data.room) this.watchEmpty(client.data.room);
+  }
+
+  /** 部屋にだれかつないでいるか */
+  private present(code: string) {
+    return !!this.server?.sockets?.adapter?.rooms?.get(code)?.size;
+  }
+
+  /** 部屋にだれもつないでいなければ、closeAfterMs 後に閉じる（もう数えていれば、そのまま） */
+  private watchEmpty(code: string) {
+    if (this.present(code) || this.closing.has(code)) return;
+    const timer = setTimeout(
+      () => void this.closeIfEmpty(code).catch((e) => console.error(e)),
+      this.closeAfterMs + 20,
+    );
+    timer.unref();
+    this.closing.set(code, { at: Date.now() + this.closeAfterMs, timer });
+  }
+
+  /** だれかが戻ったので、閉じるのをやめる */
+  private keepOpen(code: string) {
+    const c = this.closing.get(code);
+    if (!c) return;
+    clearTimeout(c.timer);
+    this.closing.delete(code);
+  }
+
+  /** 閉じる時刻を過ぎても、だれもつないでいなければ対戦を閉じる。閉じたら true */
+  private async closeIfEmpty(code: string): Promise<boolean> {
+    const c = this.closing.get(code);
+    if (!c || Date.now() < c.at) return false;
+    this.keepOpen(code);
+    if (this.present(code)) return false;
+    const row = await this.matches.close(code);
+    if (!row) return false;
+    for (const timers of [this.timers, this.cpuTimers]) {
+      const t = timers.get(code);
+      if (t) clearTimeout(t);
+      timers.delete(code);
+    }
+    this.cpuTurn.delete(code);
+    this.track(code, false);
+    return true;
+  }
+
+  /**
+   * 通信が切れた人が戻る対戦（決着していない自分の対戦）と、2 人とも抜けていれば閉じるまでの残り。
+   * 閉じる時刻を過ぎていれば、ここで閉じる（だれもつないでいないとタイマーが遅れることがあるので）
+   */
+  async resumable(userId: string) {
+    for (let i = 0; i < 3; i++) {
+      const row = await this.matches.current(userId);
+      if (!row) break;
+      if (await this.closeIfEmpty(row.code)) continue;
+      this.watchEmpty(row.code);
+      const c = this.closing.get(row.code);
+      return { match: await this.matches.info(row), closesIn: c ? Math.max(0, c.at - Date.now()) : null };
+    }
+    return { match: null, closesIn: null };
   }
 
   @SubscribeMessage("join")
@@ -131,6 +202,8 @@ export class MatchesGateway
     return this.guard(client, async (user) => {
       const row = await this.matches.join(String(body?.code ?? ""), user.id, body?.deck);
       await client.join(row.code);
+      client.data.room = row.code;
+      this.keepOpen(row.code);
       await this.sendMatch(row);
       // 入り直したときに時間が過ぎていれば、ここで進める
       this.schedule(row);
@@ -161,6 +234,7 @@ export class MatchesGateway
   async enqueue(@ConnectedSocket() client: Client, @MessageBody() body: { deck?: string }): Promise<Ack> {
     return this.guard(client, async (user) => {
       deckCards(body?.deck);
+      await this.matches.assertFree(user.id);
       const { rating } = await this.ranking.ratingOf(user.id);
       this.queue.add({
         userId: user.id,
@@ -188,6 +262,8 @@ export class MatchesGateway
         const row = await this.matches.createRandom(a, b);
         for (const s of [a, b]) this.server.to(s.socketId).emit("matched", { code: row.code });
         this.schedule(row);
+        // 2 人とも部屋に来なければ閉じる
+        this.watchEmpty(row.code);
       } catch (e) {
         console.error(e);
         this.queue.putBack(a);
@@ -200,6 +276,7 @@ export class MatchesGateway
         this.server.to(a.socketId).emit("matched", { code: row.code });
         this.schedule(row);
         void this.driveCpu(row);
+        this.watchEmpty(row.code);
       } catch (e) {
         console.error(e);
         this.queue.putBack(a);
