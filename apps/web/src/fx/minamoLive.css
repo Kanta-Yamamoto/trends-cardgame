@@ -32,9 +32,11 @@
 /* 二つ名（試作のカード面の .epi と同じ：小さく、字間を広く、淡い青） */
 .ml-name small { font: 700 0.6em / 1 var(--f-ui); letter-spacing: 0.1em; color: #4d7c96; }
 .ml-name b {
-  font-weight: 800; color: transparent; -webkit-background-clip: text; background-clip: text;
+  font-weight: 800; color: transparent;
   background: linear-gradient(100deg, #1f8fc4, #5cc8f0 30%, #ff8fbf 50%, #5cc8f0 70%, #1f8fc4);
   background-size: 250% 100%; background-position: 30% 0;
+  /* background の一括指定のあとに書く（前に書くと打ち消されて、文字が帯になる） */
+  -webkit-background-clip: text; background-clip: text;
 }
 
 /* 配信のコメント欄（下から新しいものが入り、古いものが上へ流れる） */
