@@ -294,7 +294,7 @@ function planTurnInner(start: GameState, player: PlayerId, catalog: Catalog, act
   };
   const foeId = opponent(player);
 
-  // 0. 闇堕ち：闇堕ちさせられる闇の気配は、ターンの初めにすべて闇堕ちさせる（10月26日までの「自動で戻る」と同じ時期）
+  // 0. 闇堕ち：闇堕ちさせられる裏向きのカードは、ターンの初めにすべて闇堕ちさせる（10月26日までの「自動で戻る」と同じ時期）
   for (const slot of darkFallSlots(state, player)) {
     if (state.winner) return actions;
     step({ type: "darkFall", player, slot });

@@ -120,7 +120,7 @@ interface GameStore {
   buzz: (slot: number) => void;
   /** 差し出し（フィクサー）：自分のキャラクターを1体選ぶ */
   sacrifice: (slot: number) => void;
-  /** 闇堕ち：自分の闇の気配を、その枠に闇堕ちの姿で出す（闇堕ちの演出を見せてから） */
+  /** 闇堕ち：自分の裏向きのカードを、その枠に闇堕ちの姿で出す（闇堕ちの演出を見せてから） */
   darkFall: (slot: number) => void;
   /** オンライン対戦を始める（再接続のときも、届いた状態で呼び直す） */
   startOnline: (o: {

@@ -175,12 +175,12 @@ export function effectiveCost(state: GameState, player: PlayerId, cardId: string
   return Math.max(0, cost);
 }
 
-/** 闇の気配（破壊された枠に裏向きで残り、自分のターンに闇堕ちさせられるカード） */
+/** 裏向きのカード（破壊された枠に裏向きで残り、自分のターンに闇堕ちさせられるカード） */
 export function darkOmens(state: GameState, player: PlayerId): DarkOmen[] {
   return state.players[player].darkOmens ?? [];
 }
 
-/** その枠が空いているか（キャラクターも闇の気配もない）。闇の気配は枠をふさぐ */
+/** その枠が空いているか（キャラクターも裏向きのカードもない）。裏向きのカードは枠をふさぐ */
 export function slotOpen(state: GameState, player: PlayerId, slot: number): boolean {
   const p = state.players[player];
   return (
@@ -196,7 +196,7 @@ export function openSlots(state: GameState, player: PlayerId): number[] {
   return state.players[player].field.flatMap((_, slot) => (slotOpen(state, player, slot) ? [slot] : []));
 }
 
-/** いま闇堕ちさせられる闇の気配の枠（自分のターンで、闇の気配が残ったターンより後） */
+/** いま闇堕ちさせられる裏向きのカードの枠（自分のターンで、裏向きのカードが残ったターンより後） */
 export function darkFallSlots(state: GameState, player: PlayerId): number[] {
   if (state.winner || state.pending || state.active !== player) return [];
   return darkOmens(state, player)
@@ -461,7 +461,7 @@ export function sacrificeCandidates(state: GameState, player: PlayerId): number[
 
 /**
  * 今のフィールド（画面の背景）。闇堕ちの姿が場にいれば「闇」（持ち主は、いれば手番の人を先に）。
- * いなくても闇の気配があれば「予兆」
+ * いなくても裏向きのカードがあれば「予兆」
  */
 export function fieldOf(
   state: GameState,
@@ -508,7 +508,7 @@ function summon(
   emit: Emit,
   near?: number,
 ): number {
-  // 両隣を先に（左、右の順）。どちらも埋まっていれば、左から空いた枠へ（闇の気配の枠には出せない）
+  // 両隣を先に（左、右の順）。どちらも埋まっていれば、左から空いた枠へ（裏向きのカードの枠には出せない）
   const flank = near === undefined ? [] : [near - 1, near + 1].filter((s) => slotOpen(state, player, s));
   const slot = flank[0] ?? openSlots(state, player)[0] ?? -1;
   if (slot < 0) return -1;
@@ -601,7 +601,7 @@ function resolveDeaths(
             ? { type: "destroyed", player: owner, cardId: u.cardId, slot, vanished: true }
             : { type: "destroyed", player: owner, cardId: u.cardId, slot },
         );
-        // 闇堕ちを持つカードが元の姿で破壊されたら、闇の気配（その枠に裏向きで残る。自分のターンに闇堕ちさせられる）
+        // 闇堕ちを持つカードが元の姿で破壊されたら、裏向きのカード（その枠に裏向きで残る。自分のターンに闇堕ちさせられる）
         if (!u.token && !u.dark && catalog[u.cardId]?.dark) {
           const spent = (p.darkSpent ?? []).indexOf(u.cardId);
           if (u.darkUsed || spent >= 0) {
@@ -1223,7 +1223,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       else if (ctx.target?.side === "enemy") slot = ctx.target.slot;
       const u = slot >= 0 ? foe.field[slot] : null;
       if (!u) break;
-      // 元のカードは消える（墓地に行かないので、闇の気配も出ない）
+      // 元のカードは消える（墓地に行かないので、裏向きにもならない）
       const into = newUnit(state, e.card, catalog, true);
       Object.assign(into, { canAttack: false, attacksLeft: 0, rushOnly: false });
       foe.field[slot] = into;
@@ -1420,7 +1420,7 @@ export function applyAction(
       if (action.slot < 0 || action.slot >= SLOTS) throw new RuleError("bad_slot", "その場所には出せません");
       if (me.field[action.slot]) throw new RuleError("slot_taken", "その場所にはすでにキャラクターがいます");
       if (!slotOpen(state, player, action.slot))
-        throw new RuleError("slot_omen", "闇の気配がある場所には出せません");
+        throw new RuleError("slot_omen", "裏向きのカードがある場所には出せません");
       const cost = effectiveCost(state, player, cardId, catalog);
       if (cost > me.mana)
         throw new RuleError("no_mana", `コストが足りません（必要 ${cost}・残り ${me.mana}）`);
@@ -1621,9 +1621,8 @@ export function applyAction(
     }
     case "darkFall": {
       const omen = darkOmens(state, player).find((o) => o.slot === action.slot);
-      if (!omen) throw new RuleError("no_omen", "その場所に闇の気配はありません");
-      if (omen.turn >= state.turn)
-        throw new RuleError("omen_fresh", "闇の気配が残ったターンは、闇堕ちできません");
+      if (!omen) throw new RuleError("no_omen", "その場所に裏向きのカードはありません");
+      if (omen.turn >= state.turn) throw new RuleError("omen_fresh", "破壊されたターンは、闇堕ちできません");
       me.darkOmens = darkOmens(state, player).filter((o) => o !== omen);
       const at = me.trash.lastIndexOf(omen.cardId);
       if (at >= 0) me.trash.splice(at, 1);
@@ -1636,7 +1635,7 @@ export function applyAction(
   return { state, events };
 }
 
-/** 墓地から無くなったカード（蘇生などで）の闇の気配を消す */
+/** 墓地から無くなったカード（蘇生などで）の裏向きのカードを消す */
 function pruneOmens(state: GameState) {
   for (const pid of ["p1", "p2"] as const) {
     const p = state.players[pid];

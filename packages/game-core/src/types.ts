@@ -62,11 +62,11 @@ export interface Unit {
   tempAtk?: number;
 }
 
-/** 闇の気配（破壊された枠に裏向きで残った、闇堕ちを持つカード） */
+/** 裏向きのカード（破壊された枠に裏向きで残った、闇堕ちを持つカード） */
 export interface DarkOmen {
   cardId: string;
   slot: number;
-  /** 闇の気配が残った通算ターン */
+  /** 裏向きのカードが残った通算ターン */
   turn: number;
 }
 
@@ -98,7 +98,7 @@ export interface PlayerState {
   /** 闇堕ちを使い終えたカード（闇堕ちの姿のまま手札に戻されたもの）。次にそのカードが破壊されても闇堕ちしない */
   darkSpent: string[];
   /**
-   * 闇の気配：破壊された闇堕ちを持つカード。破壊された枠に裏向きで残り、その枠をふさぐ（戦いには関わらない）。
+   * 裏向きのカード：破壊された闇堕ちを持つカード。破壊された枠に裏向きで残り、その枠をふさぐ（戦いには関わらない）。
    * 自分のターンに「闇堕ち」の操作で、その枠に闇堕ちの姿で出る。turn は残った通算ターン（そのターンのうちは闇堕ちできない）
    */
   darkOmens?: DarkOmen[];
@@ -164,7 +164,7 @@ export type Action =
   | { type: "endTurn"; player: PlayerId }
   /** 差し出し（フィクサー）：自分のキャラクターを1体選ぶ。相手の手番の途中でも、選ぶ番の人が行う */
   | { type: "sacrifice"; player: PlayerId; slot: number }
-  /** 闇堕ち：自分の闇の気配を、その枠に闇堕ちの姿で出す（自分のターン。闇の気配が残ったターンはできない） */
+  /** 闇堕ち：自分の裏向きのカードを、その枠に闇堕ちの姿で出す（自分のターン。裏向きのカードが残ったターンはできない） */
   | { type: "darkFall"; player: PlayerId; slot: number }
   /** 降参（相手の勝ちになる。自分のターンでなくてもできる） */
   | { type: "resign"; player: PlayerId }
@@ -193,7 +193,7 @@ export type GameEvent =
   | { type: "damaged"; player: PlayerId; slot: number; cardId: string; amount: number }
   /** 破壊された。slot はいた枠。vanished は闇堕ちの姿が破壊されて消えた（墓地に行かない） */
   | { type: "destroyed"; player: PlayerId; cardId: string; slot: number; vanished?: boolean }
-  /** 闇の気配：闇堕ちを持つカードが破壊され、その枠に裏向きで残った（自分のターンに闇堕ちさせられる） */
+  /** 裏向きのカード：闇堕ちを持つカードが破壊され、その枠に裏向きで残った（自分のターンに闇堕ちさせられる） */
   | { type: "darkOmen"; player: PlayerId; slot: number; cardId: string }
   | { type: "darkFall"; player: PlayerId; slot: number; cardId: string }
   /** バズ：そのキャラクターに攻撃力+2・体力+2と突進 */

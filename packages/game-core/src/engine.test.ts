@@ -262,7 +262,7 @@ const play = (s: GameState, handIndex: number, slot: number, player: "p1" | "p2"
 const cast = (s: GameState, handIndex: number, target?: { side: "enemy" | "ally"; slot: number }) =>
   run(s, { type: "cast", player: "p1", handIndex, target }).state;
 const end = (s: GameState, player: "p1" | "p2" = "p1") => run(s, { type: "endTurn", player }).state;
-/** 闇堕ち：闇の気配を、その枠に闇堕ちの姿で出す */
+/** 闇堕ち：裏向きのカードを、その枠に闇堕ちの姿で出す */
 const fall = (s: GameState, slot: number, player: "p1" | "p2" = "p1") =>
   run(s, { type: "darkFall", player, slot }).state;
 const hit = (s: GameState, from: number, slot: number) =>
@@ -800,7 +800,7 @@ describe("バトルと闇堕ち", () => {
     s = end(end(r.state), "p2");
     expect(s.players.p2.field[0]?.damage).toBe(2);
   });
-  it("闇堕ちを持つカードは、破壊されたらいったん墓地へ行き、闇の気配が残る（すぐには戻らない）", () => {
+  it("闇堕ちを持つカードは、破壊されたらいったん墓地へ行き、裏向きのカードが残る（すぐには戻らない）", () => {
     let s = withFoe(["big"], ["ren"]);
     s = play(s, 0, 0);
     s = end(end(s), "p2");
@@ -1196,13 +1196,13 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     return s;
   }
 
-  it("★5も手札から普通に出す。場にいる間は闇の気配はない", () => {
+  it("★5も手札から普通に出す。場にいる間は裏向きのカードはない", () => {
     const s = play(game(["ren"]), 0, 2);
     expect(s.players.p1.field[2]?.cardId).toBe("ren");
     expect(darkOmens(s, "p1")).toEqual([]);
   });
 
-  it("破壊されたら闇の気配がその枠に残る。自分のターンに闇堕ちさせると、コストなしで闇堕ちの姿で出て、闇堕ちしたときの効果が働く", () => {
+  it("破壊されたら裏向きのカードがその枠に残る。自分のターンに闇堕ちさせると、コストなしで闇堕ちの姿で出て、闇堕ちしたときの効果が働く", () => {
     let s = play(game(["ren"]), 0, 3);
     s = killOnFoeTurn(s, 3);
     expect(s.players.p1.field[3]).toBeNull();
@@ -1241,7 +1241,7 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     expect(attackTargets(s, "p1", 0, catalog)).toContainEqual({ kind: "leader" });
   });
 
-  it("闇の気配が残ったターンは闇堕ちできない（自分のターンに破壊されたら、次の自分のターンから）", () => {
+  it("裏向きのカードが残ったターンは闇堕ちできない（自分のターンに破壊されたら、次の自分のターンから）", () => {
     let s = withFoe(["ren"], ["big"]);
     s = play(s, 0, 0);
     const mine = s.players.p1.field[0] as Unit;
@@ -1250,7 +1250,7 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     expect(s.players.p1.field[0]).toBeNull();
     expect(darkOmens(s, "p1")).toHaveLength(1);
     expect(darkFallSlots(s, "p1")).toEqual([]);
-    expect(() => fall(s, 0)).toThrow("闇の気配が残ったターンは、闇堕ちできません");
+    expect(() => fall(s, 0)).toThrow("破壊されたターンは、闇堕ちできません");
     s = end(s);
     // 相手のターンには闇堕ちできない
     expect(darkFallSlots(s, "p1")).toEqual([]);
@@ -1261,7 +1261,7 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     expect(fall(s, 0).players.p1.field[0]?.dark).toBe(true);
   });
 
-  it("闇堕ちは自分のターンの好きなときにできる。しなければ闇の気配は残り続ける", () => {
+  it("闇堕ちは自分のターンの好きなときにできる。しなければ裏向きのカードは残り続ける", () => {
     let s = play(game(["ren", "f"]), 0, 0);
     s = end(killOnFoeTurn(s, 0), "p2");
     s.players.p1.mana = 10;
@@ -1271,16 +1271,16 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     expect(fall(s, 0).players.p1.field[0]?.dark).toBe(true);
   });
 
-  it("闇の気配がない枠では闇堕ちできない", () => {
-    expect(() => fall(game([]), 0)).toThrow("その場所に闇の気配はありません");
+  it("裏向きのカードがない枠では闇堕ちできない", () => {
+    expect(() => fall(game([]), 0)).toThrow("その場所に裏向きのカードはありません");
   });
 
-  it("闇の気配は枠をふさぐ：その枠には出せず、効果で出すキャラクターもほかの枠へ", () => {
+  it("裏向きのカードは枠をふさぐ：その枠には出せず、効果で出すキャラクターもほかの枠へ", () => {
     let s = game(["f", "f"]);
     s.players.p1.trash = ["ren"];
     s.players.p1.darkOmens = [{ cardId: "ren", slot: 0, turn: 0 }];
     s.players.p1.mana = 10;
-    expect(() => play(s, 0, 0)).toThrow("闇の気配がある場所には出せません");
+    expect(() => play(s, 0, 0)).toThrow("裏向きのカードがある場所には出せません");
     expect(openSlots(s, "p1")).toEqual([1, 2, 3, 4]);
     s = play(s, 0, 1);
     expect(s.players.p1.field[1]?.cardId).toBe("f");
@@ -1331,7 +1331,7 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     expect(s.players.p1.trash).toEqual([]);
   });
 
-  it("墓地から無くなったカード（蘇生など）の闇の気配は消え、枠が空く", () => {
+  it("墓地から無くなったカード（蘇生など）の裏向きのカードは消え、枠が空く", () => {
     const s = game(["f"]);
     s.players.p1.darkOmens = [{ cardId: "ren", slot: 0, turn: 0 }];
     s.players.p1.mana = 10;
@@ -1340,7 +1340,7 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     expect(openSlots(t, "p1")).toContain(0);
   });
 
-  it("CPU は、闇堕ちさせられる闇の気配があれば、まず闇堕ちさせる", () => {
+  it("CPU は、闇堕ちさせられる裏向きのカードがあれば、まず闇堕ちさせる", () => {
     let s = play(game(["ren"]), 0, 2);
     s = end(killOnFoeTurn(s, 2), "p2");
     expect(planTurnSearch(s, "p1", catalog)[0]).toEqual({ type: "darkFall", player: "p1", slot: 2 });

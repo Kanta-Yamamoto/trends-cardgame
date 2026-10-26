@@ -132,7 +132,7 @@ export function evaluate(state: GameState, player: PlayerId, catalog: Catalog, f
   for (let s = 0; s < me.field.length; s++) score += unitValue(state, player, s, catalog);
   for (let s = 0; s < foe.field.length; s++) score -= unitValue(state, foeId, s, catalog);
   score += (me.hand.length - foe.hand.length) * WEIGHTS.hand;
-  // 闇の気配（次のターンの始めに闇堕ちして戻ってくる）は、コストなしで出せる手札のようなもの
+  // 裏向きのカード（次のターンの始めに闇堕ちして戻ってくる）は、コストなしで出せる手札のようなもの
   score += (darkOmens(state, player).length - darkOmens(state, foeId).length) * 3 * WEIGHTS.hand;
   // バズは残しておくほど後で使える
   score += ((me.buzzLeft ?? 0) - (foe.buzzLeft ?? 0)) * WEIGHTS.buzz;
@@ -284,7 +284,7 @@ export function planTurnSearch(
   catalog: Catalog,
   options: Partial<SearchOptions> = {},
 ): Action[] {
-  // 闇堕ちさせられる闇の気配があれば、まず闇堕ちさせる（1 手ずつ返し、闇堕ちしたあとの盤面で考え直す）
+  // 闇堕ちさせられる裏向きのカードがあれば、まず闇堕ちさせる（1 手ずつ返し、闇堕ちしたあとの盤面で考え直す）
   const fall = darkFallSlots(start, player)[0];
   if (fall !== undefined) return [{ type: "darkFall", player, slot: fall }];
   const opt = { ...DEFAULT_SEARCH, ...options };
