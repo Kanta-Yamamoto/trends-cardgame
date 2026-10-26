@@ -268,7 +268,6 @@ function sentence(e: CardEffect, ctx: Ctx, prev: CardEffect | undefined): string
       case "summon": {
         const name = ctx.nameOf(e.card);
         const buffed = e.buff ? `。出した${name}に${stats(e.buff.attack, e.buff.hp)}` : "";
-        if (e.sides) return `左右の空いている枠に、${name}を1体ずつ出す${buffed}`;
         if (e.flank && e.centerCount !== undefined)
           return `隣に${name}を${e.count}体出す。センターに出したときは、左右に${e.centerCount}体出す${buffed}`;
         if (e.flank) return `隣に${name}を${e.count}体出す${buffed}`;

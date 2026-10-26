@@ -1,12 +1,13 @@
 import type { Action, ClockView, GameState } from "@trends/game-core";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { io, type Socket } from "socket.io-client";
 import { API_URL } from "../api/client";
+import { Account, Login } from "../auth/Login";
 import { type DeckSel, deckFromRef } from "../game/decks";
 import { type RemoteLink, type RemoteUpdate, useGame } from "../game/store";
 import { formatClock, type RatingChange, useLive } from "../online/live";
-import { type AuthConfig, api, loadGoogle, useSession } from "../online/session";
+import { api, useSession } from "../online/session";
 import { Board, DeckGrid } from "./Play";
 
 /**
@@ -68,93 +69,6 @@ export interface MyRating {
 function connect(token: string): Socket {
   const opts = { auth: { token }, transports: ["websocket", "polling"] };
   return API_URL ? io(API_URL, opts) : io(opts);
-}
-
-/* ---------- ログイン ---------- */
-
-function GoogleButton({ clientId }: { clientId: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const loginWithGoogle = useSession((s) => s.loginWithGoogle);
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    let alive = true;
-    loadGoogle()
-      .then((g) => {
-        if (!alive || !ref.current) return;
-        g.initialize({
-          client_id: clientId,
-          callback: (r) => loginWithGoogle(r.credential).catch((e: Error) => setError(e.message)),
-        });
-        g.renderButton(ref.current, { theme: "filled_black", size: "large", shape: "pill", locale: "ja" });
-      })
-      .catch((e: Error) => setError(e.message));
-    return () => {
-      alive = false;
-    };
-  }, [clientId, loginWithGoogle]);
-  return (
-    <>
-      <div ref={ref} className="google-btn" />
-      {error && <p className="notice">{error}</p>}
-    </>
-  );
-}
-
-function DevLogin() {
-  const loginForDev = useSession((s) => s.loginForDev);
-  const [name, setName] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    loginForDev(name).catch((err: Error) => setError(err.message));
-  };
-  return (
-    <form className="online-form" onSubmit={submit}>
-      <label>
-        開発用ログイン（名前だけ）
-        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} placeholder="名前" />
-      </label>
-      <button type="submit" className="btn" disabled={!name.trim()}>
-        この名前で入る
-      </button>
-      {error && <p className="notice">{error}</p>}
-    </form>
-  );
-}
-
-function Login() {
-  const [cfg, setCfg] = useState<AuthConfig | null>(null);
-  const [down, setDown] = useState(false);
-  useEffect(() => {
-    api<AuthConfig>("/auth/config")
-      .then(setCfg)
-      .catch(() => setDown(true));
-  }, []);
-  return (
-    <div className="online-card">
-      <h2>ログイン</h2>
-      <p className="muted">オンライン対戦は、Google アカウントでログインして遊びます。</p>
-      {down && <p className="notice">サーバーに繋がりません。時間をおいて開き直してください。</p>}
-      {cfg?.googleClientId && <GoogleButton clientId={cfg.googleClientId} />}
-      {cfg?.devLogin && <DevLogin />}
-      {cfg && !cfg.googleClientId && !cfg.devLogin && (
-        <p className="notice">ログインの設定がまだです（GOOGLE_CLIENT_ID）。</p>
-      )}
-    </div>
-  );
-}
-
-function Account() {
-  const { user, logout } = useSession();
-  if (!user) return null;
-  return (
-    <p className="online-account">
-      {user.name} でログイン中
-      <button type="button" className="btn ghost small" onClick={logout}>
-        ログアウト
-      </button>
-    </p>
-  );
 }
 
 /* ---------- ランダムマッチ ---------- */
@@ -300,8 +214,8 @@ export function OnlineLobby() {
       <header className="page-head">
         <h1>オンライン対戦</h1>
         <p className="muted">
-          ランダムマッチ（レート戦）か、友だちと合言葉で対戦します。1 ターンは 30
-          秒まで（過ぎたら自動でターン終了）。持ち時間は 1 試合で 5 分で、使い切ると負けです。
+          ランダムマッチ（レート戦）か、友だちと合言葉で対戦します。1 ターンは 60
+          秒まで（過ぎたら自動でターン終了）。持ち時間は 1 試合で 10 分で、使い切ると負けです。
         </p>
         <Account />
       </header>

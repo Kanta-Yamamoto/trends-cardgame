@@ -52,6 +52,8 @@ interface Session {
   loginWithGoogle: (credential: string) => Promise<void>;
   loginForDev: (name: string) => Promise<void>;
   logout: () => void;
+  /** 保存してあるログインがまだ使えるか確かめる（期限切れ・消えたアカウントならログアウト） */
+  check: () => Promise<void>;
 }
 
 export const useSession = create<Session>((set) => {
@@ -70,6 +72,20 @@ export const useSession = create<Session>((set) => {
     logout: () => {
       save(null);
       set({ token: null, user: null });
+    },
+    check: async () => {
+      const token = load()?.token;
+      if (!token) return;
+      try {
+        const res = await fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        // 断られたときだけログアウトする（電波が無い・サーバーが起き上がり中のときは、そのまま使う）
+        if (res.status === 401) {
+          save(null);
+          set({ token: null, user: null });
+        }
+      } catch {
+        // 確かめられなくても、そのまま使う
+      }
     },
   };
 });

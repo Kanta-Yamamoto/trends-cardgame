@@ -67,8 +67,9 @@ function summary() {
       replay = r.failedAt === null ? "再生できる" : `${r.failedAt} 手目で止まる`;
     }
     const who = g.winner === "human" ? "人の勝ち" : g.winner === "cpu" ? "CPU の勝ち" : "途中でやめた";
+    const player = g.user?.name ?? `端末 ${g.client.slice(0, 8)}`;
     console.log(
-      `${g.createdAt.slice(0, 16)}  ${g.humanDeck} vs ${g.cpuDeck}  ${who}  ${g.turns} ターン  ${rec.moves.length} 手  ${replay}`,
+      `${g.createdAt.slice(0, 16)}  ${player}  ${g.humanDeck} vs ${g.cpuDeck}  ${who}  ${g.turns} ターン  ${rec.moves.length} 手  ${replay}`,
     );
     if (g.winner) {
       const k = `CPU ${g.cpuDeck} / 人 ${g.humanDeck}`;
