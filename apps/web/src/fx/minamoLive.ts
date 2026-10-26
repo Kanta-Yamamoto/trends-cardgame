@@ -7,8 +7,8 @@ import "./minamoLive.css";
  * 1. アップ（0〜0.35 秒）：場が暗くなり、カードが枠から浮いて画面の片側でアップになる。着いたところに波紋。
  *    その間にカードの絵からミナモが消えて水だけになる（泡が昇る。最初からカードの中にいるように見せないため）
  * 2. コメント欄（0.42 秒〜）：カードの横に配信のコメント欄が開き、あいさつのコメントが下から入って上へ流れる
- * 3. ひょこっ（1.0〜1.18 秒）：カードの中の上の縁から、ミナモが顔だけ出す（行き過ぎて戻る）。切り抜きは上下逆の構図なので
- *    上下を反転して顔を上向きにし、髪から下はカードの外（枠で切り取られて映らない）。しぶきと白い閃光、カードが少し沈む。
+ * 3. ひょこっ（1.0〜1.18 秒）：カードの中の上の縁から、ミナモが顔だけ出す（行き過ぎて戻る）。カードの絵と同じ向き・同じ位置で、
+ *    顔と手だけを見せ、髪から下はぼかして消す（首から下は隠れている）。カードの枠の外には映らない。しぶきと白い閃光、カードが少し沈む。
  *    コメントが一気に増え、ハートが昇り、視聴者数が増える
  * 4. 余韻（1.18〜2.3 秒）：ゆらゆら揺れながら、泡が昇り、コメントが流れ続ける
  * 5. 引っ込む（2.3〜2.46 秒）：ひょこっと引っ込み、コメント欄が閉じる。カードの絵が元に戻る
@@ -68,8 +68,10 @@ const END = T_LAND + 340;
 /** モックの盤面の幅（360）とアップのカードの幅（150）。画面の幅に合わせて縮める */
 const MW = 360;
 const UP_W = 150;
-/** 顔を出す深さ（カードの高さの割合。顔と手だけ） */
+/** 顔を出す深さ（カードの高さの割合。顔と手だけ。CSS の mask と合わせる） */
 const SHOW = 0.3;
+/** 隠れているときの位置（カードの高さの割合。見える部分が全部、上の縁の上に出る） */
+const HIDE_Y = -0.36;
 
 /** コメント（出る時刻・文・目立たせるか）。名前と色は順に当てる */
 const MSGS: readonly [number, string, boolean?][] = [
@@ -364,18 +366,18 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
     return { x, y, w, h: (w * 88) / 63 };
   };
 
-  /** カードの中のミナモ。-1 = 上の縁の外に隠れている、-1+SHOW = 顔だけ出している（上下を反転してあるので、顔が上向きで下りてくる） */
+  /** カードの中のミナモ。HIDE_Y = 上の縁の外に隠れている（見える部分が全部、縁の上）、0 = 絵と同じ位置で顔を出している */
   const peekPose = (t: number) => {
-    let y = -1;
+    let y = HIDE_Y;
     let sway = 0;
-    if (t < T_PEEK) y = -1;
-    else if (t < T_PEEK_END) y = -1 + SHOW * backOut(seg(t, T_PEEK, T_PEEK_END), 2.6);
+    if (t < T_PEEK) y = HIDE_Y;
+    else if (t < T_PEEK_END) y = HIDE_Y * (1 - backOut(seg(t, T_PEEK, T_PEEK_END), 2.6));
     else if (t < T_HIDE) {
       const ts = (t - T_PEEK_END) / 1000;
-      y = -1 + SHOW + Math.sin(ts * 1.8) * 0.012;
+      y = Math.sin(ts * 1.8) * 0.012;
       sway = Math.sin(ts * 2.6) * 2.2;
-    } else if (t < T_HIDE_END) y = -1 + SHOW * (1 - ei3(seg(t, T_HIDE, T_HIDE_END)));
-    peek.style.transform = `translate(${sway}%, ${y * 100}%) scaleY(-1)`;
+    } else if (t < T_HIDE_END) y = HIDE_Y * ei3(seg(t, T_HIDE, T_HIDE_END));
+    peek.style.transform = `translate(${sway}%, ${y * 100}%)`;
   };
 
   /** コメント欄：開いて、行が下から入り、閉じる */

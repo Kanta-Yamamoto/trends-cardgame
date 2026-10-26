@@ -10,13 +10,13 @@
 .ml-up > .mini { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; animation: none; box-shadow: 0 20px 50px -14px #000, 0 0 40px -8px #5cc8f066; z-index: 1; }
 /* 水だけの背景（絵の上に重ねて、ミナモが消えたように見せる）。下は効果の帯の黒 */
 .ml-bg { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, #000a 100%), var(--ml-bg) center 30% / cover; opacity: 0; }
-/* カードの中のミナモ（切り抜き）。元の絵は上下逆の構図なので上下を反転して顔を上向きにし、カードの上の縁から下ろす。
-   見えるのは顔と手だけで、髪から下はカードの外（枠で切り取られて映らない）。絵の上の縁（反転後は顔の下）はぼかす */
+/* カードの中のミナモ（切り抜き）。カードの絵と同じ向き・同じ切り方。顔と手だけを見せ、髪から下はぼかして消す（首から下は隠れている）。
+   上の縁の外から下りてきて、絵と同じ位置に止まる。カードの枠の外には映らない */
 .ml-subj {
   position: absolute; inset: 0; background: var(--ml-subject) center 30% / cover no-repeat;
-  transform: translateY(-100%) scaleY(-1); will-change: transform; filter: drop-shadow(0 4px 8px #0008);
-  -webkit-mask: linear-gradient(180deg, transparent 0, #000 7%);
-  mask: linear-gradient(180deg, transparent 0, #000 7%);
+  transform: translateY(-36%); will-change: transform; filter: drop-shadow(0 4px 8px #0008);
+  -webkit-mask: linear-gradient(180deg, #000 26%, transparent 34%);
+  mask: linear-gradient(180deg, #000 26%, transparent 34%);
 }
 
 /* 配信のコメント欄（下から新しいものが入り、古いものが上へ流れる） */
