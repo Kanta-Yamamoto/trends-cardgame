@@ -1,19 +1,23 @@
-/* ミナモが場に出たときの演出（fx/minamoLive.ts）。カードのアップ・ひょこっと顔を出すミナモ・配信のコメント欄 */
+/* ミナモが場に出たときの演出（fx/minamoLive.ts）。水だけになるカードのアップ・カードの上の縁から顔を出すミナモ・配信のコメント欄 */
 
 .ml-root { position: absolute; inset: 0; pointer-events: none; }
 .ml-veil { position: absolute; background: #030b16; opacity: 0; }
 .ml-cv { position: absolute; left: 0; top: 0; }
+.ml-cv.front { z-index: 4; }
 
-/* カードの写し（足もとを軸に動かす）。中にカードの後ろから顔を出すミナモ */
+/* カードの写し（足もとを軸に動かす）。上に、カードの幅で切り取った窓（win）。ミナモはその窓の中を上下する */
 .ml-up { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; will-change: transform; z-index: 2; }
 .ml-up > .mini { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; animation: none; box-shadow: 0 20px 50px -14px #000, 0 0 40px -8px #5cc8f066; z-index: 1; }
+/* 水だけの背景（絵の上に重ねて、ミナモが消えたように見せる）。下は効果の帯の黒 */
+.ml-bg { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, #000a 100%), var(--ml-bg) center 30% / cover; opacity: 0; }
+.ml-win { position: absolute; left: 0; width: 100%; bottom: 100%; height: 96%; overflow: hidden; z-index: 0; }
 .ml-peek {
-  position: absolute; left: 50%; bottom: 90%; width: 124%; aspect-ratio: 1024 / 1536; z-index: 0;
+  position: absolute; left: 50%; bottom: 0; width: 112%; aspect-ratio: 1024 / 1536;
   background: var(--ml-subject) center / contain no-repeat; transform-origin: 50% 100%; transform: translateX(-50%) translateY(100%);
-  filter: drop-shadow(0 0 1px #ffffffcc) drop-shadow(0 0 12px #5cc8f0aa) drop-shadow(0 8px 14px #000a);
-  /* 顔と手のまわりだけ見せる（髪やリボンの端はぼかして消す） */
-  -webkit-mask: radial-gradient(ellipse 46% 24% at 50% 17%, #000 52%, transparent 100%);
-  mask: radial-gradient(ellipse 46% 24% at 50% 17%, #000 52%, transparent 100%);
+  filter: drop-shadow(0 0 1px #ffffffa0) drop-shadow(0 6px 10px #0009);
+  /* 絵の上の縁で切れている手と髪の端をぼかして、顔と手のまわりだけ見せる */
+  -webkit-mask: radial-gradient(ellipse 50% 18% at 50% 15%, #000 50%, transparent 100%);
+  mask: radial-gradient(ellipse 50% 18% at 50% 15%, #000 50%, transparent 100%);
 }
 
 /* 配信のコメント欄（下から新しいものが入り、古いものが上へ流れる） */

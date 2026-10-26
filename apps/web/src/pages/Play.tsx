@@ -1251,14 +1251,15 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             }
             descending.current.delete(uid);
           }
-          // ミナモ：ふつうの着地の代わりに、カードをアップにして上の縁からひょこっと顔を出し、横に配信のコメント欄を流す。
+          // ミナモ：ふつうの着地の代わりに、カードをアップにして（絵は水だけになる）上の縁からひょこっと顔を出し、横に配信のコメント欄を流す。
           // 描かれる前に印を付けて、着地の演出を止めておく（この行より前に await を置かない）
-          if (card && uid !== undefined && MINAMO_LIVE.has(card.id) && card.subject && fxEnabled()) {
+          const minamo = card ? MINAMO_LIVE[card.id] : undefined;
+          if (card && uid !== undefined && minamo && card.subject && fxEnabled()) {
             descending.current.add(uid);
             await gwait(50);
             const unitEl = self();
             if (unitEl) {
-              await minamoLive({ unit: unitEl, layer: fxLayer(), subject: card.subject });
+              await minamoLive({ unit: unitEl, layer: fxLayer(), subject: card.subject, bg: minamo.bg });
               unitEl.style.opacity = "";
               live = true;
             }

@@ -3,13 +3,14 @@ import { frameRect } from "../frame";
 import "./minamoLive.css";
 
 /**
- * ミナモが場に出たときの演出。ふつうの着地の代わりに見せる（10月26日。モック「ミナモの召喚演出」の案A）。
- * 1. アップ（0〜0.35 秒）：場が暗くなり、カードが枠から浮いて画面の片側でアップになる。着いたところに波紋
+ * ミナモが場に出たときの演出。ふつうの着地の代わりに見せる（10月26日。モック「ミナモの召喚演出」の出方 1・コメント欄は横）。
+ * 1. アップ（0〜0.35 秒）：場が暗くなり、カードが枠から浮いて画面の片側でアップになる。着いたところに波紋。
+ *    その間にカードの絵からミナモが消えて水だけになる（泡が昇る。最初からカードの中にいるように見せないため）
  * 2. コメント欄（0.42 秒〜）：カードの横に配信のコメント欄が開き、あいさつのコメントが下から入って上へ流れる
- * 3. ひょこっ（1.0〜1.18 秒）：カードの上の縁から、ミナモが顔を出す（行き過ぎて戻る）。縁に白い閃光としぶき、カードが少し沈む。
- *    コメントが一気に増え、ハートが昇り、視聴者数が増える
+ * 3. ひょこっ（1.0〜1.18 秒）：カードの上の縁から、ミナモが顔を出す（行き過ぎて戻る。見えるのはカードの幅の中だけ）。
+ *    縁に白い閃光としぶき、カードが少し沈む。コメントが一気に増え、ハートが昇り、視聴者数が増える
  * 4. 余韻（1.18〜2.3 秒）：ゆらゆら揺れながら、泡が昇り、コメントが流れ続ける
- * 5. 引っ込む（2.3〜2.46 秒）：ひょこっと引っ込み、コメント欄が閉じる
+ * 5. 引っ込む（2.3〜2.46 秒）：ひょこっと引っ込み、コメント欄が閉じる。カードの絵が元に戻る
  * 6. 戻る（2.5〜2.8 秒）：カードが枠へ戻って着地。足もとに輪としぶき、小さな揺れ
  *
  * カードは出した枠が画面の左なら左でアップにし、コメント欄は右（右の枠なら逆）。
@@ -17,8 +18,10 @@ import "./minamoLive.css";
  * 時間は GSAP で数える（開発中に __gsap で遅くしても、全部が同じ速さで遅くなる）
  */
 
-/** この演出で場に出るカード */
-export const MINAMO_LIVE: ReadonlySet<string> = new Set(["c3"]);
+/** この演出で場に出るカードと、ミナモが消えたあとの水だけの背景の絵（仮にコードで作ったもの。描いた絵に差し替えられる） */
+export const MINAMO_LIVE: Readonly<Record<string, { bg: string }>> = {
+  c3: { bg: "/assets/cards/c3-bg.jpg" },
+};
 
 export interface MinamoLiveOpts {
   /** 場に出たミナモ（data-uid の要素。最終の位置に置いて隠してある） */
@@ -27,6 +30,8 @@ export interface MinamoLiveOpts {
   layer: HTMLElement;
   /** 顔を出す絵（切り抜き）の URL */
   subject: string;
+  /** 水だけの背景の絵の URL */
+  bg: string;
 }
 
 const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
@@ -54,6 +59,9 @@ const T_HIDE = 2300;
 const T_HIDE_END = 2460;
 const T_BACK = 2500;
 const T_LAND = 2800;
+/** カードの絵からミナモが消える・戻る */
+const ART_OUT: readonly [number, number] = [120, 420];
+const ART_IN: readonly [number, number] = [2440, 2700];
 const END = T_LAND + 340;
 
 /** モックの盤面の幅（360）とアップのカードの幅（150）。画面の幅に合わせて縮める */
@@ -114,7 +122,8 @@ interface Bubble {
   sp: number;
   ph: number;
   amp: number;
-  delay: number;
+  /** 出る時刻（ms） */
+  at: number;
 }
 interface Heart {
   x: number;
@@ -140,7 +149,7 @@ function canvasAt(parent: HTMLElement, left: number, top: number, w: number, h: 
 }
 
 export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
-  const { unit, layer, subject } = o;
+  const { unit, layer, subject, bg } = o;
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const f = frameRect();
   const ur = unit.getBoundingClientRect();
@@ -184,15 +193,23 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
     width: `${ur.width}px`,
     height: `${ur.height}px`,
   });
+  const win = document.createElement("div");
+  win.className = "ml-win";
   const peek = document.createElement("div");
   peek.className = "ml-peek";
   peek.style.setProperty("--ml-subject", `url("${subject}")`);
-  up.appendChild(peek);
+  win.appendChild(peek);
+  up.appendChild(win);
   const card = unit.cloneNode(true) as HTMLElement;
   // 場に出たときの落ちてくる動き（.enter）を写しでやり直さないように外す
   card.classList.remove("enter");
   card.removeAttribute("data-uid");
   card.style.opacity = "1";
+  // 水だけの背景を絵の上に重ねる（透明度でミナモが消えた・戻ったを見せる）
+  const bgEl = document.createElement("div");
+  bgEl.className = "ml-bg";
+  bgEl.style.setProperty("--ml-bg", `url("${bg}")`);
+  card.prepend(bgEl);
   up.appendChild(card);
   root.appendChild(up);
 
@@ -243,6 +260,7 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
   });
 
   const gF = canvasAt(root, f.left, f.top, f.width, f.height, dpr);
+  root.lastElementChild?.classList.add("front");
   layer.appendChild(root);
   const board = document.querySelector<HTMLElement>(".board");
   const boardTransform = board?.style.transform ?? "";
@@ -253,7 +271,7 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
 
   // 粒：しぶき・泡・ハート
   let drops: Drop[] = [];
-  let bubbles: Bubble[] = [];
+  const bubbles: Bubble[] = [];
   let hearts: Heart[] = [];
   const spawnDrops = (cx: number, cy: number, w: number, n: number, spread: number) => {
     const r = rng(Math.floor(cx + cy) * 7 + n);
@@ -271,10 +289,9 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
       });
     }
   };
-  const spawnBubbles = (cx: number, cy: number, w: number) => {
-    const r = rng(99);
-    bubbles = [];
-    for (let i = 0; i < 10; i++)
+  const spawnBubbles = (cx: number, cy: number, w: number, at: number, n: number) => {
+    const r = rng(99 + n);
+    for (let i = 0; i < n; i++)
       bubbles.push({
         x: cx + (r() - 0.5) * w * 1.3,
         y0: cy + r() * w * 0.4,
@@ -282,7 +299,7 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
         sp: (14 + r() * 18) * s,
         ph: r() * 6.28,
         amp: (3 + r() * 4) * s,
-        delay: r() * 1200,
+        at: at + r() * 1200,
       });
   };
   const spawnHearts = () => {
@@ -341,10 +358,14 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
     }
     const k = w / ur.width;
     up.style.transform = `translate(${x - slotCx}px, ${y - slotBottom}px) scale(${k * sx}, ${k * sy})`;
+    // 絵：ミナモが消えて水だけになり、引っ込んだあとに戻る
+    const out = eo2(seg(t, ART_OUT[0], ART_OUT[1]));
+    const back = eo2(seg(t, ART_IN[0], ART_IN[1]));
+    bgEl.style.opacity = String(out * (1 - back));
     return { x, y, w, h: (w * 88) / 63 };
   };
 
-  /** 顔を出すミナモ。0 = カードの後ろに隠れている、1 = 顔を出している */
+  /** 窓の中のミナモ。0 = カードの後ろに隠れている、1 = 顔を出している */
   const peekPose = (t: number) => {
     let p = 0;
     let rot = 0;
@@ -365,8 +386,6 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
     }
     peek.style.transform = `translateX(-50%) translateY(${(1 - p * SHOW) * 100}%) rotate(${rot + sway * 0.4}deg)`;
     peek.style.opacity = p > 0.001 ? "1" : "0";
-    // 顔を出している間はカードの絵を少し落として、ミナモを立たせる
-    card.style.filter = `brightness(${(1 - 0.28 * clamp(p)).toFixed(3)})`;
     return p;
   };
 
@@ -398,7 +417,7 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
   };
 
   let prevT = -1;
-  const drawFx = (t: number, cd: { x: number; y: number; w: number; h: number }, pk: number) => {
+  const drawFx = (t: number, cd: { x: number; y: number; w: number; h: number }) => {
     gB.clearRect(0, 0, f.width, f.height);
     gF.clearRect(0, 0, f.width, f.height);
     const ox = f.left;
@@ -425,8 +444,9 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
     // しぶき：ひょこっの瞬間（カードの上の縁）と着地の瞬間（足もと）
     if (prevT < T_PEEK_END - 120 && t >= T_PEEK_END - 120) spawnDrops(cd.x, cd.y - cd.h, cd.w, 22, 1.9);
     if (prevT < T_LAND && t >= T_LAND) spawnDrops(cd.x, cd.y, cd.w, 16, 2.6);
+    if (prevT < ART_OUT[0] && t >= ART_OUT[0]) spawnBubbles(cd.x, cd.y - cd.h * 0.5, cd.w, ART_OUT[0], 8);
     if (prevT < T_PEEK_END && t >= T_PEEK_END) {
-      spawnBubbles(cd.x, cd.y - cd.h * 0.9, cd.w);
+      spawnBubbles(cd.x, cd.y - cd.h * 0.9, cd.w, T_PEEK_END, 10);
       spawnHearts();
     }
     gF.save();
@@ -444,26 +464,22 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
       gF.fill();
     }
     drops = drops.filter((d) => d.life < d.ttl);
-    // 顔を出している間の泡（カードの上あたり）
-    if (pk > 0.5 && t < T_HIDE + 200) {
-      const el = t - T_PEEK_END;
-      for (const b of bubbles) {
-        const tl = el - b.delay;
-        if (tl < 0) continue;
-        const y = b.y0 - (b.sp * tl) / 1000 - oy;
-        const x = b.x + Math.sin(tl / 400 + b.ph) * b.amp - ox;
-        const a = clamp(tl / 200) * clamp(1 - (tl - 1100) / 500) * 0.7;
-        if (a <= 0) continue;
-        gF.beginPath();
-        gF.arc(x, y, b.r, 0, Math.PI * 2);
-        gF.strokeStyle = `rgba(190,235,255,${a})`;
-        gF.lineWidth = s;
-        gF.stroke();
-        gF.beginPath();
-        gF.arc(x - b.r * 0.3, y - b.r * 0.3, b.r * 0.25, 0, Math.PI * 2);
-        gF.fillStyle = `rgba(255,255,255,${a})`;
-        gF.fill();
-      }
+    for (const b of bubbles) {
+      const tl = t - b.at;
+      if (tl < 0) continue;
+      const y = b.y0 - (b.sp * tl) / 1000 - oy;
+      const x = b.x + Math.sin(tl / 400 + b.ph) * b.amp - ox;
+      const a = clamp(tl / 200) * clamp(1 - (tl - 1100) / 500) * 0.7;
+      if (a <= 0) continue;
+      gF.beginPath();
+      gF.arc(x, y, b.r, 0, Math.PI * 2);
+      gF.strokeStyle = `rgba(190,235,255,${a})`;
+      gF.lineWidth = s;
+      gF.stroke();
+      gF.beginPath();
+      gF.arc(x - b.r * 0.3, y - b.r * 0.3, b.r * 0.25, 0, Math.PI * 2);
+      gF.fillStyle = `rgba(255,255,255,${a})`;
+      gF.fill();
     }
     // ハート（コメント欄の右端から昇る）
     for (const h of hearts) {
@@ -520,9 +536,9 @@ export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
     const dark = 0.72 * eo2(seg(t, 0, 350)) * (1 - ei2(seg(t, T_BACK, T_LAND + 100)));
     veil.style.opacity = String(dark);
     const cd = cardPose(t);
-    const pk = peekPose(t);
+    peekPose(t);
     chatPose(t);
-    drawFx(t, cd, pk);
+    drawFx(t, cd);
     // 着地の小さな揺れ
     const sh = t >= T_LAND ? (1 - seg(t, T_LAND, T_LAND + 180)) * 0.5 : 0;
     const shakeT =
