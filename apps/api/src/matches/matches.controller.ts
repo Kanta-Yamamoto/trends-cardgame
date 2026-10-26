@@ -1,12 +1,16 @@
 import { Body, Controller, Get, Param, Post, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "../auth/auth.guard";
 import type { PublicUser } from "../auth/auth.service";
+import { MatchesGateway } from "./matches.gateway";
 import { MatchesService } from "./matches.service";
 
 @Controller()
 @UseGuards(AuthGuard)
 export class MatchesController {
-  constructor(private readonly matches: MatchesService) {}
+  constructor(
+    private readonly matches: MatchesService,
+    private readonly gateway: MatchesGateway,
+  ) {}
 
   /** 部屋を作る。返した合言葉を相手に伝えて入ってもらう */
   @Post("matches")
@@ -14,11 +18,13 @@ export class MatchesController {
     return this.matches.create(req.user.id, body?.deck);
   }
 
-  /** 自分の決着していない対戦（通信が切れても、ここから同じ部屋に戻る）。無ければ match は null */
+  /**
+   * 自分の決着していない対戦（通信が切れても、ここから同じ部屋に戻る）。無ければ match は null。
+   * closesIn は、2 人とも抜けているときの、対戦を閉じるまでの残り（ミリ秒。だれかつないでいれば null）
+   */
   @Get("me/match")
-  async current(@Req() req: { user: PublicUser }) {
-    const row = await this.matches.current(req.user.id);
-    return { match: row ? await this.matches.info(row) : null };
+  current(@Req() req: { user: PublicUser }) {
+    return this.gateway.resumable(req.user.id);
   }
 
   /** 部屋の様子（だれが入っているか） */

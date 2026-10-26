@@ -8,6 +8,7 @@ import { io, type Socket } from "socket.io-client";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AppModule } from "../src/app.module";
+import { EMPTY_CLOSE_MS, MatchesGateway } from "../src/matches/matches.gateway";
 
 // 実際の PostgreSQL に対して動かす。ログインは開発用（名前だけ）を使う
 process.env.AUTH_DEV_LOGIN = "true";
@@ -221,6 +222,75 @@ describe("ログインとオンライン対戦", () => {
     expect((await end).state.winner).toBe("p1");
     expect((await current(ta)).match).toBeNull();
     expect((await current(tb)).match).toBeNull();
+  });
+
+  it("2 人とも抜けたまま時間がたつと、決着なしで閉じる。時間内にだれか戻れば続く", async () => {
+    const gateway = app.get(MatchesGateway);
+    gateway.closeAfterMs = 400;
+    try {
+      const tag = randomUUID().slice(0, 6);
+      const [ta, tb] = [await login(`ぬける${tag}`), await login(`のこる${tag}`)];
+      const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+      const current = async (t: string) =>
+        (await request(app.getHttpServer()).get("/me/match").set("Authorization", `Bearer ${t}`).expect(200))
+          .body as { match: { code: string } | null; closesIn: number | null };
+      const start = async () => {
+        const created = await request(app.getHttpServer())
+          .post("/matches")
+          .set("Authorization", `Bearer ${ta}`)
+          .send({ deck: "solo_flame" })
+          .expect(201);
+        const code = created.body.code as string;
+        const a = await connect(ta);
+        await emit(a, "join", { code });
+        const b = await connect(tb);
+        const started = next<MatchMsg>(b, "match");
+        await emit(b, "join", { code, deck: "solo_idol" });
+        await started;
+        return { code, a, b };
+      };
+
+      // 片方だけ抜けても、対戦は続く（閉じるまでの残りは無い）
+      const one = await start();
+      one.a.disconnect();
+      await wait(600);
+      expect(await current(ta)).toMatchObject({ match: { code: one.code }, closesIn: null });
+
+      // もう片方も抜けると、閉じるまでの残りが出て、時間がたつと閉じる
+      one.b.disconnect();
+      await wait(100);
+      const closing = await current(tb);
+      expect(closing.match?.code).toBe(one.code);
+      expect(closing.closesIn).toBeGreaterThan(0);
+      await wait(600);
+      expect((await current(ta)).match).toBeNull();
+      expect((await current(tb)).match).toBeNull();
+      // 入り直すと閉じたことが分かり、操作はできない。ほかの部屋は作れる
+      const back = await connect(ta);
+      const seen = next<MatchMsg>(back, "match");
+      await emit(back, "join", { code: one.code });
+      expect((await seen).status).toBe("closed");
+      expect(
+        await emit(back, "action", { code: one.code, action: { type: "endTurn", player: "p1" } }),
+      ).toEqual({
+        ok: false,
+        error: "この対戦は、2人とも抜けたので閉じました",
+      });
+      back.disconnect();
+
+      // 2 人とも抜けても、時間内に戻れば続く
+      const two = await start();
+      two.a.disconnect();
+      two.b.disconnect();
+      await wait(100);
+      const again = await connect(ta);
+      await emit(again, "join", { code: two.code });
+      await wait(600);
+      expect(await current(ta)).toMatchObject({ match: { code: two.code }, closesIn: null });
+      await emit(again, "resign", { code: two.code });
+    } finally {
+      gateway.closeAfterMs = EMPTY_CLOSE_MS;
+    }
   });
 
   it("招待リンクの守りが効いているときは、招待済みのクッキーが無い接続を断る", async () => {

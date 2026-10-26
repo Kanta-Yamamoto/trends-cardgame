@@ -37,6 +37,8 @@ const CATALOG = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string
 /** 読み間違えやすい文字（0/O・1/I など）を除いた合言葉の文字 */
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const newCode = () => Array.from({ length: 6 }, () => CODE_CHARS[randomInt(CODE_CHARS.length)]).join("");
+/** 2 人とも抜けて閉じた対戦に、操作が届いたときの文 */
+export const CLOSED_MESSAGE = "この対戦は、2人とも抜けたので閉じました";
 
 /** 対戦を1手進めた結果（両者に送る） */
 export interface Step {
@@ -221,6 +223,18 @@ export class MatchesService {
       throw new ConflictException("対戦中の部屋があります。先にその対戦に戻ってください");
   }
 
+  /** 2 人とも抜けた対戦を閉じる（決着なし。レーティングは動かない）。対戦中でなければ何もせず null */
+  close(code: string) {
+    return this.serial(code, async () => {
+      const [row] = await this.db
+        .update(matches)
+        .set({ status: "closed" })
+        .where(and(eq(matches.code, code.toUpperCase()), eq(matches.status, "playing")))
+        .returning();
+      return row ?? null;
+    });
+  }
+
   async find(code: string) {
     const [row] = await this.db.select().from(matches).where(eq(matches.code, code.toUpperCase()));
     if (!row) throw new NotFoundException("その合言葉の部屋はありません");
@@ -255,6 +269,7 @@ export class MatchesService {
       const row = await this.find(code);
       const pid = this.seat(row, userId);
       if (!row.state) throw new BadRequestException("まだ対戦が始まっていません");
+      if (row.status === "closed") throw new RuleError("closed", CLOSED_MESSAGE);
       const now = Date.now();
       const steps = await this.catchUp(row, now);
       const last = steps.at(-1)?.row ?? row;
@@ -290,7 +305,7 @@ export class MatchesService {
     const steps: Step[] = [];
     let cur = row;
     // 自動の差し出しのあと、手番の人も時間切れ…と続くことがあるので、何回か見る
-    for (let i = 0; i < 4 && cur.state && cur.clock; i++) {
+    for (let i = 0; i < 4 && cur.status === "playing" && cur.state && cur.clock; i++) {
       const due = clockAction(cur.clock, cur.state, now, CATALOG);
       if (!due) break;
       const step = await this.advance(cur, due, now);

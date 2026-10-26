@@ -73,38 +73,87 @@ function connect(token: string): Socket {
 
 /* ---------- 通信が切れた対戦に戻る ---------- */
 
+/** 戻る対戦と、2 人とも抜けているときに閉じる時刻（だれかつないでいれば null） */
+interface Resume {
+  match: MatchInfo;
+  closesAt: number | null;
+}
+
 /**
  * 自分の決着していない対戦（無ければ null、確かめている途中は undefined）。
- * 確かめられなかったときは null（ふつうのロビーを出す。ほかの部屋に入ろうとしても、サーバーが断る）
+ * 確かめられなかったときは null（ふつうのロビーを出す。ほかの部屋に入ろうとしても、サーバーが断る）。
+ * あるあいだは確かめ直す（相手が抜けた・戻った・決着した・閉じた）。閉じる時刻が来たら、すぐ確かめ直す
  */
 function useCurrentMatch(token: string | null) {
-  const [current, setCurrent] = useState<MatchInfo | null | undefined>(undefined);
+  const [current, setCurrent] = useState<Resume | null | undefined>(undefined);
   useEffect(() => {
     if (!token) return;
     let alive = true;
-    api<{ match: MatchInfo | null }>("/me/match", {}, token)
-      .then((r) => alive && setCurrent(r.match))
-      .catch(() => alive && setCurrent(null));
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    /** 前に確かめた結果（確かめ直しに失敗したときは、これを出したままにする） */
+    let last: Resume | null = null;
+    const again = (ms: number) => {
+      timer = setTimeout(check, Math.max(300, Math.min(RECHECK_MS, ms)));
+    };
+    const check = () =>
+      api<{ match: MatchInfo | null; closesIn: number | null }>("/me/match", { cache: "no-store" }, token)
+        .then((r) => {
+          if (!alive) return;
+          last = r.match
+            ? { match: r.match, closesAt: r.closesIn === null ? null : Date.now() + r.closesIn }
+            : null;
+          setCurrent(last);
+          if (last) again(last.closesAt === null ? RECHECK_MS : last.closesAt - Date.now() + 300);
+        })
+        .catch(() => {
+          if (!alive) return;
+          setCurrent(last);
+          if (last) again(RECHECK_MS);
+        });
+    void check();
     return () => {
       alive = false;
+      clearTimeout(timer);
     };
   }, [token]);
   return current;
 }
+/** 戻る対戦があるあいだ、確かめ直す間隔 */
+const RECHECK_MS = 15_000;
+
+/** 1 秒ごとに今の時刻を返す（on のあいだだけ） */
+function useNow(on: boolean) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!on) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [on]);
+  return now;
+}
 
 /** 決着していない対戦があるあいだは、ロビーにこれだけを出す（ほかの対戦は始めず、その部屋に戻ってもらう） */
-function ResumeMatch({ match }: { match: MatchInfo }) {
+function ResumeMatch({ resume: { match, closesAt } }: { resume: Resume }) {
   const { user } = useSession();
   const navigate = useNavigate();
+  const now = useNow(closesAt !== null);
   const foe = match.players.p1?.id === user?.id ? match.players.p2 : match.players.p1;
+  const cpu = match.kind === "cpu";
   return (
     <div className="online-card resume">
       <h2>対戦が続いています</h2>
-      <p>{match.kind === "cpu" ? "CPU" : `${foe?.name ?? "相手"} さん`}との対戦の途中です。</p>
-      <p className="muted">
-        戻るまでのあいだも、あなたのターンは 60
-        秒で終わり、持ち時間が減っていきます（使い切ると負け）。決着するまで、ほかの対戦はできません。
-      </p>
+      <p>{cpu ? "CPU" : `${foe?.name ?? "相手"} さん`}との対戦の途中です。</p>
+      {closesAt === null ? (
+        <p className="muted">
+          戻るまでのあいだも、あなたのターンは 60
+          秒で終わり、持ち時間が減っていきます（使い切ると負け）。決着するまで、ほかの対戦はできません。
+        </p>
+      ) : (
+        <p className="muted">
+          {cpu ? "" : "相手も抜けているので、"}あと <b>{formatClock(Math.max(0, closesAt - now))}</b>{" "}
+          でこの対戦を閉じます（勝ち負けなし）。閉じるまでに戻れば、続きから遊べます。
+        </p>
+      )}
       <button type="button" className="btn" onClick={() => navigate(`/online/${match.code}`)}>
         対戦に戻る
       </button>
@@ -264,7 +313,7 @@ export function OnlineLobby() {
       {!user ? (
         <Login />
       ) : current === undefined ? null : current ? (
-        <ResumeMatch match={current} />
+        <ResumeMatch resume={current} />
       ) : (
         <>
           <div className="online-tabs" role="tablist" aria-label="対戦のしかた">
@@ -341,7 +390,7 @@ export function OnlineRoom() {
   const ready = member || !!deck;
   const current = useCurrentMatch(token);
   /** ほかの部屋で続いている対戦（あれば、この部屋には入らずそちらに戻ってもらう） */
-  const elsewhere = info && !member && current && current.code !== info.code ? current : null;
+  const elsewhere = info && !member && current && current.match.code !== info.code ? current : null;
 
   // 部屋の様子を取る（参加者か、空きがあるか）
   useEffect(() => {
@@ -385,7 +434,7 @@ export function OnlineRoom() {
       setError(null);
       useLive.getState().setClock(m.clock);
       useLive.getState().setRating(m.rating);
-      if (m.state && m.me && m.opponent) {
+      if (m.state && m.me && m.opponent && m.status !== "closed") {
         const sel = deckFromRef(m.me.deck);
         if (sel)
           useGame.getState().startOnline({
@@ -420,7 +469,9 @@ export function OnlineRoom() {
     }
   };
 
-  if (mode === "online" && hasGame) {
+  /** 2 人とも抜けたので、決着なしで閉じた対戦 */
+  const closed = match?.status === "closed";
+  if (mode === "online" && hasGame && !closed) {
     return (
       <section className="page play">
         <Board onQuit={() => navigate("/online")} />
@@ -444,8 +495,15 @@ export function OnlineRoom() {
             ロビーに戻る
           </button>
         </div>
+      ) : closed ? (
+        <div className="online-card">
+          <p className="notice">この対戦は、2人とも抜けたので閉じました（勝ち負けなし）。</p>
+          <button type="button" className="btn ghost" onClick={() => navigate("/online")}>
+            ロビーに戻る
+          </button>
+        </div>
       ) : elsewhere ? (
-        <ResumeMatch match={elsewhere} />
+        <ResumeMatch resume={elsewhere} />
       ) : full ? (
         <div className="online-card">
           <p className="notice">この部屋はもう2人そろっています。</p>
