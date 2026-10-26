@@ -725,23 +725,13 @@ function runEffect(e: CardEffect, ctx: Ctx) {
   switch (e.do) {
     case "summon": {
       const placed: number[] = [];
-      if (e.sides) {
-        // 左右の空いている枠にだけ、1体ずつ（空いていない側には出さない）
-        const at = ctx.selfSlot;
-        if (at !== undefined)
-          for (const s of [at - 1, at + 1]) {
-            if (s < 0 || s >= me.field.length || me.field[s]) continue;
-            placeSummoned(state, player, e.card, catalog, emit, s);
-            placed.push(s);
-          }
-      } else {
-        const n = e.centerCount !== undefined && ctx.selfSlot === CENTER_SLOT ? e.centerCount : e.count;
-        const near = e.flank ? ctx.selfSlot : undefined;
-        for (let i = 0; i < n; i++) {
-          const s = summon(state, player, e.card, catalog, emit, near);
-          if (s < 0) break;
-          placed.push(s);
-        }
+      const n = e.centerCount !== undefined && ctx.selfSlot === CENTER_SLOT ? e.centerCount : e.count;
+      // flank なら隣を先に埋める。隣が埋まっていても数は減らさず、空いた枠へ出す（場が埋まれば止まる）
+      const near = e.flank ? ctx.selfSlot : undefined;
+      for (let i = 0; i < n; i++) {
+        const s = summon(state, player, e.card, catalog, emit, near);
+        if (s < 0) break;
+        placed.push(s);
       }
       // 出したキャラクターに強化
       if (e.buff)
