@@ -12,16 +12,15 @@ import "./kusahamiAmbush.css";
  * 4. 斬る（1.71〜1.82 秒）：枠へ叩きつけ、着地と同時に銀の鎌が斜めに一閃。閃光・揺れ・葉が舞う（斬る前の溜めは作らない。オーナー）
  * 5. 草が消える（1.88〜2.5 秒）：茂みは刈られて飛び、草原はなぎ倒されて消える。地の暗さも引いて、いつもの場に戻る
  *
- * 闇の姿（kusahamiWither。案E「枯れてから毒の茨」。約 3.6 秒。闇堕ちの全画面の演出のあと、場に出るところ）
+ * 闇の姿（kusahamiWither。案D「毒が根を張る」。約 3.5 秒。闇堕ちの全画面の演出のあと、場に出るところ）
  * 1. 草原が戻る（0〜0.45 秒）：出す枠からクサハミの草原が生えそろう
- * 2. 枯れる（0.6〜1.3 秒）：草がしおれて茶色く枯れ、枯れ葉が落ちる。場が暗く沈む
- * 3. 降りる（1.25〜1.6 秒）：闇の姿が枠の上に浮かび、叩きつける
- * 4. 着地（1.6 秒）：紫の閃光・大きな揺れ。何重もの紫の衝撃の輪が足もとから広がり、光の筋が放射状に走る
- * 5. 毒の茨（1.6〜2.2 秒）：枯れた草が紫の茨になって、枠から外へ一斉に伸びる。胞子が昇る
- * 6. 場が戻る（2.8〜3.5 秒）：茨・紫の地・暗さが引いて、いつもの場に戻る
+ * 2. 風が止む（0.45〜0.8 秒）：場が暗く沈み、闇の姿が枠の上に浮かぶ
+ * 3. 着地（0.9 秒）：紫の閃光・揺れ。足もとから 1 重の波紋が、水面のようにゆっくり広がり始めて加速しながら消える
+ * 4. 根が張る（0.9〜2.2 秒）：足もとから紫の根が地面を割って走り（5 本・枝分かれは少なめ）、根が通ったところから草が紫に染まってうねる。胞子が昇る
+ * 5. 場が戻る（2.7〜3.4 秒）：毒の草・根・紫の地・暗さが引いて、いつもの場に戻る
  *
  * 場の後ろの層（field。キャラクターの後ろ）に、地の暗さ・地の色・草原を描き、
- * 画面座標の層（layer）に、カードの写し・茂み・赤い目・鎌の軌跡・舞う葉・衝撃の輪・閃光を描く。本物のカードは終わるまで隠しておく（呼ぶ側で隠す）。
+ * 画面座標の層（layer）に、カードの写し・茂み・赤い目・鎌の軌跡・舞う葉・波紋・胞子・閃光を描く。本物のカードは終わるまで隠しておく（呼ぶ側で隠す）。
  * 時間は GSAP で数える（開発中に __gsap で遅くしても、全部が同じ速さで遅くなる）
  */
 
@@ -68,9 +67,6 @@ const GREEN_L: RGB = [104, 168, 86];
 const SILVER: RGB = [214, 236, 222];
 const BLADE: RGB = [170, 220, 255];
 const GROUND: RGB = [22, 70, 38];
-const DRY_GROUND: RGB = [70, 58, 40];
-const DRY_D: RGB = [78, 68, 52];
-const DRY_L: RGB = [128, 110, 80];
 const PURP_D: RGB = [58, 14, 80];
 const PURP_L: RGB = [150, 46, 176];
 const PURP_TIP: RGB = [246, 128, 255];
@@ -280,51 +276,28 @@ function ellipseRing(
 }
 
 /**
- * 闇の姿の着地の衝撃波：何重もの紫の輪が足もとから順に広がり、光の筋が放射状に走る。
+ * 闇の姿の着地の波紋：水面に落ちたときのような 1 重の輪。ゆっくり広がり始めて、加速しながら薄れて消える。
  * e は着地からの時間（ms）。k はカードの幅の倍率
  */
-function shockwave(g: CanvasRenderingContext2D, x: number, y: number, e: number, k: number) {
-  if (e < 0 || e > 900) return;
+function ripple(g: CanvasRenderingContext2D, x: number, y: number, e: number, k: number) {
+  const DUR = 1100;
+  if (e < 0 || e > DUR) return;
+  const q = e / DUR;
+  // 半径は時間の 2.2 乗で伸びる（はじめはゆっくり、あとから速く）
+  const r = lerp(12, 230, q ** 2.2) * k;
+  const fade = 1 - seg(q, 0.55, 1);
   g.save();
   g.globalCompositeOperation = "lighter";
-  g.lineCap = "round";
-  // 輪：4 重。70ms ずつ遅れて出て、外の輪ほど速く遠くへ。先頭の輪は太く明るい
-  for (let i = 0; i < 4; i++) {
-    const q = seg(e, i * 70, i * 70 + 620);
-    if (q <= 0 || q >= 1) continue;
-    const r = lerp(16, 200 - i * 22, eo3(q)) * k;
-    const a = (1 - q) * (i === 0 ? 1 : 0.8);
-    const col = i % 2 === 0 ? PURP_RING : mix(PURP_RING, [255, 220, 255], 0.5);
-    ellipseRing(g, x, y, r, 0.4, lerp(i === 0 ? 7 : 4, 1, q) * k, col, a);
-    ellipseRing(g, x, y, r, 0.4, lerp(16, 3, q) * k, col, a * 0.22);
-  }
-  // 光の筋：放射状に 14 本。はじめに勢いよく伸びて、細く消える
-  const n = 14;
-  const q = seg(e, 0, 380);
-  if (q < 1) {
-    for (let i = 0; i < n; i++) {
-      const an = (i / n) * Math.PI * 2 + 0.2;
-      const len = lerp(20, 120, eo3(q)) * k;
-      const head = lerp(6, 160, eo3(q)) * k;
-      const sx = x + Math.cos(an) * head * 0.9;
-      const sy = y + Math.sin(an) * head * 0.9 * 0.4;
-      const ex = x + Math.cos(an) * (head * 0.9 + len * 0.6);
-      const ey = y + Math.sin(an) * (head * 0.9 + len * 0.6) * 0.4;
-      g.strokeStyle = rgba(mix(PURP_RING, [255, 255, 255], 0.4), 0.9 * (1 - q));
-      g.lineWidth = lerp(2.4, 0.6, q) * k;
-      g.beginPath();
-      g.moveTo(sx, sy);
-      g.lineTo(ex, ey);
-      g.stroke();
-    }
-  }
-  // 足もとの紫の光だまり：一瞬ふくらんで、しぼむ
-  const bl = 1 - seg(e, 0, 520);
+  // 内側の淡い帯（波の盛り上がりの影）→ 細い明るい線
+  ellipseRing(g, x, y, r - 3 * k, 0.4, lerp(14, 6, q) * k, PURP_RING, 0.18 * fade);
+  ellipseRing(g, x, y, r, 0.4, lerp(2.6, 1, q) * k, mix(PURP_RING, [255, 235, 255], 0.5), 0.9 * fade);
+  // 着地点の光：一瞬ふくらんで、波が離れるにつれて消える
+  const bl = 1 - seg(e, 0, 420);
   if (bl > 0) {
-    const R = lerp(10, 90, eo3(seg(e, 0, 260))) * k;
+    const R = lerp(10, 60, eo3(seg(e, 0, 260))) * k;
     const grd = g.createRadialGradient(x, y, 0, x, y, R);
-    grd.addColorStop(0, rgba([255, 230, 255], 0.7 * bl));
-    grd.addColorStop(0.4, rgba(PURP_RING, 0.4 * bl));
+    grd.addColorStop(0, rgba([255, 230, 255], 0.6 * bl));
+    grd.addColorStop(0.5, rgba(PURP_RING, 0.3 * bl));
     grd.addColorStop(1, rgba(PURP_RING, 0));
     g.fillStyle = grd;
     g.save();
@@ -688,14 +661,14 @@ export async function kusahamiAmbush(o: KusahamiAmbushOpts): Promise<void> {
   }
 }
 
-/* ============================== 闇の姿：枯れてから毒の茨 ============================== */
+/* ============================== 闇の姿：毒が根を張る ============================== */
 
 // 時間（ms）
 /** 着地 */
-const WL = 1600;
+const WL = 900;
 /** 場が戻る [始め, 終わり] */
-const WRET: readonly [number, number] = [2800, 3500];
-const WEND = 3600;
+const WRET: readonly [number, number] = [2700, 3400];
+const WEND = 3500;
 
 /** 闇の姿の写しの、この瞬間の置き方：浮かぶ → 叩きつける → つぶれて戻る（モックの dropIn） */
 function dropIn(t: number, t0: number, hoverMs: number, lift: number, sMax: number) {
@@ -720,8 +693,39 @@ function dropIn(t: number, t0: number, hoverMs: number, lift: number, sMax: numb
   };
 }
 
+/** 紫の根：着地点から地面を割って走る。pts は [x, y, 根もとからの道のり]（モックの座標、着地点が原点） */
+interface Vein {
+  pts: [number, number, number][];
+  w: number;
+}
+function buildVeins(): Vein[] {
+  const rv = rng(5);
+  const out: Vein[] = [];
+  const grow = (x: number, y: number, ang: number, len: number, s0: number, depth: number) => {
+    const pts: [number, number, number][] = [[x, y, s0]];
+    let s = s0;
+    let a = ang;
+    for (let k = 0; k < len; k++) {
+      a += (rv() - 0.5) * 0.7;
+      const st = 9 + rv() * 6;
+      x += Math.cos(a) * st;
+      y += Math.sin(a) * st * 0.62;
+      s += st;
+      pts.push([x, y, s]);
+      // 枝分かれは 1 段だけ、少なめに（オーナー：「根をもう少し少なく」）
+      if (depth < 1 && rv() < 0.14)
+        grow(x, y, a + (rv() < 0.5 ? -1 : 1) * (0.5 + rv() * 0.6), Math.floor((len - k) * 0.6), s, depth + 1);
+    }
+    out.push({ pts, w: depth === 0 ? 2.6 : 1.7 });
+  };
+  // 本数は 5 本（モックは 9 本だった）
+  for (let k = 0; k < 5; k++)
+    grow(0, 0, (k / 5) * Math.PI * 2 + rv() * 0.5, 20 + Math.floor(rv() * 10), 0, 0);
+  return out;
+}
+
 /**
- * 闇堕ちで戻る毒草喰らいのクサハミが場に出るときの演出（案E）。
+ * 闇堕ちで戻る毒草喰らいのクサハミが場に出るときの演出（案D「毒が根を張る」）。
  * 闇堕ちの全画面の演出（DarkCutscene）のあと、ふつうの着地と裏返しの代わりに見せる
  */
 export async function kusahamiWither(o: KusahamiAmbushOpts): Promise<void> {
@@ -731,24 +735,12 @@ export async function kusahamiWither(o: KusahamiAmbushOpts): Promise<void> {
     return;
   }
   const { cu, co, veil, card, flash, meadow, FW, FH, kf, gx, gy, f, k, CX, CY } = S;
-  const rd = rng(41);
-  // 落ちる枯れ葉（画面座標。草原の範囲に降る）
+  const veins = buildVeins();
+  const rs = rng(43);
+  // 胞子（着地のあと、毒の草の上をゆっくり昇る）
   const pf = document.querySelector(".pfield")?.getBoundingClientRect();
   const top = (pf ? pf.top : CY - 150 * k) - f.top;
   const bottom = (pf ? pf.bottom : CY + 150 * k) - f.top;
-  const dead = Array.from({ length: 26 }, () => ({
-    t0: 650 + rd() * 700,
-    x: rd() * f.width,
-    y0: top + rd() * (bottom - top) * 0.6,
-    vy: (0.05 + rd() * 0.05) * k,
-    amp: (5 + rd() * 8) * k,
-    ph: rd() * 6,
-    rot: rd() * 6,
-    spin: (rd() - 0.5) * 0.01,
-    s: (0.8 + rd() * 0.6) * k,
-  }));
-  const rs = rng(43);
-  // 胞子（着地のあと、茨の上をゆっくり昇る）
   const spores = Array.from({ length: 70 }, () => ({
     x: rs() * f.width,
     y: top + 20 * k + rs() * (bottom - top),
@@ -760,53 +752,77 @@ export async function kusahamiWither(o: KusahamiAmbushOpts): Promise<void> {
     s: (0.8 + rs() * 1.6) * k,
   }));
 
-  /** 場の残り（1 → 0）：茨・紫の地・暗さが引いて戻る */
+  /** 場の残り（1 → 0）：毒の草・根・紫の地・暗さが引いて戻る */
   const fieldAlpha = (t: number) => 1 - eo3(seg(t, WRET[0], WRET[1]));
+
+  const drawVeins = (t: number, fa: number) => {
+    if (t < WL) return;
+    const front = (t - WL) * 0.32;
+    cu.save();
+    cu.globalCompositeOperation = "lighter";
+    cu.lineCap = "round";
+    cu.lineJoin = "round";
+    const pulse = 0.75 + 0.25 * Math.sin(t / 160);
+    for (const v of veins) {
+      for (const [lw, col, al] of [
+        [v.w * 4, [150, 30, 210] as RGB, 0.22],
+        [v.w, [236, 120, 255] as RGB, 0.9],
+      ] as const) {
+        cu.beginPath();
+        let started = false;
+        for (const [x, y, s] of v.pts) {
+          if (s > front) break;
+          const px = gx + x * kf;
+          const py = gy + 30 * kf + y * kf;
+          if (started) cu.lineTo(px, py);
+          else cu.moveTo(px, py);
+          started = true;
+        }
+        if (!started) continue;
+        cu.lineWidth = lw * kf;
+        cu.strokeStyle = rgba(col, al * pulse * fa);
+        cu.stroke();
+      }
+    }
+    cu.restore();
+  };
 
   const drawField = (t: number) => {
     cu.clearRect(0, 0, FW, FH);
     const fa = fieldAlpha(t);
-    const dr = seg(t, 600, 1300);
-    groundDisc(
-      cu,
-      gx,
-      gy + 30 * kf,
-      Math.min(t * 0.9 * kf, 520 * kf),
-      mix(GROUND, DRY_GROUND, dr),
-      0.42 * fa,
-      FW,
-      FH,
-    );
-    groundDisc(cu, gx, gy + 30 * kf, Math.min((t - WL) * 0.55 * kf, 560 * kf), PURP_GROUND, 0.5 * fa, FW, FH);
+    groundDisc(cu, gx, gy + 30 * kf, Math.min(t * 0.9 * kf, 520 * kf), GROUND, 0.42 * fa, FW, FH);
+    groundDisc(cu, gx, gy + 30 * kf, Math.min((t - WL) * 0.3 * kf, 560 * kf), PURP_GROUND, 0.5 * fa, FW, FH);
+    drawVeins(t, fa);
     for (const b of meadow) {
-      // 戻ってくる → 枯れる → 着地から外へ順に、紫の茨になって伸びる
+      // 戻ってくる → 風が止む → 根が通ったところから紫に染まって、うねる
       const g = eo3(seg(t, b.d * 0.6, b.d * 0.6 + 260));
       if (g <= 0.01) continue;
-      let dry = eo3(seg(t, 600 + b.j * 300, 1000 + b.j * 300));
-      const re = seg(t, WL + b.d / 0.55, WL + b.d / 0.55 + 230);
-      const pur = re;
-      const thorn = back(re);
-      dry *= 1 - re;
-      let amp = lerp(0.1, 0.03, dry);
+      const pur = eo3(seg(t, WL + b.d / 0.3, WL + b.d / 0.3 + 280));
+      let amp = lerp(0.1, 0.02, seg(t, 450, 700));
       let freq = 520;
       if (pur > 0.4) {
         amp = Math.max(amp, 0.2 * pur);
         freq = 300;
       }
       const sway = amp * Math.sin(t / freq + b.x / (55 * kf) + b.ph);
-      const lean = b.lean0 + sway + dry * Math.sign(b.lean0 || 1) * 1.0 + thorn * b.twist * 0.6;
-      const h = b.h * g * (1 - 0.45 * dry) * (1 + (b.tall - 1) * thorn);
-      let col = mix(GREEN_D, GREEN_L, b.sh);
-      col = mix(col, mix(DRY_D, DRY_L, b.sh), dry);
-      col = mix(col, mix(PURP_D, PURP_L, b.sh), pur);
-      const [tx, ty] = blade(cu, b.x, b.y, h, b.w * (1 - 0.3 * thorn), lean, col, 0.92 * fa);
+      // 着地の衝撃で外へなぎ倒される
+      const shock =
+        t >= WL
+          ? Math.sign(b.x - gx || 1) *
+            Math.max(0, 1 - Math.abs(b.d - (t - WL) * 0.5) / 40) *
+            0.7 *
+            (1 - seg(t, WL, WL + 900))
+          : 0;
+      const lean = b.lean0 + sway + shock;
+      const col = mix(mix(GREEN_D, GREEN_L, b.sh), mix(PURP_D, PURP_L, b.sh), pur);
+      const [tx, ty] = blade(cu, b.x, b.y, b.h * g, b.w, lean, col, 0.92 * fa);
       // 先の光：通常は銀、毒は紫に灯る
       if (b.sh > 0.66) {
         if (pur > 0.5) {
           const fl = 0.6 + 0.4 * Math.sin(t / 120 + b.ph);
           cu.fillStyle = rgba(PURP_TIP, (pur - 0.5) * 2 * fl * fa);
           cu.fillRect(tx - 1.2 * kf, ty - 1.2 * kf, 2.4 * kf, 2.4 * kf);
-        } else if (dry < 0.3 && pur < 0.2) {
+        } else if (pur < 0.2) {
           cu.fillStyle = rgba(SILVER, 0.5 * fa * g);
           cu.fillRect(tx - 0.7 * kf, ty - 0.7 * kf, 1.4 * kf, 1.4 * kf);
         }
@@ -817,40 +833,24 @@ export async function kusahamiWither(o: KusahamiAmbushOpts): Promise<void> {
   const render = (t: number) => {
     const ts = t / 1000;
     const fa = fieldAlpha(t);
-    veil.style.opacity = String(lerp(0.3, 0.62, seg(t, 600, 1300)) * eo3(seg(t, 0, 300)) * fa);
+    veil.style.opacity = String(lerp(0.3, 0.55, seg(t, 450, 900)) * eo3(seg(t, 0, 300)) * fa);
     drawField(t);
 
     // カードの写し
-    const p = dropIn(t, WL, 350, 54, 1.32);
+    const p = dropIn(t, WL, 400, 54, 1.32);
     const sx = (p.sx ?? 1) * p.s;
     const sy = (p.sy ?? 1) * p.s;
     card.style.opacity = String(p.op);
     card.style.transform = `translateY(${p.y * k}px) scale(${sx}, ${sy})`;
     const glow =
-      t >= WL - 350 && t < WL + 600
+      t >= WL - 400 && t < WL + 600
         ? ` drop-shadow(0 0 ${12 * k}px ${rgba(PURP_RING, 0.7 * (1 - seg(t, WL + 200, WL + 600)))})`
         : "";
     card.style.filter = `brightness(${p.br.toFixed(3)})${glow}`;
 
     co.clearRect(0, 0, f.width, f.height);
-    // 枯れ葉：ひらひらと落ちる（着地のころには消える）
-    for (const l of dead) {
-      const e = t - l.t0;
-      if (e < 0) continue;
-      const y = l.y0 + e * l.vy;
-      if (y > bottom + 10 * k) continue;
-      leaf(
-        co,
-        l.x + Math.sin(e / 260 + l.ph) * l.amp,
-        y,
-        l.rot + e * l.spin + Math.sin(e / 300) * 0.8,
-        l.s,
-        DRY_L,
-        0.8 * (1 - seg(t, WL, WL + 300)) * fa,
-      );
-    }
-    // 着地の衝撃波（足もと）
-    shockwave(co, CX, CY + 30 * k, t - WL, k);
+    // 着地の波紋（足もと）
+    ripple(co, CX, CY + 30 * k, t - WL, k);
     // 胞子
     if (t >= WL) {
       co.save();
@@ -868,10 +868,10 @@ export async function kusahamiWither(o: KusahamiAmbushOpts): Promise<void> {
       co.restore();
     }
 
-    // 紫の閃光と大きな揺れ（着地の瞬間）
+    // 紫の閃光と揺れ（着地の瞬間）
     flash.style.background = "#9628d2";
     flash.style.opacity = String(t >= WL ? 0.22 * (1 - seg(t, WL, WL + 220)) : 0);
-    S.shake(t >= WL ? (1 - seg(t, WL, WL + 340)) * 7 * k : 0, ts);
+    S.shake(t >= WL ? (1 - seg(t, WL, WL + 320)) * 6 * k : 0, ts);
   };
 
   try {
