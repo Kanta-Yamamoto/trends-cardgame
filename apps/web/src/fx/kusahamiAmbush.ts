@@ -3,21 +3,29 @@ import { frameRect } from "../frame";
 import "./kusahamiAmbush.css";
 
 /**
- * クサハミが場に出たときの「茂みから飛び出す」演出。ふつうの着地の代わりに見せる
- * （10月26日、オーナーがモック「クサハミの召喚演出」で選んだ案B。斬る直前の溜めを足し、斬ったら草はすぐ消える。そのあと場は戻る）。
+ * クサハミが場に出たときの演出（2 つ。どちらもふつうの着地の代わりに見せる。10月26日、オーナーがモック「クサハミの召喚演出」で選んだ案）。
+ *
+ * 通常の姿（kusahamiAmbush。案B「茂みから飛び出す」。約 2.7 秒）
  * 1. 草原（0〜1.0 秒）：場の地が暗くなり、出す枠から草原が生えそろう。枠のまわりには背の高い茂みが育つ（茂みはカードより手前）
  * 2. 気配（0.95〜1.35 秒）：茂みの奥で赤い目が 2 つ光り、茂みがざわざわ揺れる
  * 3. 飛び出す（1.35〜1.6 秒）：茂みが左右に割れ、クサハミが上へ飛び上がる
- * 4. 溜め（1.6〜1.96 秒）：空中で体を引き、鎌の先に光が集まる。斬る直前に一瞬止まる
- * 5. 斬る（1.96〜2.07 秒）：枠へ叩きつけ、着地と同時に銀の鎌が斜めに一閃。閃光・揺れ・葉が舞う
- * 6. 草が消える（2.13〜2.7 秒）：茂みは刈られて飛び、草原はなぎ倒されて消える。地の暗さも引いて、いつもの場に戻る
+ * 4. 斬る（1.71〜1.82 秒）：枠へ叩きつけ、着地と同時に銀の鎌が斜めに一閃。閃光・揺れ・葉が舞う（斬る前の溜めは作らない。オーナー）
+ * 5. 草が消える（1.88〜2.5 秒）：茂みは刈られて飛び、草原はなぎ倒されて消える。地の暗さも引いて、いつもの場に戻る
+ *
+ * 闇の姿（kusahamiWither。案E「枯れてから毒の茨」。約 3.6 秒。闇堕ちの全画面の演出のあと、場に出るところ）
+ * 1. 草原が戻る（0〜0.45 秒）：出す枠からクサハミの草原が生えそろう
+ * 2. 枯れる（0.6〜1.3 秒）：草がしおれて茶色く枯れ、枯れ葉が落ちる。場が暗く沈む
+ * 3. 降りる（1.25〜1.6 秒）：闇の姿が枠の上に浮かび、叩きつける
+ * 4. 着地（1.6 秒）：紫の閃光・大きな揺れ。何重もの紫の衝撃の輪が足もとから広がり、光の筋が放射状に走る
+ * 5. 毒の茨（1.6〜2.2 秒）：枯れた草が紫の茨になって、枠から外へ一斉に伸びる。胞子が昇る
+ * 6. 場が戻る（2.8〜3.5 秒）：茨・紫の地・暗さが引いて、いつもの場に戻る
  *
  * 場の後ろの層（field。キャラクターの後ろ）に、地の暗さ・地の色・草原を描き、
- * 画面座標の層（layer）に、カードの写し・茂み・赤い目・鎌の軌跡・舞う葉・閃光を描く。本物のカードは終わるまで隠しておく（呼ぶ側で隠す）。
+ * 画面座標の層（layer）に、カードの写し・茂み・赤い目・鎌の軌跡・舞う葉・衝撃の輪・閃光を描く。本物のカードは終わるまで隠しておく（呼ぶ側で隠す）。
  * 時間は GSAP で数える（開発中に __gsap で遅くしても、全部が同じ速さで遅くなる）
  */
 
-/** この演出で場に出るカード（通常の姿のクサハミ。闇の姿は闇堕ちの流れで出るので通らない） */
+/** この演出で場に出るカード（通常の姿は kusahamiAmbush、闇堕ちで戻る闇の姿は kusahamiWither） */
 export const KUSAHAMI_AMBUSH: ReadonlySet<string> = new Set(["c14"]);
 
 export interface KusahamiAmbushOpts {
@@ -60,21 +68,14 @@ const GREEN_L: RGB = [104, 168, 86];
 const SILVER: RGB = [214, 236, 222];
 const BLADE: RGB = [170, 220, 255];
 const GROUND: RGB = [22, 70, 38];
-
-// 時間（ms）
-/** 飛び上がり始め */
-const LEAP = 1350;
-/** 飛び上がり切る＝溜めの始まり */
-const APEX = 1600;
-/** 溜めの終わり（ここから叩きつける） */
-const CHARGE_END = 1960;
-/** 着地＝斬る */
-const L = 2070;
-/** 草が消え始める */
-const CLEAR = L + 60;
-/** 場が戻り切る */
-const CLEAR_END = L + 650;
-const END = L + 900;
+const DRY_GROUND: RGB = [70, 58, 40];
+const DRY_D: RGB = [78, 68, 52];
+const DRY_L: RGB = [128, 110, 80];
+const PURP_D: RGB = [58, 14, 80];
+const PURP_L: RGB = [150, 46, 176];
+const PURP_TIP: RGB = [246, 128, 255];
+const PURP_RING: RGB = [210, 90, 255];
+const PURP_GROUND: RGB = [74, 16, 96];
 
 /** モックのカードの幅（座標の倍率の元） */
 const CARD_W = 66;
@@ -88,23 +89,41 @@ interface Blade {
   ph: number;
   sh: number;
   j: number;
+  /** 出す枠からの距離（モックの座標。地面は縦につぶれて見えるので y は 1.35 倍） */
+  d: number;
+  /** 茨になるときのねじれと、伸びる倍率 */
+  twist: number;
+  tall: number;
 }
 
-/** 草原の 1 本の葉。手前（下）の順に描くので y で並べる */
-function buildMeadow(left: number, top: number, width: number, height: number, k: number): Blade[] {
+/** 草原の 1 本の葉。手前（下）の順に描くので y で並べる。d は (gx, gy) からの距離をモックの座標で */
+function buildMeadow(
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+  k: number,
+  gx: number,
+  gy: number,
+): Blade[] {
   const r = rng(11);
   const n = Math.round(clamp((width * height) / (k * k * 260), 120, 640));
   const out: Blade[] = [];
   for (let i = 0; i < n; i++) {
+    const x = left + r() * width;
+    const y = top + r() * height;
     out.push({
-      x: left + r() * width,
-      y: top + r() * height,
+      x,
+      y,
       h: (9 + r() * 11) * k,
       w: (2.2 + r() * 1.6) * k,
       lean0: (r() - 0.5) * 0.6,
       ph: r() * 6.28,
       sh: r(),
       j: r(),
+      d: Math.hypot(x - gx, (y - gy) * 1.35) / k,
+      twist: (r() - 0.5) * 1.4,
+      tall: 1.35 + r() * 0.8,
     });
   }
   return out.sort((a, b) => a.y - b.y);
@@ -128,6 +147,9 @@ function buildBush(k: number): Blade[] {
       ph: r() * 6.28,
       sh: r(),
       j: r(),
+      d: 0,
+      twist: 0,
+      tall: 1,
     });
   }
   return out.sort((a, b) => a.y - b.y);
@@ -234,30 +256,84 @@ function swing(
   g.restore();
 }
 
-/** 斬る直前の溜め：鎌の先に集まる光（十字のきらめきと芯の玉） */
-function glint(g: CanvasRenderingContext2D, x: number, y: number, p: number, k: number) {
-  if (p <= 0) return;
+/** 床に広がる輪（縦に k 倍つぶした楕円） */
+function ellipseRing(
+  g: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  k: number,
+  lw: number,
+  col: RGB,
+  a: number,
+) {
+  if (a <= 0.01 || r <= 0) return;
+  g.save();
+  g.translate(x, y);
+  g.scale(1, k);
+  g.beginPath();
+  g.arc(0, 0, r, 0, Math.PI * 2);
+  g.restore();
+  g.lineWidth = lw;
+  g.strokeStyle = rgba(col, a);
+  g.stroke();
+}
+
+/**
+ * 闇の姿の着地の衝撃波：何重もの紫の輪が足もとから順に広がり、光の筋が放射状に走る。
+ * e は着地からの時間（ms）。k はカードの幅の倍率
+ */
+function shockwave(g: CanvasRenderingContext2D, x: number, y: number, e: number, k: number) {
+  if (e < 0 || e > 900) return;
   g.save();
   g.globalCompositeOperation = "lighter";
-  const R = (8 + 24 * p) * k;
-  const grd = g.createRadialGradient(x, y, 0, x, y, R);
-  grd.addColorStop(0, rgba([255, 255, 255], 0.95 * p));
-  grd.addColorStop(0.3, rgba(BLADE, 0.5 * p));
-  grd.addColorStop(1, rgba(BLADE, 0));
-  g.fillStyle = grd;
-  g.beginPath();
-  g.arc(x, y, R, 0, Math.PI * 2);
-  g.fill();
-  // 十字の光（溜めるほど長く、細い）
-  const len = (12 + 48 * p) * k;
-  g.strokeStyle = rgba([255, 255, 255], 0.85 * p);
-  g.lineWidth = 1.6 * k;
   g.lineCap = "round";
-  for (const an of [0.35, 0.35 + Math.PI / 2]) {
+  // 輪：4 重。70ms ずつ遅れて出て、外の輪ほど速く遠くへ。先頭の輪は太く明るい
+  for (let i = 0; i < 4; i++) {
+    const q = seg(e, i * 70, i * 70 + 620);
+    if (q <= 0 || q >= 1) continue;
+    const r = lerp(16, 200 - i * 22, eo3(q)) * k;
+    const a = (1 - q) * (i === 0 ? 1 : 0.8);
+    const col = i % 2 === 0 ? PURP_RING : mix(PURP_RING, [255, 220, 255], 0.5);
+    ellipseRing(g, x, y, r, 0.4, lerp(i === 0 ? 7 : 4, 1, q) * k, col, a);
+    ellipseRing(g, x, y, r, 0.4, lerp(16, 3, q) * k, col, a * 0.22);
+  }
+  // 光の筋：放射状に 14 本。はじめに勢いよく伸びて、細く消える
+  const n = 14;
+  const q = seg(e, 0, 380);
+  if (q < 1) {
+    for (let i = 0; i < n; i++) {
+      const an = (i / n) * Math.PI * 2 + 0.2;
+      const len = lerp(20, 120, eo3(q)) * k;
+      const head = lerp(6, 160, eo3(q)) * k;
+      const sx = x + Math.cos(an) * head * 0.9;
+      const sy = y + Math.sin(an) * head * 0.9 * 0.4;
+      const ex = x + Math.cos(an) * (head * 0.9 + len * 0.6);
+      const ey = y + Math.sin(an) * (head * 0.9 + len * 0.6) * 0.4;
+      g.strokeStyle = rgba(mix(PURP_RING, [255, 255, 255], 0.4), 0.9 * (1 - q));
+      g.lineWidth = lerp(2.4, 0.6, q) * k;
+      g.beginPath();
+      g.moveTo(sx, sy);
+      g.lineTo(ex, ey);
+      g.stroke();
+    }
+  }
+  // 足もとの紫の光だまり：一瞬ふくらんで、しぼむ
+  const bl = 1 - seg(e, 0, 520);
+  if (bl > 0) {
+    const R = lerp(10, 90, eo3(seg(e, 0, 260))) * k;
+    const grd = g.createRadialGradient(x, y, 0, x, y, R);
+    grd.addColorStop(0, rgba([255, 230, 255], 0.7 * bl));
+    grd.addColorStop(0.4, rgba(PURP_RING, 0.4 * bl));
+    grd.addColorStop(1, rgba(PURP_RING, 0));
+    g.fillStyle = grd;
+    g.save();
+    g.translate(x, y);
+    g.scale(1, 0.4);
     g.beginPath();
-    g.moveTo(x - Math.cos(an) * len, y - Math.sin(an) * len);
-    g.lineTo(x + Math.cos(an) * len, y + Math.sin(an) * len);
-    g.stroke();
+    g.arc(0, 0, R, 0, Math.PI * 2);
+    g.restore();
+    g.fill();
   }
   g.restore();
 }
@@ -274,44 +350,13 @@ function canvasIn(parent: HTMLElement, w: number, h: number, dpr: number) {
   return g;
 }
 
-/** クサハミの写しの、この瞬間の置き方（y はカードの中心からのずれ。モックのカード幅 66 の座標） */
-function pose(t: number) {
-  if (t < LEAP) return { op: 0, y: 12, s: 0.8, rot: 0, br: 1 };
-  if (t < APEX) {
-    const q = eo3(seg(t, LEAP, APEX));
-    return { op: seg(t, LEAP, LEAP + 70), y: lerp(12, -74, q), s: lerp(0.8, 1.35, q), rot: 0, br: 1 };
-  }
-  if (t < CHARGE_END) {
-    // 溜め：少し上へ体を引き、後ろへ傾いて、白く光っていく。最後の 60ms は止まる
-    const q = eo2(seg(t, APEX, CHARGE_END - 60));
-    const bob = Math.sin((t - APEX) / 90) * 1.5 * (1 - q);
-    return { op: 1, y: -74 - 7 * q + bob, s: lerp(1.35, 1.44, q), rot: -8 * q, br: lerp(1, 1.45, q) };
-  }
-  if (t < L) {
-    const q = ei3(seg(t, CHARGE_END, L));
-    return { op: 1, y: lerp(-81, 0, q), s: lerp(1.44, 1, q), rot: lerp(-8, 4, q), br: lerp(1.45, 2.2, q) };
-  }
-  // 着地：つぶれて弾んで戻る
-  const q = seg(t, L, L + 300);
-  const sq = Math.sin(Math.PI * q) * (1 - q);
-  return {
-    op: 1,
-    y: 0,
-    s: 1,
-    rot: 4 * (1 - eo3(seg(t, L, L + 160))),
-    br: lerp(2.2, 1, eo2(seg(t, L, L + 260))),
-    sx: 1 + 0.12 * sq,
-    sy: 1 - 0.12 * sq,
-  };
-}
-
-export async function kusahamiAmbush(o: KusahamiAmbushOpts): Promise<void> {
+/** 2 つの層（場の後ろ・画面座標）とカードの写しを用意する。終わったら dispose で片付ける */
+function setupLayers(o: KusahamiAmbushOpts) {
   const { unit, field, layer } = o;
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const board = document.querySelector<HTMLElement>(".board");
   const boardTransform = board?.style.transform ?? "";
   const ur = unit.getBoundingClientRect();
-  if (ur.width === 0) return;
 
   // ---- 場の後ろの層（舞台の中の座標。舞台は拡大・縮小しているので、画面の座標から直す）----
   const fr = field.getBoundingClientRect();
@@ -329,10 +374,7 @@ export async function kusahamiAmbush(o: KusahamiAmbushOpts): Promise<void> {
   veil.className = "ka-veil";
   field.appendChild(veil);
   const cu = canvasIn(field, FW, FH, dpr);
-  const meadow = buildMeadow(-5 * kf, meadowTop, FW + 10 * kf, meadowH, kf).map((b) => ({
-    ...b,
-    d: Math.hypot(b.x - gx, (b.y - gy) * 1.35),
-  }));
+  const meadow = buildMeadow(-5 * kf, meadowTop, FW + 10 * kf, meadowH, kf, gx, gy);
 
   // ---- 画面座標の層 ----
   const f = frameRect();
@@ -361,14 +403,125 @@ export async function kusahamiAmbush(o: KusahamiAmbushOpts): Promise<void> {
   flash.className = "ka-flash";
   root.appendChild(flash);
   layer.appendChild(root);
-  if (!cu || !co) {
+  const dispose = () => {
+    if (board) board.style.transform = boardTransform;
     root.remove();
-    veil.remove();
+    field.replaceChildren();
+  };
+  const shake = (px: number, ts: number) => {
+    const shakeT =
+      px > 0 ? `translate(${Math.sin(ts * 210) * px}px, ${Math.cos(ts * 270) * px * 0.7}px)` : "";
+    root.style.transform = shakeT;
+    if (board) board.style.transform = shakeT || boardTransform;
+  };
+  return {
+    ok: ur.width > 0 && !!cu && !!co,
+    cu: cu as CanvasRenderingContext2D,
+    co: co as CanvasRenderingContext2D,
+    veil,
+    card,
+    flash,
+    meadow,
+    FW,
+    FH,
+    kf,
+    gx,
+    gy,
+    f,
+    k: ur.width / CARD_W,
+    CX: ur.left + ur.width / 2 - f.left,
+    CY: ur.top + ur.height / 2 - f.top,
+    dispose,
+    shake,
+  };
+}
+
+/** 時間を GSAP で進めて render を呼ぶ。終わる（または止められる）まで待つ */
+function run(end: number, render: (t: number) => void): Promise<void> {
+  render(0);
+  return new Promise<void>((resolve) => {
+    const st = { t: 0 };
+    gsap.to(st, {
+      t: end,
+      duration: end / 1000,
+      ease: "none",
+      onUpdate: () => render(st.t),
+      onComplete: resolve,
+      onInterrupt: resolve,
+    });
+  });
+}
+
+/** 出す枠から広がる地の色の円 */
+function groundDisc(
+  g: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  col: RGB,
+  a: number,
+  w: number,
+  h: number,
+) {
+  if (r <= 0 || a <= 0.01) return;
+  const grd = g.createRadialGradient(x, y, 0, x, y, r);
+  grd.addColorStop(0, rgba(col, a));
+  grd.addColorStop(0.82, rgba(col, a * 0.8));
+  grd.addColorStop(1, rgba(col, 0));
+  g.fillStyle = grd;
+  g.fillRect(0, 0, w, h);
+}
+
+/* ============================== 通常の姿：茂みから飛び出す ============================== */
+
+// 時間（ms）
+/** 飛び上がり始め */
+const LEAP = 1350;
+/** 飛び上がり切る */
+const APEX = 1600;
+/** 叩きつけ始め */
+const DIVE = 1710;
+/** 着地＝斬る */
+const L = 1820;
+/** 草が消え始める */
+const CLEAR = L + 60;
+/** 場が戻り切る */
+const CLEAR_END = L + 650;
+const END = L + 900;
+
+/** クサハミの写しの、この瞬間の置き方（y はカードの中心からのずれ。モックのカード幅 66 の座標） */
+function pose(t: number) {
+  if (t < LEAP) return { op: 0, y: 12, s: 0.8, br: 1 };
+  if (t < APEX) {
+    const q = eo3(seg(t, LEAP, APEX));
+    return { op: seg(t, LEAP, LEAP + 70), y: lerp(12, -74, q), s: lerp(0.8, 1.35, q), br: 1 };
+  }
+  // 頂点でわずかに揺れて、すぐ叩きつける
+  if (t < DIVE) return { op: 1, y: -74 + 3 * Math.sin((t - APEX) / 30), s: 1.35, br: 1 };
+  if (t < L) {
+    const q = ei3(seg(t, DIVE, L));
+    return { op: 1, y: lerp(-74, 0, q), s: lerp(1.35, 1, q), br: lerp(1, 2.2, q) };
+  }
+  // 着地：つぶれて弾んで戻る
+  const q = seg(t, L, L + 300);
+  const sq = Math.sin(Math.PI * q) * (1 - q);
+  return {
+    op: 1,
+    y: 0,
+    s: 1,
+    br: lerp(2.2, 1, eo2(seg(t, L, L + 260))),
+    sx: 1 + 0.12 * sq,
+    sy: 1 - 0.12 * sq,
+  };
+}
+
+export async function kusahamiAmbush(o: KusahamiAmbushOpts): Promise<void> {
+  const S = setupLayers(o);
+  if (!S.ok) {
+    S.dispose();
     return;
   }
-  const k = ur.width / CARD_W;
-  const CX = ur.left + ur.width / 2 - f.left;
-  const CY = ur.top + ur.height / 2 - f.top;
+  const { cu, co, veil, card, flash, meadow, FW, FH, kf, gx, gy, f, k, CX, CY } = S;
   const bush = buildBush(k);
   const rb = rng(37);
   // 着地で舞い上がる葉と、刈られて飛ぶ茂みの葉
@@ -404,16 +557,7 @@ export async function kusahamiAmbush(o: KusahamiAmbushOpts): Promise<void> {
   const drawField = (t: number) => {
     cu.clearRect(0, 0, FW, FH);
     const fa = fieldAlpha(t);
-    // 地の色：出す枠から広がる円
-    const gr = Math.min((t - 100) * 0.7 * kf, 520 * kf);
-    if (gr > 0 && fa > 0) {
-      const grd = cu.createRadialGradient(gx, gy + 30 * kf, 0, gx, gy + 30 * kf, gr);
-      grd.addColorStop(0, rgba(GROUND, 0.42 * fa));
-      grd.addColorStop(0.82, rgba(GROUND, 0.34 * fa));
-      grd.addColorStop(1, rgba(GROUND, 0));
-      cu.fillStyle = grd;
-      cu.fillRect(0, 0, FW, FH);
-    }
+    groundDisc(cu, gx, gy + 30 * kf, Math.min((t - 100) * 0.7 * kf, 520 * kf), GROUND, 0.42 * fa, FW, FH);
     // 草原（奥から手前の順）
     const gn = gone(t);
     for (const b of meadow) {
@@ -422,9 +566,7 @@ export async function kusahamiAmbush(o: KusahamiAmbushOpts): Promise<void> {
       const sway = 0.1 * Math.sin(t / 520 + b.x / (55 * kf) + b.ph);
       // 着地の衝撃で外へなぎ倒され、そのまま消えていく
       const shock =
-        t >= L
-          ? Math.sign(b.x - gx || 1) * Math.max(0, 1 - Math.abs(b.d - (t - L) * 0.45 * kf) / (40 * kf)) * 0.8
-          : 0;
+        t >= L ? Math.sign(b.x - gx || 1) * Math.max(0, 1 - Math.abs(b.d - (t - L) * 0.45) / 40) * 0.8 : 0;
       const lean = b.lean0 + sway + shock + Math.sign(b.x - gx || 1) * 1.1 * gn;
       const h = b.h * g * (1 - 0.5 * gn);
       const a = 0.92 * (1 - gn);
@@ -500,10 +642,10 @@ export async function kusahamiAmbush(o: KusahamiAmbushOpts): Promise<void> {
     const sx = (p.sx ?? 1) * p.s;
     const sy = (p.sy ?? 1) * p.s;
     card.style.opacity = String(p.op);
-    card.style.transform = `translateY(${p.y * k}px) rotate(${p.rot}deg) scale(${sx}, ${sy})`;
+    card.style.transform = `translateY(${p.y * k}px) scale(${sx}, ${sy})`;
     const glow =
-      t >= APEX && t < L + 400
-        ? ` drop-shadow(0 0 ${lerp(4, 12, seg(t, APEX, CHARGE_END)) * k}px ${rgba(BLADE, 0.6 * (1 - seg(t, L, L + 400)))})`
+      t >= DIVE && t < L + 400
+        ? ` drop-shadow(0 0 ${10 * k}px ${rgba(BLADE, 0.6 * (1 - seg(t, L, L + 400)))})`
         : "";
     card.style.filter = `brightness(${p.br.toFixed(3)})${glow}`;
 
@@ -512,10 +654,6 @@ export async function kusahamiAmbush(o: KusahamiAmbushOpts): Promise<void> {
     drawBush(t, (b) => b.y < 40 * k || b.j > 0.3);
     drawEyes(t);
     drawBush(t, (b) => b.y >= 40 * k && b.j <= 0.3);
-
-    // 溜め：鎌の先（カードの右下）に光が集まる
-    const ch = seg(t, APEX + 50, CHARGE_END - 30) * (t < CHARGE_END ? 1 : 1 - seg(t, CHARGE_END, L));
-    if (ch > 0) glint(co, CX + 30 * k * p.s, CY + (p.y + 30 * p.s) * k, ch, k);
 
     // 斬る：着地と同時に、斜めに一閃
     swing(co, CX + 10 * k, CY + 70 * k, 120 * k, -2.4, -0.55, seg(t, L, L + 280) * 1.6, 11 * k);
@@ -538,30 +676,207 @@ export async function kusahamiAmbush(o: KusahamiAmbushOpts): Promise<void> {
     }
 
     // 閃光と揺れ（着地の瞬間）
+    flash.style.background = "#eaf6ff";
     flash.style.opacity = String(t >= L ? 0.16 * (1 - seg(t, L, L + 180)) : 0);
-    const shake = t >= L ? (1 - seg(t, L, L + 300)) * 6 * k : 0;
-    const shakeT =
-      shake > 0 ? `translate(${Math.sin(ts * 210) * shake}px, ${Math.cos(ts * 270) * shake * 0.7}px)` : "";
-    root.style.transform = shakeT;
-    if (board) board.style.transform = shakeT || boardTransform;
+    S.shake(t >= L ? (1 - seg(t, L, L + 300)) * 6 * k : 0, ts);
   };
 
   try {
-    render(0);
-    await new Promise<void>((resolve) => {
-      const st = { t: 0 };
-      gsap.to(st, {
-        t: END,
-        duration: END / 1000,
-        ease: "none",
-        onUpdate: () => render(st.t),
-        onComplete: resolve,
-        onInterrupt: resolve,
-      });
-    });
+    await run(END, render);
   } finally {
-    if (board) board.style.transform = boardTransform;
-    root.remove();
-    field.replaceChildren();
+    S.dispose();
+  }
+}
+
+/* ============================== 闇の姿：枯れてから毒の茨 ============================== */
+
+// 時間（ms）
+/** 着地 */
+const WL = 1600;
+/** 場が戻る [始め, 終わり] */
+const WRET: readonly [number, number] = [2800, 3500];
+const WEND = 3600;
+
+/** 闇の姿の写しの、この瞬間の置き方：浮かぶ → 叩きつける → つぶれて戻る（モックの dropIn） */
+function dropIn(t: number, t0: number, hoverMs: number, lift: number, sMax: number) {
+  if (t < t0 - hoverMs) return { op: 0, y: 0, s: 0.9, br: 1 };
+  if (t < t0 - 110) {
+    const q = eo3(seg(t, t0 - hoverMs, t0 - 160));
+    return { op: q, y: -lift * q, s: lerp(0.9, sMax, q), br: 1 };
+  }
+  if (t < t0) {
+    const q = ei3(seg(t, t0 - 110, t0));
+    return { op: 1, y: lerp(-lift, 0, q), s: lerp(sMax, 1, q), br: lerp(1, 2.2, q) };
+  }
+  const q = seg(t, t0, t0 + 300);
+  const sq = Math.sin(Math.PI * q) * (1 - q);
+  return {
+    op: 1,
+    y: 0,
+    s: 1,
+    br: lerp(2.2, 1, eo2(seg(t, t0, t0 + 260))),
+    sx: 1 + 0.12 * sq,
+    sy: 1 - 0.12 * sq,
+  };
+}
+
+/**
+ * 闇堕ちで戻る毒草喰らいのクサハミが場に出るときの演出（案E）。
+ * 闇堕ちの全画面の演出（DarkCutscene）のあと、ふつうの着地と裏返しの代わりに見せる
+ */
+export async function kusahamiWither(o: KusahamiAmbushOpts): Promise<void> {
+  const S = setupLayers(o);
+  if (!S.ok) {
+    S.dispose();
+    return;
+  }
+  const { cu, co, veil, card, flash, meadow, FW, FH, kf, gx, gy, f, k, CX, CY } = S;
+  const rd = rng(41);
+  // 落ちる枯れ葉（画面座標。草原の範囲に降る）
+  const pf = document.querySelector(".pfield")?.getBoundingClientRect();
+  const top = (pf ? pf.top : CY - 150 * k) - f.top;
+  const bottom = (pf ? pf.bottom : CY + 150 * k) - f.top;
+  const dead = Array.from({ length: 26 }, () => ({
+    t0: 650 + rd() * 700,
+    x: rd() * f.width,
+    y0: top + rd() * (bottom - top) * 0.6,
+    vy: (0.05 + rd() * 0.05) * k,
+    amp: (5 + rd() * 8) * k,
+    ph: rd() * 6,
+    rot: rd() * 6,
+    spin: (rd() - 0.5) * 0.01,
+    s: (0.8 + rd() * 0.6) * k,
+  }));
+  const rs = rng(43);
+  // 胞子（着地のあと、茨の上をゆっくり昇る）
+  const spores = Array.from({ length: 70 }, () => ({
+    x: rs() * f.width,
+    y: top + 20 * k + rs() * (bottom - top),
+    t0: rs() * 1400,
+    life: 1200 + rs() * 900,
+    vy: (0.02 + rs() * 0.035) * k,
+    amp: (3 + rs() * 6) * k,
+    ph: rs() * 6,
+    s: (0.8 + rs() * 1.6) * k,
+  }));
+
+  /** 場の残り（1 → 0）：茨・紫の地・暗さが引いて戻る */
+  const fieldAlpha = (t: number) => 1 - eo3(seg(t, WRET[0], WRET[1]));
+
+  const drawField = (t: number) => {
+    cu.clearRect(0, 0, FW, FH);
+    const fa = fieldAlpha(t);
+    const dr = seg(t, 600, 1300);
+    groundDisc(
+      cu,
+      gx,
+      gy + 30 * kf,
+      Math.min(t * 0.9 * kf, 520 * kf),
+      mix(GROUND, DRY_GROUND, dr),
+      0.42 * fa,
+      FW,
+      FH,
+    );
+    groundDisc(cu, gx, gy + 30 * kf, Math.min((t - WL) * 0.55 * kf, 560 * kf), PURP_GROUND, 0.5 * fa, FW, FH);
+    for (const b of meadow) {
+      // 戻ってくる → 枯れる → 着地から外へ順に、紫の茨になって伸びる
+      const g = eo3(seg(t, b.d * 0.6, b.d * 0.6 + 260));
+      if (g <= 0.01) continue;
+      let dry = eo3(seg(t, 600 + b.j * 300, 1000 + b.j * 300));
+      const re = seg(t, WL + b.d / 0.55, WL + b.d / 0.55 + 230);
+      const pur = re;
+      const thorn = back(re);
+      dry *= 1 - re;
+      let amp = lerp(0.1, 0.03, dry);
+      let freq = 520;
+      if (pur > 0.4) {
+        amp = Math.max(amp, 0.2 * pur);
+        freq = 300;
+      }
+      const sway = amp * Math.sin(t / freq + b.x / (55 * kf) + b.ph);
+      const lean = b.lean0 + sway + dry * Math.sign(b.lean0 || 1) * 1.0 + thorn * b.twist * 0.6;
+      const h = b.h * g * (1 - 0.45 * dry) * (1 + (b.tall - 1) * thorn);
+      let col = mix(GREEN_D, GREEN_L, b.sh);
+      col = mix(col, mix(DRY_D, DRY_L, b.sh), dry);
+      col = mix(col, mix(PURP_D, PURP_L, b.sh), pur);
+      const [tx, ty] = blade(cu, b.x, b.y, h, b.w * (1 - 0.3 * thorn), lean, col, 0.92 * fa);
+      // 先の光：通常は銀、毒は紫に灯る
+      if (b.sh > 0.66) {
+        if (pur > 0.5) {
+          const fl = 0.6 + 0.4 * Math.sin(t / 120 + b.ph);
+          cu.fillStyle = rgba(PURP_TIP, (pur - 0.5) * 2 * fl * fa);
+          cu.fillRect(tx - 1.2 * kf, ty - 1.2 * kf, 2.4 * kf, 2.4 * kf);
+        } else if (dry < 0.3 && pur < 0.2) {
+          cu.fillStyle = rgba(SILVER, 0.5 * fa * g);
+          cu.fillRect(tx - 0.7 * kf, ty - 0.7 * kf, 1.4 * kf, 1.4 * kf);
+        }
+      }
+    }
+  };
+
+  const render = (t: number) => {
+    const ts = t / 1000;
+    const fa = fieldAlpha(t);
+    veil.style.opacity = String(lerp(0.3, 0.62, seg(t, 600, 1300)) * eo3(seg(t, 0, 300)) * fa);
+    drawField(t);
+
+    // カードの写し
+    const p = dropIn(t, WL, 350, 54, 1.32);
+    const sx = (p.sx ?? 1) * p.s;
+    const sy = (p.sy ?? 1) * p.s;
+    card.style.opacity = String(p.op);
+    card.style.transform = `translateY(${p.y * k}px) scale(${sx}, ${sy})`;
+    const glow =
+      t >= WL - 350 && t < WL + 600
+        ? ` drop-shadow(0 0 ${12 * k}px ${rgba(PURP_RING, 0.7 * (1 - seg(t, WL + 200, WL + 600)))})`
+        : "";
+    card.style.filter = `brightness(${p.br.toFixed(3)})${glow}`;
+
+    co.clearRect(0, 0, f.width, f.height);
+    // 枯れ葉：ひらひらと落ちる（着地のころには消える）
+    for (const l of dead) {
+      const e = t - l.t0;
+      if (e < 0) continue;
+      const y = l.y0 + e * l.vy;
+      if (y > bottom + 10 * k) continue;
+      leaf(
+        co,
+        l.x + Math.sin(e / 260 + l.ph) * l.amp,
+        y,
+        l.rot + e * l.spin + Math.sin(e / 300) * 0.8,
+        l.s,
+        DRY_L,
+        0.8 * (1 - seg(t, WL, WL + 300)) * fa,
+      );
+    }
+    // 着地の衝撃波（足もと）
+    shockwave(co, CX, CY + 30 * k, t - WL, k);
+    // 胞子
+    if (t >= WL) {
+      co.save();
+      co.globalCompositeOperation = "lighter";
+      for (const s of spores) {
+        const e = t - WL - s.t0;
+        if (e < 0) continue;
+        const life = e % s.life;
+        const a = Math.sin((Math.PI * life) / s.life);
+        co.fillStyle = rgba(PURP_TIP, 0.7 * a * fa);
+        co.beginPath();
+        co.arc(s.x + Math.sin(e / 400 + s.ph) * s.amp, s.y - life * s.vy, s.s, 0, Math.PI * 2);
+        co.fill();
+      }
+      co.restore();
+    }
+
+    // 紫の閃光と大きな揺れ（着地の瞬間）
+    flash.style.background = "#9628d2";
+    flash.style.opacity = String(t >= WL ? 0.22 * (1 - seg(t, WL, WL + 220)) : 0);
+    S.shake(t >= WL ? (1 - seg(t, WL, WL + 340)) * 7 * k : 0, ts);
+  };
+
+  try {
+    await run(WEND, render);
+  } finally {
+    S.dispose();
   }
 }
