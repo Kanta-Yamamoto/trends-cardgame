@@ -4,10 +4,13 @@ import {
   buzzBlock,
   canUnitAttack,
   castTargets,
+  darkFallSlots,
   effectiveCost,
   isShielded,
+  openSlots,
   opponent,
   sacrificeCandidates,
+  slotOpen,
   viewUnit,
 } from "./engine";
 import type { Action, CastTarget, GameState, PlayerId, RuleCard, UnitView } from "./types";
@@ -59,7 +62,7 @@ function judgePost(
     return mine.length >= 2 ? { score: mine.length * 4 } : null;
   }
   if (effects.includes("summon")) {
-    const empty = state.players[player].field.filter((u) => !u).length;
+    const empty = openSlots(state, player).length;
     return empty >= 1 ? { score: Math.min(empty, 2) * 4 + (effects.includes("draw") ? 3 : 0) } : null;
   }
   if (effects.includes("drawPerAllies")) {
@@ -134,7 +137,7 @@ function judgePost(
     return t ? { score: 10, target: { side: "ally", slot: t.slot } } : null;
   }
   if (effects.includes("fill")) {
-    const empty = state.players[player].field.filter((u) => !u).length;
+    const empty = openSlots(state, player).length;
     return empty >= 2 ? { score: empty * 4 } : null;
   }
   if (effects.includes("cleanse")) {
@@ -291,11 +294,17 @@ function planTurnInner(start: GameState, player: PlayerId, catalog: Catalog, act
   };
   const foeId = opponent(player);
 
+  // 0. 闇堕ち：闇堕ちさせられる闇の気配は、ターンの初めにすべて闇堕ちさせる（10月26日までの「自動で戻る」と同じ時期）
+  for (const slot of darkFallSlots(state, player)) {
+    if (state.winner) return actions;
+    step({ type: "darkFall", player, slot });
+  }
+
   // 1. 出す・使う
   for (let guard = 0; guard < 20; guard++) {
     if (state.winner) return actions;
     const me = state.players[player];
-    const slot = me.field.findIndex((u) => !u);
+    const slot = openSlots(state, player)[0] ?? -1;
     let best: { score: number; action: Action } | null = null;
     me.hand.forEach((id, handIndex) => {
       const card = catalog[id];
@@ -306,7 +315,7 @@ function planTurnInner(start: GameState, player: PlayerId, catalog: Catalog, act
         if (slot < 0) return;
         // 注目のキャラクターは真ん中の枠を優先する
         const wantsCenter = card.keywords.includes("注目") || card.effects.some((e) => e.do === "focusAura");
-        const center = wantsCenter && !me.field[2] ? 2 : slot;
+        const center = wantsCenter && slotOpen(state, player, 2) ? 2 : slot;
         let score = card.cost * 10 + (card.attack ?? 0) + (card.hp ?? 0);
         // 場のキャラクターが多いほど安く・強くなるカードは、ほかを出してから
         if (card.effects.some((e) => e.do === "cheaperPerAlly")) {

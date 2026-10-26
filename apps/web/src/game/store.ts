@@ -120,6 +120,8 @@ interface GameStore {
   buzz: (slot: number) => void;
   /** 差し出し（フィクサー）：自分のキャラクターを1体選ぶ */
   sacrifice: (slot: number) => void;
+  /** 闇堕ち：自分の闇の気配を、その枠に闇堕ちの姿で出す（闇堕ちの演出を見せてから） */
+  darkFall: (slot: number) => void;
   /** オンライン対戦を始める（再接続のときも、届いた状態で呼び直す） */
   startOnline: (o: {
     deck: DeckSel;
@@ -212,7 +214,7 @@ function placedOnly(prev: GameState, a: PlaceAction, next: GameState): GameState
 
 const isPlace = (a: Action): a is PlaceAction => a.type === "play";
 
-/** 出来事の中の闇堕ち（ターンの始めに自動で起きる）の演出を、順に見せる */
+/** 出来事の中の闇堕ちの演出を、順に見せる */
 async function showDarkFalls(events: GameEvent[]) {
   for (const e of events)
     if (e.type === "darkFall" && presenter?.darkFall) await presenter.darkFall(e.cardId, e.player);
@@ -226,6 +228,7 @@ const hasEffects = (a: Action, events: GameEvent[]) =>
   a.type === "cast" ||
   a.type === "endTurn" ||
   a.type === "sacrifice" ||
+  a.type === "darkFall" ||
   (a.type === "attack" && events.some((e) => e.type === "summoned"));
 
 export const useGame = create<GameStore>((set, get) => {
@@ -516,6 +519,10 @@ export const useGame = create<GameStore>((set, get) => {
         set({ selection: null });
         settleCpu();
       });
+    },
+    darkFall: (slot) => {
+      if (!get().game || get().cpuBusy || get().animating) return;
+      then(commit({ type: "darkFall", player: ME, slot }), (ok) => ok && set({ selection: null }));
     },
     cast: (target) => {
       const sel = get().selection;

@@ -916,6 +916,26 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .omen-flame i:nth-child(2) { width: 40%; left: 32%; height: 70%; animation-delay: -0.4s; opacity: 0.7; }
 .omen-flame i:nth-child(3) { width: 40%; left: 68%; height: 60%; animation-delay: -0.8s; opacity: 0.6; }
 @keyframes omen-flicker { 0%, 100% { transform: translateX(-50%) scale(1, 1); } 50% { transform: translateX(-50%) scale(0.9, 1.12); } }
+/* 闇の気配は、倒れたエースの枠に裏向きで残る（その枠には出せない）。闇堕ちさせられるときは光って押せる */
+.slot.omen-slot { cursor: default; }
+.omen-card {
+  position: absolute; inset: -1.5px; border-radius: inherit; overflow: hidden; display: grid; align-content: end; justify-items: center; gap: 1px; padding: 0 2px 4px;
+  border: 1.5px solid #d6a8ff;
+  background:
+    radial-gradient(circle at 50% 42%, transparent 0 20%, #d6a8ff55 21% 23%, transparent 24%),
+    repeating-linear-gradient(45deg, #3b1258 0 6px, #2a0d3f 6px 12px);
+  box-shadow: 0 0 12px #b06bff77, inset 0 0 12px #000a;
+}
+.omen-card .omen-flame { bottom: 34%; height: 46%; }
+.omen-card b { position: relative; max-width: 100%; font-size: 9px; font-weight: 800; line-height: 1.2; color: #f1dcff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px #000; }
+.omen-card small { position: relative; font-size: 8px; font-weight: 800; color: #cdb4e6; white-space: nowrap; }
+.slot.omen-ready { cursor: pointer; }
+.slot.omen-ready .omen-card { animation: omen-ready 1.6s ease-in-out infinite; }
+.slot.omen-ready .omen-card small { color: #fff; background: #8a2bd0; padding: 1px 5px; border-radius: 99px; }
+@keyframes omen-ready { 50% { box-shadow: 0 0 0 2px #f1dcff, 0 0 22px #b06bffcc, inset 0 0 12px #000a; } }
+.dark-confirm .end-confirm-body { border-color: #b06bff99; box-shadow: 0 20px 50px #000c, 0 0 30px #b06bff55; }
+.dkc-effect { margin: 0; font-size: 12.5px; line-height: 1.55; color: #e7d6f5; }
+.dkc-go { color: #fff; background: linear-gradient(180deg, #8a2bd0, #5a1590); border-color: #d6a8ff; }
 /* 『演出家』の登場：バトル場全体の背景を真紅と黒の二色が支配する（形は DirectorField.tsx が毎フレーム切る） */
 .board.field-director { isolation: isolate; }
 .director-field {
@@ -928,7 +948,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .director-field .df-crown, .director-crown { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .director-crown { z-index: 3; border-radius: inherit; }
 @keyframes director-in { from { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .field-mist, .omen-flame i, .field-dark.field-layer, .field-omen.field-layer { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .field-mist, .omen-flame i, .field-dark.field-layer, .field-omen.field-layer, .slot.omen-ready .omen-card { animation: none; } }
 
 /* バズ：ボタン（残りの玉）、マスターの帯の残り、カットイン、盤面での対象の強調 */
 /* バズの色：ホログラム（シアン→紫→ピンク）。キラカードの光と同じ系統で、属性の色・闇の紫・ターン終了の金と重ならない */

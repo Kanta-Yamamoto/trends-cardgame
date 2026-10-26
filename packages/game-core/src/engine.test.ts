@@ -10,15 +10,18 @@ import {
   castTargets,
   createGame,
   damageCutOn,
+  darkFallSlots,
   darkOmens,
   delayedDamageOn,
   effectiveCost,
   isShielded,
   legalTargets,
+  openSlots,
   previewAttack,
   viewUnit,
   withRushBoost,
 } from "./engine";
+import { planTurnSearch } from "./search";
 import { type Action, type GameState, type RuleCard, RuleError, type Unit } from "./types";
 
 type Extra = Partial<RuleCard>;
@@ -259,6 +262,9 @@ const play = (s: GameState, handIndex: number, slot: number, player: "p1" | "p2"
 const cast = (s: GameState, handIndex: number, target?: { side: "enemy" | "ally"; slot: number }) =>
   run(s, { type: "cast", player: "p1", handIndex, target }).state;
 const end = (s: GameState, player: "p1" | "p2" = "p1") => run(s, { type: "endTurn", player }).state;
+/** 闇堕ち：闇の気配を、その枠に闇堕ちの姿で出す */
+const fall = (s: GameState, slot: number, player: "p1" | "p2" = "p1") =>
+  run(s, { type: "darkFall", player, slot }).state;
 const hit = (s: GameState, from: number, slot: number) =>
   run(s, { type: "attack", player: "p1", from, target: { kind: "unit", slot } });
 const face = (s: GameState, from: number) =>
@@ -562,7 +568,7 @@ describe("★5 の作り直し（ヒバナ・カグラ・陰謀論者・クサ�
     (s.players.p1.field[0] as Unit).damage = 3;
     s = end(s);
     expect(s.players.p1.field[0]).toBeNull();
-    const r = run(s, { type: "endTurn", player: "p2" });
+    const r = run(end(s, "p2"), { type: "darkFall", player: "p1", slot: 0 });
     const dark = r.state.players.p1.field[0] as Unit;
     expect(dark.dark).toBe(true);
     expect(r.events).toContainEqual({
@@ -803,7 +809,7 @@ describe("バトルと闇堕ち", () => {
     expect(r.events).toContainEqual({ type: "darkOmen", player: "p2", slot: 0, cardId: "ren" });
     expect(r.state.players.p2.field[0]).toBeNull();
     expect(r.state.players.p2.trash).toContain("ren");
-    expect(darkOmens(r.state, "p2")).toEqual([{ cardId: "ren", slot: 0 }]);
+    expect(darkOmens(r.state, "p2")).toEqual([{ cardId: "ren", slot: 0, turn: r.state.turn }]);
   });
   it("ライフが0になったら勝ち、以降は操作できない", () => {
     let s = play(game(["twin"]), 0, 0);
@@ -1196,17 +1202,21 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     expect(darkOmens(s, "p1")).toEqual([]);
   });
 
-  it("破壊されたら闇の気配。次の自分のターンの始めに、コストなしで闇堕ちの姿で出て、闇堕ちしたときの効果が働く", () => {
+  it("破壊されたら闇の気配がその枠に残る。自分のターンに闇堕ちさせると、コストなしで闇堕ちの姿で出て、闇堕ちしたときの効果が働く", () => {
     let s = play(game(["ren"]), 0, 3);
     s = killOnFoeTurn(s, 3);
     expect(s.players.p1.field[3]).toBeNull();
-    expect(darkOmens(s, "p1")).toEqual([{ cardId: "ren", slot: 3 }]);
-    const r = run(s, { type: "endTurn", player: "p2" });
+    expect(darkOmens(s, "p1")).toEqual([{ cardId: "ren", slot: 3, turn: s.turn }]);
+    // 自分のターンが来ても、自動では戻らない（10月26日に「自動で戻る」から変更）
+    const started = run(s, { type: "endTurn", player: "p2" });
+    expect(started.events.map((e) => e.type)).not.toContain("darkFall");
+    s = started.state;
+    expect(s.players.p1.field[3]).toBeNull();
+    const mana = s.players.p1.mana;
+    const r = run(s, { type: "darkFall", player: "p1", slot: 3 });
     s = r.state;
-    const types = r.events.map((e) => e.type);
-    expect(types).toContain("darkFall");
-    // ターンの始めに出る（引くより前）
-    expect(types.indexOf("darkFall")).toBeLessThan(types.indexOf("drew"));
+    expect(r.events.map((e) => e.type)).toContain("darkFall");
+    expect(s.players.p1.mana).toBe(mana);
     expect(s.players.p1.trash).not.toContain("ren");
     expect(darkOmens(s, "p1")).toEqual([]);
     const u = s.players.p1.field[3];
@@ -1218,7 +1228,7 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
   it("闇堕ちの姿は、出たターンから相手のキャラクターに攻撃できる（突進。プレイヤーは次のターンから）", () => {
     let s = withFoe(["ren"], ["wall"]);
     s = play(s, 0, 0);
-    s = end(killOnFoeTurn(s), "p2");
+    s = fall(end(killOnFoeTurn(s), "p2"), 0);
     const u = s.players.p1.field[0];
     expect(u?.dark).toBe(true);
     expect(u?.canAttack).toBe(true);
@@ -1231,7 +1241,7 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     expect(attackTargets(s, "p1", 0, catalog)).toContainEqual({ kind: "leader" });
   });
 
-  it("自分のターンに破壊されても、そのターンには戻らず、次の自分のターンの始めに戻る", () => {
+  it("闇の気配が残ったターンは闇堕ちできない（自分のターンに破壊されたら、次の自分のターンから）", () => {
     let s = withFoe(["ren"], ["big"]);
     s = play(s, 0, 0);
     const mine = s.players.p1.field[0] as Unit;
@@ -1239,15 +1249,46 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     s = hit(s, 0, 0).state;
     expect(s.players.p1.field[0]).toBeNull();
     expect(darkOmens(s, "p1")).toHaveLength(1);
+    expect(darkFallSlots(s, "p1")).toEqual([]);
+    expect(() => fall(s, 0)).toThrow("闇の気配が残ったターンは、闇堕ちできません");
     s = end(s);
-    expect(s.players.p1.field[0]).toBeNull();
+    // 相手のターンには闇堕ちできない
+    expect(darkFallSlots(s, "p1")).toEqual([]);
+    expect(() => fall(s, 0)).toThrow("相手のターンです");
     s = end(s, "p2");
-    expect(s.players.p1.field[0]?.dark).toBe(true);
+    expect(s.players.p1.field[0]).toBeNull();
+    expect(darkFallSlots(s, "p1")).toEqual([0]);
+    expect(fall(s, 0).players.p1.field[0]?.dark).toBe(true);
+  });
+
+  it("闇堕ちは自分のターンの好きなときにできる。しなければ闇の気配は残り続ける", () => {
+    let s = play(game(["ren", "f"]), 0, 0);
+    s = end(killOnFoeTurn(s, 0), "p2");
+    s.players.p1.mana = 10;
+    s = play(s, s.players.p1.hand.indexOf("f"), 1);
+    s = end(end(s), "p2");
+    expect(darkOmens(s, "p1")).toHaveLength(1);
+    expect(fall(s, 0).players.p1.field[0]?.dark).toBe(true);
+  });
+
+  it("闇の気配がない枠では闇堕ちできない", () => {
+    expect(() => fall(game([]), 0)).toThrow("その場所に闇の気配はありません");
+  });
+
+  it("闇の気配は枠をふさぐ：その枠には出せず、効果で出すキャラクターもほかの枠へ", () => {
+    let s = game(["f", "f"]);
+    s.players.p1.trash = ["ren"];
+    s.players.p1.darkOmens = [{ cardId: "ren", slot: 0, turn: 0 }];
+    s.players.p1.mana = 10;
+    expect(() => play(s, 0, 0)).toThrow("闇の気配がある場所には出せません");
+    expect(openSlots(s, "p1")).toEqual([1, 2, 3, 4]);
+    s = play(s, 0, 1);
+    expect(s.players.p1.field[1]?.cardId).toBe("f");
   });
 
   it("闇堕ちの姿が破壊されたら消える（墓地にも行かず、もう戻らない）", () => {
     let s = play(game(["ren"]), 0, 0);
-    s = end(killOnFoeTurn(s), "p2");
+    s = fall(end(killOnFoeTurn(s), "p2"), 0);
     expect(s.players.p1.field[0]?.dark).toBe(true);
     const r = run(killOnFoeTurn(s), { type: "endTurn", player: "p2" });
     expect(r.state.players.p1.field[0]).toBeNull();
@@ -1257,7 +1298,7 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
 
   it("闇堕ちの姿が破壊されたときの出来事は「消えた」", () => {
     let s = play(game(["ren"]), 0, 0);
-    s = end(killOnFoeTurn(s), "p2");
+    s = fall(end(killOnFoeTurn(s), "p2"), 0);
     s = end(s);
     s.players.p2.mana = 30;
     s.players.p2.hand = ["kill", ...s.players.p2.hand];
@@ -1269,7 +1310,7 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
 
   it("TL浄化で元の姿に戻ったカードは、破壊されたら墓地へ行くが、もう闇堕ちしない", () => {
     let s = play(game(["ren", "cleanse"]), 0, 0);
-    s = end(killOnFoeTurn(s), "p2");
+    s = fall(end(killOnFoeTurn(s), "p2"), 0);
     s.players.p1.mana = 10;
     s = cast(s, 0);
     expect(s.players.p1.field[0]?.dark).toBe(false);
@@ -1282,26 +1323,28 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     let s = game([]);
     s.players.p1.trash = ["ren", "ren"];
     s.players.p1.darkOmens = [
-      { cardId: "ren", slot: 0 },
-      { cardId: "ren", slot: 1 },
+      { cardId: "ren", slot: 0, turn: 0 },
+      { cardId: "ren", slot: 1, turn: 0 },
     ];
-    s = end(end(s), "p2");
+    s = fall(fall(end(end(s), "p2"), 0), 1);
     expect(s.players.p1.field.filter((u) => u?.dark)).toHaveLength(2);
     expect(s.players.p1.trash).toEqual([]);
   });
 
-  it("破壊された枠が埋まっていれば、ほかの空き枠へ。空きが無ければ空くまで待つ", () => {
-    const filler = play(game(["f"]), 0, 0).players.p1.field[0] as Unit;
-    const s = game([]);
-    s.players.p1.trash = ["ren"];
-    s.players.p1.darkOmens = [{ cardId: "ren", slot: 0 }];
-    s.players.p1.field = s.players.p1.field.map((_, i) => (i === 4 ? null : { ...filler, uid: 500 + i }));
-    let t = end(end(s), "p2");
-    expect(t.players.p1.field[4]?.dark).toBe(true);
-    s.players.p1.field[4] = { ...filler, uid: 600 };
-    t = end(end(s), "p2");
-    expect(t.players.p1.field.some((u) => u?.dark)).toBe(false);
-    expect(darkOmens(t, "p1")).toEqual([{ cardId: "ren", slot: 0 }]);
+  it("墓地から無くなったカード（蘇生など）の闇の気配は消え、枠が空く", () => {
+    const s = game(["f"]);
+    s.players.p1.darkOmens = [{ cardId: "ren", slot: 0, turn: 0 }];
+    s.players.p1.mana = 10;
+    const t = play(s, 0, 1);
+    expect(darkOmens(t, "p1")).toEqual([]);
+    expect(openSlots(t, "p1")).toContain(0);
+  });
+
+  it("CPU は、闇堕ちさせられる闇の気配があれば、まず闇堕ちさせる", () => {
+    let s = play(game(["ren"]), 0, 2);
+    s = end(killOnFoeTurn(s, 2), "p2");
+    expect(planTurnSearch(s, "p1", catalog)[0]).toEqual({ type: "darkFall", player: "p1", slot: 2 });
+    expect(planTurn(s, "p1", catalog)[0]).toEqual({ type: "darkFall", player: "p1", slot: 2 });
   });
 });
 
@@ -1442,8 +1485,8 @@ describe("闇堕ちの姿の効果（確定除去・手札に戻す・プレイ�
     // p2 の闇堕ちは p2 のターンの始めに出る
     let s = game(["back", "big"]);
     s.players.p2.trash = ["ren"];
-    s.players.p2.darkOmens = [{ cardId: "ren", slot: 0 }];
-    s = end(s);
+    s.players.p2.darkOmens = [{ cardId: "ren", slot: 0, turn: 0 }];
+    s = fall(end(s), 0, "p2");
     expect(s.players.p2.field[0]?.dark).toBe(true);
     s = end(s, "p2");
     s.players.p1.mana = 10;
@@ -1744,7 +1787,7 @@ describe("推し属性の作り直し（10月24日。docs/design-oshi.md）", ()
   const fin = (s: GameState, player: "p1" | "p2" = "p1") => go(s, { type: "endTurn", player });
   const ids = (s: GameState) => s.players.p1.field.map((u) => u?.cardId ?? null);
 
-  /** p1 の slot のキャラクターを、相手の big 2 体で破壊して、次の p1 のターンの始めまで進める */
+  /** p1 の slot のキャラクターを、相手の big 2 体で破壊して、次の p1 のターンに闇堕ちさせる */
   function killAndReturn(s: GameState, slot: number): GameState {
     s = fin(s);
     s.players.p2.mana = 30;
@@ -1757,7 +1800,7 @@ describe("推し属性の作り直し（10月24日。docs/design-oshi.md）", ()
     for (const from of [0, 1])
       if (s.players.p1.field[slot])
         s = go(s, { type: "attack", player: "p2", from, target: { kind: "unit", slot } });
-    return fin(s, "p2");
+    return go(fin(s, "p2"), { type: "darkFall", player: "p1", slot });
   }
 
   it("エースの闇堕ち：センターで戻れば、左右に親衛隊を1体ずつ出し、攻撃力+2・体力+2", () => {
@@ -1911,14 +1954,14 @@ describe("炎属性の作り直し（10月24日。docs/design-fire.md）", () =>
     expect(viewUnit(s, "p1", guarded, local).keywords).toContain("ガード");
   });
 
-  it("エース：破壊された次の自分のターンの始めに、闇の姿が速攻で戻る。相手全員を晒し状態にして、相手のプレイヤーを殴れる", () => {
+  it("エース：闇堕ちさせると、闇の姿が速攻で戻る。相手全員を晒し状態にして、相手のプレイヤーを殴れる", () => {
     let s = put(game(["ren"]), 0, 2);
     (s.players.p1.field[2] as Unit).damage = 99;
     s = fin(s);
     s.players.p2.mana = 30;
     s.players.p2.hand = ["sg", ...s.players.p2.hand];
     s = put(s, 0, 2, "p2");
-    s = fin(s, "p2");
+    s = go(fin(s, "p2"), { type: "darkFall", player: "p1", slot: 2 }).state;
     const ace = s.players.p1.field[2] as Unit;
     expect(ace.dark).toBe(true);
     expect(viewUnit(s, "p1", ace, local)).toMatchObject({ attack: 4, hp: 2 });
@@ -2120,7 +2163,7 @@ describe("自然属性の作り直し（10月25日。docs/design-nature.md）", 
     let s = game(["k5"], F(12), 20);
     s = put(s, 0, 0);
     (s.players.p1.field[0] as Unit).damage = 99;
-    s = fin(fin(s), "p2");
+    s = go(fin(fin(s), "p2"), { type: "darkFall", player: "p1", slot: 0 }).state;
     const dark = s.players.p1.field[0] as Unit;
     expect(dark.dark).toBe(true);
     expect(stat(s, 0)).toEqual([3, 1]);

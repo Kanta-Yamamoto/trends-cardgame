@@ -5,10 +5,12 @@ import {
   buzzBlock,
   canUnitAttack,
   castTargets,
+  darkFallSlots,
   darkOmens,
   delayedDamageOn,
   effectiveCost,
   hasPassive,
+  openSlots,
   opponent,
   sacrificeCandidates,
   viewUnit,
@@ -173,7 +175,7 @@ function candidates(state: GameState, player: PlayerId, catalog: Catalog): Actio
   }
   const me = state.players[player];
   const out: Action[] = [];
-  const empty = me.field.flatMap((u, slot) => (u ? [] : [slot]));
+  const empty = openSlots(state, player);
   const slots = [
     ...new Set([empty.includes(CENTER_SLOT) ? CENTER_SLOT : -1, empty[0] ?? -1, empty.at(-1) ?? -1]),
   ].filter((s) => s >= 0);
@@ -282,6 +284,9 @@ export function planTurnSearch(
   catalog: Catalog,
   options: Partial<SearchOptions> = {},
 ): Action[] {
+  // 闇堕ちさせられる闇の気配があれば、まず闇堕ちさせる（1 手ずつ返し、闇堕ちしたあとの盤面で考え直す）
+  const fall = darkFallSlots(start, player)[0];
+  if (fall !== undefined) return [{ type: "darkFall", player, slot: fall }];
   const opt = { ...DEFAULT_SEARCH, ...options };
   // 構え（攻めるか、盤面を取るか）はターンの初めの盤面で決める
   const bias = faceBiasOf(start, player, catalog);
