@@ -10,17 +10,17 @@ import {
   MAX_DECK_ATTRIBUTES,
 } from "@trends/cards";
 import { useCallback, useMemo, useState } from "react";
-import { Link } from "react-router";
-import { AttrChips } from "../cards/AttrChips";
 import { EffectText } from "../cards/EffectText";
 import { ATTR_META } from "../cards/meta";
 import { CardZoom } from "../game/CardZoom";
+import { CostStrip } from "../game/CostStrip";
+import { AttrDots, DeckAce, deckGradient } from "../game/DeckArt";
 import { pushDecks, useDecksChanged } from "../game/deckSync";
 import {
   attrsOf,
   builtinDeck,
   type CustomDeck,
-  costCurve,
+  customDeckSel,
   deckErrors,
   loadCustomDecks,
   newDeckId,
@@ -31,7 +31,45 @@ import { useSession } from "../online/session";
 
 type Filter = Attribute | "ニュートラル" | "全部";
 const FILTERS: Filter[] = ["全部", ...ATTRIBUTES, "ニュートラル"];
-const COST_LABELS = ["1", "2", "3", "4", "5", "6", "7+"];
+const ICON_PLUS = (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.4"
+    strokeLinecap="round"
+    aria-hidden="true"
+  >
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+const ICON_COPY = (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="8" y="8" width="12" height="12" rx="2.5" />
+    <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+  </svg>
+);
+const ICON_TRASH = (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+  </svg>
+);
 /** デッキに入れられるカード（トークンは除く）。属性→コスト→★の順 */
 const POOL: CardDef[] = CARDS.filter((c) => !c.token).sort(
   (a, b) =>
@@ -55,7 +93,7 @@ const countsOf = (cards: readonly string[]) => {
 export function Decks() {
   const [list, setList] = useState<CustomDeck[]>(() => loadCustomDecks());
   const [editing, setEditing] = useState<CustomDeck | null>(null);
-  const [copyFrom, setCopyFrom] = useState<DeckId | "">("");
+  const [picking, setPicking] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const user = useSession((s) => s.user);
   // アカウントとそろえ終わったら、一覧を読み直す
@@ -92,104 +130,155 @@ export function Decks() {
     );
   }
 
+  const builtinIds = Object.keys(DECK_INFO) as DeckId[];
   return (
     <section className="page deck-builder">
-      <header className="page-head">
-        <h1>デッキ構築</h1>
-        <p className="muted">
-          {DECK_SIZE} 枚ちょうど・同じカードは {MAX_COPIES} 枚まで・属性は {MAX_DECK_ATTRIBUTES}{" "}
-          つ（ニュートラルのカードはいくつでも）・闇堕ちを持つカードは {MAX_DARK_CARDS}{" "}
-          枚まで（種類は問わない）。 保存したデッキは「CPU と対戦」「オンライン対戦」で選べます。
-        </p>
-        <p className="db-sync muted">
-          {user ? (
-            <>
-              <b>{user.name}</b> のアカウントに保存しています。ほかの端末でも同じアカウントで入れば使えます。
-            </>
-          ) : (
-            <>
-              この端末にだけ保存しています。<Link to="/online">オンライン対戦</Link>
-              の画面でログインすると、ほかの端末でも同じデッキを使えます。
-            </>
-          )}
-        </p>
-      </header>
       {notice && <p className="db-notice">{notice}</p>}
-      <div className="db-actions">
-        <button type="button" className="btn" onClick={() => create([], "新しいデッキ")}>
-          空のデッキから作る
+      <div className="db-make">
+        <button type="button" className="db-mk new" onClick={() => create([], "新しいデッキ")}>
+          <span className="db-mk-ic" aria-hidden="true">
+            {ICON_PLUS}
+          </span>
+          <b>空のデッキから作る</b>
+          <small>{DECK_SIZE}枚を自由に</small>
         </button>
-        <label className="db-copy">
-          <select value={copyFrom} onChange={(e) => setCopyFrom(e.target.value as DeckId | "")}>
-            <option value="">構築済みデッキをコピーして作る…</option>
-            {(Object.keys(DECK_INFO) as DeckId[]).map((id) => (
-              <option key={id} value={id}>
-                {DECK_INFO[id].name}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="btn ghost small"
-            disabled={!copyFrom}
-            onClick={() => {
-              if (!copyFrom) return;
-              const b = builtinDeck(copyFrom);
-              create(b.cards, `${b.name}（コピー）`);
-              setCopyFrom("");
-            }}
-          >
-            コピー
-          </button>
-        </label>
+        <button type="button" className="db-mk copy g2" onClick={() => setPicking(true)}>
+          <span className="db-mk-ic" aria-hidden="true">
+            {ICON_COPY}
+          </span>
+          <b>
+            構築済みを
+            <br />
+            コピーして作る
+          </b>
+          <small>{builtinIds.length}個から選ぶ</small>
+        </button>
+      </div>
+      <div className="sec">
+        <h2>自分のデッキ</h2>
+        <small>{list.length}個</small>
       </div>
       {list.length === 0 ? (
-        <p className="muted">まだデッキがありません。</p>
+        <p className="muted db-empty">まだデッキがありません。</p>
       ) : (
         <ul className="db-saved">
-          {list.map((d) => {
-            const attrs = attrsOf(d.cards);
+          {list.map((d, i) => {
+            const sel = customDeckSel(d);
             const errors = deckErrors(d.cards);
+            const left = DECK_SIZE - d.cards.length;
             return (
-              <li key={d.id} className="db-saved-item">
-                <div className="db-saved-info">
-                  <strong>{d.name}</strong>
-                  <span className="muted">
-                    {attrs.length > 0 ? attrs.join("×") : "ニュートラル"}・{d.cards.length}枚
-                    {errors.length > 0 && <b className="db-bad">（決まりを守れていません）</b>}
-                  </span>
-                </div>
-                <div className="db-saved-btns">
-                  <button type="button" className="btn ghost small" onClick={() => setEditing({ ...d })}>
-                    編集
-                  </button>
-                  <button
-                    type="button"
-                    className="btn ghost small"
-                    onClick={() => create([...d.cards], `${d.name}（コピー）`)}
-                  >
-                    複製
-                  </button>
-                  <button
-                    type="button"
-                    className="btn ghost small danger"
-                    onClick={() => {
-                      if (window.confirm(`「${d.name}」を消しますか？`))
-                        persist(list.filter((x) => x.id !== d.id));
-                    }}
-                  >
-                    消す
-                  </button>
+              <li
+                key={d.id}
+                className="db-saved-item g2"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.06}s` }}
+              >
+                <span className="db-thumb" style={{ background: deckGradient(sel.attrs, sel.ace) }}>
+                  <DeckAce id={sel.ace} />
+                </span>
+                <div className="db-saved-body">
+                  <div>
+                    <h3 className="db-saved-name">{d.name}</h3>
+                    <p className="db-saved-meta">
+                      <span className="db-pill">
+                        <AttrDots attrs={sel.attrs} />
+                        {sel.attrs.length > 0 ? sel.attrs.join("×") : "ニュートラル"}
+                      </span>
+                      <span className={`db-cnt ${left === 0 ? "ok" : "ng"}`}>
+                        {d.cards.length}/{DECK_SIZE}
+                      </span>
+                      {errors.length === 0 ? (
+                        <span className="tag ok">使えます</span>
+                      ) : (
+                        <span className="tag ng">{left > 0 ? `あと${left}枚` : "直すところあり"}</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="db-saved-btns">
+                    <button type="button" className="btn small" onClick={() => setEditing({ ...d })}>
+                      編集
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      aria-label="複製"
+                      onClick={() => create([...d.cards], `${d.name}（コピー）`)}
+                    >
+                      {ICON_COPY}
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-btn danger"
+                      aria-label="消す"
+                      onClick={() => {
+                        if (window.confirm(`「${d.name}」を消しますか？`))
+                          persist(list.filter((x) => x.id !== d.id));
+                      }}
+                    >
+                      {ICON_TRASH}
+                    </button>
+                  </div>
                 </div>
               </li>
             );
           })}
         </ul>
       )}
-      <p className="muted">
-        <Link to="/play">CPU と対戦</Link>・<Link to="/online">オンライン対戦</Link>{" "}
-        のデッキ選択に「自分のデッキ」として出ます
+      <p className="db-foot g2">
+        {DECK_SIZE} 枚ちょうど・同じカードは {MAX_COPIES} 枚まで・属性は {MAX_DECK_ATTRIBUTES}{" "}
+        つ（ニュートラルのカードはいくつでも）・闇堕ちを持つカードは {MAX_DARK_CARDS}{" "}
+        枚まで（種類は問わない）。保存したデッキは「CPUと対戦」「オンライン対戦」のデッキ選びに出ます。
+        {user
+          ? `${user.name} のアカウントに保存しています。ほかの端末でも使えます。`
+          : "この端末にだけ保存しています。"}
       </p>
+      {picking && (
+        <div className="deck-confirm" role="dialog" aria-modal="true" aria-label="コピーする構築済みデッキ">
+          <button
+            type="button"
+            className="deck-confirm-bg"
+            aria-label="閉じる"
+            onClick={() => setPicking(false)}
+          />
+          <section className="db-copy-body">
+            <h2>どのデッキをコピーしますか</h2>
+            <ul className="db-copy-list">
+              {builtinIds.map((id) => {
+                const b = builtinDeck(id);
+                return (
+                  <li key={id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPicking(false);
+                        create(b.cards, `${b.name}（コピー）`);
+                      }}
+                    >
+                      <span className="db-copy-dots">
+                        <AttrDots attrs={b.attrs} />
+                      </span>
+                      <span>{b.name}</span>
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M9 6l6 6-6 6" />
+                      </svg>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <button type="button" className="btn ghost lg" onClick={() => setPicking(false)}>
+              やめる
+            </button>
+          </section>
+        </div>
+      )}
     </section>
   );
 }
@@ -212,7 +301,6 @@ function DeckEditor({
   const cards = useMemo(() => expand(counts), [counts]);
   const attrs = attrsOf(cards);
   const errors = deckErrors(cards);
-  const curve = costCurve(cards);
   const total = cards.length;
 
   const canAdd = (c: CardDef) => {
@@ -240,14 +328,27 @@ function DeckEditor({
     if (filter === "ニュートラル") return c.attributes.length === 0;
     return c.attributes[0] === filter;
   });
-  const maxCurve = Math.max(1, ...curve);
+  const full = total === DECK_SIZE;
+  const darkN = cards.filter((id) => CARD_BY_ID[id]?.dark).length;
+  // 枚数の足りなさは上の輪と札で見せるので、それ以外の直すところだけ並べる
+  const otherErrors = errors.filter((e) => !e.startsWith("デッキは"));
 
   return (
-    <section className="page deck-builder">
+    <section className="page deck-builder db-editor">
       <div className="db-head">
         <div className="db-head-row">
-          <button type="button" className="btn ghost small" onClick={onBack}>
-            ← 戻る
+          <button type="button" className="topbar-back g1" aria-label="デッキの一覧に戻る" onClick={onBack}>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M15 6l-6 6 6 6" />
+            </svg>
           </button>
           <input
             className="db-name"
@@ -258,7 +359,7 @@ function DeckEditor({
           />
           <button
             type="button"
-            className="btn"
+            className="btn db-save"
             disabled={errors.length > 0}
             onClick={() =>
               onSave({ ...deck, name: name.trim() || "自分のデッキ", cards, updated: Date.now() })
@@ -267,65 +368,88 @@ function DeckEditor({
             保存
           </button>
         </div>
-        <div className="db-summary">
-          <b className={total === DECK_SIZE ? "db-ok" : ""}>
-            {total}/{DECK_SIZE}
-          </b>
-          <span className="db-attrs">
-            {attrs.length > 0
-              ? attrs.map((a) => (
-                  <span
-                    key={a}
-                    className="chip attr"
-                    style={{ background: ATTR_META[a].color, color: ATTR_META[a].deep }}
-                  >
-                    {a}
-                  </span>
-                ))
-              : "属性なし"}
+        <section className="db-sum g2">
+          <span className={`db-ring ${full ? "full" : ""}`}>
+            <svg viewBox="0 0 76 76" aria-hidden="true">
+              <defs>
+                <linearGradient id="db-ring-g" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stopColor="#9fe3fb" />
+                  <stop offset=".5" stopColor="#2fa8e4" />
+                  <stop offset="1" stopColor="#1272b0" />
+                </linearGradient>
+              </defs>
+              <circle className="bg" cx="38" cy="38" r="32" />
+              <circle
+                className="fg"
+                cx="38"
+                cy="38"
+                r="32"
+                strokeDasharray="201"
+                strokeDashoffset={201 * (1 - Math.min(1, total / DECK_SIZE))}
+              />
+            </svg>
+            <b>
+              {total}
+              <small>/ {DECK_SIZE}</small>
+            </b>
           </span>
-          <span className="db-curve" role="img" aria-label="コストごとの枚数">
-            {COST_LABELS.map((label, i) => (
-              <span key={label} className="db-bar" title={`${label}コスト ${curve[i] ?? 0}枚`}>
-                <i style={{ height: `${((curve[i] ?? 0) / maxCurve) * 100}%` }} />
-                <small>{label}</small>
-                <em>{curve[i] ?? 0}</em>
+          <div className="db-sum-r">
+            <p className="db-sum-top">
+              <span className="db-pill">
+                <AttrDots attrs={attrs} />
+                {attrs.length > 0 ? attrs.join("×") : "属性なし"}
               </span>
-            ))}
-          </span>
-        </div>
-        {errors.length > 0 && (
+              {errors.length === 0 ? (
+                <span className="tag ok">使えます</span>
+              ) : (
+                <span className="tag ng">
+                  {total < DECK_SIZE ? `あと${DECK_SIZE - total}枚` : "直すところあり"}
+                </span>
+              )}
+              <span className="db-dark-n">
+                闇堕ち {darkN}/{MAX_DARK_CARDS}
+              </span>
+            </p>
+            <CostStrip cards={cards} />
+          </div>
+        </section>
+        {otherErrors.length > 0 && (
           <ul className="db-errors">
-            {errors.map((e) => (
+            {otherErrors.map((e) => (
               <li key={e}>{e}</li>
             ))}
           </ul>
         )}
-      </div>
-
-      <div className="db-filter">
-        {FILTERS.map((f) => (
+        <div className="db-filter" role="toolbar" aria-label="絞り込み">
+          {FILTERS.map((f) => (
+            <button
+              key={f}
+              type="button"
+              className={`g-chip ${f === "全部" ? "all" : ""} ${filter === f ? "on" : ""}`}
+              aria-pressed={filter === f}
+              onClick={() => setFilter(f)}
+            >
+              {f === "ニュートラル" ? (
+                <span className="at neutral" aria-hidden="true">
+                  ニ
+                </span>
+              ) : f !== "全部" ? (
+                <span className="at" style={{ background: ATTR_META[f].color }} aria-hidden="true">
+                  {ATTR_META[f].mark}
+                </span>
+              ) : null}
+              {f}
+            </button>
+          ))}
           <button
-            key={f}
             type="button"
-            className={`chip ${filter === f ? "on" : ""}`}
-            style={
-              f !== "全部" && f !== "ニュートラル"
-                ? {
-                    background: filter === f ? ATTR_META[f].color : undefined,
-                    color: filter === f ? ATTR_META[f].deep : undefined,
-                  }
-                : undefined
-            }
-            onClick={() => setFilter(f)}
+            className={`g-chip all ${onlyIn ? "on" : ""}`}
+            aria-pressed={onlyIn}
+            onClick={() => setOnlyIn((v) => !v)}
           >
-            {f}
+            入れたカードだけ
           </button>
-        ))}
-        <label className="db-only">
-          <input type="checkbox" checked={onlyIn} onChange={(e) => setOnlyIn(e.target.checked)} />
-          入れたカードだけ
-        </label>
+        </div>
       </div>
 
       <ul className="db-list">
@@ -334,31 +458,41 @@ function DeckEditor({
           const a = c.attributes[0];
           const meta = a ? ATTR_META[a] : null;
           return (
-            <li key={c.id} className={`db-row ${n > 0 ? "in" : ""}`}>
-              <span
-                className="db-cost"
-                style={meta ? { background: meta.color, color: meta.deep } : undefined}
-              >
-                {c.cost}
-              </span>
+            <li key={c.id} className={`db-row g2 ${n > 0 ? "in" : ""}`}>
+              <span className="db-cost">{c.cost}</span>
               <button type="button" className="db-card" onClick={() => setZoom(c)}>
                 <span className="db-title">
+                  {a && meta ? (
+                    <span className="at" style={{ background: meta.color }} title={a}>
+                      {meta.mark}
+                    </span>
+                  ) : (
+                    <span className="at neutral" title="ニュートラル">
+                      ニ
+                    </span>
+                  )}
                   <b>{c.name}</b>
-                  <span className="db-stars">{"★".repeat(c.rarity)}</span>
+                </span>
+                <span className="db-tags">
                   {c.type === "icon" && (
-                    <span className="db-stats">
-                      <i className="t-atk">{c.attack}</i>/<i className="t-hp">{c.hp}</i>
-                    </span>
+                    <>
+                      <i className="db-ball atk">{c.attack}</i>
+                      <i className="db-ball hp">{c.hp}</i>
+                    </>
                   )}
-                </span>
-                <span className="db-effect">
-                  <AttrChips card={c} />
-                  {c.effect && (
-                    <span className="db-text">
-                      <EffectText text={c.effect} />
+                  <span className="db-stars">{"★".repeat(c.rarity)}</span>
+                  {c.kaiwai.map((k) => (
+                    <span key={k} className="tag">
+                      {k}界隈
                     </span>
-                  )}
+                  ))}
+                  {c.dark && <span className="tag db-dark">闇堕ち</span>}
                 </span>
+                {c.effect && (
+                  <span className="db-text">
+                    <EffectText text={c.effect} />
+                  </span>
+                )}
               </button>
               <span className="db-count">
                 <button
@@ -373,7 +507,7 @@ function DeckEditor({
                 <b>{n}</b>
                 <button
                   type="button"
-                  className="db-step"
+                  className="db-step plus"
                   disabled={!canAdd(c)}
                   onClick={() => add(c.id)}
                   aria-label="1枚増やす"

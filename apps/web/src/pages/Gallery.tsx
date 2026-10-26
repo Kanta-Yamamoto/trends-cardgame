@@ -112,36 +112,28 @@ export function Gallery() {
   const zoom = zoomAt >= 0 ? order[zoomAt] : undefined;
 
   return (
-    <section className="page">
-      <header className="page-head">
-        <h1>カード一覧</h1>
-        <p className="muted">
-          カードを押すと拡大して、効果を大きな文字で読めます。拡大したまま「前へ・次へ」で順に見られます。
-        </p>
-        {isError && (
-          <p className="notice">
-            サーバーにつながらないため、アプリに入っているカードデータを表示しています。
-          </p>
-        )}
-      </header>
+    <section className="page gallery-page">
+      {isError && (
+        <p className="notice">サーバーにつながらないため、アプリに入っているカードデータを表示しています。</p>
+      )}
       <div className="g-filters" role="toolbar" aria-label="属性で絞り込む">
         {([null, ...ATTRIBUTES, "ニュートラル"] as Filter[]).map((f) => (
           <button
             key={f ?? "all"}
             type="button"
-            className={`g-chip ${filter === f ? "on" : ""}`}
-            style={
-              f && f !== "ニュートラル"
-                ? {
-                    borderColor: ATTR_META[f].color,
-                    color: filter === f ? "#fff" : ATTR_META[f].deep,
-                    background: filter === f ? ATTR_META[f].deep : undefined,
-                  }
-                : undefined
-            }
+            className={`g-chip ${f ? "" : "all"} ${filter === f ? "on" : ""}`}
             aria-pressed={filter === f}
             onClick={() => setFilter(f)}
           >
+            {f === "ニュートラル" ? (
+              <span className="at neutral" aria-hidden="true">
+                ニ
+              </span>
+            ) : f ? (
+              <span className="at" style={{ background: ATTR_META[f].color }} aria-hidden="true">
+                {ATTR_META[f].mark}
+              </span>
+            ) : null}
             {f ?? "すべて"}
           </button>
         ))}

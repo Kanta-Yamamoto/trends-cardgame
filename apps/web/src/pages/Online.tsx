@@ -3,7 +3,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { io, type Socket } from "socket.io-client";
 import { API_URL } from "../api/client";
-import { Account, Login } from "../auth/Login";
+import { Login } from "../auth/Login";
 import { type DeckSel, deckFromRef } from "../game/decks";
 import { type RemoteLink, type RemoteUpdate, useGame } from "../game/store";
 import { formatClock, type RatingChange, useLive } from "../online/live";
@@ -174,8 +174,8 @@ function useElapsed(since: number | null) {
   return since === null ? 0 : Math.max(0, now - since);
 }
 
-/** 自分のレーティング（レート・戦績） */
-function MyRatingLine({ token }: { token: string | null }) {
+/** 自分のレーティング（レート・戦績）とランダムマッチの決まり */
+function RateCard({ token }: { token: string | null }) {
   const [mine, setMine] = useState<MyRating | null>(null);
   useEffect(() => {
     api<MyRating>("/me/rating", {}, token)
@@ -183,23 +183,42 @@ function MyRatingLine({ token }: { token: string | null }) {
       .catch(() => {});
   }, [token]);
   return (
-    <p className="my-rating">
-      あなたのレート <b>{mine?.rating ?? "—"}</b>
-      {mine && mine.games > 0 && (
-        <small>
-          {mine.games}戦 {mine.wins}勝
-        </small>
-      )}
-      <Link to="/ranking" className="btn ghost small">
-        ランキング
-      </Link>
-    </p>
+    <section className="rate-card g3">
+      <div className="rate-top">
+        <div>
+          <span className="rate-label">あなたのレート</span>
+          <span className="rate-num">{mine?.rating ?? "—"}</span>
+          <span className="rate-rec">
+            {mine?.games ?? 0}戦 {mine?.wins ?? 0}勝
+          </span>
+        </div>
+        <Link to="/ranking" className="rank-link">
+          ランキング
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </Link>
+      </div>
+      <p className="rate-facts">
+        <span className="tag">1ターン 60秒</span>
+        <span className="tag">持ち時間 10分</span>
+        <span className="tag">勝つとレートが上がる</span>
+      </p>
+    </section>
   );
 }
 
 /** デッキを選ぶと待ち行列に入り、相手が見つかったらその部屋に入る */
 function RandomMatch() {
-  const { token, logout } = useSession();
+  const { user, token, logout } = useSession();
   const navigate = useNavigate();
   /** 相手を探しているデッキ（null なら選ぶ前） */
   const [deck, setDeck] = useState<DeckSel | null>(null);
@@ -233,38 +252,39 @@ function RandomMatch() {
   };
 
   return (
-    <div className="online-card">
-      <h2>ランダムマッチ</h2>
-      <MyRatingLine token={token} />
-      {deck ? (
+    <>
+      <RateCard token={token} />
+      <p className="muted online-note">
+        レートの近い人と対戦します。勝つとレートが上がり、負けると下がります（はじめは 1500）。
+      </p>
+      {error && <p className="notice">{error}</p>}
+      <DeckGrid
+        onPick={(sel) => {
+          setError(null);
+          setDeck(sel);
+          setSince(Date.now());
+        }}
+        confirmLabel="このデッキで相手を探す"
+      />
+      {deck && (
         <div className="searching" role="status">
-          <span className="search-spin" aria-hidden="true" />
-          <p>
-            相手を探しています <b>{formatClock(waited)}</b>
-          </p>
+          <div className="radar" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <span className="radar-sweep" />
+            <span className="radar-me">{Array.from(user?.name ?? "")[0] ?? "？"}</span>
+          </div>
+          <h2>相手を探しています</h2>
+          <b className="searching-clock">{formatClock(waited)}</b>
           <p className="muted">デッキ：{deck.name}</p>
           <p className="muted">15 秒たっても相手がいなければ、CPU と対戦します（レートは動きません）。</p>
           <button type="button" className="btn ghost" onClick={cancel}>
             やめる
           </button>
         </div>
-      ) : (
-        <>
-          <p className="muted">
-            レートの近い人と対戦します。勝つとレートが上がり、負けると下がります（はじめは 1500）。
-          </p>
-          {error && <p className="notice">{error}</p>}
-          <DeckGrid
-            onPick={(sel) => {
-              setError(null);
-              setDeck(sel);
-              setSince(Date.now());
-            }}
-            confirmLabel="このデッキで相手を探す"
-          />
-        </>
       )}
-    </div>
+    </>
   );
 }
 
@@ -302,21 +322,13 @@ export function OnlineLobby() {
 
   return (
     <section className="page online">
-      <header className="page-head">
-        <h1>オンライン対戦</h1>
-        <p className="muted">
-          ランダムマッチ（レート戦）か、友だちと合言葉で対戦します。1 ターンは 60
-          秒まで（過ぎたら自動でターン終了）。持ち時間は 1 試合で 10 分で、使い切ると負けです。
-        </p>
-        <Account />
-      </header>
       {!user ? (
         <Login />
       ) : current === undefined ? null : current ? (
         <ResumeMatch resume={current} />
       ) : (
         <>
-          <div className="online-tabs" role="tablist" aria-label="対戦のしかた">
+          <div className="seg g2" role="tablist" aria-label="対戦のしかた">
             <button
               type="button"
               role="tab"
@@ -340,29 +352,32 @@ export function OnlineLobby() {
             <RandomMatch />
           ) : (
             <>
-              <form className="online-card online-form" onSubmit={join}>
+              <form className="online-card join-card" onSubmit={join}>
                 <h2>合言葉で入る</h2>
-                <input
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="例：K7QX2M"
-                  maxLength={6}
-                  aria-label="合言葉"
-                />
-                <button type="submit" className="btn" disabled={code.trim().length < 6}>
-                  入る
-                </button>
+                <p className="muted">友だちから届いた 6 文字の合言葉を入れます。</p>
+                <div className="join-row">
+                  <input
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="K7QX2M"
+                    maxLength={6}
+                    aria-label="合言葉"
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                  />
+                  <button type="submit" className="btn" disabled={code.trim().length < 6}>
+                    入る
+                  </button>
+                </div>
               </form>
-              <div className="online-card">
-                <h2>部屋を作る</h2>
-                <p className="muted">
-                  使うデッキを選ぶと部屋ができます。友だちとの対戦では、レートは動きません。
-                </p>
-                {error && <p className="notice">{error}</p>}
-                <fieldset disabled={busy} className="plain">
-                  <DeckGrid onPick={create} confirmLabel="このデッキで部屋を作る" />
-                </fieldset>
-              </div>
+              <p className="muted online-note">
+                部屋を作るときは、使うデッキを選びます。1 ターンは 60 秒まで、持ち時間は 1 試合で 10
+                分（使い切ると負け）。友だちとの対戦では、レートは動きません。
+              </p>
+              {error && <p className="notice">{error}</p>}
+              <fieldset disabled={busy} className="plain">
+                <DeckGrid onPick={create} confirmLabel="このデッキで部屋を作る" />
+              </fieldset>
             </>
           )}
         </>
@@ -495,10 +510,6 @@ export function OnlineRoom() {
   const full = !!info && !member && !!info.players.p2;
   return (
     <section className="page online">
-      <header className="page-head">
-        <h1>オンライン対戦</h1>
-        <Account />
-      </header>
       {!user ? (
         <Login />
       ) : error ? (
@@ -522,26 +533,53 @@ export function OnlineRoom() {
           <p className="notice">この部屋はもう2人そろっています。</p>
         </div>
       ) : info && !ready ? (
-        <div className="online-card">
-          <h2>{info.players.p1?.name} さんの部屋に入る</h2>
-          <p className="muted">使うデッキを選ぶと対戦が始まります。</p>
+        <>
+          <p className="muted online-note">
+            {info.players.p1?.name} さんの部屋に入ります。使うデッキを選ぶと対戦が始まります。
+          </p>
           <DeckGrid onPick={setDeck} confirmLabel="このデッキで対戦する" />
-        </div>
+        </>
       ) : (
-        <div className="online-card waiting">
-          <h2>相手を待っています</h2>
-          <p className="muted">この合言葉か招待リンクを、対戦したい友だちに送ってください。</p>
-          <p className="room-code">{match?.code ?? code.toUpperCase()}</p>
-          <div className="invite">
-            <input readOnly value={invite} aria-label="招待リンク" onFocus={(e) => e.target.select()} />
-            <button type="button" className="btn" onClick={copy}>
-              {copied ? "コピーしました" : "リンクをコピー"}
+        <>
+          <section className="seats online-card">
+            <div className="seat">
+              <span className="seat-av">{Array.from(user.name)[0] ?? "？"}</span>
+              <b>{user.name}</b>
+              {match?.me && (
+                <span className="seat-deck">{deckFromRef(match.me.deck)?.name ?? "自分のデッキ"}</span>
+              )}
+            </div>
+            <span className="seats-vs">VS</span>
+            <div className="seat">
+              <span className="seat-av wait">?</span>
+              <b>友だち</b>
+              <span className="seat-wait">
+                待っています
+                <i />
+                <i />
+                <i />
+              </span>
+            </div>
+          </section>
+          <section className="online-card code-card">
+            <h2>合言葉</h2>
+            <p className="room-code">
+              {Array.from(match?.code ?? code.toUpperCase()).map((ch, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: 合言葉の文字は同じ字が並ぶことがあるので、場所で見分ける
+                <span key={i} style={{ animationDelay: `${i * 0.05}s` }}>
+                  {ch}
+                </span>
+              ))}
+            </p>
+            <button type="button" className="btn lg" onClick={copy}>
+              {copied ? "コピーしました" : "招待リンクをコピー"}
             </button>
-          </div>
-          {match?.me && (
-            <p className="muted">あなたのデッキ：{deckFromRef(match.me.deck)?.name ?? "自分のデッキ"}</p>
-          )}
-        </div>
+            <p className="room-link">{invite}</p>
+          </section>
+          <p className="room-hint g2">
+            この合言葉か招待リンクを、対戦したい友だちに送ってください。友だちが入ると、すぐに対戦が始まります。友だちとの対戦では、レートは動きません。
+          </p>
+        </>
       )}
     </section>
   );
