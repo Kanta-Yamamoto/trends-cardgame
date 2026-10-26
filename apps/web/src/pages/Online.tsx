@@ -541,19 +541,19 @@ export function OnlineRoom() {
         </>
       ) : (
         <>
-          <section className="seats online-card">
-            <div className="seat">
-              <span className="seat-av">{Array.from(user.name)[0] ?? "？"}</span>
+          <section className="room-seats online-card">
+            <div className="room-seat">
+              <span className="room-av">{Array.from(user.name)[0] ?? "？"}</span>
               <b>{user.name}</b>
               {match?.me && (
-                <span className="seat-deck">{deckFromRef(match.me.deck)?.name ?? "自分のデッキ"}</span>
+                <span className="room-deck">{deckFromRef(match.me.deck)?.name ?? "自分のデッキ"}</span>
               )}
             </div>
-            <span className="seats-vs">VS</span>
-            <div className="seat">
-              <span className="seat-av wait">?</span>
+            <span className="room-vs">VS</span>
+            <div className="room-seat">
+              <span className="room-av wait">?</span>
               <b>友だち</b>
-              <span className="seat-wait">
+              <span className="room-wait">
                 待っています
                 <i />
                 <i />

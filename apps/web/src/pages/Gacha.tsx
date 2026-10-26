@@ -3,7 +3,7 @@ import { Link } from "react-router";
 /** ガチャ（まだ無い。ホームの入口だけ先に置き、押すとこの画面）。裏向きのカードを扇に並べ、下に「準備中」の台 */
 export function Gacha() {
   return (
-    <section className="page gacha">
+    <section className="page gacha-page">
       <span className="gacha-rays" aria-hidden="true" />
       <div className="gacha-fan" aria-hidden="true">
         <span className="gacha-iri" />

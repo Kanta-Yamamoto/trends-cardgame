@@ -571,18 +571,18 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .resume b { color: var(--pri-3); font-variant-numeric: tabular-nums; }
 .resume .btn { width: 100%; margin-top: 8px; }
 /* 友だちを待っている部屋：2 人の席・合言葉・招待リンク */
-.seats { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; padding: 20px 12px 18px; border-radius: 26px; }
-.seat { display: grid; justify-items: center; gap: 8px; min-width: 0; text-align: center; }
-.seat b { max-width: 100%; font-size: 14px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.seat-av { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; font-size: 32px; font-weight: 900; color: #fff; background: var(--pri-2); box-shadow: 0 0 0 5px #fff, 0 10px 22px var(--shadow); }
-.seat-av.wait { background: none; color: var(--pri-2); border: 2.5px dashed var(--pri-2); box-shadow: none; animation: pulse 1.8s ease-in-out infinite; }
+.room-seats { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; padding: 20px 12px 18px; border-radius: 26px; }
+.room-seat { display: grid; justify-items: center; gap: 8px; min-width: 0; text-align: center; }
+.room-seat b { max-width: 100%; font-size: 14px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room-av { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; font-size: 32px; font-weight: 900; color: #fff; background: var(--pri-2); box-shadow: 0 0 0 5px #fff, 0 10px 22px var(--shadow); }
+.room-av.wait { background: none; color: var(--pri-2); border: 2.5px dashed var(--pri-2); box-shadow: none; animation: pulse 1.8s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { scale: 1; } 50% { scale: 1.04; } }
-.seat-deck { max-width: 100%; height: 24px; padding: 0 10px; border-radius: 12px; display: inline-flex; align-items: center; font-size: 11px; font-weight: 800; background: var(--g3); box-shadow: var(--sh-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.seats-vs { font: 200 26px/1 var(--f-ui); color: var(--ink-3); letter-spacing: 0.2em; }
-.seat-wait { display: inline-flex; align-items: baseline; gap: 2px; font-size: 12px; font-weight: 800; color: var(--pri-3); }
-.seat-wait i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: blink 1.2s infinite; }
-.seat-wait i:nth-child(2) { animation-delay: 0.2s; }
-.seat-wait i:nth-child(3) { animation-delay: 0.4s; }
+.room-deck { max-width: 100%; height: 24px; padding: 0 10px; border-radius: 12px; display: inline-flex; align-items: center; font-size: 11px; font-weight: 800; background: var(--g3); box-shadow: var(--sh-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room-vs { font: 200 26px/1 var(--f-ui); color: var(--ink-3); letter-spacing: 0.2em; }
+.room-wait { display: inline-flex; align-items: baseline; gap: 2px; font-size: 12px; font-weight: 800; color: var(--pri-3); }
+.room-wait i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: blink 1.2s infinite; }
+.room-wait i:nth-child(2) { animation-delay: 0.2s; }
+.room-wait i:nth-child(3) { animation-delay: 0.4s; }
 @keyframes blink { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
 .code-card { padding: 18px 16px 16px; border-radius: 26px; text-align: center; }
 .code-card h2 { font-size: 13px; color: var(--ink-2); letter-spacing: 0.08em; }
@@ -1349,7 +1349,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 /* ホーム（Home.tsx）は画面いっぱいに自分で置くので、外枠は余白を付けない */
 .home-shell { min-height: 100dvh; }
 /* ガチャ（準備中）：光の筋の上に裏向きのカードを扇に並べ、下にすりガラスの台 */
-.gacha { position: relative; min-height: calc(100dvh - 68px - max(10px, env(safe-area-inset-top, 0px))); padding-top: 0; }
+.gacha-page { position: relative; min-height: calc(100dvh - 68px - max(10px, env(safe-area-inset-top, 0px))); padding-top: 0; }
 .gacha-rays { position: absolute; left: 50%; top: 250px; width: 900px; height: 900px; margin: -450px 0 0 -450px; z-index: -1; pointer-events: none; background: repeating-conic-gradient(from 0deg, #ffffffbf 0deg 6deg, transparent 6deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 52%); mask-image: radial-gradient(circle, #000 0%, transparent 52%); opacity: 0.6; animation: spin 90s linear infinite; }
 .gacha-fan { position: absolute; left: 50%; top: 250px; width: 0; height: 0; }
 .gacha-back { position: absolute; left: -74px; top: -104px; width: 148px; height: 208px; overflow: hidden; border-radius: 14px; border: 3px solid #fff; box-shadow: 0 16px 30px #1f487840; transform-origin: 50% 160%; background: radial-gradient(circle at 50% 50%, #f2cf7a 0 9%, transparent 10%), radial-gradient(circle at 50% 50%, transparent 0 22%, #f2cf7a55 23% 25%, transparent 26%), repeating-linear-gradient(45deg, #1b2a48 0 7px, #16223b 7px 14px); }
