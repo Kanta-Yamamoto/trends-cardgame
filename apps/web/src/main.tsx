@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router";
 import { App } from "./App";
+import { AppScroll } from "./AppScroll";
 // 書体はアプリに同梱する（Google Fonts に繋がらない環境・スマホアプリ・オフラインでも同じ見た目に）
 import "@fontsource/m-plus-1/400.css";
 import "@fontsource/m-plus-1/700.css";
@@ -50,9 +51,9 @@ createRoot(root).render(
       <BrowserRouter>
         {/* 画面の枠：すべての画面と演出を、スマホの縦の画面1つの中だけで出す（frame.ts） */}
         <div id={FRAME_ID} className="app-frame">
-          <div className="app-scroll">
+          <AppScroll>
             <App />
-          </div>
+          </AppScroll>
         </div>
       </BrowserRouter>
     </QueryClientProvider>
