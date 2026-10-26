@@ -1710,7 +1710,7 @@ describe("推し属性の作り直し（10月24日。docs/design-oshi.md）", ()
     ...catalog,
     sg: icon("sg", 3, 1, 3, { keywords: ["ガード"] }),
     gk: icon("gk", 0, 2, 1, { keywords: ["突進"], token: true }),
-    // エース：闇堕ちしたとき、左右の空いている枠に sg を1体ずつ出し、攻撃力+2・体力+2
+    // エース：闇堕ちしたとき、隣に sg を2体出し（隣が埋まっていれば空いた枠へ）、攻撃力+2・体力+2
     oshi: icon("oshi", 1, 4, 5, {
       rarity: 5,
       keywords: ["注目"],
@@ -1720,7 +1720,7 @@ describe("推し属性の作り直し（10月24日。docs/design-oshi.md）", ()
         hp: 4,
         keywords: ["突進", "注目"],
         effects: [
-          { on: "play", do: "summon", card: "sg", count: 2, sides: true, buff: { attack: 2, hp: 2 } },
+          { on: "play", do: "summon", card: "sg", count: 2, flank: true, buff: { attack: 2, hp: 2 } },
         ],
         effect: "",
       },
@@ -1770,11 +1770,29 @@ describe("推し属性の作り直し（10月24日。docs/design-oshi.md）", ()
     expect(viewUnit(s, "p1", s.players.p1.field[2] as Unit, local)).toMatchObject({ hp: 4 });
   });
 
-  it("エースの闇堕ち：端の枠で戻れば1体だけ。埋まっている側には出さず、ほかの枠にも回さない", () => {
-    expect(ids(killAndReturn(put(game(["oshi"]), 0, 0), 0))).toEqual(["oshi", "sg", null, null, null]);
+  it("エースの闇堕ち：端の枠や隣が埋まっていても、空いている枠に2体出す（10月26日。場所で数は変わらない）", () => {
+    // 端の枠：隣の1体と、左から空いた枠に1体
+    expect(ids(killAndReturn(put(game(["oshi"]), 0, 0), 0))).toEqual(["oshi", "sg", "sg", null, null]);
+    // センターで左が埋まっている：右の隣と、左から空いた枠
     let s = put(put(game(["f", "oshi"]), 0, 1), 0, 2);
     s = killAndReturn(s, 2);
-    expect(ids(s)).toEqual([null, "f", "oshi", "sg", null]);
+    expect(ids(s)).toEqual(["sg", "f", "oshi", "sg", null]);
+    for (const slot of [0, 3]) {
+      expect(viewUnit(s, "p1", s.players.p1.field[slot] as Unit, local)).toMatchObject({ attack: 3, hp: 5 });
+    }
+  });
+
+  it("エースの闇堕ち：空いている枠が1つなら1体、場が埋まっていれば出ない", () => {
+    const board = (slots: number[]) => {
+      let g = game([]);
+      g.players.p1.hand = [...slots.map(() => "f"), "oshi"];
+      slots.forEach((slot) => {
+        g = put(g, 0, slot);
+      });
+      return killAndReturn(put(g, 0, 2), 2);
+    };
+    expect(ids(board([0, 1, 3]))).toEqual(["f", "f", "oshi", "f", "sg"]);
+    expect(ids(board([0, 1, 3, 4]))).toEqual(["f", "f", "oshi", "f", "f"]);
   });
 
   it("育つ推し：センターにいれば、自分のターンの終わりに1枚引く。センターでなければ引かない", () => {

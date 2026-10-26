@@ -117,7 +117,7 @@ function withoutGone(cur: GameState, events: GameEvent[], alive: ReadonlySet<num
 const summonsOnDeath = (from: string) => {
   const c = CATALOG[from];
   return [...(c?.effects ?? []), ...(c?.dark?.effects ?? [])].reduce(
-    (n, f) => (f.on === "death" && f.do === "summon" ? n + (f.sides ? 2 : f.count) : n),
+    (n, f) => (f.on === "death" && f.do === "summon" ? n + f.count : n),
     0,
   );
 };

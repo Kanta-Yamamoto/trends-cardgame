@@ -320,7 +320,7 @@
       "attack": 5,
       "hp": 4,
       "keywords": ["突進", "注目"],
-      "effect": "突進。注目。【闇堕ちしたとき】左右の空いている枠に、親衛隊を1体ずつ出す。出した親衛隊に攻撃力+2・体力+2。",
+      "effect": "突進。注目。【闇堕ちしたとき】隣に親衛隊を2体出す。出した親衛隊に攻撃力+2・体力+2。",
       "art": "/assets/cards/m1-dark-art.jpg",
       "subject": "/assets/cards/m1-dark-subject.webp",
       "original": "assets/original/m1-dark.webp",
@@ -330,7 +330,7 @@
           "do": "summon",
           "card": "m4",
           "count": 2,
-          "sides": true,
+          "flank": true,
           "buff": {
             "attack": 2,
             "hp": 2
