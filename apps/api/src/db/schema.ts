@@ -123,10 +123,11 @@ export interface SavedDeck {
 
 /**
  * CPU 対戦の記録（人と CPU の対戦を一手ずつ）。あとで見返して CPU を強くし、カードのバランス調整に使う（docs/cpu-logs.md）。
- * 名前・メールは残さない。client は端末ごとの印（同じ人の対戦をまとめて見るため）
+ * userId は遊んだアカウント（10月26日から。サービス全体でログインが要る。それより前の記録は null）。client は端末ごとの印
  */
 export const cpuGames = pgTable("cpu_games", {
   id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
   client: text("client").notNull(),
   /** カードのデータの印（game-core の cardsStamp） */
   cards: text("cards").notNull(),

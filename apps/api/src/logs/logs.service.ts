@@ -1,9 +1,9 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import type { CpuGameRecord } from "@trends/game-core";
-import { asc, gt } from "drizzle-orm";
+import { asc, eq, gt } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
-import { cpuGames } from "../db/schema";
+import { cpuGames, users } from "../db/schema";
 
 /** 1つの記録の手の数・考えた中身の数の上限（おかしな大きさのものを断る） */
 const MAX_MOVES = 3000;
@@ -44,13 +44,14 @@ export function parseCpuGame(body: unknown): { client: string; record: CpuGameRe
 export class LogsService {
   constructor(@Inject(DB) private readonly db: Db) {}
 
-  /** CPU 対戦の記録を残す */
-  async addCpuGame(body: unknown) {
+  /** CPU 対戦の記録を、遊んだアカウントにひも付けて残す */
+  async addCpuGame(userId: string, body: unknown) {
     const { client, record } = parseCpuGame(body);
     const winner = record.end.winner === null ? null : record.end.winner === record.human ? "human" : "cpu";
     const [row] = await this.db
       .insert(cpuGames)
       .values({
+        userId,
         client,
         cards: record.cards.slice(0, 32),
         humanDeck: record.humanDeck.ref.slice(0, 64),
@@ -70,15 +71,18 @@ export class LogsService {
       throw new BadRequestException("after は時刻で指定してください");
     const n = Math.min(MAX_LIST, Math.max(1, Number(limit) || MAX_LIST));
     const rows = await this.db
-      .select()
+      .select({ game: cpuGames, userName: users.name })
       .from(cpuGames)
+      .leftJoin(users, eq(users.id, cpuGames.userId))
       .where(since ? gt(cpuGames.createdAt, since) : undefined)
       .orderBy(asc(cpuGames.createdAt))
       .limit(n);
     return {
-      games: rows.map((r) => ({
+      games: rows.map(({ game: r, userName }) => ({
         id: r.id,
         createdAt: r.createdAt.toISOString(),
+        /** 遊んだアカウント（10月26日より前の記録は null） */
+        user: r.userId ? { id: r.userId, name: userName } : null,
         client: r.client,
         cards: r.cards,
         humanDeck: r.humanDeck,
