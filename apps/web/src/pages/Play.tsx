@@ -43,6 +43,7 @@ import { frameRect, frameSize } from "../frame";
 import { fieldEntry, landed } from "../fx/fieldEntry";
 import { GOD_DESCENT_CARDS, godDescent } from "../fx/godDescent";
 import { IDOL_LIVE, idolLive } from "../fx/idolLive";
+import { KUSAHAMI_AMBUSH, kusahamiAmbush } from "../fx/kusahamiAmbush";
 import { fxEnabled } from "../fx/stage";
 import { warmFx } from "../fx/warm";
 import { ArbiterField } from "../game/ArbiterField";
@@ -977,7 +978,10 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const [god, setGod] = useState<{ id: number; gifts: string[] } | null>(null);
   const godField = useRef<HTMLDivElement>(null);
   const godOver = useRef<HTMLDivElement>(null);
-  /** 降臨で場に出る神と、ライブ演出で出るアイドル。ふつうの着地の代わりに、godDescent・idolLive が見せる */
+  /** クサハミの召喚：場の後ろの層（草原）。描いている間だけ置く */
+  const [ambush, setAmbush] = useState<number | null>(null);
+  const ambushField = useRef<HTMLDivElement>(null);
+  /** 降臨で場に出る神・ライブ演出で出るアイドル・茂みから飛び出すクサハミ。ふつうの着地の代わりに、godDescent・idolLive・kusahamiAmbush が見せる */
   const descending = useRef(new Set<number>());
   /** 降臨で神から手札へ飛ばし終えたカードの数。山札から引く演出を出さない */
   const handedOver = useRef(0);
@@ -1244,6 +1248,22 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             }
             descending.current.delete(uid);
           }
+          // クサハミ：ふつうの着地の代わりに、茂みから飛び出して斬る演出（草原は場の後ろの層に描く）。
+          // 描かれる前に印を付けて、着地の演出を止めておく（この行より前に await を置かない）
+          if (card && uid !== undefined && KUSAHAMI_AMBUSH.has(card.id) && fxEnabled()) {
+            descending.current.add(uid);
+            setAmbush(Date.now());
+            await gwait(50);
+            const unitEl = self();
+            const field = ambushField.current;
+            if (unitEl && field) {
+              await kusahamiAmbush({ unit: unitEl, field, layer: fxLayer() });
+              unitEl.style.opacity = "";
+              live = true;
+            }
+            descending.current.delete(uid);
+            setAmbush(null);
+          }
           // 効果でキャラクター（トークンなど）を出すなら、出したキャラクターが着地してから、1体ずつ時間差で出す
           const summons = events.some((e) => e.type === "summoned");
           if (!visible && !summons) return;
@@ -1333,7 +1353,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       const card = CATALOG[u.cardId];
       const el = document.querySelector<HTMLElement>(`[data-uid="${u.uid}"]`);
       if (stagedAces.current.delete(u.uid) || descending.current.has(u.uid)) {
-        // 『演出家』で上がるエース・降臨するネ申・ライブ演出で出るアイドルは、描かれる前に隠して、それぞれの演出に任せる
+        // 『演出家』で上がるエース・降臨するネ申・ライブ演出で出るアイドル・茂みから飛び出すクサハミは、描かれる前に隠して、それぞれの演出に任せる
         if (el) el.style.opacity = "0";
       } else if (card) fieldEntry(el, card);
     }
@@ -1756,6 +1776,9 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
           )}
           {fixer && <FixerField key={fixer.id} ref={fixerApi} onDone={() => setFixer(null)} />}
           {god && <div key={god.id} className="god-field" ref={godField} aria-hidden="true" />}
+          {ambush !== null && (
+            <div key={ambush} className="kusa-field" ref={ambushField} aria-hidden="true" />
+          )}
           <div className="ptop">
             {quitBtn}
             {turnPill}
