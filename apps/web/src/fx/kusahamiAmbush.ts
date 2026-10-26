@@ -15,12 +15,12 @@ import "./kusahamiAmbush.css";
  * 闇の姿（kusahamiWither。案D「毒が根を張る」。約 3.5 秒。闇堕ちの全画面の演出のあと、場に出るところ）
  * 1. 草原が戻る（0〜0.45 秒）：出す枠からクサハミの草原が生えそろう
  * 2. 風が止む（0.45〜0.8 秒）：場が暗く沈み、闇の姿が枠の上に浮かぶ
- * 3. 着地（0.9 秒）：紫の閃光・揺れ。足もとから 1 重の波紋が、水面のようにゆっくり広がり始めて加速しながら消える
- * 4. 根が張る（0.9〜2.2 秒）：足もとから紫の根が地面を割って走り（5 本・枝分かれは少なめ）、根が通ったところから草が紫に染まってうねる。胞子が昇る
+ * 3. 着地（0.9 秒）：紫の閃光・揺れ（衝撃波の輪は出さない。オーナー：「チープに見える」）
+ * 4. 根が張る（0.9〜2.2 秒）：足もとから紫の根が地面を割って四方へ走り（5 本を均等な向きに・枝分かれは少なめ）、根が通ったところから草が紫に染まってうねる。胞子が昇る
  * 5. 場が戻る（2.7〜3.4 秒）：毒の草・根・紫の地・暗さが引いて、いつもの場に戻る
  *
  * 場の後ろの層（field。キャラクターの後ろ）に、地の暗さ・地の色・草原を描き、
- * 画面座標の層（layer）に、カードの写し・茂み・赤い目・鎌の軌跡・舞う葉・波紋・胞子・閃光を描く。本物のカードは終わるまで隠しておく（呼ぶ側で隠す）。
+ * 画面座標の層（layer）に、カードの写し・茂み・赤い目・鎌の軌跡・舞う葉・胞子・閃光を描く。本物のカードは終わるまで隠しておく（呼ぶ側で隠す）。
  * 時間は GSAP で数える（開発中に __gsap で遅くしても、全部が同じ速さで遅くなる）
  */
 
@@ -249,65 +249,6 @@ function swing(
   g.shadowBlur = 14;
   crescent(g, cx, cy, r, tail, head, thick, BLADE, 0.55 * fade);
   crescent(g, cx, cy, r, tail, head, thick * 0.45, [255, 255, 255], 0.95 * fade);
-  g.restore();
-}
-
-/** 床に広がる輪（縦に k 倍つぶした楕円） */
-function ellipseRing(
-  g: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  r: number,
-  k: number,
-  lw: number,
-  col: RGB,
-  a: number,
-) {
-  if (a <= 0.01 || r <= 0) return;
-  g.save();
-  g.translate(x, y);
-  g.scale(1, k);
-  g.beginPath();
-  g.arc(0, 0, r, 0, Math.PI * 2);
-  g.restore();
-  g.lineWidth = lw;
-  g.strokeStyle = rgba(col, a);
-  g.stroke();
-}
-
-/**
- * 闇の姿の着地の波紋：水面に落ちたときのような 1 重の輪。ゆっくり広がり始めて、加速しながら薄れて消える。
- * e は着地からの時間（ms）。k はカードの幅の倍率
- */
-function ripple(g: CanvasRenderingContext2D, x: number, y: number, e: number, k: number) {
-  const DUR = 1100;
-  if (e < 0 || e > DUR) return;
-  const q = e / DUR;
-  // 半径は時間の 2.2 乗で伸びる（はじめはゆっくり、あとから速く）
-  const r = lerp(12, 230, q ** 2.2) * k;
-  const fade = 1 - seg(q, 0.55, 1);
-  g.save();
-  g.globalCompositeOperation = "lighter";
-  // 内側の淡い帯（波の盛り上がりの影）→ 細い明るい線
-  ellipseRing(g, x, y, r - 3 * k, 0.4, lerp(14, 6, q) * k, PURP_RING, 0.18 * fade);
-  ellipseRing(g, x, y, r, 0.4, lerp(2.6, 1, q) * k, mix(PURP_RING, [255, 235, 255], 0.5), 0.9 * fade);
-  // 着地点の光：一瞬ふくらんで、波が離れるにつれて消える
-  const bl = 1 - seg(e, 0, 420);
-  if (bl > 0) {
-    const R = lerp(10, 60, eo3(seg(e, 0, 260))) * k;
-    const grd = g.createRadialGradient(x, y, 0, x, y, R);
-    grd.addColorStop(0, rgba([255, 230, 255], 0.6 * bl));
-    grd.addColorStop(0.5, rgba(PURP_RING, 0.3 * bl));
-    grd.addColorStop(1, rgba(PURP_RING, 0));
-    g.fillStyle = grd;
-    g.save();
-    g.translate(x, y);
-    g.scale(1, 0.4);
-    g.beginPath();
-    g.arc(0, 0, R, 0, Math.PI * 2);
-    g.restore();
-    g.fill();
-  }
   g.restore();
 }
 
@@ -706,7 +647,8 @@ function buildVeins(): Vein[] {
     let s = s0;
     let a = ang;
     for (let k = 0; k < len; k++) {
-      a += (rv() - 0.5) * 0.7;
+      // 少し揺れながら、元の向きへ戻る（曲がりすぎて片側に寄らないように）
+      a += (rv() - 0.5) * 0.5 + (ang - a) * 0.15;
       const st = 9 + rv() * 6;
       x += Math.cos(a) * st;
       y += Math.sin(a) * st * 0.62;
@@ -718,9 +660,9 @@ function buildVeins(): Vein[] {
     }
     out.push({ pts, w: depth === 0 ? 2.6 : 1.7 });
   };
-  // 本数は 5 本（モックは 9 本だった）
+  // 本数は 5 本（モックは 9 本だった）。向きは左上から順に均等に振り分け、場の四方へ同じくらい届くようにする
   for (let k = 0; k < 5; k++)
-    grow(0, 0, (k / 5) * Math.PI * 2 + rv() * 0.5, 20 + Math.floor(rv() * 10), 0, 0);
+    grow(0, 0, -2.4 + (k / 5) * Math.PI * 2 + (rv() - 0.5) * 0.3, 22 + Math.floor(rv() * 8), 0, 0);
   return out;
 }
 
@@ -734,7 +676,7 @@ export async function kusahamiWither(o: KusahamiAmbushOpts): Promise<void> {
     S.dispose();
     return;
   }
-  const { cu, co, veil, card, flash, meadow, FW, FH, kf, gx, gy, f, k, CX, CY } = S;
+  const { cu, co, veil, card, flash, meadow, FW, FH, kf, gx, gy, f, k, CY } = S;
   const veins = buildVeins();
   const rs = rng(43);
   // 胞子（着地のあと、毒の草の上をゆっくり昇る）
@@ -849,8 +791,6 @@ export async function kusahamiWither(o: KusahamiAmbushOpts): Promise<void> {
     card.style.filter = `brightness(${p.br.toFixed(3)})${glow}`;
 
     co.clearRect(0, 0, f.width, f.height);
-    // 着地の波紋（足もと）
-    ripple(co, CX, CY + 30 * k, t - WL, k);
     // 胞子
     if (t >= WL) {
       co.save();
