@@ -21,11 +21,22 @@ html, body { touch-action: manipulation; }
    それより広い画面（PC・横持ち）だけ、枠に transform を持たせて、中の position: fixed（モーダル・全画面の演出）を枠いっぱいに収め、
    スクロールは中の .app-scroll にする（10月23日：スマホで枠に transform を持たせたら、PixiJS の演出が出なくなったため） */
 .app-frame { position: relative; width: 100%; max-width: 480px; margin: 0 auto; }
+/* スクロールの位置を示す細い印（AppScroll.tsx）。スマホの縦では .app-scroll はスクロールしない（ページがスクロールする）ので置かない */
+.app-scrollbar { display: none; }
 @media (min-width: 481px) {
   html, body, #root { height: 100%; }
   body { overflow: hidden; }
   .app-frame { height: 100vh; height: 100dvh; overflow: hidden; transform: translateZ(0); }
   .app-scroll { height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; }
+  /* PC のブラウザの本物のスクロールバーは枠の幅を取り、中身を細くする（Windows では 17px ほど）ので消す。
+     位置は、スクロールしている間だけ細い印（.app-scrollbar。AppScroll.tsx が動かす）を中身の上に重ねて出す */
+  .app-scroll { scrollbar-width: none; }
+  .app-scroll::-webkit-scrollbar { display: none; }
+  .app-scrollbar {
+    display: block; position: absolute; top: 0; right: 3px; width: 4px; border-radius: 99px; background: #ffffff66;
+    opacity: 0; transition: opacity 0.3s ease 0.1s; pointer-events: none; z-index: 15;
+  }
+  .app-scrollbar.is-on { opacity: 1; transition: opacity 0.08s; }
 }
 /* 画面座標で置く演出の層（#fx-layer）は、枠の外（body の直下）に、画面いっぱいに置く（枠を入れる前と同じ）。
    広い画面だけ、枠の外にはみ出した分を切る（--frame-*。frame.ts が書く）。
