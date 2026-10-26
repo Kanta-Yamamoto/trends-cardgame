@@ -474,7 +474,20 @@ export function OnlineRoom() {
   if (mode === "online" && hasGame && !closed) {
     return (
       <section className="page play">
-        <Board onQuit={() => navigate("/online")} />
+        <Board
+          onQuit={() => navigate("/online")}
+          quitNotes={
+            match?.kind === "cpu"
+              ? [
+                  "1 分以内にロビーの「対戦に戻る」から戻れば、続きを遊べます",
+                  "1 分たつと、勝ち負けなしで対戦を閉じます",
+                ]
+              : [
+                  "対戦は続きます。ロビーの「対戦に戻る」から続きを遊べます",
+                  "戻るまでのあいだも、あなたのターンは 60 秒で終わり、持ち時間が減っていきます（使い切ると負け）",
+                ]
+          }
+        />
       </section>
     );
   }
