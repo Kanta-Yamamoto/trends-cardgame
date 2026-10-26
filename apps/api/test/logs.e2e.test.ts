@@ -7,7 +7,9 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AppModule } from "../src/app.module";
 
-// 実際の PostgreSQL に対して動かす
+// 実際の PostgreSQL に対して動かす。ログインは開発用（名前だけ）を使う
+process.env.AUTH_DEV_LOGIN = "true";
+
 describe("CPU 対戦の記録", () => {
   let app: INestApplication;
 
@@ -20,6 +22,11 @@ describe("CPU 対戦の記録", () => {
   afterAll(async () => {
     await app?.close();
   });
+
+  const login = async (name: string) => {
+    const res = await request(app.getHttpServer()).post("/auth/dev").send({ name }).expect(201);
+    return res.body.token as string;
+  };
 
   const record = (winner: "p1" | "p2" | null): CpuGameRecord => {
     const initial = createGame({
@@ -44,16 +51,28 @@ describe("CPU 対戦の記録", () => {
     };
   };
 
-  it("送った記録を残し、あとから古い順に取り出せる（勝ったのが人か CPU かも分かる）", async () => {
+  it("ログインしていなければ、記録を受け取らない", async () => {
+    await request(app.getHttpServer())
+      .post("/logs/cpu-games")
+      .send({ client: "x", record: record("p1") })
+      .expect(401);
+  });
+
+  it("送った記録を、遊んだアカウントにひも付けて残し、あとから古い順に取り出せる（勝ったのが人か CPU かも分かる）", async () => {
     const before = new Date(Date.now() - 1000).toISOString();
     const client = `端末${Date.now()}`;
+    // 毎回同じアカウントを使う（走るたびにアカウントを増やすと、ランキングのテストの上位 100 人を押し出す）
+    const name = "記録係";
+    const token = await login(name);
     const a = await request(app.getHttpServer())
       .post("/logs/cpu-games")
+      .set("Authorization", `Bearer ${token}`)
       .send({ client, record: record("p1") })
       .expect(201);
     expect(a.body.id).toBeTypeOf("string");
     await request(app.getHttpServer())
       .post("/logs/cpu-games")
+      .set("Authorization", `Bearer ${token}`)
       .send({ client, record: record(null) })
       .expect(201);
 
@@ -66,21 +85,21 @@ describe("CPU 対戦の記録", () => {
       turns: 7,
       cards: "0123abcd",
     });
+    expect(mine[0].user.name).toBe(name);
     expect(mine[0].record.moves).toEqual([{ action: { type: "endTurn", player: "p1" }, at: 3000 }]);
     expect(mine[0].record.initial.players.p1.deck.length).toBeGreaterThan(0);
   });
 
   it("形のおかしい記録は断る", async () => {
-    await request(app.getHttpServer())
-      .post("/logs/cpu-games")
+    const auth = `Bearer ${await login("記録係")}`;
+    const post = () => request(app.getHttpServer()).post("/logs/cpu-games").set("Authorization", auth);
+    await post()
       .send({ record: record("p1") })
       .expect(400);
-    await request(app.getHttpServer())
-      .post("/logs/cpu-games")
+    await post()
       .send({ client: "x", record: { ...record("p1"), v: 2 } })
       .expect(400);
-    await request(app.getHttpServer())
-      .post("/logs/cpu-games")
+    await post()
       .send({ client: "x", record: { ...record("p1"), human: "p2" } })
       .expect(400);
     await request(app.getHttpServer()).get("/logs/cpu-games?after=きのう").expect(400);

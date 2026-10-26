@@ -9,6 +9,7 @@ import {
   type PlayerId,
 } from "@trends/game-core";
 import { API_URL } from "../api/client";
+import { useSession } from "../online/session";
 
 /**
  * CPU 対戦の記録を取って、終わったらサーバーに送る（docs/cpu-logs.md）。
@@ -23,7 +24,7 @@ let last: CpuGameRecord | null = null;
 
 const CLIENT_KEY = "trends-client";
 
-/** 端末ごとの印（同じ人の対戦をまとめて見るため。名前やメールは残さない） */
+/** 端末ごとの印（同じ人がどの端末で遊んだかを見るため。人はアカウントで見分ける） */
 function clientId(): string {
   try {
     const got = localStorage.getItem(CLIENT_KEY);
@@ -101,22 +102,25 @@ function finish(state: GameState | null, beacon: boolean) {
   rec = null;
 }
 
+/** 画面を閉じたあとも届くように送れる大きさ（keepalive の上限 64KB より少し小さく） */
+const KEEPALIVE_MAX = 60_000;
+
 async function send(record: CpuGameRecord, beacon: boolean) {
   if (import.meta.env.MODE === "test") return;
-  const url = `${API_URL}/logs/cpu-games`;
-  const body = JSON.stringify({ client: clientId(), record });
+  // 記録はアカウントにひも付ける（ログインしていなければ送らない。サービス全体でログインが要る）
+  const token = useSession.getState().token;
+  if (!token) return;
+  let body = JSON.stringify({ client: clientId(), record });
+  // 画面を閉じるときは、閉じたあとも届くように送る（大きすぎれば、考えた中身を外して小さくする）
+  if (beacon && body.length > KEEPALIVE_MAX)
+    body = JSON.stringify({ client: clientId(), record: { ...record, thoughts: [] } });
   try {
-    // 画面を閉じるときは、閉じたあとも届くように送る（大きすぎて送れなければ、考えた中身を外してもう一度）
-    if (beacon && navigator.sendBeacon) {
-      const blob = (b: string) => new Blob([b], { type: "application/json" });
-      if (navigator.sendBeacon(url, blob(body))) return;
-      navigator.sendBeacon(
-        url,
-        blob(JSON.stringify({ client: clientId(), record: { ...record, thoughts: [] } })),
-      );
-      return;
-    }
-    await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body });
+    await fetch(`${API_URL}/logs/cpu-games`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body,
+      keepalive: beacon && body.length <= KEEPALIVE_MAX,
+    });
   } catch {
     // 送れなくても対戦には響かない
   }

@@ -38,10 +38,8 @@ export type CardEffect = (
       count: number;
       /** センター（真ん中の枠）に出したときの数 */
       centerCount?: number;
-      /** このキャラクターの両隣（左、右の順）から埋める。埋まっていれば左から空いた枠へ */
+      /** このキャラクターの両隣（左、右の順）から埋める。埋まっていれば左から空いた枠へ。数は減らない */
       flank?: boolean;
-      /** このキャラクターの左右の空いている枠にだけ、1体ずつ出す（count は使わない。空いていない側には出さない） */
-      sides?: boolean;
       /** 出したキャラクターに強化（攻撃力+attack・体力+hp） */
       buff?: { attack: number; hp: number };
     }
