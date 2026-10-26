@@ -12,12 +12,12 @@ import "./kusahamiAmbush.css";
  * 4. 斬る（1.71〜1.82 秒）：枠へ叩きつけ、着地と同時に銀の鎌が斜めに一閃。閃光・揺れ・葉が舞う（斬る前の溜めは作らない。オーナー）
  * 5. 草が消える（1.88〜2.5 秒）：茂みは刈られて飛び、草原はなぎ倒されて消える。地の暗さも引いて、いつもの場に戻る
  *
- * 闇の姿（kusahamiWither。案D「毒が根を張る」。約 3.5 秒。闇堕ちの全画面の演出のあと、場に出るところ）
+ * 闇の姿（kusahamiWither。案D「毒が根を張る」。約 3.8 秒。闇堕ちの全画面の演出のあと、場に出るところ）
  * 1. 草原が戻る（0〜0.45 秒）：出す枠からクサハミの草原が生えそろう
  * 2. 風が止む（0.45〜0.8 秒）：場が暗く沈み、闇の姿が枠の上に浮かぶ
  * 3. 着地（0.9 秒）：紫の閃光・揺れ（衝撃波の輪は出さない。オーナー：「チープに見える」）
- * 4. 根が張る（0.9〜2.2 秒）：足もとから紫の根が地面を割って四方へ走り（6 本を等間隔に・長さもそろえて円状に・枝分かれは少なめ）、根が通ったところから草が紫に染まってうねる。胞子が昇る
- * 5. 場が戻る（2.7〜3.4 秒）：毒の草・根・紫の地・暗さが引いて、いつもの場に戻る
+ * 4. 根が張る（0.9〜2.5 秒）：足もとから紫の根が地面を割って四方へ走り（はじめはゆっくり、だんだん速く）（6 本を等間隔に・長さもそろえて円状に・枝分かれは少なめ）、根が通ったところから草が紫に染まってうねる。胞子が昇る
+ * 5. 場が戻る（3.0〜3.7 秒）：毒の草・根・紫の地・暗さが引いて、いつもの場に戻る
  *
  * 場の後ろの層（field。キャラクターの後ろ）に、地の暗さ・地の色・草原を描き、
  * 画面座標の層（layer）に、カードの写し・茂み・赤い目・鎌の軌跡・舞う葉・胞子・閃光を描く。本物のカードは終わるまで隠しておく（呼ぶ側で隠す）。
@@ -608,8 +608,14 @@ export async function kusahamiAmbush(o: KusahamiAmbushOpts): Promise<void> {
 /** 着地 */
 const WL = 900;
 /** 場が戻る [始め, 終わり] */
-const WRET: readonly [number, number] = [2700, 3400];
-const WEND = 3500;
+const WRET: readonly [number, number] = [3000, 3700];
+const WEND = 3800;
+/** 根の届く道のり（モックの座標）と、張り切るまでの時間。はじめはゆっくり、だんだん速く（時間の 2.2 乗。オーナー：「加速度」） */
+const ROOT_LEN = 320;
+const ROOT_MS = 1600;
+const rootFront = (t: number) => ROOT_LEN * seg(t, WL, WL + ROOT_MS) ** 2.2;
+/** 根が道のり d に届く時刻 */
+const rootReach = (d: number) => WL + ROOT_MS * Math.min(1, d / ROOT_LEN) ** (1 / 2.2);
 
 /** 闇の姿の写しの、この瞬間の置き方：浮かぶ → 叩きつける → つぶれて戻る（モックの dropIn） */
 function dropIn(t: number, t0: number, hoverMs: number, lift: number, sMax: number) {
@@ -705,7 +711,7 @@ export async function kusahamiWither(o: KusahamiAmbushOpts): Promise<void> {
 
   const drawVeins = (t: number, fa: number) => {
     if (t < WL) return;
-    const front = (t - WL) * 0.32;
+    const front = rootFront(t);
     cu.save();
     cu.globalCompositeOperation = "lighter";
     cu.lineCap = "round";
@@ -739,13 +745,22 @@ export async function kusahamiWither(o: KusahamiAmbushOpts): Promise<void> {
     cu.clearRect(0, 0, FW, FH);
     const fa = fieldAlpha(t);
     groundDisc(cu, gx, gy + 30 * kf, Math.min(t * 0.9 * kf, 520 * kf), GROUND, 0.42 * fa, FW, FH);
-    groundDisc(cu, gx, gy + 30 * kf, Math.min((t - WL) * 0.3 * kf, 560 * kf), PURP_GROUND, 0.5 * fa, FW, FH);
+    groundDisc(
+      cu,
+      gx,
+      gy + 30 * kf,
+      Math.min(rootFront(t) * 1.6 * kf, 560 * kf),
+      PURP_GROUND,
+      0.5 * fa,
+      FW,
+      FH,
+    );
     drawVeins(t, fa);
     for (const b of meadow) {
       // 戻ってくる → 風が止む → 根が通ったところから紫に染まって、うねる
       const g = eo3(seg(t, b.d * 0.6, b.d * 0.6 + 260));
       if (g <= 0.01) continue;
-      const pur = eo3(seg(t, WL + b.d / 0.3, WL + b.d / 0.3 + 280));
+      const pur = eo3(seg(t, rootReach(b.d), rootReach(b.d) + 280));
       let amp = lerp(0.1, 0.02, seg(t, 450, 700));
       let freq = 520;
       if (pur > 0.4) {
