@@ -2,7 +2,7 @@ import { CARDS, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
 import { autoSacrifice } from "./ai";
 import { applyAction, createGame } from "./engine";
-import { type CpuGameRecord, cardsStamp, replayRecord } from "./record";
+import { type CpuGameRecord, cardSnapshot, cardsStamp, moveCards, replayRecord } from "./record";
 import { type CpuThought, planTurnSearch } from "./search";
 import type { RuleCard } from "./types";
 
@@ -31,8 +31,9 @@ function playRecorded(seed: number): { rec: CpuGameRecord; final: ReturnType<typ
   };
   let s = initial;
   const step = (x: Parameters<typeof applyAction>[1]) => {
+    const before = s;
     s = applyAction(s, x, real).state;
-    rec.moves.push({ action: x, at: rec.moves.length });
+    rec.moves.push({ action: x, at: rec.moves.length, ...moveCards(before, x) });
   };
   for (let t = 0; t < 60 && !s.winner; t++) {
     while (s.pending && !s.winner) {
@@ -74,6 +75,26 @@ describe("CPU 対戦の記録", () => {
     const next = rec.moves.slice(t.move, t.move + (chosen?.actions.length ?? 0)).map((m) => m.action);
     expect(next).toEqual(chosen?.actions);
   }, 30_000);
+
+  it("手には、使ったカードと相手のカードの ID が付く（再生しなくても、何をいつ使ったか分かる）", () => {
+    const { rec } = playRecorded(5);
+    const plays = rec.moves.filter((m) => m.action.type === "play");
+    expect(plays.length).toBeGreaterThan(0);
+    for (const m of plays) expect(real[m.card ?? ""]?.type).toBe("icon");
+    const hits = rec.moves.filter((m) => m.action.type === "attack" && m.action.target.kind === "unit");
+    for (const m of hits) expect(m.target).toBeTypeOf("string");
+    expect(rec.moves.find((m) => m.action.type === "endTurn")).not.toHaveProperty("card");
+  }, 30_000);
+
+  it("試合のときのカードのデータを、デッキのカードと、それが出すトークン・手札に加えるカードまで残す", () => {
+    const data = cardSnapshot(real, ["g20", "k15", "c14"]);
+    // ネ申が手札に加える呪文、ネタ枠アイドルとクサハミが出す草も入る
+    expect(Object.keys(data).sort()).toEqual(
+      ["c14", "g20", "k15", "t-ikazuchi", "t-kusa", "t-tate", "t-tenbatsu"].sort(),
+    );
+    expect(data.g20).toMatchObject({ cost: real.g20?.cost, attack: real.g20?.attack, hp: real.g20?.hp });
+    expect(data.c14?.dark?.effects).toEqual(real.c14?.dark?.effects);
+  });
 
   it("カードのデータの印は、数値や効果が変わったときだけ変わる（名前・絵では変わらない）", () => {
     const base = cardsStamp(real);

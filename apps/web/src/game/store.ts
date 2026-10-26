@@ -309,7 +309,7 @@ export const useGame = create<GameStore>((set, get) => {
       let id = log.at(-1)?.id ?? 0;
       const added = events.map((e) => ({ id: ++id, e }));
       set({ game: state, log: [...log, ...added].slice(-60), error: null });
-      logMove(a, state);
+      logMove(a, game, state);
       return true;
     } catch (e) {
       if (e instanceof RuleError) {
@@ -346,7 +346,7 @@ export const useGame = create<GameStore>((set, get) => {
       .then(() => {
         if (my !== runId) return false;
         set({ game: state, log: appendLog(events, true), animating: false, error: null });
-        logMove(a, state);
+        logMove(a, game, state);
         return true;
       });
   };
