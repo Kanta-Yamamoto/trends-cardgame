@@ -44,6 +44,7 @@ import { fieldEntry, landed } from "../fx/fieldEntry";
 import { GOD_DESCENT_CARDS, godDescent } from "../fx/godDescent";
 import { IDOL_LIVE, idolLive } from "../fx/idolLive";
 import { KUSAHAMI_AMBUSH, kusahamiAmbush, kusahamiWither } from "../fx/kusahamiAmbush";
+import { MINAMO_LIVE, minamoLive } from "../fx/minamoLive";
 import { fxEnabled } from "../fx/stage";
 import { warmFx } from "../fx/warm";
 import { ArbiterField } from "../game/ArbiterField";
@@ -983,7 +984,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
   const ambushField = useRef<HTMLDivElement>(null);
   /** 毒の茨の演出で場に出した闇の姿の uid。出来事に合わせた裏返し（flipCard）は出さない */
   const withered = useRef(new Set<number>());
-  /** 降臨で場に出る神・ライブ演出で出るアイドル・茂みから飛び出すクサハミ。ふつうの着地の代わりに、godDescent・idolLive・kusahamiAmbush が見せる */
+  /** 降臨で場に出る神・ライブ演出で出るアイドル・茂みから飛び出すクサハミ・顔を出すミナモ。ふつうの着地の代わりに、godDescent・idolLive・kusahamiAmbush・minamoLive が見せる */
   const descending = useRef(new Set<number>());
   /** 降臨で神から手札へ飛ばし終えたカードの数。山札から引く演出を出さない */
   const handedOver = useRef(0);
@@ -1250,6 +1251,19 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
             }
             descending.current.delete(uid);
           }
+          // ミナモ：ふつうの着地の代わりに、カードをアップにして上の縁からひょこっと顔を出し、横に配信のコメント欄を流す。
+          // 描かれる前に印を付けて、着地の演出を止めておく（この行より前に await を置かない）
+          if (card && uid !== undefined && MINAMO_LIVE.has(card.id) && card.subject && fxEnabled()) {
+            descending.current.add(uid);
+            await gwait(50);
+            const unitEl = self();
+            if (unitEl) {
+              await minamoLive({ unit: unitEl, layer: fxLayer(), subject: card.subject });
+              unitEl.style.opacity = "";
+              live = true;
+            }
+            descending.current.delete(uid);
+          }
           // クサハミ：ふつうの着地の代わりに、茂みから飛び出して斬る演出（草原は場の後ろの層に描く）。
           // 描かれる前に印を付けて、着地の演出を止めておく（この行より前に await を置かない）
           if (card && uid !== undefined && KUSAHAMI_AMBUSH.has(card.id) && fxEnabled()) {
@@ -1384,7 +1398,7 @@ export function Board({ onQuit }: { onQuit?: () => void } = {}) {
       const card = CATALOG[u.cardId];
       const el = document.querySelector<HTMLElement>(`[data-uid="${u.uid}"]`);
       if (stagedAces.current.delete(u.uid) || descending.current.has(u.uid)) {
-        // 『演出家』で上がるエース・降臨するネ申・ライブ演出で出るアイドル・茂みから飛び出すクサハミは、描かれる前に隠して、それぞれの演出に任せる
+        // 『演出家』で上がるエース・降臨するネ申・ライブ演出で出るアイドル・茂みから飛び出すクサハミ・顔を出すミナモは、描かれる前に隠して、それぞれの演出に任せる
         if (el) el.style.opacity = "0";
       } else if (card) fieldEntry(el, card);
     }
