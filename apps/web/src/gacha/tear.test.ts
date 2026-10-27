@@ -117,7 +117,7 @@ describe("パックを裂く手ごたえ（tear.ts）", () => {
   it("線はパックの上の方に収まる（下の方を押しても、傾けすぎても）", () => {
     const t = newTear();
     grab(t, 4, 260);
-    expect(t.y0).toBe(120);
+    expect(t.y0).toBe(86);
     swipe(t, 4, PACK_W, 400, 260, 10);
     const s = shape(t);
     expect(s.yr).toBeGreaterThanOrEqual(18 - 0.01);

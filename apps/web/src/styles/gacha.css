@@ -9,7 +9,7 @@
 .gx-gem-pill .gx-plus svg { width: 16px; height: 16px; }
 
 /* パック（第1弾）。上の方をなぞって切ると、切り取り線より上が飛んでいく */
-.gx-pack { position: relative; width: 200px; height: 300px; filter: drop-shadow(0 22px 30px #1f487847); }
+.gx-pack { position: relative; width: 200px; height: 330px; filter: drop-shadow(0 22px 30px #1f487847); }
 /* 切り取り線（gacha/tear.ts の shape。Opening が .gx-pk-float に書く）。書かれていなければ、上の圧着の下に横まっすぐ */
 .gx-pack-wrap, .gx-pk-float { --tip: 0px; --yl: 38px; --yt: 38px; --yr: 38px; --ang: 0deg; --hx: 200px; --mouth: 0px; --mouth-end: 0px; --band: 1.2px; --capl: 0deg; --capr: 0deg; }
 .gx-pk-body, .gx-pk-flap { position: absolute; inset: 0; border-radius: 8px; overflow: hidden; background: linear-gradient(165deg, #f4f9ff 0%, #cfe6ff 22%, #ffd6ee 42%, #d3fff1 62%, #fff0c4 80%, #dcecff 100%); }
@@ -34,11 +34,11 @@
 
 /* ガチャの画面 */
 .gx-top { position: relative; padding-bottom: 190px; }
-.gx-rays { position: absolute; left: 50%; top: 170px; width: 900px; height: 900px; margin: -450px 0 0 -450px; z-index: -1; pointer-events: none; background: repeating-conic-gradient(from 0deg, #ffffffbf 0deg 6deg, transparent 6deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 52%); mask-image: radial-gradient(circle, #000 0%, transparent 52%); opacity: 0.6; animation: spin 90s linear infinite; }
-.gx-iri { position: absolute; left: 50%; top: 170px; width: 230px; height: 330px; margin: -165px 0 0 -115px; z-index: -1; border-radius: 30px; background: conic-gradient(from 0deg, #ffb3d9, #b5ccff, #9ef0dc, #ffe7a3, #ffb3d9); filter: blur(30px); opacity: 0.5; animation: spin 9s linear infinite; pointer-events: none; }
+.gx-rays { position: absolute; left: 50%; top: 183px; width: 900px; height: 900px; margin: -450px 0 0 -450px; z-index: -1; pointer-events: none; background: repeating-conic-gradient(from 0deg, #ffffffbf 0deg 6deg, transparent 6deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 52%); mask-image: radial-gradient(circle, #000 0%, transparent 52%); opacity: 0.6; animation: spin 90s linear infinite; }
+.gx-iri { position: absolute; left: 50%; top: 183px; width: 230px; height: 360px; margin: -180px 0 0 -115px; z-index: -1; border-radius: 30px; background: conic-gradient(from 0deg, #ffb3d9, #b5ccff, #9ef0dc, #ffe7a3, #ffb3d9); filter: blur(30px); opacity: 0.5; animation: spin 9s linear infinite; pointer-events: none; }
 .gx-pack-wrap { display: grid; justify-items: center; padding-top: 14px; animation: gx-floaty 3.6s ease-in-out infinite; }
 /* ガチャの画面ではパックを少し小さく（下のデモまで 1 画面に収める） */
-.gx-pack-wrap .gx-pack { transform: scale(0.86); transform-origin: top center; margin-bottom: -42px; }
+.gx-pack-wrap .gx-pack { transform: scale(0.86); transform-origin: top center; margin-bottom: -46px; }
 .gx-info { display: grid; justify-items: center; gap: 6px; margin-top: 16px; text-align: center; }
 .gx-info h2 { margin: 0; font-size: 22px; font-weight: 800; }
 .gx-info .gx-sub { margin: 0; font-size: 12px; font-weight: 700; color: var(--ink-2); }
@@ -156,9 +156,9 @@
 .gx-dim.on { opacity: 0.55; }
 /* 舞台：真ん中を原点にして置き、画面の高さに合わせて全体を拡大・縮小する（--s） */
 .gx-stage { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform: translateY(-10px) scale(var(--s, 1)); }
-.gx-pk-out { position: absolute; left: -100px; top: -150px; width: 200px; height: 300px; transition: transform 0.7s cubic-bezier(0.5, 0, 0.7, 0.4), opacity 0.6s; }
-.gx-pk-out.sink { transform: translateY(300px) scale(0.9); opacity: 0; }
-.gx-pk-float { position: relative; width: 200px; height: 300px; animation: gx-floaty 3.6s ease-in-out infinite; }
+.gx-pk-out { position: absolute; left: -100px; top: -165px; width: 200px; height: 330px; transition: transform 0.7s cubic-bezier(0.5, 0, 0.7, 0.4), opacity 0.6s; }
+.gx-pk-out.sink { transform: translateY(330px) scale(0.9); opacity: 0; }
+.gx-pk-float { position: relative; width: 200px; height: 330px; animation: gx-floaty 3.6s ease-in-out infinite; }
 .gx-pk-out .gx-pack { filter: drop-shadow(0 22px 30px #0008); }
 /* 持っている間は、浮き沈みを止める。指で引くと、下の方を軸に指の側へ傾く（gacha/tear.ts） */
 .gx-pk-float.grip { animation-play-state: paused; }
