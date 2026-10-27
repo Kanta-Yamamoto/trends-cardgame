@@ -8,8 +8,11 @@ import type { Request } from "express";
 
 /** プレビューの絵（1200×630。apps/web/public/ogp.jpg） */
 export const OGP_IMAGE = "/ogp.jpg";
+/** 絵を差し替えたら上げる（LINE・X などが前の絵を覚えたままにしないよう、絵の URL に付ける） */
+const OGP_IMAGE_VERSION = 2;
 
-const ABOUT = "ネットの話題をキラカードにして戦う、オリジナルカードゲーム";
+/** 説明文（10月27日。オーナーが挙げた売り：おしゃれな演出・わかりやすい操作・豊富なキャラクター。絵の文字は「多彩なギミックで戦う 本格カードゲーム」） */
+const ABOUT = "おしゃれな演出・わかりやすい操作・豊富なキャラクター。多彩なギミックで戦う本格カードゲーム";
 
 export interface Preview {
   title: string;
@@ -51,7 +54,7 @@ export function ogpTags(req: Request, preview: Preview): string {
   ];
   if (origin) {
     meta.push(
-      ["og:image", `${origin}${OGP_IMAGE}`],
+      ["og:image", `${origin}${OGP_IMAGE}?v=${OGP_IMAGE_VERSION}`],
       ["og:image:width", "1200"],
       ["og:image:height", "630"],
       ["og:image:alt", "TRENDS"],

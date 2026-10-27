@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
-import { UpdateBar } from "./AppRefresh";
 import { Login } from "./auth/Login";
 import { RegisterScreen } from "./auth/Register";
 import { useDeckSync } from "./game/deckSync";
@@ -56,7 +55,6 @@ export function App() {
       </main>
       <InstallAutoGuide />
       <HelpSheet />
-      <UpdateBar />
     </div>
   );
 }
@@ -74,7 +72,6 @@ function LoginScreen() {
       <main className="login-box g3">
         <Login />
       </main>
-      <UpdateBar />
     </div>
   );
 }

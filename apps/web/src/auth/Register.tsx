@@ -1,6 +1,5 @@
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router";
-import { UpdateBar } from "../AppRefresh";
 import { fmt } from "../gacha/wallet";
 import { api, type User, useSession } from "../online/session";
 import { NameField, nameStatus } from "./NameField";
@@ -88,7 +87,6 @@ export function RegisterScreen() {
           </form>
         )}
       </main>
-      <UpdateBar />
     </div>
   );
 }

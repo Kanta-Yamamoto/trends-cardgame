@@ -17,8 +17,9 @@ export function serveWeb(app: NestExpressApplication, dir = process.env.WEB_DIST
     index: false,
     maxAge: "1h",
     setHeaders: (res, path) => {
-      // サービスワーカーと manifest は毎回確かめさせる（更新がすぐ届くように）
-      if (path.endsWith("sw.js") || path.endsWith(".webmanifest")) res.setHeader("Cache-Control", "no-cache");
+      // サービスワーカー・manifest・版の印（version.json）は毎回確かめさせる（更新がすぐ届くように）
+      if (path.endsWith("sw.js") || path.endsWith(".webmanifest") || path.endsWith("version.json"))
+        res.setHeader("Cache-Control", "no-cache");
       // ビルドした JS・CSS は名前にハッシュが付くので、ずっと使ってよい
       else if (/[\\/]assets[\\/][^\\/]+-[\w-]{8,}\.(js|css)$/.test(path))
         res.setHeader("Cache-Control", "public, max-age=31536000, immutable");

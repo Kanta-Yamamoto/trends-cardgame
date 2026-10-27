@@ -6,6 +6,7 @@ import { Opening, type PulledCard } from "../gacha/Opening";
 import { Gem, PACK_NAME, Pack } from "../gacha/Pack";
 import { fmt, totalGems, useWallet, type Wallet } from "../gacha/wallet";
 import { api, useSession } from "../online/session";
+import { usePageMusic } from "../sound/music";
 import { SlotTable } from "./GachaRates";
 import "../styles/gacha.css";
 
@@ -46,6 +47,8 @@ function perPack(rarity: number) {
  * ジェムが足りなければ「ジェムを買う」へ。開けたらパックを開ける演出（gacha/Opening.tsx）
  */
 export function Gacha() {
+  // 開いている間は、ガチャの曲を流す（パックを開ける演出の間も）
+  usePageMusic("gacha");
   const token = useSession((s) => s.token);
   const wallet = useWallet((s) => s.wallet);
   const loadWallet = useWallet((s) => s.load);

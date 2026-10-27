@@ -125,6 +125,10 @@ button { font: inherit; color: inherit; }
 .topbar-back { flex: none; width: 44px; height: 44px; border-radius: 15px; display: grid; place-items: center; color: var(--ink); text-decoration: none; }
 .topbar-back svg { width: 22px; height: 22px; }
 .topbar-back:active { transform: scale(0.94); }
+/* 音楽を止める・流すボタン（曲の流れるガチャだけ。sound/MusicToggle.tsx） */
+.topbar-music { flex: none; width: 44px; height: 44px; padding: 0; border-radius: 15px; display: grid; place-items: center; color: var(--ink); cursor: pointer; }
+.topbar-music svg { width: 22px; height: 22px; }
+.topbar-music:active { transform: scale(0.94); }
 .topbar-title { flex: 1; min-width: 0; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.02em; line-height: 1.2; }
 .topbar-title small { display: block; margin-top: 1px; font-size: 11px; font-weight: 700; color: var(--ink-2); letter-spacing: 0; }
 /* すりガラスの 3 段 */
@@ -146,13 +150,6 @@ button { font: inherit; color: inherit; }
 .tag.ok { color: var(--ok); }
 .tag.ng { color: var(--ng); }
 .tag.ok::before, .tag.ng::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-/* 新しい版の帯：画面の枠（frame.ts）のいちばん下。対戦の画面より手前 */
-.update-bar {
-  position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom, 0px)); z-index: 300;
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 10px 12px 10px 16px; border-radius: 14px; font-size: 13px; font-weight: 800;
-  color: var(--ink); background: #fffffff0; border: 1px solid var(--pri-2); box-shadow: 0 10px 30px var(--shadow);
-}
 .spacer { flex: 1; }
 .page { padding-top: 18px; }
 .page-head h1 { margin: 0 0 6px; font-size: 24px; font-weight: 800; }
@@ -465,12 +462,15 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 /* 余った高さは、場の間（案内とターン終了の行）と手札の上に 3:2 で配る */
 .stage .pstage { height: 100%; display: grid; grid-template-rows: auto auto auto auto auto minmax(0, 1fr); align-content: start; gap: 6px; padding: 6px; border-radius: 0; }
 .ptop { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; min-height: 30px; }
-.ptop .quit { justify-self: start; padding: 5px 10px; font-size: 11px; }
+.ptop-left { display: flex; gap: 6px; justify-content: start; }
+.ptop .quit { padding: 5px 10px; font-size: 11px; }
 .ptop .turn-pill { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; line-height: 1; padding: 7px 14px 6px; white-space: nowrap; }
 /* TURN の数字は Lilita One（太さは1つだけ）。太字を重ねると線が太ってずれて見えるので、400 のまま・字間を詰めて文字の高さをそろえる */
 .ptop .turn-pill small { font: 400 12px/1 var(--f-mark); font-synthesis: none; letter-spacing: 0.06em; opacity: 0.8; padding-top: 1px; }
 .ptop-right { display: flex; gap: 6px; justify-content: end; }
 .ptop .plog, .ptop .resign { padding: 5px 10px; font-size: 11px; }
+.ptop .pmusic { padding: 4px 8px; }
+.ptop .pmusic svg { display: block; width: 15px; height: 15px; }
 .ptop .resign.ask { color: #fff; background: #c8303f; border-color: #ffb0b0; }
 /* マスター：左に名前・ライフ、右に手札・話題力。その右に山札とオワコン */
 .pstage .pbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
