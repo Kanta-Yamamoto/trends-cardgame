@@ -23,6 +23,7 @@ import {
   type RuleCard,
   RuleError,
   rateGame,
+  readyClock,
   resolveDeckRef,
   startClock,
   tickClock,
@@ -280,6 +281,21 @@ export class MatchesService {
         throw e;
       }
       return { steps };
+    });
+  }
+
+  /**
+   * 手番の人の画面が、ターンの始めまでの演出を見せ終えた。待っている時計をすぐ動かす。
+   * 時計が変わったら、保存した部屋を返す（変わらなければ null）
+   */
+  ready(code: string, userId: string, turn: number) {
+    return this.serial(code, async (): Promise<MatchRow | null> => {
+      const row = await this.find(code);
+      if (!row.state || !row.clock || row.status !== "playing") return null;
+      const clock = readyClock(row.clock, row.state, this.seat(row, userId), turn, Date.now());
+      if (clock === row.clock) return null;
+      const [next] = await this.db.update(matches).set({ clock }).where(eq(matches.id, row.id)).returning();
+      return next ?? null;
     });
   }
 

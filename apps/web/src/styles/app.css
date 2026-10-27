@@ -322,7 +322,8 @@ button.pb-main:disabled { cursor: default; }
 .log .ev-won { color: var(--gold-ink); font-weight: 800; }
 
 /* 対戦の結果：盤面をぼかした白い幕の上に、勝ちは黄色の「勝利！」、負けはパレットの青の「敗北…」。下にボタン */
-.result { position: fixed; inset: 0; z-index: 30; display: grid; grid-template-rows: minmax(0, 1fr) auto; padding: 0 16px max(28px, env(safe-area-inset-bottom, 0px)); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); background: radial-gradient(80% 55% at 50% 38%, #f1f8fff5, #e2f1fceb 60%, #d3e9fae0); animation: fade 0.45s ease; }
+/* 決着の画面は、拡大（60）・オープニング（65）より手前に出す（開いたままの小窓の下に隠れないように。10月28日） */
+.result { position: fixed; inset: 0; z-index: 66; display: grid; grid-template-rows: minmax(0, 1fr) auto; padding: 0 16px max(28px, env(safe-area-inset-bottom, 0px)); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); background: radial-gradient(80% 55% at 50% 38%, #f1f8fff5, #e2f1fceb 60%, #d3e9fae0); animation: fade 0.45s ease; }
 .result.lose { background: radial-gradient(80% 55% at 50% 38%, #f3f5f9f5, #e6ebf2eb 60%, #d9e0eae0); }
 /* 帯が砕けて暗転したあと：暗転が明けるのと同時に見せる（画面そのものはじわっと出さない。中の文字の動きはそのまま） */
 .result.after-break { animation: none; }

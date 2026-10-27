@@ -352,14 +352,22 @@ function setupLayers(o: KusahamiAmbushOpts) {
 
 /** 時間を GSAP で進めて render を呼ぶ。終わる（または止められる）まで待つ */
 function run(end: number, render: (t: number) => void): Promise<void> {
-  render(0);
+  // 1 コマの描画で失敗しても、時間割は止めない（止まると片付けが走らず、幕が画面に残る。10月28日）
+  const draw = (t: number) => {
+    try {
+      render(t);
+    } catch (e) {
+      console.warn("[fx] クサハミの演出の描画", e);
+    }
+  };
+  draw(0);
   return new Promise<void>((resolve) => {
     const st = { t: 0 };
     gsap.to(st, {
       t: end,
       duration: end / 1000,
       ease: "none",
-      onUpdate: () => render(st.t),
+      onUpdate: () => draw(st.t),
       onComplete: resolve,
       onInterrupt: resolve,
     });
