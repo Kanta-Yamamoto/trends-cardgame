@@ -11,7 +11,7 @@ import { gsap } from "gsap";
  * モック「決着の演出」（claude.ai の Artifact）は、このファイルをそのまま組み込んで動かしている（動きと秒数は同じ）。
  *
  * 時間割（0 は始まり。始まるのは、最後の一撃の数字とライフ 0 を見せ終えてから。Play.tsx が待つ）：
- * 1. ひび 0〜0.56 秒：ライフのゲージから、帯にひびが 3 段（0・0.17・0.34 秒）で広がる。そのたびに帯が小さく揺れて光る
+ * 1. ひび 0〜0.56 秒：ライフのゲージから、帯に青みの灰色のひびが 3 段（0・0.17・0.34 秒）で広がる。そのたびに帯が小さく揺れて光る
  * 2. 砕ける 0.56 秒：帯が、ひびの形の文字のないガラスの破片になってはじける（帯の元の姿は隠す）。0.05 秒だけふつうの速さ。
  *    勝ち（相手の帯）は白いガラスに相手のゲージの色、負け（自分の帯）は黒いガラス
  * 3. スローモーション 0.61〜1.26 秒：時間がふつうの 7% の速さに落ちる（0.09 秒かけて）。ほかの破片はほとんど止まって漂い、
@@ -32,8 +32,6 @@ type Rect = { left: number; top: number; width: number; height: number };
 type P = { x: number; y: number };
 
 export type LifeBreakEnd = "dark" | "white";
-/** ひびの色（モックで見比べる）：白く光る線（ふちにごく淡い影）／白だけ／薄い灰色／少し濃い灰色 */
-export type CrackColor = "white" | "whiteOnly" | "lightGray" | "gray";
 
 export interface LifeBreakOptions {
   /** 演出を置く層（画面座標。#fx-layer） */
@@ -53,8 +51,8 @@ export interface LifeBreakOptions {
   mine?: boolean;
   /** 切り替え方。省略すると、勝ちは白転・負けは暗転 */
   end?: LifeBreakEnd;
-  /** ひびの色。省略すると white */
-  crackColor?: CrackColor;
+  /** ひびの灰色に混ぜる盤面の青の量（0〜1。モックで見比べる。省略で 0.5） */
+  crackBlue?: number;
   /** 画面が覆われて、結果を出してよいとき（このあと明けて結果が見える） */
   onCovered?: () => void;
   /** 乱数（モックで同じ形を出し直すため）。省略で Math.random */
@@ -89,10 +87,24 @@ const REVEAL = 520; // 明けて結果が見える
 const FLASH = 120; // 白転：白くなりきるまで
 
 const RAYS = 9; // ひびの放射の数
+const CRACK_GRAY = "#9aa5b5"; // ひびの薄い灰色
+const BOARD_BLUE = "#2c7ab8"; // 盤面の地の青（app.css の .play-full）
+const CRACK_BLUE = 0.5; // ひびの灰色に混ぜる青の量
 const BLUR = 6; // まわりのボケ（px）
 const DIM = 0.72; // まわりの明るさ
 
 const s = (ms: number) => ms / 1000;
+/** #rrggbb の 2 色を、b を t の割合で混ぜる */
+const mix = (a: string, b: string, t: number) =>
+  `#${[1, 3, 5]
+    .map((i) => {
+      const x = Number.parseInt(a.slice(i, i + 2), 16);
+      const y = Number.parseInt(b.slice(i, i + 2), 16);
+      return Math.round(x + (y - x) * t)
+        .toString(16)
+        .padStart(2, "0");
+    })
+    .join("")}`;
 /** 0〜1 の濃さを、色に付ける 2 桁の 16 進に */
 const alpha = (a: number) =>
   Math.round(Math.max(0, Math.min(1, a)) * 255)
@@ -282,20 +294,11 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
   // 帯と同じ角の丸みで切る（ひびが帯の外にはみ出さない）
   crackBox.style.borderRadius = `${(Number.parseFloat(getComputedStyle(bar).borderTopLeftRadius) || 0) * scale}px`;
   crackBox.style.overflow = "hidden";
-  // ひびには色を付けない（オーナー：「ヒビの色を黒以外の、白とかガラスと同系統に」「ガラスにヒビが入る時に、
-  // そのヒビの部分に色がつくのが違和感」「薄い灰色とかなのかなヒビの線って。比べたい」）。
-  // white：白く光る線。白い帯の上でも見えるよう、ふちにだけごく淡い灰色の影
-  const crackLayers: Record<CrackColor, (width: number, k: number) => [string, number][]> = {
-    white: (wd, k) => [
-      [`#5f6f86${alpha(0.32 * k)}`, wd * 2.2],
-      ["#ffffff", wd * 1.05],
-    ],
-    whiteOnly: (wd, k) => [[`#ffffff${alpha(k)}`, wd * 1.3]],
-    lightGray: (wd, k) => [[`#9aa5b5${alpha(0.9 * k)}`, wd * 1.1]],
-    gray: (wd, k) => [[`#6b778a${alpha(0.95 * k)}`, wd * 1.1]],
-  };
+  // ひびは、薄い灰色に盤面の地の青を混ぜた線（オーナー：「ガラスにヒビが入る時に、そのヒビの部分に色がつくのが違和感」→
+  // 白く光る線・白だけ・薄い灰色・少し濃い灰色をモックで見比べて「薄い灰色が一番近い」「その色にさらに背景色の青色を混ぜて」）
+  const crackColor = mix(CRACK_GRAY, BOARD_BLUE, opts.crackBlue ?? CRACK_BLUE);
   const crack = (a: P, b: P, width: number, k: number) =>
-    crackLine(crackSvg, a, b, crackLayers[opts.crackColor ?? "white"](width, k));
+    crackLine(crackSvg, a, b, [[`${crackColor}${alpha(0.9 * k)}`, width * 1.1]]);
   const segs: { lines: SVGLineElement[]; stage: number; delay: number }[] = [];
   vtx.forEach((ray, i) => {
     const next = vtx[(i + 1) % RAYS] as P[];
