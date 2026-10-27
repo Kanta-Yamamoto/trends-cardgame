@@ -16,9 +16,9 @@ import { gsap } from "gsap";
  *    勝ち（相手の帯）は白いガラスに相手のゲージの色、負け（自分の帯）は黒いガラス
  * 3. スローモーション 0.61〜1.26 秒：時間がふつうの 7% の速さに落ちる（0.09 秒かけて）。ほかの破片はほとんど止まって漂い、
  *    まわりが 0.42 秒かけてボケる（勝ちは少し暗く、負けは色を失って暗く沈み、四隅から暗くなる）。
- *    こちらへ来る破片 1 枚だけがくっきりしたまま、まわりより速い 22% の速さでゆっくり近づき始める。勝ちはその角がキラッと光る
- * 4. 飛んでくる 1.26〜1.81 秒：時間が 0.46 秒かけてふつうの速さに戻り、その破片が縦の軸でぐるっと 1 回転しながら一気に近づき、
- *    正面を向いて画面いっぱいになる。勝ちは半分来たところでもう一度キラッと光る
+ *    こちらへ来る破片 1 枚だけがくっきりしたまま、まわりより速い 22% の速さでゆっくり近づき始める。勝ちはその角が 1 回キラッと光る
+ * 4. 飛んでくる 1.26〜1.81 秒：時間が 0.46 秒かけてふつうの速さに戻り、その破片が 1 回くるっと裏返りながら（縦の軸で半回転）
+ *    一気に近づき、正面を向いて画面いっぱいになる（オーナー：「回転も輝きも一回でいい」）
  * 5. ぶつかる 1.81 秒：破片が揺れ、end で切り替える（省略すると、勝ちは白転・負けは暗転）
  *    - dark（暗転）：画面全体が一瞬光ってから 0.08 秒で黒くなる → 0.26 秒そのまま → 結果を出して 0.52 秒で明ける
  *    - white（白転）：白く光り、そのまま白い結果の画面へ明ける
@@ -478,22 +478,14 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
   const big = hero
     ? Math.max(frame.width / Math.max(8, hero.bw), frame.height / Math.max(8, hero.bh)) * 2.4
     : 1;
-  // 飛んでくる間に、破片そのものが縦の軸でぐるっと 1 回転し、ぶつかる瞬間に正面を向く（ゆっくり回り始め、時間が戻ると速く回る）
-  const turn = (rnd() < 0.5 ? -1 : 1) * (90 + rnd() * 60);
-  const flip = rnd() < 0.5 ? -360 : 360;
+  // 飛んでくる間に、破片そのものが縦の軸で 1 回くるっと裏返り、ぶつかる瞬間に正面を向く（ゆっくり回り始め、時間が戻ると速く回る）。
+  // ガラスは表と裏が同じ見た目なので、半回転で「1 回の回転」に見える（1 回転させると、裏返るのが 2 回に見えた）。
+  // 画面の上での回りは、ごく小さく
+  const turn = (rnd() < 0.5 ? -1 : 1) * (20 + rnd() * 15);
+  const flip = rnd() < 0.5 ? -180 : 180;
   const total = heroAt(HIT);
-  // 勝ち：こちらへ来る破片の角が、キラッと 2 回光る（近づき始めたときと、半分来たとき）
-  const half = (() => {
-    for (let t = BREAK; t < HIT; t++) if (heroAt(t) >= total / 2) return t;
-    return APPROACH;
-  })();
-  const glints =
-    mine || !hero
-      ? []
-      : [
-          { at: BREAK + BURST + 200, dur: 320, size: 1.25 },
-          { at: half - 40, dur: 260, size: 1 },
-        ];
+  // 勝ち：こちらへ来る破片の角が、近づき始めたときに 1 回キラッと光る
+  const glints = mine || !hero ? [] : [{ at: BREAK + BURST + 200, dur: 320, size: 1.25 }];
   const twinkle = glints.length
     ? place(box({ left: 0, top: 0, width: 72, height: 72 }, { opacity: "0" }))
     : null;
@@ -548,7 +540,7 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
         const hx = (fc.x - start.x) * mix + (rnd() - 0.5) * 20 * knock;
         const hy = (fc.y - start.y) * mix + (rnd() - 0.5) * 20 * knock;
         const spinY = flip * p;
-        const spinX = 28 * Math.sin(p * Math.PI);
+        const spinX = 14 * Math.sin(p * Math.PI);
         const spinZ = turn * lat;
         gsap.set(hero.el, {
           x: hx,
