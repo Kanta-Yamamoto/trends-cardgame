@@ -223,8 +223,6 @@ export type GameEvent =
       cardId: string;
       attack: number;
       hp: number;
-      /** tokenLost：自分のトークンが破壊されたことで強くなった（クサハミ）。画面は、破壊を見せ終えてから「+N」を出す */
-      cause?: "tokenLost";
     }
   | { type: "healed"; player: PlayerId; slot: number; cardId: string; amount: number }
   | { type: "leaderDamaged"; player: PlayerId; amount: number; lp: number }

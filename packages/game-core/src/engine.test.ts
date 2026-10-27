@@ -107,19 +107,13 @@ const catalog: Record<string, RuleCard> = {
   burner: icon("burner", 1, 1, 1, { effects: [{ on: "death", do: "draw", count: 1 }] }),
   popper: icon("popper", 2, 1, 1, { effects: [{ on: "death", do: "damage", to: "allEnemies", amount: 1 }] }),
   eater: icon("eater", 3, 1, 3, {
-    effects: [
-      { on: "play", do: "attackPerLostToken", card: "kusa" },
-      { on: "passive", do: "growOnTokenLost", card: "kusa" },
-    ],
+    effects: [{ on: "play", do: "attackPerLostToken", card: "kusa" }],
     dark: {
       name: "毒草喰らい",
       attack: 1,
       hp: 3,
       keywords: ["速攻"],
-      effects: [
-        { on: "play", do: "attackPerLostToken", card: "kusa" },
-        { on: "passive", do: "growOnTokenLost", card: "kusa" },
-      ],
+      effects: [{ on: "play", do: "attackPerLostToken", card: "kusa" }],
       effect: "",
     },
   }),
@@ -529,7 +523,7 @@ describe("★5 の作り直し（ヒバナ・カグラ・陰謀論者・クサ�
     expect(s.players.p1.trash).toContain("burner");
     expect(s.players.p1.hand.length).toBeGreaterThan(hand);
   });
-  it("クサハミ：自分の草が破壊されるたび攻撃力+1。同時に破壊された分は、まとめて1回の強化にする", () => {
+  it("クサハミ：場に出たあとに自分の草が破壊されても、攻撃力は増えない（場に出たときに確定した数字のまま）", () => {
     let s = game(["eater", "cat"]);
     s = play(s, 0, 0);
     s = play(s, 0, 1);
@@ -537,13 +531,10 @@ describe("★5 の作り直し（ヒバナ・カグラ・陰謀論者・クサ�
     const r = run(s, { type: "endTurn", player: "p1" });
     s = r.state;
     expect(s.players.p1.tokensLost).toEqual({ kusa: 2 });
-    const ups = r.events.filter((e) => e.type === "buffed");
-    expect(ups).toEqual([
-      { type: "buffed", player: "p1", slot: 0, cardId: "eater", attack: 2, hp: 0, cause: "tokenLost" },
-    ]);
+    expect(r.events.filter((e) => e.type === "buffed")).toEqual([]);
     const eater = s.players.p1.field[0] as Unit;
-    expect(eater.atkBuff).toBe(2);
-    expect(viewUnit(s, "p1", eater, catalog).attack).toBe(3);
+    expect(eater.atkBuff).toBe(0);
+    expect(viewUnit(s, "p1", eater, catalog).attack).toBe(1);
   });
   it("クサハミ：場に出たときに、それまでに破壊された草の数を数えて足す。強化なので、数字はあとから勝手に動かない", () => {
     let s = play(game(["cat", "eater"]), 0, 0);
