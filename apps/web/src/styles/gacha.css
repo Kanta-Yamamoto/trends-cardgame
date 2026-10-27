@@ -1,0 +1,221 @@
+/* ガチャ・パックを開ける演出・提供割合・ジェムを買う（10月27日。モックで決めた形）。名前は gx- を頭に付けて、ほかの画面とぶつけない */
+
+/* ジェムの形（水色の宝石） */
+.gx-gem { position: relative; display: inline-block; flex: none; width: 16px; height: 16px; background: linear-gradient(155deg, #e6f9ff 0%, #7fd6f7 35%, #2fa8e4 62%, #1272b0 100%); clip-path: polygon(22% 8%, 78% 8%, 100% 38%, 50% 96%, 0 38%); }
+.gx-gem::after { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, transparent 30%, #ffffffd9 42%, transparent 54%); }
+.gx-gem-pill { flex: none; display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 4px 0 12px; border-radius: 20px; text-decoration: none; color: var(--ink); }
+.gx-gem-pill b { font: 400 18px/1 var(--f-mark); letter-spacing: 0.02em; }
+.gx-gem-pill .gx-plus { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: var(--pri-grad); box-shadow: 0 3px 8px #1780c447; }
+.gx-gem-pill .gx-plus svg { width: 16px; height: 16px; }
+
+/* パック（第1弾）。上の 40px（切り取り線より上）をなぞって切ると飛んでいく */
+.gx-pack { position: relative; width: 200px; height: 300px; filter: drop-shadow(0 22px 30px #1f487847); }
+.gx-pk-body, .gx-pk-cap { position: absolute; inset: 0; border-radius: 8px; overflow: hidden; background: linear-gradient(165deg, #f4f9ff 0%, #cfe6ff 22%, #ffd6ee 42%, #d3fff1 62%, #fff0c4 80%, #dcecff 100%); }
+.gx-pk-body { clip-path: polygon(0% 40px, 10% 35px, 20% 42px, 30% 36px, 40% 43px, 50% 35px, 60% 42px, 70% 36px, 80% 43px, 90% 35px, 100% 41px, 100% 100%, 0% 100%); }
+.gx-pk-cap { clip-path: polygon(0% 0%, 100% 0%, 100% 41px, 90% 35px, 80% 43px, 70% 36px, 60% 42px, 50% 35px, 40% 43px, 30% 36px, 20% 42px, 10% 35px, 0% 40px); }
+.gx-pk-cap.off { animation: gx-cap-fly 0.65s cubic-bezier(0.2, 0.7, 0.4, 1) forwards; }
+.gx-pk-crimp { position: absolute; left: 0; right: 0; height: 16px; background: repeating-linear-gradient(90deg, #ffffff99 0 2px, #1f48781f 2px 5px); }
+.gx-pk-crimp.t { top: 0; }
+.gx-pk-crimp.b { bottom: 0; }
+.gx-pk-foil { position: absolute; inset: 0; background: repeating-linear-gradient(120deg, #ffffff00 0 14px, #ffffff66 14px 16px, #ffffff00 16px 30px); }
+.gx-pk-sheen { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, #ffffffb3 45%, #bfe8ff80 52%, transparent 66%) 0 0 / 300% 100%; animation: sheen 3.6s ease-in-out infinite; }
+.gx-pk-chara { position: absolute; left: 50%; top: 86px; width: 250px; transform: translateX(-50%); filter: drop-shadow(0 8px 12px #1f487855); pointer-events: none; user-select: none; }
+.gx-pk-logo { position: absolute; left: 0; right: 0; top: 50px; text-align: center; font: 400 38px/1 var(--f-mark); letter-spacing: 0.05em; color: #fff; text-shadow: 0 2px 0 #1272b0, 0 4px 0 #0d4f80, 0 10px 18px #1f487866; }
+.gx-pk-band { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); height: 26px; padding: 0 12px; border-radius: 13px; background: #1f2d44e6; color: #fff; font-size: 12px; font-weight: 800; line-height: 26px; white-space: nowrap; }
+
+/* ガチャの画面 */
+.gx-top { position: relative; padding-bottom: 170px; }
+.gx-rays { position: absolute; left: 50%; top: 170px; width: 900px; height: 900px; margin: -450px 0 0 -450px; z-index: -1; pointer-events: none; background: repeating-conic-gradient(from 0deg, #ffffffbf 0deg 6deg, transparent 6deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 52%); mask-image: radial-gradient(circle, #000 0%, transparent 52%); opacity: 0.6; animation: spin 90s linear infinite; }
+.gx-iri { position: absolute; left: 50%; top: 170px; width: 230px; height: 330px; margin: -165px 0 0 -115px; z-index: -1; border-radius: 30px; background: conic-gradient(from 0deg, #ffb3d9, #b5ccff, #9ef0dc, #ffe7a3, #ffb3d9); filter: blur(30px); opacity: 0.5; animation: spin 9s linear infinite; pointer-events: none; }
+.gx-pack-wrap { display: grid; justify-items: center; padding-top: 20px; animation: gx-floaty 3.6s ease-in-out infinite; }
+.gx-info { display: grid; justify-items: center; gap: 8px; margin-top: 22px; text-align: center; }
+.gx-info h2 { margin: 0; font-size: 22px; font-weight: 800; }
+.gx-info .gx-sub { margin: 0; font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.gx-rate3 { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 12px 6px; border-radius: var(--r-l); margin-top: 6px; }
+.gx-rate3 > div { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.gx-rate3 > div + div { border-left: 1px solid var(--line); }
+.gx-rate3 b { font-size: 13px; font-weight: 800; }
+.gx-stars { color: #e0a100; letter-spacing: -0.06em; font-size: 13px; }
+.gx-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9; max-width: 480px; margin: 0 auto; display: grid; gap: 6px; padding: 12px 16px max(18px, env(safe-area-inset-bottom, 0px)); border-radius: var(--r-xl) var(--r-xl) 0 0; background: var(--g3); -webkit-backdrop-filter: blur(24px) saturate(1.6); backdrop-filter: blur(24px) saturate(1.6); border-top: 1px solid #fff; box-shadow: var(--sh-3); }
+.gx-pulls { display: grid; grid-template-columns: 1fr 1.25fr; gap: 10px; }
+.gx-pull { display: grid; place-content: center; justify-items: center; gap: 5px; height: 68px; border-radius: 34px; }
+.gx-pull .l1 { font-size: 16px; font-weight: 800; }
+.gx-pull .l2 { display: flex; align-items: center; gap: 5px; font: 400 16px/1 var(--f-mark); letter-spacing: 0.02em; }
+.gx-pull .gx-gem { width: 14px; height: 14px; }
+.gx-dock .btn.text { justify-self: center; height: 30px; }
+
+/* 下から出る小窓（開ける確認・ジェムが足りない・提供割合・買う確認） */
+.gx-sheet { position: relative; width: 100%; max-width: 480px; max-height: 86dvh; overflow: auto; padding: 8px 18px max(26px, env(safe-area-inset-bottom, 0px)); border-radius: var(--r-xl) var(--r-xl) 0 0; background: var(--g3); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); border-top: 1px solid #fff; box-shadow: var(--sh-3); animation: sheet-up 0.32s cubic-bezier(0.2, 0.9, 0.3, 1); }
+.gx-grip { width: 40px; height: 5px; margin: 0 auto 8px; border-radius: 3px; background: var(--line-2); }
+.gx-sheet h2 { margin: 4px 0 10px; font-size: 18px; font-weight: 800; }
+.gx-sheet p { margin: 0; font-size: 13.5px; line-height: 1.7; }
+.gx-note { font-size: 11.5px !important; color: var(--ink-2); }
+.gx-cost { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 12px 0; padding: 14px; border-radius: var(--r-m); background: var(--pri-soft); }
+.gx-cost b { font: 400 24px/1 var(--f-mark); }
+.gx-cost svg { width: 20px; height: 20px; color: var(--ink-3); }
+.gx-cost .after { color: var(--pri-3); }
+.gx-btns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 14px; }
+.gx-btns .btn { display: flex; align-items: center; justify-content: center; width: 100%; height: 48px; }
+.gx-tbl { display: grid; margin-top: 6px; border-radius: var(--r-m); overflow: hidden; box-shadow: inset 0 0 0 1px var(--line-2); background: #fff; }
+.gx-tr { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 10px; padding: 11px 14px; font-size: 13px; }
+.gx-tr + .gx-tr { border-top: 1px solid var(--line); }
+.gx-tr .k { font-weight: 800; color: var(--ink-2); }
+.gx-tr .v { display: grid; gap: 5px; font-weight: 700; }
+.gx-tr .v span { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.gx-tr .v small { font-size: 11px; color: var(--ink-2); font-weight: 700; margin-right: auto; }
+.gx-pct { font: 400 15px/1 var(--f-mark); letter-spacing: 0.02em; }
+.gx-error { margin-top: 10px !important; font-size: 12.5px !important; font-weight: 800; color: var(--ng); }
+
+/* 提供割合のページ */
+.gx-rates { padding-bottom: 30px; }
+.gx-per { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.gx-per > div { display: grid; justify-items: center; gap: 5px; padding: 12px 4px; border-radius: var(--r-m); text-align: center; }
+.gx-per b { font: 400 20px/1 var(--f-mark); }
+.gx-per small { font-size: 10.5px; font-weight: 700; color: var(--ink-2); }
+.gx-grp { border-radius: var(--r-l); overflow: hidden; margin-bottom: 8px; }
+.gx-grp-h { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 8px 14px; border: 0; background: none; cursor: pointer; text-align: left; color: var(--ink); }
+.gx-grp-h .grow { flex: 1; font-size: 12px; font-weight: 700; color: var(--ink-2); line-height: 1.5; }
+.gx-grp-h svg { flex: none; width: 18px; height: 18px; color: var(--ink-3); transition: transform 0.2s; }
+.gx-grp-h svg.open { transform: rotate(90deg); }
+.gx-cl { display: grid; padding: 0 14px 8px; }
+.gx-cl div { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; font-weight: 700; }
+.gx-cl i { font: 400 14px/1 var(--f-mark); font-style: normal; color: var(--ink-2); white-space: nowrap; }
+.gx-foot { display: grid; gap: 6px; padding: 12px 6px 0; }
+.gx-foot p { margin: 0; font-size: 11.5px; line-height: 1.7; color: var(--ink-2); }
+
+/* ジェムを買う（決済の準備ができるまでは、買えない状態で画面だけ） */
+.gx-shop { padding-bottom: 30px; }
+.gx-bal { margin-top: 6px; padding: 16px; border-radius: var(--r-l); display: grid; gap: 12px; }
+.gx-bal-top { display: flex; align-items: center; justify-content: space-between; }
+.gx-bal-top small { font-size: 12px; font-weight: 800; color: var(--ink-2); }
+.gx-bal-num { display: flex; align-items: center; gap: 8px; }
+.gx-bal-num .gx-gem { width: 24px; height: 24px; }
+.gx-bal-num b { font: 400 32px/1 var(--f-mark); letter-spacing: 0.02em; }
+.gx-bal-split { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); padding-top: 10px; }
+.gx-bal-split span { display: flex; justify-content: center; align-items: baseline; gap: 8px; font-size: 12px; font-weight: 800; color: var(--ink-2); }
+.gx-bal-split span + span { border-left: 1px solid var(--line); }
+.gx-bal-split b { font: 400 17px/1 var(--f-mark); color: var(--ink); }
+.gx-items { display: grid; gap: 8px; }
+.gx-item { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; height: 70px; padding: 0 12px 0 10px; border-radius: var(--r-m); cursor: pointer; text-align: left; color: var(--ink); }
+.gx-item:active { transform: scale(0.98); }
+.gx-pile { position: relative; width: 52px; height: 46px; }
+.gx-pile .gx-gem { position: absolute; }
+.gx-amt { display: grid; gap: 3px; }
+.gx-amt b { font: 400 22px/1 var(--f-mark); letter-spacing: 0.02em; }
+.gx-amt small { font-size: 11px; font-weight: 700; color: var(--ink-2); }
+.gx-price { display: grid; place-items: center; min-width: 84px; height: 38px; padding: 0 12px; border-radius: 19px; background: var(--pri-soft); color: var(--pri-3); font: 400 17px/1 var(--f-mark); letter-spacing: 0.02em; }
+.gx-soon { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 10px 14px; border-radius: var(--r-m); font-size: 12px; font-weight: 800; color: var(--ink-2); }
+.gx-opt { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; margin-top: 8px; padding: 10px 14px; border-radius: var(--r-m); border: 1.5px solid var(--line-2); background: #fff; cursor: pointer; text-align: left; color: var(--ink); }
+.gx-opt .grow { flex: 1; display: grid; gap: 2px; }
+.gx-opt b { font-size: 15px; font-weight: 800; }
+.gx-opt small { font-size: 11.5px; font-weight: 700; color: var(--ink-2); }
+.gx-opt .dot { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line-2); display: grid; place-items: center; }
+.gx-opt.on { border-color: var(--pri-2); box-shadow: 0 0 0 3px #2fa8e42e; }
+.gx-opt.on .dot { border-color: var(--pri-2); }
+.gx-opt.on .dot::after { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--pri-2); }
+.gx-opt > svg { flex: none; width: 26px; height: 26px; color: var(--pri-3); }
+.gx-buy { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: var(--r-m); background: var(--pri-soft); }
+.gx-buy .gx-gem { width: 28px; height: 28px; }
+.gx-buy .grow { flex: 1; display: grid; gap: 2px; }
+.gx-buy b { font: 400 24px/1 var(--f-mark); }
+.gx-buy small { font-size: 11px; font-weight: 700; color: var(--ink-2); }
+.gx-buy .yen { font: 400 24px/1 var(--f-mark); color: var(--pri-3); }
+.gx-sub-h { margin: 16px 0 0 !important; font-size: 12px !important; font-weight: 800; letter-spacing: 0.08em; color: var(--ink-2); }
+.gx-terms { display: grid; gap: 4px; margin-top: 12px; padding: 10px 12px; border-radius: var(--r-s); background: #1f2d440a; }
+.gx-terms div { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; }
+.gx-terms div span:first-child { color: var(--ink-2); }
+
+/* パックを開ける（画面いっぱい。地は対戦の盤面と同じ濃い青。白い光が映えるように） */
+.gx-open { position: fixed; inset: 0; z-index: 70; overflow: hidden; isolation: isolate; color: #fff; background: radial-gradient(circle at 50% 52%, #1d5a92 0%, #0d2f57 45%, #071a33 100%); animation: fade 0.25s ease-out; }
+.gx-open::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0.25; background-image: radial-gradient(#ffffffcc 1px, transparent 1.5px); background-size: 22px 22px; -webkit-mask-image: radial-gradient(circle at 50% 50%, #000, transparent 70%); mask-image: radial-gradient(circle at 50% 50%, #000, transparent 70%); }
+.gx-open-head { position: absolute; left: 0; right: 0; top: 0; z-index: 12; display: flex; align-items: center; gap: 10px; padding: max(12px, env(safe-area-inset-top, 0px)) 14px 8px; }
+.gx-open-head h1 { flex: 1; margin: 0; font-size: 18px; font-weight: 800; }
+.gx-open-head .gx-count { font: 400 16px/1 var(--f-mark); color: #ffffffcc; }
+.gx-dim { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: #000; opacity: 0; transition: opacity 0.4s; }
+.gx-dim.on { opacity: 0.55; }
+/* 舞台：真ん中を原点にして置き、画面の高さに合わせて全体を拡大・縮小する（--s） */
+.gx-stage { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform: translateY(-10px) scale(var(--s, 1)); }
+.gx-pk-out { position: absolute; left: -100px; top: -150px; width: 200px; height: 300px; transition: transform 0.7s cubic-bezier(0.5, 0, 0.7, 0.4), opacity 0.6s; }
+.gx-pk-out.sink { transform: translateY(300px) scale(0.9); opacity: 0; }
+.gx-pk-float { position: relative; width: 200px; height: 300px; animation: gx-floaty 3.6s ease-in-out infinite; }
+.gx-pk-out .gx-pack { filter: drop-shadow(0 22px 30px #0008); }
+.gx-pk-btn { position: absolute; inset: -14px; z-index: 5; border: 0; padding: 0; background: none; cursor: pointer; touch-action: none; border-radius: 12px; }
+.gx-cut { position: absolute; left: 0; top: 37px; z-index: 4; height: 4px; border-radius: 2px; background: #fff; box-shadow: 0 0 10px 3px #ffffffb3, 0 0 24px 6px #bfe8ff80; pointer-events: none; }
+.gx-guide { position: absolute; left: -16px; top: 26px; z-index: 4; width: 232px; height: 26px; pointer-events: none; }
+.gx-guide::before { content: ""; position: absolute; left: 0; right: 0; top: 12px; border-top: 2px dashed #ffffffb3; }
+.gx-guide i { position: absolute; left: 0; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 6px #ffffff40; animation: gx-guide 1.6s ease-in-out infinite; }
+.gx-leak { position: absolute; left: -30px; right: -30px; top: -120px; height: 170px; z-index: -1; pointer-events: none; background: radial-gradient(ellipse 50% 60% at 50% 100%, #ffffffd9 0%, #bfe8ff66 40%, transparent 70%); transform-origin: 50% 100%; animation: gx-leak 0.6s ease-out both; }
+/* カード（裏と表。表は HoloCard） */
+.gx-card { position: absolute; left: -105px; top: -147px; width: 210px; height: 293px; perspective: 1000px; transition: transform 0.55s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.4s; }
+.gx-card.hid { opacity: 0; }
+.gx-in { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.35s cubic-bezier(0.3, 0.7, 0.3, 1); }
+.gx-card.flip .gx-in { transform: rotateY(180deg); }
+.gx-card.now .gx-in { transition: none; }
+.gx-back, .gx-face { position: absolute; inset: 0; border-radius: 12px; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.gx-back { border: 3px solid #fff; box-shadow: 0 14px 26px #0007; transition: box-shadow 0.45s; background: radial-gradient(circle at 50% 50%, #f2cf7a 0 9%, transparent 10%), radial-gradient(circle at 50% 50%, transparent 0 22%, #f2cf7a55 23% 25%, transparent 26%), repeating-linear-gradient(45deg, #1b2a48 0 7px, #16223b 7px 14px); }
+.gx-face { transform: rotateY(180deg); filter: drop-shadow(0 14px 22px #0008); }
+.gx-face .holo { width: 100%; }
+.gx-card.hit .gx-face { filter: drop-shadow(0 0 16px #ffffffcc) drop-shadow(0 14px 22px #0008); }
+.gx-new { position: absolute; left: 50%; top: -34px; transform: translateX(-50%); height: 38px; padding: 0 18px; border-radius: 19px; background: #fff; color: var(--pri-3); font: 400 26px/38px var(--f-mark); letter-spacing: 0.06em; box-shadow: 0 4px 12px #0005; }
+.gx-tap { position: absolute; left: -135px; top: -170px; width: 270px; height: 340px; z-index: 60; border: 0; padding: 0; background: none; cursor: pointer; }
+/* 当たり：宙に浮かせ、真ん中を軸に回す（左が手前）。30% までは加速、そこからゆっくり。表は見せず、まわりから後ろの光が漏れる */
+.gx-card.lift .gx-back { box-shadow: 0 36px 46px #000b; }
+.gx-card.sq .gx-in { transform-origin: 50% 50%; animation: gx-squeeze var(--sq) linear forwards; }
+.gx-card.sq .gx-back::after { content: ""; position: absolute; inset: -3px; border-radius: 12px; box-shadow: inset 0 0 28px 6px #ffffffd9, 0 0 22px 6px #ffffffb3; animation: gx-lit var(--sq) ease-in forwards; }
+.gx-spill { position: absolute; left: 0; top: -26px; width: 0; height: 0; z-index: 45; pointer-events: none; }
+.gx-spill-core { position: absolute; left: -105px; top: -147px; width: 210px; height: 293px; border-radius: 16px; background: #fff; filter: blur(12px); animation: gx-spill-core var(--sq) linear forwards; }
+.gx-spill-glow { position: absolute; left: -300px; top: -300px; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, #ffffff 0%, #ffffffb3 22%, #bfe8ff4d 45%, transparent 68%); animation: gx-spill-glow var(--sq) linear forwards; }
+/* 白い光：画面を覆ってから、ゆっくり引く */
+.gx-white { position: absolute; inset: 0; z-index: 90; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 50%, #fff 0%, #fff 45%, #eef8ff 100%); }
+.gx-white.in { opacity: 1; transition: opacity var(--win) cubic-bezier(0.4, 0, 0.8, 0.6); }
+.gx-white.out { opacity: 0; transition: opacity var(--wout) cubic-bezier(0.2, 0.6, 0.4, 1); }
+/* 当たりのカードを見せる画面 */
+.gx-present { position: absolute; inset: 0; z-index: 85; overflow: hidden; color: var(--ink); background: radial-gradient(circle at 50% 46%, #ffffff 0%, #eef8ff 42%, #cfe6f8 100%); }
+.gx-pr-bg { position: absolute; inset: 0; z-index: 0; border: 0; padding: 0; background: none; cursor: pointer; }
+.gx-pr-halo { position: absolute; left: 50%; top: 47%; width: 520px; height: 520px; margin: -260px 0 0 -260px; border-radius: 50%; background: radial-gradient(circle, #ffffff 0%, #ffffffcc 30%, #bfe8ff59 52%, transparent 70%); animation: gx-breathe 3.2s ease-in-out infinite; pointer-events: none; }
+.gx-pr-spark { position: absolute; bottom: -20px; width: 12px; height: 12px; background: #fff; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 4px #9fd8f7); animation: gx-rise 5s linear infinite; pointer-events: none; }
+.gx-pr-card { position: absolute; z-index: 1; left: 50%; top: 47%; width: min(270px, 70vw); transform: translate(-50%, -50%); animation: gx-pr-in var(--wout) cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+.gx-pr-card .holo { width: 100%; }
+.gx-pr-new { position: absolute; z-index: 2; left: 50%; top: calc(47% - min(189px, 49vw) - 40px); transform: translateX(-50%); height: 30px; padding: 0 16px; border-radius: 15px; background: var(--pri-grad); color: #fff; font: 400 18px/30px var(--f-mark); letter-spacing: 0.08em; box-shadow: 0 6px 16px #1780c447; animation: pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) calc(var(--wout) * 0.6) both; }
+.gx-pr-foot { position: absolute; left: 16px; right: 16px; bottom: max(24px, env(safe-area-inset-bottom, 0px)); z-index: 2; pointer-events: none; display: grid; justify-items: center; gap: 10px; animation: fade 0.6s ease-out var(--wout) both; }
+.gx-pr-foot p { margin: 0; font-size: 13px; font-weight: 800; color: var(--ink-2); letter-spacing: 0.04em; }
+.gx-open-hint { position: absolute; left: 0; right: 0; bottom: calc(max(24px, env(safe-area-inset-bottom, 0px)) + 64px); z-index: 61; margin: 0; text-align: center; font-size: 13px; font-weight: 800; color: #ffffffd9; letter-spacing: 0.04em; pointer-events: none; }
+.gx-open-hint b { font: 400 15px/1 var(--f-mark); margin-left: 6px; color: #fff; }
+.gx-open-dock { position: absolute; left: 16px; right: 16px; bottom: max(20px, env(safe-area-inset-bottom, 0px)); z-index: 80; display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+.gx-open-dock.one { grid-template-columns: 1fr; }
+.gx-open-dock .btn { display: flex; align-items: center; justify-content: center; width: 100%; height: 50px; font-size: 15px; }
+.btn.ghost.gx-dk { color: #fff; background: #ffffff1f; border: 1px solid #ffffff59; box-shadow: none; }
+
+/* 10 パックの結果（明るい地） */
+.gx-sum { position: absolute; inset: 0; z-index: 95; overflow: auto; color: var(--ink); background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 42%, var(--bg-bot) 100%); padding: 0 16px 120px; animation: fade 0.3s ease-out; }
+.gx-sum-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px; margin: 0 -16px; padding: max(12px, env(safe-area-inset-top, 0px)) 16px 10px; background: linear-gradient(#dcf0ffeb 70%, #dcf0ff00); }
+.gx-sum-head h1 { flex: 1; margin: 0; font-size: 20px; font-weight: 800; }
+.gx-sum-head h1 small { display: block; margin-top: 1px; font-size: 11px; font-weight: 700; color: var(--ink-2); }
+.gx-sum-count { display: flex; gap: 8px; margin-top: 4px; }
+.gx-sum-count > div { flex: 1; display: grid; justify-items: center; gap: 4px; padding: 10px 0; border-radius: var(--r-m); }
+.gx-sum-count .gx-stars { font-size: 11px; }
+.gx-sum-count b { font: 400 22px/1 var(--f-mark); }
+.gx-sum-count b small { font: 800 11px/1 var(--f-ui); color: var(--ink-2); margin-left: 2px; }
+.gx-hits5 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.gx-hits4 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.gx-th { position: relative; animation: rise-in 0.45s ease-out backwards; }
+.gx-th .holo { width: 100%; }
+.gx-hits5 .gx-th { filter: drop-shadow(0 0 10px #ffffffe6); }
+.gx-th .gx-tnew { position: absolute; left: 4px; top: -6px; z-index: 2; height: 18px; padding: 0 7px; border-radius: 9px; background: #fff; color: var(--pri-3); font: 400 12px/18px var(--f-mark); letter-spacing: 0.06em; box-shadow: var(--sh-1); }
+.gx-hits4 .gx-tnew, .gx-prow .gx-tnew { height: 14px; padding: 0 4px; font-size: 9px; line-height: 14px; left: 1px; top: -5px; }
+.gx-packs { display: grid; gap: 8px; }
+.gx-prow { display: grid; grid-template-columns: 24px repeat(5, minmax(0, 1fr)); gap: 6px; align-items: center; padding: 8px 10px 8px 6px; border-radius: var(--r-m); }
+.gx-pno { font: 400 16px/1 var(--f-mark); color: var(--ink-3); text-align: center; }
+.gx-sum-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; max-width: 480px; margin: 0 auto; padding: 12px 16px max(18px, env(safe-area-inset-bottom, 0px)); border-radius: var(--r-xl) var(--r-xl) 0 0; background: var(--g3); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); border-top: 1px solid #fff; box-shadow: var(--sh-3); }
+
+@keyframes gx-floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes gx-cap-fly { to { transform: translate(70px, -160px) rotate(32deg); opacity: 0; } }
+@keyframes gx-leak { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+@keyframes gx-guide { 0% { transform: translateX(0); opacity: 0; } 15% { opacity: 1; } 80% { transform: translateX(212px); opacity: 1; } 100% { transform: translateX(212px); opacity: 0; } }
+@keyframes gx-squeeze { 0% { transform: rotateY(0deg); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.7); } 26% { transform: rotateY(30deg); animation-timing-function: cubic-bezier(0.25, 0.4, 0.55, 1); } 100% { transform: rotateY(82deg); } }
+@keyframes gx-lit { 0% { opacity: 0; } 26% { opacity: 0.35; } 100% { opacity: 1; } }
+@keyframes gx-spill-core { 0% { opacity: 0; transform: scale(0.96); } 26% { opacity: 0.7; transform: scale(1.04); } 100% { opacity: 1; transform: scale(1.2); } }
+@keyframes gx-spill-glow { 0% { opacity: 0; transform: scale(0.3); } 26% { opacity: 0.4; transform: scale(0.7); } 100% { opacity: 1; transform: scale(1.9); } }
+@keyframes gx-breathe { 50% { scale: 1.06; } }
+@keyframes gx-pr-in { from { transform: translate(-50%, -50%) scale(1.14); filter: brightness(1.8) blur(6px); } to { transform: translate(-50%, -50%) scale(1); filter: none; } }
+@keyframes gx-rise { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-110dvh) scale(1); opacity: 0; } }

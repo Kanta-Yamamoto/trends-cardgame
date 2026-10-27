@@ -1,4 +1,6 @@
 import { Link, useLocation } from "react-router";
+import { GemPill } from "./gacha/Pack";
+import { useWallet } from "./gacha/wallet";
 import { useSession } from "./online/session";
 
 /** 画面ごとの題名（上の帯に出す）。小さい字は題名の下の説明 */
@@ -8,8 +10,13 @@ const TITLES: Record<string, { title: string; sub?: string }> = {
   "/play": { title: "CPUと対戦" },
   "/online": { title: "オンライン対戦" },
   "/ranking": { title: "ランキング", sub: "ランダムマッチのレート" },
-  "/gacha": { title: "ガチャを回す" },
+  "/gacha": { title: "ガチャ" },
+  "/gacha/rates": { title: "提供割合", sub: "第1弾パック" },
+  "/shop": { title: "ジェムを買う" },
+  "/me": { title: "マイページ" },
 };
+/** 戻るボタンの行き先（無ければホーム） */
+const BACK: Record<string, string> = { "/gacha/rates": "/gacha", "/shop": "/gacha" };
 
 function titleOf(pathname: string) {
   if (pathname.startsWith("/online/")) return { title: "オンライン対戦", sub: "友だちとの部屋" };
@@ -20,11 +27,13 @@ function titleOf(pathname: string) {
 export function TopBar() {
   const { pathname } = useLocation();
   const name = useSession((st) => st.user?.name);
+  const wallet = useWallet((st) => st.wallet);
+  const back = BACK[pathname] ?? "/";
   const { title, sub = pathname === "/online" && name ? `${name} でログイン中` : undefined } =
     titleOf(pathname);
   return (
     <div className="topbar">
-      <Link to="/" className="topbar-back g1" aria-label="ホームへ戻る">
+      <Link to={back} className="topbar-back g1" aria-label={back === "/" ? "ホームへ戻る" : "戻る"}>
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -41,6 +50,7 @@ export function TopBar() {
         {title}
         {sub && <small>{sub}</small>}
       </h1>
+      {pathname === "/gacha" && <GemPill wallet={wallet} />}
     </div>
   );
 }

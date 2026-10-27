@@ -5,6 +5,8 @@ export interface User {
   id: string;
   name: string;
   picture: string | null;
+  /** 本人がプレイヤー名を決めたか（false なら初期登録の画面だけを出す。前の版で保存したログインは持たない） */
+  nameSet?: boolean;
 }
 export interface AuthConfig {
   googleClientId: string;
@@ -51,6 +53,8 @@ interface Session {
   user: User | null;
   loginWithGoogle: (credential: string) => Promise<void>;
   loginForDev: (name: string) => Promise<void>;
+  /** 名前を決めた・変えたあとの、新しいトークンとユーザーに入れ替える */
+  setSession: (r: { token: string; user: User }) => void;
   logout: () => void;
   /** 保存してあるログインがまだ使えるか確かめる（期限切れ・消えたアカウントならログアウト） */
   check: () => Promise<void>;
@@ -69,6 +73,7 @@ export const useSession = create<Session>((set) => {
       done(await api("/auth/google", { method: "POST", body: JSON.stringify({ credential }) })),
     loginForDev: async (name) =>
       done(await api("/auth/dev", { method: "POST", body: JSON.stringify({ name }) })),
+    setSession: done,
     logout: () => {
       save(null);
       set({ token: null, user: null });
@@ -82,6 +87,12 @@ export const useSession = create<Session>((set) => {
         if (res.status === 401) {
           save(null);
           set({ token: null, user: null });
+          return;
+        }
+        // 名前を決めたか・今の名前を、サーバーの値にそろえる（別の端末で名前を変えたときも）
+        if (res.ok) {
+          const me = (await res.json()) as User;
+          if (load()?.token === token && typeof me.nameSet === "boolean") done({ token, user: me });
         }
       } catch {
         // 確かめられなくても、そのまま使う

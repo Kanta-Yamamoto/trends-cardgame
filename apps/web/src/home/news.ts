@@ -12,6 +12,12 @@ export interface NewsItem {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: "2026-10-27-gacha",
+    date: "10/27",
+    tag: "更新",
+    title: "プレイヤー名を決められるようになり、マイページとガチャができました",
+  },
+  {
     id: "2026-10-27-finale",
     date: "10/27",
     tag: "更新",

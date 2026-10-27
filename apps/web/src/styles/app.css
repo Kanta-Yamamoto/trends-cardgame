@@ -1347,26 +1347,9 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
   @keyframes op-fade { 0% { opacity: 0; } 15%, 85% { opacity: 1; } 100% { opacity: 0; } }
 }
 
-/* ---------- ホームの外枠・ガチャ（準備中） ---------- */
+/* ---------- ホームの外枠（ガチャは styles/gacha.css） ---------- */
 /* ホーム（Home.tsx）は画面いっぱいに自分で置くので、外枠は余白を付けない */
 .home-shell { min-height: 100dvh; }
-/* ガチャ（準備中）：光の筋の上に裏向きのカードを扇に並べ、下にすりガラスの台 */
-.gacha-page { position: relative; min-height: calc(100dvh - 68px - max(10px, env(safe-area-inset-top, 0px))); padding-top: 0; }
-.gacha-rays { position: absolute; left: 50%; top: 250px; width: 900px; height: 900px; margin: -450px 0 0 -450px; z-index: -1; pointer-events: none; background: repeating-conic-gradient(from 0deg, #ffffffbf 0deg 6deg, transparent 6deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 52%); mask-image: radial-gradient(circle, #000 0%, transparent 52%); opacity: 0.6; animation: spin 90s linear infinite; }
-.gacha-fan { position: absolute; left: 50%; top: 250px; width: 0; height: 0; }
-.gacha-back { position: absolute; left: -74px; top: -104px; width: 148px; height: 208px; overflow: hidden; border-radius: 14px; border: 3px solid #fff; box-shadow: 0 16px 30px #1f487840; transform-origin: 50% 160%; background: radial-gradient(circle at 50% 50%, #f2cf7a 0 9%, transparent 10%), radial-gradient(circle at 50% 50%, transparent 0 22%, #f2cf7a55 23% 25%, transparent 26%), repeating-linear-gradient(45deg, #1b2a48 0 7px, #16223b 7px 14px); }
-.gacha-back::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 35%, #ffffff66 48%, #bfe8ff55 52%, transparent 64%) 0 0 / 300% 100%; animation: sheen 3.6s ease-in-out infinite; }
-.gacha-back.b1 { transform: rotate(-14deg); }
-.gacha-back.b2 { transform: rotate(14deg); }
-.gacha-back.b3 { animation: gacha-float 3.6s ease-in-out infinite; }
-@keyframes gacha-float { 0%, 100% { transform: translateY(-10px); } 50% { transform: translateY(-16px); } }
-.gacha-iri { position: absolute; left: -90px; top: -122px; width: 180px; height: 244px; border-radius: 22px; background: conic-gradient(from 0deg, #ffb3d9, #b5ccff, #9ef0dc, #ffe7a3, #ffb3d9); filter: blur(26px); opacity: 0.45; animation: spin 8s linear infinite; }
-.gacha-spark { position: absolute; width: 16px; height: 16px; background: #fff; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 6px #9fe3fb); animation: twinkle 2.4s ease-in-out infinite; }
-@keyframes twinkle { 0%, 100% { opacity: 0.2; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1.1); } }
-.gacha-box { position: absolute; left: 0; right: 0; bottom: 30px; display: grid; justify-items: center; gap: 10px; padding: 22px 20px 20px; border-radius: var(--r-xl); text-align: center; }
-.gacha-box h2 { margin: 0; font-size: 22px; font-weight: 800; }
-.gacha-soon { height: 28px; padding: 0 14px; border-radius: 14px; font-size: 12px; letter-spacing: 0.12em; }
-.gacha-box .btn { margin-top: 4px; }
 /* ログインの画面（ログインしていなければ、どのページでもこれだけ。App.tsx） */
 .login-screen { position: fixed; inset: 0; overflow: hidden; isolation: isolate; }
 .login-bg { position: absolute; inset: -30px; z-index: -2; }
