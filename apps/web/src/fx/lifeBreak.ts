@@ -51,8 +51,8 @@ export interface LifeBreakOptions {
   mine?: boolean;
   /** 切り替え方。省略すると、勝ちは白転・負けは暗転 */
   end?: LifeBreakEnd;
-  /** 割れ目から地の青が透ける濃さ（0〜1。モックで見比べる。省略で CRACK_SEE） */
-  crackSee?: number;
+  /** ひびの色（地の青）に混ぜる白の量（0〜1。モックで見比べる。省略で CRACK_WHITE） */
+  crackWhite?: number;
   /** 画面が覆われて、結果を出してよいとき（このあと明けて結果が見える） */
   onCovered?: () => void;
   /** 乱数（モックで同じ形を出し直すため）。省略で Math.random */
@@ -89,10 +89,21 @@ const FLASH = 120; // 白転：白くなりきるまで
 const RAYS = 9; // ひびの放射の数
 const BOARD_BLUE = "#2c7ab8"; // 盤面の地の青（app.css の .play-full）
 const CRACK_SEE = 0.45; // 割れ目から地の青が透ける濃さ
+const CRACK_WHITE = 0.5; // ひびの色（地の青）に混ぜる白の量
 const BLUR = 6; // まわりのボケ（px）
 const DIM = 0.72; // まわりの明るさ
 
 const s = (ms: number) => ms / 1000;
+/** #rrggbb に白を t の割合で混ぜる */
+const whiten = (hex: string, t: number) =>
+  `#${[1, 3, 5]
+    .map((i) => {
+      const x = Number.parseInt(hex.slice(i, i + 2), 16);
+      return Math.round(x + (255 - x) * t)
+        .toString(16)
+        .padStart(2, "0");
+    })
+    .join("")}`;
 /** 0〜1 の濃さを、色に付ける 2 桁の 16 進に */
 const alpha = (a: number) =>
   Math.round(Math.max(0, Math.min(1, a)) * 255)
@@ -291,10 +302,11 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
     `<filter id="${id}" filterUnits="userSpaceOnUse" x="0" y="0" width="${w}" height="${h}"><feGaussianBlur stdDeviation="${sd}"/></filter>`;
   crackSvg.innerHTML = `<defs>${blur(`${fid}-soft`, 1.3)}${blur(`${fid}-core`, 0.45)}</defs><g filter="url(#${fid}-soft)"></g><g filter="url(#${fid}-core)"></g>`;
   const [soft, core] = [...crackSvg.querySelectorAll("g")] as SVGGElement[];
-  const see = opts.crackSee ?? CRACK_SEE;
+  // 「もっと色薄くていいな、つまり白をもう少し混ぜて」→ 地の青に白を混ぜる
+  const blue = whiten(BOARD_BLUE, opts.crackWhite ?? CRACK_WHITE);
   const crack = (a: P, b: P, width: number, k: number) => [
-    ...crackLine(soft as SVGGElement, a, b, [[`${BOARD_BLUE}${alpha(see * 0.55 * k)}`, width * 2.6]]),
-    ...crackLine(core as SVGGElement, a, b, [[`${BOARD_BLUE}${alpha(see * k)}`, width * 1.0]]),
+    ...crackLine(soft as SVGGElement, a, b, [[`${blue}${alpha(CRACK_SEE * 0.55 * k)}`, width * 2.6]]),
+    ...crackLine(core as SVGGElement, a, b, [[`${blue}${alpha(CRACK_SEE * k)}`, width * 1.0]]),
   ];
   const segs: { lines: SVGLineElement[]; stage: number; delay: number }[] = [];
   vtx.forEach((ray, i) => {
