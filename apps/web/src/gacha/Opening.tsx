@@ -2,6 +2,7 @@ import { CARDS, type CardDef } from "@trends/cards";
 import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } from "react";
 import { HoloCard } from "../cards/HoloCard";
 import { frameSize } from "../frame";
+import { useMusicHush } from "../sound/music";
 import { PACK_NAME, Pack } from "./Pack";
 import { grab, letGo, newTear, PACK_H, PACK_W, pull, shape, step, still, type TearEvent } from "./tear";
 
@@ -143,6 +144,8 @@ export function Opening({
   const big = rarity >= 5;
   const t = HIT[big ? 5 : 4];
   const many = packs.length > 1;
+  // 開けている間はガチャの曲を消し、最後の結果（1 パックは 5 枚が並んだところ、10 パックは結果の一覧）でゆっくり戻す
+  useMusicHush(!(s.summary || (!many && s.phase === "done")));
 
   const tear = () => {
     patch({ phase: "tear" });
