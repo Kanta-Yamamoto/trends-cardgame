@@ -3,6 +3,7 @@ import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } fr
 import { HoloCard } from "../cards/HoloCard";
 import { frameSize } from "../frame";
 import { PACK_NAME, Pack } from "./Pack";
+import { grab, letGo, newTear, PACK_H, PACK_W, pull, shape, step, still, type TearEvent } from "./tear";
 
 /** 開けたパックの 1 枚（isNew：このガチャの前は持っていなかった） */
 export interface PulledCard {
@@ -53,8 +54,6 @@ interface St {
   /** 何パック目か */
   at: number;
   phase: Phase;
-  /** 切り取り線をどこまで切ったか（0〜1） */
-  cut: number;
   /** 何枚目をめくっているか */
   cur: number;
   flipped: boolean;
@@ -62,7 +61,17 @@ interface St {
   /** 10 パックの結果を出しているか */
   summary: boolean;
 }
-const FIRST: St = { at: 0, phase: "idle", cut: 0, cur: 0, flipped: false, hit: "", summary: false };
+const FIRST: St = { at: 0, phase: "idle", cur: 0, flipped: false, hit: "", summary: false };
+
+/** 裂くときの手ごたえの震え（Android の Chrome だけ。iPhone の Safari は震わせられない） */
+const BUZZ: Record<TearEvent, number> = { notch: 14, tick: 6, done: 28 };
+function buzz(e: TearEvent) {
+  try {
+    navigator.vibrate?.(BUZZ[e]);
+  } catch {
+    // 震わせられなくても、裂ける
+  }
+}
 
 /** 舞台の大きさ：画面の高さに合わせて、全体を拡大・縮小する */
 function stageScale() {
@@ -71,7 +80,7 @@ function stageScale() {
 }
 
 /**
- * パックを開ける（画面いっぱい）。パックの上を横になぞって裂き、1 枚ずつめくる。
+ * パックを開ける（画面いっぱい）。パックの上半分を横になぞって裂き（手ごたえは tear.ts）、1 枚ずつめくる。
  * 5 枚目が★4・★5 のときは、浮かせて回し、漏れた光が白く画面を覆ってから、当たりのカードを見せる。
  * 10 パックは 1 パックずつ同じ開け方で、スキップすると 10 パックの結果へ
  */
@@ -93,14 +102,21 @@ export function Opening({
   const ref = useRef(s);
   ref.current = s;
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const cutIv = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
-  const drag = useRef<{ x0: number; w: number; moved: boolean } | null>(null);
+  /** 裂く手ごたえ。指の動きのたびに React を描き直さず、毎フレーム CSS 変数だけを書く（カード 5 枚を描き直さない） */
+  const tr = useRef(newTear());
+  const floatRef = useRef<HTMLDivElement>(null);
+  const raf = useRef(0);
+  const drag = useRef<{ x0: number; box: DOMRect; moved: boolean } | null>(null);
 
+  const stopTear = () => {
+    cancelAnimationFrame(raf.current);
+    raf.current = 0;
+    drag.current = null;
+  };
   const stopAll = () => {
     for (const t of timers.current) clearTimeout(t);
     timers.current = [];
-    clearInterval(cutIv.current);
-    drag.current = null;
+    stopTear();
   };
   const later = (fn: () => void, ms: number) => {
     timers.current.push(setTimeout(fn, ms));
@@ -113,7 +129,7 @@ export function Opening({
     return () => {
       window.removeEventListener("resize", onResize);
       for (const t of timers.current) clearTimeout(t);
-      clearInterval(cutIv.current);
+      cancelAnimationFrame(raf.current);
     };
   }, []);
 
@@ -129,23 +145,55 @@ export function Opening({
   const many = packs.length > 1;
 
   const tear = () => {
-    patch({ phase: "tear", cut: 1 });
+    patch({ phase: "tear" });
     later(() => patch({ phase: "rise" }), 500);
     later(() => patch({ phase: "reveal" }), 1150);
   };
-  const autoCut = () => {
-    clearInterval(cutIv.current);
-    cutIv.current = setInterval(() => {
-      const c = Math.min(1, ref.current.cut + 16 / 380);
-      if (c >= 1) {
-        clearInterval(cutIv.current);
-        tear();
-      } else patch({ cut: c });
-    }, 16);
+  /** 手ごたえを 1 フレームすすめ、パックの傾き・切り取り線・上の端・口の開きを CSS 変数に書く。止まったら回すのをやめる */
+  const frame = (prev: number) => (now: number) => {
+    const t = tr.current;
+    for (const e of step(t, Math.min(0.05, Math.max(0, (now - prev) / 1000)))) {
+      buzz(e);
+      if (e === "done") tear();
+    }
+    const el = floatRef.current;
+    if (el) {
+      const f = shape(t);
+      const px = (k: string, v: number) => el.style.setProperty(k, `${v.toFixed(2)}px`);
+      const deg = (k: string, v: number) => el.style.setProperty(k, `${v.toFixed(2)}deg`);
+      px("--tip", f.tip);
+      px("--yl", f.yl);
+      px("--yt", f.yt);
+      px("--yr", f.yr);
+      deg("--ang", f.ang);
+      px("--hx", f.hx);
+      px("--mouth", f.mouth);
+      px("--mouth-end", f.mouthEnd);
+      px("--band", f.band);
+      deg("--rot", f.rot);
+      px("--px", f.rot * 1.4);
+      deg("--capr", f.capR);
+      deg("--capl", f.capL);
+      el.classList.toggle("grip", t.hold);
+      el.classList.toggle("torn", t.tip > 0);
+    }
+    raf.current = el && !still(t) ? requestAnimationFrame(frame(now)) : 0;
+  };
+  const run = () => {
+    if (!raf.current) raf.current = requestAnimationFrame(frame(performance.now()));
+  };
+  /** 指の位置を、パックの中の位置（幅 PACK_W・高さ PACK_H）にする */
+  const packAt = (e: PointerEvent<HTMLButtonElement>): [number, number] => {
+    const b = drag.current?.box;
+    if (!b?.width || !b.height) return [0, 0];
+    return [((e.clientX - b.left) / b.width) * PACK_W, ((e.clientY - b.top) / b.height) * PACK_H];
   };
   const packDown = (e: PointerEvent<HTMLButtonElement>) => {
-    if (ref.current.phase !== "idle") return;
-    drag.current = { x0: e.clientX, w: e.currentTarget.getBoundingClientRect().width, moved: false };
+    const el = floatRef.current;
+    if (ref.current.phase !== "idle" || !el) return;
+    drag.current = { x0: e.clientX, box: el.getBoundingClientRect(), moved: false };
+    grab(tr.current, ...packAt(e));
+    run();
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
@@ -155,21 +203,16 @@ export function Opening({
   const packMove = (e: PointerEvent<HTMLButtonElement>) => {
     const d = drag.current;
     if (!d || ref.current.phase !== "idle") return;
-    const dx = Math.abs(e.clientX - d.x0);
-    if (dx > 6) d.moved = true;
-    const cut = Math.min(1, dx / (d.w * 0.85));
-    if (cut >= 1) {
-      drag.current = null;
-      tear();
-    } else patch({ cut });
+    if (Math.abs(e.clientX - d.x0) > 6) d.moved = true;
+    pull(tr.current, ...packAt(e));
+    run();
   };
   const packUp = () => {
     const d = drag.current;
     if (!d) return;
     drag.current = null;
-    // 押しただけ・7 割まで切ったときは、残りを自動で切る
-    if (!d.moved || ref.current.cut >= 0.7) autoCut();
-    else patch({ cut: 0 });
+    letGo(tr.current, !d.moved);
+    run();
   };
 
   /** ★5：画面いっぱいのカードを、舞台のカードの大きさまで縮めて、一連の流れを終える */
@@ -203,6 +246,7 @@ export function Opening({
   };
   const nextPack = () => {
     stopAll();
+    tr.current = newTear();
     setS({ ...FIRST, at: ref.current.at + 1 });
   };
 
@@ -249,17 +293,16 @@ export function Opening({
       <div className="gx-stage">
         {(phase === "idle" || phase === "tear" || phase === "rise") && (
           <div className={`gx-pk-out ${phase === "rise" ? "sink" : ""}`}>
-            <div className="gx-pk-float">
-              {phase !== "idle" && <div className="gx-leak" />}
-              <Pack capOff={phase !== "idle"} />
-              {phase === "idle" && s.cut > 0 && (
-                <div className="gx-cut" style={{ width: `${s.cut * 100}%` }} />
-              )}
-              {phase === "idle" && s.cut === 0 && (
-                <div className="gx-guide" aria-hidden="true">
-                  <i />
-                </div>
-              )}
+            <div className="gx-pk-float" ref={floatRef}>
+              <div className="gx-pk-pull">
+                {phase !== "idle" && <div className="gx-leak" />}
+                <Pack capOff={phase !== "idle"} />
+                {phase === "idle" && (
+                  <div className="gx-guide" aria-hidden="true">
+                    <i />
+                  </div>
+                )}
+              </div>
               <button
                 type="button"
                 className="gx-pk-btn"
