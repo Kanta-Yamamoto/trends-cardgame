@@ -94,6 +94,8 @@ import { CATALOG, CPU, DECK_INFO, ME, openingMs, setPresenter, useGame } from ".
 import { useDragPlay } from "../game/useDragPlay";
 import { type ClockLeft, formatClock, useClockLeft, useLive } from "../online/live";
 import { useSession } from "../online/session";
+import { MusicToggle } from "../sound/MusicToggle";
+import { usePageMusic } from "../sound/music";
 import { lockZoom, resetZoom } from "../viewport";
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -1124,6 +1126,8 @@ export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: 
     resign,
   } = useGame();
   const online = mode === "online";
+  // 盤面を出している間は、対戦の曲を流す（CPU 戦・オンライン対戦のどちらも。上の帯の左の音楽のボタンで止められる）
+  usePageMusic("battle");
   // オンライン対戦の持ち時間（CPU 戦では null）
   const myClock = useClockLeft(ME, game?.active ?? ME);
   const foeClock = useClockLeft(CPU, game?.active ?? ME);
@@ -2129,7 +2133,11 @@ export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: 
             <div key={ambush} className="kusa-field" ref={ambushField} aria-hidden="true" />
           )}
           <div className="ptop">
-            {quitBtn}
+            {/* 音楽のボタンは左（右はオンライン対戦で「降参」まで並び、空きがない） */}
+            <span className="ptop-left">
+              {quitBtn}
+              <MusicToggle className="btn ghost small pmusic" />
+            </span>
             {turnPill}
             <span className="ptop-right">
               <button type="button" className="btn ghost small plog" onClick={() => setLogOpen(true)}>

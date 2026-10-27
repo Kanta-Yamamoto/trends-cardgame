@@ -6,14 +6,15 @@ import { markNewsSeen, NEWS, unseenCount } from "../home/news";
 import { InstallGuide, useCanInstall } from "../InstallButton";
 import { api, useSession } from "../online/session";
 import { dismissGuide, refreshApp } from "../pwa";
-import { setMusicOn, useHomeMusic, useMusicOn } from "../sound/homeMusic";
+import { MusicToggle } from "../sound/MusicToggle";
+import { usePageMusic } from "../sound/music";
 import "../styles/home.css";
 
 /**
  * ホーム画面（10月26日。オーナーが UI 案の A（推しが主役・下に対戦ボタン）と配色の ①ソーダ を選んだ）。
  * 真ん中に★5 のキャラクターが立ち、ふわっと浮いて呼吸する。押すと跳ね、指の位置に合わせて少し傾く。
  * 下に「オンライン対戦」「CPUと対戦」の大きなボタンと、「デッキを組む」「カード一覧」「ガチャを回す」。
- * 開いている間は音楽が流れ、右上のボタンで止められる（sound/homeMusic.ts）
+ * 開いている間は音楽が流れ、右上のボタンで止められる（sound/music.ts）
  */
 
 /** ホームに立てるキャラクター：切り抜きの絵がある★5（トークンは除く） */
@@ -110,8 +111,6 @@ const I = {
     "M12 7v7M9 11l3 3 3-3",
   ],
   refresh: ["M20 11a8 8 0 1 0-2.3 5.7", "M20 4v7h-7"],
-  sound: ["M4 9.5h3.5L12 6v12l-4.5-3.5H4z", "M15.5 9.5a3.5 3.5 0 0 1 0 5", "M18.5 7a7 7 0 0 1 0 10"],
-  mute: ["M4 9.5h3.5L12 6v12l-4.5-3.5H4z", "M16 10l4 4M20 10l-4 4"],
   logout: ["M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3", "M10 8l-4 4 4 4M6 12h10"],
 };
 
@@ -121,8 +120,7 @@ export function Home() {
   const logout = useSession((s) => s.logout);
   const navigate = useNavigate();
   const canInstall = useCanInstall();
-  useHomeMusic();
-  const musicOn = useMusicOn();
+  usePageMusic("home");
 
   const [charaId, setCharaId] = useState(loadChara);
   const chara = CHARAS.find((c) => c.id === charaId) ?? CHARAS[0];
@@ -205,14 +203,7 @@ export function Home() {
           </span>
         </Link>
         <span className="hm-top-actions">
-          <button
-            type="button"
-            className="hm-icon-btn hm-glass"
-            aria-label={musicOn ? "音楽を止める" : "音楽を流す"}
-            onClick={() => setMusicOn(!musicOn)}
-          >
-            <Icon d={musicOn ? I.sound : I.mute} />
-          </button>
+          <MusicToggle className="hm-icon-btn hm-glass" />
           <button type="button" className="hm-icon-btn hm-glass" aria-label="お知らせ" onClick={openNews}>
             <Icon d={I.bell} />
             {unseen > 0 && <span className="hm-badge">{unseen}</span>}
