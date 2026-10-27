@@ -572,6 +572,66 @@ describe("★5 の作り直し（ヒバナ・カグラ・陰謀論者・クサ�
     });
     expect(viewUnit(r.state, "p1", dark, catalog).attack).toBe(4);
   });
+  it("本物のクサハミ（c14）：場に出たとき・闇堕ちしたときに確定した攻撃力は、あとで草が破壊されても変わらない", () => {
+    const real = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string, RuleCard>;
+    const go = (s: GameState, a: Action) => applyAction(s, a, real);
+    const field = (s: GameState) => s.players.p1.field;
+    const attack = (s: GameState, slot: number) => viewUnit(s, "p1", field(s)[slot] as Unit, real).attack;
+    const turn = (s: GameState) => {
+      const r = go(go(s, { type: "endTurn", player: "p1" }).state, { type: "endTurn", player: "p2" }).state;
+      r.players.p1.mana = 10;
+      return r;
+    };
+    const playCard = (s: GameState, id: string) =>
+      go(s, {
+        type: "play",
+        player: "p1",
+        handIndex: s.players.p1.hand.indexOf(id),
+        slot: field(s).findIndex((u) => !u),
+      }).state;
+    // 草は体力1。ダメージを1にしておくと、ターンの終わりに破壊される
+    const killGrass = (s: GameState) => {
+      const u = field(s).find((u) => u?.cardId === "t-kusa");
+      if (u) u.damage = 1;
+    };
+    // 手札：猫ミーム（草を2体出す）・クサハミ・リプ欄の民（草を1体出す）
+    let s = createGame({
+      decks: { p1: ["k1", "c14", "k6", "k6", ...Array(16).fill("k6")], p2: Array(20).fill("k6") },
+      seed: 42,
+      shuffle: false,
+      config: { startHand: 4 },
+    });
+    s.players.p1.mana = 10;
+    s = playCard(s, "k1");
+    killGrass(s);
+    s = turn(s);
+    expect(s.players.p1.tokensLost).toEqual({ "t-kusa": 1 });
+
+    s = playCard(s, "c14");
+    const at = field(s).findIndex((u) => u?.cardId === "c14");
+    expect(attack(s, at)).toBe(3); // 2 ＋ 破壊された草 1
+    killGrass(s);
+    const r = go(s, { type: "endTurn", player: "p1" });
+    expect(r.state.players.p1.tokensLost).toEqual({ "t-kusa": 2 });
+    expect(r.events.filter((e) => e.type === "buffed")).toEqual([]);
+    expect(attack(r.state, at)).toBe(3);
+
+    // 闇堕ち：闇堕ちしたときに数え直して確定し、そのあとは増えない
+    s = go(r.state, { type: "endTurn", player: "p2" }).state;
+    s.players.p1.mana = 10;
+    (field(s)[at] as Unit).damage = 2;
+    s = turn(s);
+    expect(field(s)[at]).toBeNull();
+    s = go(s, { type: "darkFall", player: "p1", slot: at }).state;
+    expect(field(s)[at]?.dark).toBe(true);
+    expect(attack(s, at)).toBe(4); // 2 ＋ 破壊された草 2
+    s = playCard(s, "k6");
+    killGrass(s);
+    const after = go(s, { type: "endTurn", player: "p1" });
+    expect(after.state.players.p1.tokensLost).toEqual({ "t-kusa": 3 });
+    expect(after.events.filter((e) => e.type === "buffed")).toEqual([]);
+    expect(attack(after.state, at)).toBe(4);
+  });
 });
 
 describe("差し出し（フィクサー）", () => {
