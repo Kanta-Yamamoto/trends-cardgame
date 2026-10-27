@@ -1714,7 +1714,7 @@ export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: 
         board: document.querySelector<HTMLElement>(".pstage"),
         gauge: bar.querySelector<HTMLElement>(".lp-bar"),
         // 破片の色味は、負けた側のライフのゲージの色。負けは破片が黒く、まわりが暗く沈む。勝ちは破片がキラッと光る。
-        // 切り替えは、勝ちは白転・負けは暗転（Claude の案。オーナーは「暗転か白転」まで）
+        // ぶつかったあとは、勝ちは白転・負けは暗転（lifeBreak の中で決まる）
         tint: loser === ME ? "#8fdcfb" : "#ffb0b8",
         mine: loser === ME,
         onCovered: () => {

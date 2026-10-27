@@ -11,7 +11,7 @@ import { gsap } from "gsap";
  * モック「決着の演出」（claude.ai の Artifact）は、このファイルをそのまま組み込んで動かしている（動きと秒数は同じ）。
  *
  * 時間割（0 は始まり。始まるのは、最後の一撃の数字とライフ 0 を見せ終えてから。Play.tsx が待つ）：
- * 1. ひび 0〜0.56 秒：ライフのゲージから、帯にひび（割れ目から地の青がぼやけて透ける）が 3 段（0・0.17・0.34 秒）で広がる。そのたびに帯が小さく揺れて光る
+ * 1. ひび 0〜0.56 秒：ライフのゲージから、帯にひび（割れ目から、白を 3.5 割混ぜた地の青がぼやけて透ける）が 3 段（0・0.17・0.34 秒）で広がる。そのたびに帯が小さく揺れて光る
  * 2. 砕ける 0.56 秒：帯が、ひびの形の文字のないガラスの破片になってはじける（帯の元の姿は隠す）。0.05 秒だけふつうの速さ。
  *    勝ち（相手の帯）は白いガラスに相手のゲージの色、負け（自分の帯）は黒いガラス
  * 3. スローモーション 0.61〜1.26 秒：時間がふつうの 7% の速さに落ちる（0.09 秒かけて）。ほかの破片はほとんど止まって漂い、
@@ -19,9 +19,9 @@ import { gsap } from "gsap";
  *    こちらへ来る破片 1 枚だけがくっきりしたまま、まわりより速い 22% の速さでゆっくり近づき始める。勝ちはその角が 1 回キラッと光る
  * 4. 飛んでくる 1.26〜1.81 秒：時間が 0.46 秒かけてふつうの速さに戻り、その破片が 1 回くるっと裏返りながら（縦の軸で半回転）
  *    一気に近づき、正面を向いて画面いっぱいになる（オーナー：「回転も輝きも一回でいい」）
- * 5. ぶつかる 1.81 秒：破片が揺れ、end で切り替える（省略すると、勝ちは白転・負けは暗転）
- *    - dark（暗転）：画面全体が一瞬光ってから 0.08 秒で黒くなる → 0.26 秒そのまま → 結果を出して 0.52 秒で明ける
- *    - white（白転）：白く光り、そのまま白い結果の画面へ明ける
+ * 5. ぶつかる 1.81 秒：破片が揺れて切り替わる
+ *    - 負けは暗転：画面全体が一瞬光ってから 0.08 秒で黒くなる → 0.26 秒そのまま → 結果を出して 0.52 秒で明ける
+ *    - 勝ちは白転：白く光り、そのまま白い結果の画面へ明ける
  *
  * 破片の動きは「演出の中の時間」で決め、実際の時間との対応（スローモーションの速さの変わり方）を 1 か所で決める。
  * 帯の揺れは CSS の個別のプロパティ（translate）で付け、ほかの演出の transform とぶつからないようにする。
@@ -30,8 +30,6 @@ import { gsap } from "gsap";
 
 type Rect = { left: number; top: number; width: number; height: number };
 type P = { x: number; y: number };
-
-export type LifeBreakEnd = "dark" | "white";
 
 export interface LifeBreakOptions {
   /** 演出を置く層（画面座標。#fx-layer） */
@@ -49,10 +47,6 @@ export interface LifeBreakOptions {
    * 勝ち（相手の帯）は、こちらへ来る破片がキラッと光る
    */
   mine?: boolean;
-  /** 切り替え方。省略すると、勝ちは白転・負けは暗転 */
-  end?: LifeBreakEnd;
-  /** ひびの色（地の青）に混ぜる白の量（0〜1。モックで見比べる。省略で CRACK_WHITE） */
-  crackWhite?: number;
   /** 画面が覆われて、結果を出してよいとき（このあと明けて結果が見える） */
   onCovered?: () => void;
   /** 乱数（モックで同じ形を出し直すため）。省略で Math.random */
@@ -89,7 +83,7 @@ const FLASH = 120; // 白転：白くなりきるまで
 const RAYS = 9; // ひびの放射の数
 const BOARD_BLUE = "#2c7ab8"; // 盤面の地の青（app.css の .play-full）
 const CRACK_SEE = 0.45; // 割れ目から地の青が透ける濃さ
-const CRACK_WHITE = 0.5; // ひびの色（地の青）に混ぜる白の量
+const CRACK_WHITE = 0.35; // ひびの色（地の青）に混ぜる白の量
 const BLUR = 6; // まわりのボケ（px）
 const DIM = 0.72; // まわりの明るさ
 
@@ -247,7 +241,8 @@ let glassId = 0;
 export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
   const rnd = opts.random ?? Math.random;
   const mine = !!opts.mine;
-  const end = opts.end ?? (mine ? "dark" : "white");
+  // ぶつかったあとの切り替え：勝ちは白転・負けは暗転（Claude の案をオーナーが選んだ。モックで、いつも暗転・いつも白転と見比べた）
+  const end: "dark" | "white" = mine ? "dark" : "white";
   const { layer, frame } = opts;
   const r = bar.getBoundingClientRect();
   const w = r.width;
@@ -303,7 +298,8 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
   crackSvg.innerHTML = `<defs>${blur(`${fid}-soft`, 1.3)}${blur(`${fid}-core`, 0.45)}</defs><g filter="url(#${fid}-soft)"></g><g filter="url(#${fid}-core)"></g>`;
   const [soft, core] = [...crackSvg.querySelectorAll("g")] as SVGGElement[];
   // 「もっと色薄くていいな、つまり白をもう少し混ぜて」→ 地の青に白を混ぜる
-  const blue = whiten(BOARD_BLUE, opts.crackWhite ?? CRACK_WHITE);
+  // 白 3.5 割・5 割・6.5 割をモックで見比べて、オーナーが「白 3.5」を選んだ
+  const blue = whiten(BOARD_BLUE, CRACK_WHITE);
   const crack = (a: P, b: P, width: number, k: number) => [
     ...crackLine(soft as SVGGElement, a, b, [[`${blue}${alpha(CRACK_SEE * 0.55 * k)}`, width * 2.6]]),
     ...crackLine(core as SVGGElement, a, b, [[`${blue}${alpha(CRACK_SEE * k)}`, width * 1.0]]),
