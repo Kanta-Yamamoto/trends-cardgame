@@ -6,7 +6,7 @@ import { markNewsSeen, NEWS, unseenCount } from "../home/news";
 import { InstallGuide, useCanInstall } from "../InstallButton";
 import { InviteFriends } from "../InviteFriends";
 import { api, useSession } from "../online/session";
-import { dismissGuide, refreshApp } from "../pwa";
+import { dismissGuide, refreshApp, useReloadWhenNewer } from "../pwa";
 import { setMusicOn, useHomeMusic, useMusicOn } from "../sound/homeMusic";
 import "../styles/home.css";
 
@@ -126,6 +126,8 @@ export function Home() {
   const navigate = useNavigate();
   const canInstall = useCanInstall();
   useHomeMusic();
+  // 新しい版が出ていれば、ホームにいるあいだに黙って読み直す（pwa.ts）
+  useReloadWhenNewer();
   const musicOn = useMusicOn();
 
   const [charaId, setCharaId] = useState(loadChara);

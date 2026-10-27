@@ -22,6 +22,7 @@ describe("serveWeb", () => {
     writeFileSync(join(dir, "index.html"), "<html><head><title>TRENDS</title></head><body></body></html>");
     writeFileSync(join(dir, "sw.js"), "// sw");
     writeFileSync(join(dir, "manifest.webmanifest"), "{}");
+    writeFileSync(join(dir, "version.json"), '{"build":"abc"}');
     writeFileSync(join(dir, "assets", "index-Ab12_cD3.js"), "//");
     mkdirSync(join(dir, "assets", "cards"));
     writeFileSync(join(dir, "assets", "cards", "c6-art.jpg"), "jpg");
@@ -66,8 +67,8 @@ describe("serveWeb", () => {
     expect(res.text).not.toContain("<script>");
   });
 
-  it("サービスワーカーと manifest は毎回確かめさせる", async () => {
-    for (const path of ["/sw.js", "/manifest.webmanifest"]) {
+  it("サービスワーカー・manifest・版の印は毎回確かめさせる", async () => {
+    for (const path of ["/sw.js", "/manifest.webmanifest", "/version.json"]) {
       const res = await request(app.getHttpServer()).get(path);
       expect(res.status).toBe(200);
       expect(res.headers["cache-control"]).toBe("no-cache");
