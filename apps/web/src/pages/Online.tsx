@@ -6,32 +6,18 @@ import { API_URL } from "../api/client";
 import { Login } from "../auth/Login";
 import { type DeckSel, deckFromRef } from "../game/decks";
 import { type RemoteLink, type RemoteUpdate, useGame } from "../game/store";
+import { useInviteLink } from "../invite";
 import { formatClock, type RatingChange, useLive } from "../online/live";
 import { api, useSession } from "../online/session";
 import { Board, DeckGrid } from "./Play";
 
 /**
  * 部屋に誘うリンク。公開前の招待リンクの守りが効いているときは、合言葉（?invite=）も付ける
- * （まだ招待されていない友だちでも、このリンク1つで入れるように）
+ * （まだ招待されていない友だちでも、このリンク1つで入れるように。invite.ts）
  */
 function useRoomLink() {
-  const [link, setLink] = useState(() => window.location.href);
-  useEffect(() => {
-    let alive = true;
-    fetch(`${API_URL}/auth/invite`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((b: { invite?: string | null } | null) => {
-        if (!alive || !b?.invite) return;
-        const url = new URL(window.location.href);
-        url.searchParams.set("invite", b.invite);
-        setLink(url.toString());
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, []);
-  return link;
+  const { link } = useInviteLink(window.location.pathname);
+  return link ?? window.location.href;
 }
 
 interface Seat {
