@@ -1,5 +1,5 @@
 import { CARDS } from "@trends/cards";
-import { PACK_PRICE, type PackCount, packChance, packPool } from "@trends/game-core";
+import { openPack, PACK_PRICE, type PackCount, packChance, packPool } from "@trends/game-core";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Opening, type PulledCard } from "../gacha/Opening";
@@ -18,6 +18,21 @@ type Sheet =
   | { kind: "short"; packs: PackCount }
   | { kind: "rates" }
   | null;
+
+/**
+ * 本物のガチャ（ジェムを使い、カードが増える）を押せるか。10月27日、オーナー：「ジェムは今使えると良くないので、ガチャのボタンはまだ押せず」。
+ * 開けるときは true にし、サーバーの GACHA_OPEN も true にする（サーバーは GACHA_OPEN でなければ断る）
+ */
+const REAL_GACHA = false;
+
+/**
+ * デモで引く（10月27日、オーナー：「一時的に同ページにデモでガチャを引くの機能を出しておきましょう」「これは後ほど消します」）。
+ * 画面の中だけで同じルール（game-core の openPack）で開け、サーバーは呼ばない。カードは増えず、ジェムも減らない。NEW も出さない
+ */
+function demoPacks(packs: PackCount): PulledCard[][] {
+  const rand = () => (crypto.getRandomValues(new Uint32Array(1))[0] ?? 0) / 2 ** 32;
+  return Array.from({ length: packs }, () => openPack(POOL, rand).map((id) => ({ id, isNew: false })));
+}
 
 /** 1 パックで出る割合の目安（「3パックに1枚」など） */
 function perPack(rarity: number) {
@@ -38,7 +53,13 @@ export function Gacha() {
   const [sheet, setSheet] = useState<Sheet>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [opening, setOpening] = useState<PulledCard[][] | null>(null);
+  // n：開けるたびに増やし、開ける画面を作り直す（もう1パックのとき、前のパックの続きにならないように）
+  const [opening, setOpening] = useState<{ packs: PulledCard[][]; demo: boolean; n: number } | null>(null);
+  const [openN, setOpenN] = useState(0);
+  const show = (packs: PulledCard[][], demo: boolean) => {
+    setOpening({ packs, demo, n: openN + 1 });
+    setOpenN((n) => n + 1);
+  };
 
   useEffect(() => {
     void loadWallet(token);
@@ -62,11 +83,13 @@ export function Gacha() {
       .then((r) => {
         setWallet(r.wallet);
         setSheet(null);
-        setOpening(r.packs);
+        show(r.packs, false);
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setBusy(false));
   };
+
+  const demo = (packs: PackCount) => show(demoPacks(packs), true);
 
   return (
     <section className="page gx-top">
@@ -88,16 +111,33 @@ export function Gacha() {
         </div>
       </div>
 
+      {/* デモ（後で消す）：カードは増えず、ジェムも減らない */}
+      <section className="gx-demo g2" aria-label="デモで引く">
+        <div className="gx-demo-h">
+          <span className="tag pri">デモ</span>
+          <b>ためしに引く</b>
+        </div>
+        <p className="gx-demo-note">カードは増えず、ジェムも減りません。</p>
+        <div className="gx-demo-btns">
+          <button type="button" className="btn ghost" onClick={() => demo(1)}>
+            1パック
+          </button>
+          <button type="button" className="btn ghost" onClick={() => demo(10)}>
+            10パック
+          </button>
+        </div>
+      </section>
+
       <div className="gx-dock">
         <div className="gx-pulls">
-          <button type="button" className="btn ghost gx-pull" onClick={() => ask(1)}>
+          <button type="button" className="btn ghost gx-pull" disabled={!REAL_GACHA} onClick={() => ask(1)}>
             <span className="l1">1パック</span>
             <span className="l2">
               <Gem />
               {fmt(PACK_PRICE)}
             </span>
           </button>
-          <button type="button" className="btn gx-pull" onClick={() => ask(10)}>
+          <button type="button" className="btn gx-pull" disabled={!REAL_GACHA} onClick={() => ask(10)}>
             <span className="l1">10パック</span>
             <span className="l2">
               <Gem />
@@ -105,6 +145,7 @@ export function Gacha() {
             </span>
           </button>
         </div>
+        {!REAL_GACHA && <p className="gx-closed">ガチャは準備中です</p>}
         <button type="button" className="btn text" onClick={() => setSheet({ kind: "rates" })}>
           提供割合 ›
         </button>
@@ -190,9 +231,15 @@ export function Gacha() {
 
       {opening && (
         <Opening
-          packs={opening}
+          key={opening.n}
+          packs={opening.packs}
+          demo={opening.demo}
           onClose={() => setOpening(null)}
           onAgain={() => {
+            if (opening.demo) {
+              demo(1);
+              return;
+            }
             setOpening(null);
             ask(1);
           }}

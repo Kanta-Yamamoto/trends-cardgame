@@ -17,6 +17,7 @@ import {
   fieldOf,
   type GameEvent,
   type GameState,
+  isRentalDeck,
   isShielded,
   openSlots,
   type PlayerId,
@@ -52,6 +53,7 @@ import { endCue, type LifeBreak, lifeBreak } from "../fx/lifeBreak";
 import { MINAMO_LIVE, minamoLive } from "../fx/minamoLive";
 import { fxEnabled } from "../fx/stage";
 import { warmFx } from "../fx/warm";
+import { useCollection } from "../gacha/collection";
 import { ArbiterField } from "../game/ArbiterField";
 import { CardZoom } from "../game/CardZoom";
 import { CostStrip } from "../game/CostStrip";
@@ -91,6 +93,7 @@ import { endReason } from "../game/result";
 import { CATALOG, CPU, DECK_INFO, ME, openingMs, setPresenter, useGame } from "../game/store";
 import { useDragPlay } from "../game/useDragPlay";
 import { type ClockLeft, formatClock, useClockLeft, useLive } from "../online/live";
+import { useSession } from "../online/session";
 import { lockZoom, resetZoom } from "../viewport";
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -661,6 +664,15 @@ export function DeckGrid({
   useDecksChanged(useCallback(() => setMine(readMine()), [readMine]));
   const pick = (sel: DeckSel) => (confirmLabel ? setPending(sel) : setChosen(sel));
   const builtins = (Object.keys(DECK_INFO) as DeckId[]).map((id) => builtinDeck(id));
+  // 持っていないカードが入っているデッキは、レンタルデッキとして使う（10月27日。いずれレーティングだけ使えなくするなど）。
+  // 持っているカードをまだ取れていないあいだは、印を出さない
+  const token = useSession((s) => s.token);
+  const owned = useCollection((s) => s.cards);
+  const loadOwned = useCollection((s) => s.load);
+  useEffect(() => {
+    void loadOwned(token);
+  }, [token, loadOwned]);
+  const rental = (sel: DeckSel) => !!owned && isRentalDeck(sel.cards, owned);
   const tile = (sel: DeckSel, i: number) => {
     const on = chosen?.ref === sel.ref;
     return (
@@ -677,6 +689,7 @@ export function DeckGrid({
           <AttrDots attrs={sel.attrs} />
         </span>
         <span className="deck-check">{CHECK}</span>
+        {rental(sel) && <span className="deck-rental">レンタル</span>}
         <strong className="deck-name">{sel.name}</strong>
       </button>
     );
@@ -727,7 +740,10 @@ export function DeckGrid({
           <div className="deck-dock-pad" />
           <div className="deck-dock g3">
             <div className="deck-dock-text">
-              <b>{chosen?.name ?? "デッキを選んでください"}</b>
+              <b>
+                {chosen && rental(chosen) && <span className="tag pri deck-rental-tag">レンタルデッキ</span>}
+                {chosen?.name ?? "デッキを選んでください"}
+              </b>
               {chosen && <span>{chosen.text}</span>}
             </div>
             <button type="button" className="btn" disabled={!chosen} onClick={() => chosen && onPick(chosen)}>
@@ -739,6 +755,7 @@ export function DeckGrid({
       {pending && confirmLabel && (
         <DeckConfirm
           deck={pending}
+          rental={rental(pending)}
           label={confirmLabel}
           onConfirm={() => {
             setPending(null);
@@ -754,11 +771,14 @@ export function DeckGrid({
 /** デッキの確認（下から出る小窓。名前・属性・説明と、コストごとの枚数・入っているカード） */
 function DeckConfirm({
   deck,
+  rental,
   label,
   onConfirm,
   onCancel,
 }: {
   deck: DeckSel;
+  /** 持っていないカードが入っている（レンタルデッキとして使う） */
+  rental: boolean;
   label: string;
   onConfirm: () => void;
   onCancel: () => void;
@@ -784,6 +804,7 @@ function DeckConfirm({
             <AttrDots attrs={deck.attrs} />
             {deck.attrs.length > 0 ? deck.attrs.join("×") : "ニュートラル"}
           </span>
+          {rental && <span className="deck-rental">レンタルデッキ</span>}
           <div className="deck-confirm-text">
             <b>{deck.name}</b>
             <span>{deck.text}</span>

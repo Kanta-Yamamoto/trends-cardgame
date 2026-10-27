@@ -13,8 +13,9 @@ import { DB } from "../src/db/db.module";
 import { userCards, users } from "../src/db/schema";
 import { WELCOME_GEMS } from "../src/gacha/gems";
 
-// 実際の PostgreSQL に対して動かす
+// 実際の PostgreSQL に対して動かす。本物のガチャは本番ではまだ止めているので、テストでは開けてよいことにする
 process.env.AUTH_DEV_LOGIN = "true";
+process.env.GACHA_OPEN = "true";
 
 const rarityOf = Object.fromEntries(CARDS.map((c) => [c.id, c.rarity]));
 
@@ -147,6 +148,40 @@ describe("プレイヤー名の登録とガチャ", () => {
       .send({ packs: 1 })
       .expect(200);
     expect(mixed.body.wallet).toEqual({ paid: 50, free: 0 });
+  });
+
+  it("GACHA_OPEN でなければ開けられない（ジェムも減らない）", async () => {
+    const res = await http()
+      .post("/auth/dev")
+      .send({ name: `準備中${Date.now()}` });
+    const t = res.body.token as string;
+    await db.update(users).set({ gemsFree: 1500 }).where(eq(users.id, res.body.user.id));
+    process.env.GACHA_OPEN = "false";
+    try {
+      const closed = await http().post("/gacha/open").set("Authorization", `Bearer ${t}`).send({ packs: 1 });
+      expect(closed.status).toBe(403);
+      expect(closed.body.message).toBe("ガチャは準備中です");
+    } finally {
+      process.env.GACHA_OPEN = "true";
+    }
+    const wallet = await http().get("/me/wallet").set("Authorization", `Bearer ${t}`);
+    expect(wallet.body.free).toBe(1500);
+  });
+
+  it("持っているカードを ID ごとの枚数で返す", async () => {
+    const res = await http()
+      .post("/auth/dev")
+      .send({ name: `一覧${Date.now()}` });
+    const t = res.body.token as string;
+    await http().get("/me/cards").expect(401);
+    const empty = await http().get("/me/cards").set("Authorization", `Bearer ${t}`).expect(200);
+    expect(empty.body.cards).toEqual({});
+    await db.update(users).set({ gemsFree: 150 }).where(eq(users.id, res.body.user.id));
+    const opened = await http().post("/gacha/open").set("Authorization", `Bearer ${t}`).send({ packs: 1 });
+    const got = await http().get("/me/cards").set("Authorization", `Bearer ${t}`);
+    const want: Record<string, number> = {};
+    for (const c of opened.body.packs[0] as { id: string }[]) want[c.id] = (want[c.id] ?? 0) + 1;
+    expect(got.body.cards).toEqual(want);
   });
 
   it("開けられるのは 1 パックか 10 パックだけ", async () => {
