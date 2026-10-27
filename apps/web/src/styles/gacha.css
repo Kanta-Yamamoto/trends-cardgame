@@ -8,12 +8,21 @@
 .gx-gem-pill .gx-plus { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: var(--pri-grad); box-shadow: 0 3px 8px #1780c447; }
 .gx-gem-pill .gx-plus svg { width: 16px; height: 16px; }
 
-/* パック（第1弾）。上の 40px（切り取り線より上）をなぞって切ると飛んでいく */
-.gx-pack { position: relative; width: 200px; height: 300px; filter: drop-shadow(0 22px 30px #1f487847); }
-.gx-pk-body, .gx-pk-cap { position: absolute; inset: 0; border-radius: 8px; overflow: hidden; background: linear-gradient(165deg, #f4f9ff 0%, #cfe6ff 22%, #ffd6ee 42%, #d3fff1 62%, #fff0c4 80%, #dcecff 100%); }
-.gx-pk-body { clip-path: polygon(0% 40px, 10% 35px, 20% 42px, 30% 36px, 40% 43px, 50% 35px, 60% 42px, 70% 36px, 80% 43px, 90% 35px, 100% 41px, 100% 100%, 0% 100%); }
-.gx-pk-cap { clip-path: polygon(0% 0%, 100% 0%, 100% 41px, 90% 35px, 80% 43px, 70% 36px, 60% 42px, 50% 35px, 40% 43px, 30% 36px, 20% 42px, 10% 35px, 0% 40px); }
-.gx-pk-cap.off { animation: gx-cap-fly 0.65s cubic-bezier(0.2, 0.7, 0.4, 1) forwards; }
+/* パック（第1弾）。上の方をなぞって切ると、切り取り線より上が飛んでいく */
+.gx-pack { position: relative; width: 200px; height: 330px; filter: drop-shadow(0 22px 30px #1f487847); }
+/* 切り取り線（gacha/tear.ts の shape。Opening が .gx-pk-float に書く）。書かれていなければ、上の圧着の下に横まっすぐ */
+.gx-pack-wrap, .gx-pk-float { --tip: 0px; --yl: 38px; --yt: 38px; --yr: 38px; --ang: 0deg; --hx: 200px; --mouth: 0px; --mouth-end: 0px; --band: 1.2px; --capl: 0deg; --capr: 0deg; }
+.gx-pk-body, .gx-pk-flap { position: absolute; inset: 0; border-radius: 8px; overflow: hidden; background: linear-gradient(165deg, #f4f9ff 0%, #cfe6ff 22%, #ffd6ee 42%, #d3fff1 62%, #fff0c4 80%, #dcecff 100%); }
+.gx-pk-body { clip-path: polygon(0 var(--yl), 100% var(--yr), 100% 100%, 0 100%); }
+.gx-pk-cap { position: absolute; inset: 0; }
+/* 裂けた側は裂け目を軸にめくれ、まだ付いている側は右端を軸に浮く。付いている側は本体と 1.5px 重ねて、継ぎ目を見せない */
+.gx-pk-flap.l { clip-path: polygon(0 0, var(--tip) 0, var(--tip) var(--yt), 0 var(--yl)); transform-origin: var(--tip) var(--yt); transform: rotate(var(--capl)); }
+.gx-pk-flap.r { clip-path: polygon(var(--tip) 0, 100% 0, 100% calc(var(--yr) + 1.5px), var(--tip) calc(var(--yt) + 1.5px)); transform-origin: 100% var(--yr); transform: rotate(var(--capr)); }
+/* 内側の銀色のフィルム：裂けた所のふち（本体は細い線、めくれた側は裏が少し見える）と、開いた口の中 */
+.gx-pk-edge { position: absolute; left: 0; width: var(--tip); pointer-events: none; transform: skewY(var(--ang)); }
+.gx-pk-body .gx-pk-edge { top: var(--yl); height: 1.6px; transform-origin: 0 0; background: linear-gradient(90deg, #c3cbd4, #f7f9fb 22%, #aab4bf 46%, #eef2f6 70%, #b6bfc9); box-shadow: 0 1px 0 #1f48781f; }
+.gx-pk-flap.l .gx-pk-edge { top: calc(var(--yl) - var(--band)); height: var(--band); transform-origin: 0 100%; clip-path: polygon(0 0, 100% calc(100% - 1px), 100% 100%, 0 100%); background: linear-gradient(180deg, #7d8895, #c9d0d8 45%, #f8fafc 85%, #fff), linear-gradient(90deg, #ffffff00, #ffffff80 40%, #ffffff00 70%); background-blend-mode: soft-light; }
+.gx-pk-mouth { position: absolute; left: 0; top: calc(var(--yl) - var(--mouth)); width: var(--hx); height: calc(var(--mouth) + 1px); pointer-events: none; transform-origin: 0 100%; transform: skewY(var(--ang)); clip-path: polygon(0 0, 100% calc(100% - 1px - var(--mouth-end)), 100% 100%, 0 100%); background: linear-gradient(90deg, #ffffff00 0%, #ffffff8c 28%, #ffffff00 52%, #ffffff66 78%, #ffffff00 100%), linear-gradient(180deg, #67727f 0%, #b9c1ca 30%, #eef1f5 58%, #a4aeba 84%, #ffffff 100%); }
 .gx-pk-crimp { position: absolute; left: 0; right: 0; height: 16px; background: repeating-linear-gradient(90deg, #ffffff99 0 2px, #1f48781f 2px 5px); }
 .gx-pk-crimp.t { top: 0; }
 .gx-pk-crimp.b { bottom: 0; }
@@ -25,11 +34,11 @@
 
 /* ガチャの画面 */
 .gx-top { position: relative; padding-bottom: 190px; }
-.gx-rays { position: absolute; left: 50%; top: 170px; width: 900px; height: 900px; margin: -450px 0 0 -450px; z-index: -1; pointer-events: none; background: repeating-conic-gradient(from 0deg, #ffffffbf 0deg 6deg, transparent 6deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 52%); mask-image: radial-gradient(circle, #000 0%, transparent 52%); opacity: 0.6; animation: spin 90s linear infinite; }
-.gx-iri { position: absolute; left: 50%; top: 170px; width: 230px; height: 330px; margin: -165px 0 0 -115px; z-index: -1; border-radius: 30px; background: conic-gradient(from 0deg, #ffb3d9, #b5ccff, #9ef0dc, #ffe7a3, #ffb3d9); filter: blur(30px); opacity: 0.5; animation: spin 9s linear infinite; pointer-events: none; }
+.gx-rays { position: absolute; left: 50%; top: 183px; width: 900px; height: 900px; margin: -450px 0 0 -450px; z-index: -1; pointer-events: none; background: repeating-conic-gradient(from 0deg, #ffffffbf 0deg 6deg, transparent 6deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 52%); mask-image: radial-gradient(circle, #000 0%, transparent 52%); opacity: 0.6; animation: spin 90s linear infinite; }
+.gx-iri { position: absolute; left: 50%; top: 183px; width: 230px; height: 360px; margin: -180px 0 0 -115px; z-index: -1; border-radius: 30px; background: conic-gradient(from 0deg, #ffb3d9, #b5ccff, #9ef0dc, #ffe7a3, #ffb3d9); filter: blur(30px); opacity: 0.5; animation: spin 9s linear infinite; pointer-events: none; }
 .gx-pack-wrap { display: grid; justify-items: center; padding-top: 14px; animation: gx-floaty 3.6s ease-in-out infinite; }
 /* ガチャの画面ではパックを少し小さく（下のデモまで 1 画面に収める） */
-.gx-pack-wrap .gx-pack { transform: scale(0.86); transform-origin: top center; margin-bottom: -42px; }
+.gx-pack-wrap .gx-pack { transform: scale(0.86); transform-origin: top center; margin-bottom: -46px; }
 .gx-info { display: grid; justify-items: center; gap: 6px; margin-top: 16px; text-align: center; }
 .gx-info h2 { margin: 0; font-size: 22px; font-weight: 800; }
 .gx-info .gx-sub { margin: 0; font-size: 12px; font-weight: 700; color: var(--ink-2); }
@@ -147,19 +156,23 @@
 .gx-dim.on { opacity: 0.55; }
 /* 舞台：真ん中を原点にして置き、画面の高さに合わせて全体を拡大・縮小する（--s） */
 .gx-stage { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform: translateY(-10px) scale(var(--s, 1)); }
-.gx-pk-out { position: absolute; left: -100px; top: -150px; width: 200px; height: 300px; transition: transform 0.7s cubic-bezier(0.5, 0, 0.7, 0.4), opacity 0.6s; }
-.gx-pk-out.sink { transform: translateY(300px) scale(0.9); opacity: 0; }
-.gx-pk-float { position: relative; width: 200px; height: 300px; animation: gx-floaty 3.6s ease-in-out infinite; }
+.gx-pk-out { position: absolute; left: -100px; top: -165px; width: 200px; height: 330px; transition: transform 0.7s cubic-bezier(0.5, 0, 0.7, 0.4), opacity 0.6s; }
+.gx-pk-out.sink { transform: translateY(330px) scale(0.9); opacity: 0; }
+.gx-pk-float { position: relative; width: 200px; height: 330px; animation: gx-floaty 3.6s ease-in-out infinite; }
 .gx-pk-out .gx-pack { filter: drop-shadow(0 22px 30px #0008); }
-.gx-pk-btn { position: absolute; inset: -14px; z-index: 5; border: 0; padding: 0; background: none; cursor: pointer; touch-action: none; border-radius: 12px; }
-.gx-cut { position: absolute; left: 0; top: 37px; z-index: 4; height: 4px; border-radius: 2px; background: #fff; box-shadow: 0 0 10px 3px #ffffffb3, 0 0 24px 6px #bfe8ff80; pointer-events: none; }
-.gx-guide { position: absolute; left: -16px; top: 26px; z-index: 4; width: 232px; height: 26px; pointer-events: none; }
+/* 持っている間は、浮き沈みを止める。指で引くと、下の方を軸に指の側へ傾く（gacha/tear.ts） */
+.gx-pk-float.grip { animation-play-state: paused; }
+.gx-pk-pull { position: absolute; inset: 0; transform-origin: 50% 90%; transform: translateX(var(--px, 0px)) rotate(var(--rot, 0deg)); will-change: transform; }
+/* なぞる所はパックの上半分（まわりに少し余白）。開ける前のカードは透明でも指を取らない */
+.gx-pk-btn { position: absolute; left: -24px; right: -24px; top: -24px; height: 174px; z-index: 5; border: 0; padding: 0; background: none; cursor: pointer; touch-action: none; border-radius: 12px; }
+.gx-guide { position: absolute; left: -16px; top: 26px; z-index: 4; width: 232px; height: 26px; pointer-events: none; transition: opacity 0.15s; }
+.gx-pk-float.grip .gx-guide, .gx-pk-float.torn .gx-guide { opacity: 0; }
 .gx-guide::before { content: ""; position: absolute; left: 0; right: 0; top: 12px; border-top: 2px dashed #ffffffb3; }
 .gx-guide i { position: absolute; left: 0; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 6px #ffffff40; animation: gx-guide 1.6s ease-in-out infinite; }
-.gx-leak { position: absolute; left: -30px; right: -30px; top: -120px; height: 170px; z-index: -1; pointer-events: none; background: radial-gradient(ellipse 50% 60% at 50% 100%, #ffffffd9 0%, #bfe8ff66 40%, transparent 70%); transform-origin: 50% 100%; animation: gx-leak 0.6s ease-out both; }
+.gx-leak { position: absolute; left: -30px; right: -30px; top: calc((var(--yl) + var(--yr)) / 2 - 158px); height: 170px; z-index: -1; pointer-events: none; background: radial-gradient(ellipse 50% 60% at 50% 100%, #ffffffd9 0%, #bfe8ff66 40%, transparent 70%); transform-origin: 50% 100%; animation: gx-leak 0.6s ease-out both; }
 /* カード（裏と表。表は HoloCard） */
 .gx-card { position: absolute; left: -105px; top: -147px; width: 210px; height: 293px; perspective: 1000px; transition: transform 0.55s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.4s; }
-.gx-card.hid { opacity: 0; }
+.gx-card.hid { opacity: 0; pointer-events: none; }
 .gx-in { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.35s cubic-bezier(0.3, 0.7, 0.3, 1); }
 .gx-card.flip .gx-in { transform: rotateY(180deg); }
 .gx-card.now .gx-in { transition: none; }
@@ -191,6 +204,37 @@
 .gx-pr-new { position: absolute; z-index: 2; left: 50%; top: calc(47% - min(189px, 49vw) - 40px); transform: translateX(-50%); height: 30px; padding: 0 16px; border-radius: 15px; background: var(--pri-grad); color: #fff; font: 400 18px/30px var(--f-mark); letter-spacing: 0.08em; box-shadow: 0 6px 16px #1780c447; animation: pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) calc(var(--wout) * 0.6) both; }
 .gx-pr-foot { position: absolute; left: 16px; right: 16px; bottom: max(24px, env(safe-area-inset-bottom, 0px)); z-index: 2; pointer-events: none; display: grid; justify-items: center; gap: 10px; animation: fade 0.6s ease-out var(--wout) both; }
 .gx-pr-foot p { margin: 0; font-size: 13px; font-weight: 800; color: var(--ink-2); letter-spacing: 0.04em; }
+/* ★5 の当たり：画面そのものをカードの枠にして出し（カード面を画面の形いっぱいに描く）、何秒か見せてから、枠ごと舞台のカードの大きさまで縮める */
+.gx-big { position: absolute; inset: 0; z-index: 85; overflow: hidden; }
+.gx-big-card {
+  position: absolute; z-index: 1; left: 0; top: env(safe-area-inset-top, 0px); width: 100%;
+  height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); pointer-events: none;
+  transition: left var(--shrink) var(--shrink-ease), top var(--shrink) var(--shrink-ease), width var(--shrink) var(--shrink-ease), height var(--shrink) var(--shrink-ease), opacity var(--settle) ease-out;
+  --shrink-ease: cubic-bezier(0.55, 0, 0.25, 1);
+}
+.gx-big-in { width: 100%; height: 100%; animation: gx-emerge var(--wout) cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+/* 画面を枠にするので、カードは傾けない（キラの光だけ流れる） */
+.gx-big .holo .card { transform: none; }
+.gx-big.settle .gx-big-card { opacity: 0; }
+/* 表面の虹（10月27日。オーナー：「表面に虹色のエフェクトが分かりやすくはいるといい」「このパック開封の時の星５だけ」）。
+   カード面の上に重ねて色を混ぜる（overlay・hard-light）ので、暗いカードにも明るいカードにも虹が乗る。縮め始めたら消し、舞台のカードに渡す
+   ::before 箔：幅の広い虹の縞が全面にかかり、ゆっくり斜めに揺れる / ::after 帯：白い芯の虹の帯が、左上から右下へ斜めに走り抜ける */
+.gx-big .holo .card::before, .gx-big .holo .card::after { content: ""; position: absolute; z-index: 30; pointer-events: none; transition: opacity calc(var(--shrink) * 0.6) ease-out; }
+.gx-big .holo .card::before {
+  inset: -25%; opacity: 0.55; mix-blend-mode: overlay;
+  background: repeating-linear-gradient(125deg, #ff3d7f 0%, #ffb03b 3.3%, #fff45c 6.6%, #4dff9a 10%, #3dc8ff 13.3%, #8a5bff 16.6%, #ff3d7f 20%);
+  animation: gx-foil 6s ease-in-out infinite alternate;
+}
+.gx-big .holo .card::after {
+  left: 50%; top: 50%; width: 70%; height: 160%; opacity: 0.8; mix-blend-mode: hard-light;
+  background: linear-gradient(90deg, transparent 0%, #ff3d7f 16%, #ffb03b 28%, #fff45c 40%, #ffffff 50%, #4dff9a 60%, #3dc8ff 72%, #8a5bff 84%, transparent 100%);
+  animation: gx-band 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.gx-big.shrink .holo .card::before, .gx-big.shrink .holo .card::after,
+.gx-big.settle .holo .card::before, .gx-big.settle .holo .card::after { opacity: 0; }
+.gx-big-new { top: calc(env(safe-area-inset-top, 0px) + 16px); transition: opacity 0.3s; }
+.gx-big.shrink .gx-big-new, .gx-big.settle .gx-big-new { opacity: 0; }
+.gx-big-tap { position: absolute; inset: 0; z-index: 3; border: 0; padding: 0; background: none; cursor: pointer; }
 .gx-open-hint { position: absolute; left: 0; right: 0; bottom: calc(max(24px, env(safe-area-inset-bottom, 0px)) + 64px); z-index: 61; margin: 0; text-align: center; font-size: 13px; font-weight: 800; color: #ffffffd9; letter-spacing: 0.04em; pointer-events: none; }
 .gx-open-hint b { font: 400 15px/1 var(--f-mark); margin-left: 6px; color: #fff; }
 .gx-open-dock { position: absolute; left: 16px; right: 16px; bottom: max(20px, env(safe-area-inset-bottom, 0px)); z-index: 80; display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
@@ -229,5 +273,9 @@
 @keyframes gx-spill-core { 0% { opacity: 0; transform: scale(0.96); } 26% { opacity: 0.7; transform: scale(1.04); } 100% { opacity: 1; transform: scale(1.2); } }
 @keyframes gx-spill-glow { 0% { opacity: 0; transform: scale(0.3); } 26% { opacity: 0.4; transform: scale(0.7); } 100% { opacity: 1; transform: scale(1.9); } }
 @keyframes gx-breathe { 50% { scale: 1.06; } }
+@keyframes gx-foil { from { transform: translate(-8%, -4%); } to { transform: translate(8%, 4%); } }
+/* 帯：通り過ぎたら、少し間を置いてまた走る */
+@keyframes gx-band { 0% { transform: translate(-50%, -50%) rotate(35deg) translateX(-200%); } 65%, 100% { transform: translate(-50%, -50%) rotate(35deg) translateX(200%); } }
+@keyframes gx-emerge { from { transform: scale(1.06); filter: brightness(1.8) blur(6px); } to { transform: none; filter: none; } }
 @keyframes gx-pr-in { from { transform: translate(-50%, -50%) scale(1.14); filter: brightness(1.8) blur(6px); } to { transform: translate(-50%, -50%) scale(1); filter: none; } }
 @keyframes gx-rise { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-110dvh) scale(1); opacity: 0; } }

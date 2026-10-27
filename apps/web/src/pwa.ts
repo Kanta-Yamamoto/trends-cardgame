@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
  * PWA（ホーム画面に追加して、アプリのように全画面で遊ぶ）
  * - 本番のビルドだけサービスワーカーを登録する（開発中・試遊ページ・スマホアプリ版では登録しない）
  * - インストールの案内：Android/PC の Chrome は「アプリにする」ボタン、iPhone は共有メニューからの手順を出す
+ * - 新しい版を出したら、開いたままの画面も、ホーム画面にいるときに黙って読み直す（押す操作は要らない）
  */
 
 interface InstallPromptEvent extends Event {
@@ -49,16 +50,25 @@ export function registerPwa() {
     notify();
   });
 
+  if (autoUpdate()) {
+    for (const ev of ["pointerdown", "keydown"]) {
+      document.addEventListener(
+        ev,
+        () => {
+          lastInput = Date.now();
+        },
+        true,
+      );
+    }
+    // アプリに戻ってきたとき（ホーム画面のアプリは閉じずに裏に置かれやすい）
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") void checkUpdate(Date.now());
+    });
+  }
+
   const native = "Capacitor" in window;
   if (!import.meta.env.PROD || import.meta.env.BASE_URL !== "/" || native || !("serviceWorker" in navigator))
     return;
-  // 開いた時点で、もう前の版のサービスワーカーが動いていたか（初めての人には「新しい版」を出さない）
-  const hadController = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (!hadController) return;
-    updateReady = true;
-    notify();
-  });
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/sw.js")
@@ -74,20 +84,68 @@ export function registerPwa() {
   });
 }
 
-/** 新しい版のサービスワーカーに切り替わった（画面はまだ前の版のまま） */
-let updateReady = false;
+/* ---------- 新しい版に自動で切り替える（10月27日） ----------
+ * 本番を入れ替えても、開いたままの画面は前の版の JS で動き続ける（画面を開き直せば、サービスワーカーがネットから新しい版を取る）。
+ * アプリに戻ってきたとき・ホーム画面に来たときに、サーバーの版の印（version.json。vite.config.ts）と比べ、違っていれば読み直す。
+ * 読み直すのはホーム画面にいるときだけ（対戦・デッキ作り・ガチャの途中を消さない）。確かめている間に画面を触ったら、次の機会に回す
+ */
 
-/** 新しい版が出ているか（画面の下に「新しい版があります」の帯を出す） */
-export function useUpdateReady() {
-  const [, rerender] = useState(0);
+/** サーバーに出ている新しい版の印（まだ知らなければ null） */
+let newer: string | null = null;
+/** ホーム画面を開いているか（読み直してよい場所） */
+let atHome = false;
+/** 最後に画面を触った時刻 */
+let lastInput = 0;
+/** 最後に version.json を確かめた時刻（戻ってくるたびに何度も取りに行かない） */
+let lastCheck = 0;
+const CHECK_INTERVAL = 30_000;
+/** 読み直した版の印（同じ版のための読み直しは 1 回だけ。読み直しても前の版のままなら繰り返さない） */
+const RELOADED_KEY = "trends.reloadedFor";
+
+/** 自動の更新を使うか（本番の Web だけ。試遊ページ・スマホアプリ版は使わない） */
+function autoUpdate() {
+  return import.meta.env.PROD && import.meta.env.BASE_URL === "/" && !("Capacitor" in window);
+}
+
+/** サーバーに出ている版の印（取れなければ null） */
+async function serverBuild(): Promise<string | null> {
+  try {
+    const res = await fetch("/version.json", { cache: "no-store" });
+    if (!res.ok) return null;
+    const { build } = (await res.json()) as { build?: unknown };
+    return typeof build === "string" ? build : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 新しい版が出ていないか確かめ、出ていてホーム画面にいれば読み直す（since より後に画面を触っていたら読み直さない） */
+async function checkUpdate(since: number) {
+  if (!newer && Date.now() - lastCheck > CHECK_INTERVAL) {
+    lastCheck = Date.now();
+    const build = await serverBuild();
+    if (build && build !== __BUILD_ID__) newer = build;
+  }
+  if (!newer || !atHome || lastInput > since || document.visibilityState !== "visible") return;
+  try {
+    if (sessionStorage.getItem(RELOADED_KEY) === newer) return;
+    sessionStorage.setItem(RELOADED_KEY, newer);
+  } catch {
+    // 覚えられない環境では、繰り返しを防げないので読み直さない（開き直せば新しい版になる）
+    return;
+  }
+  window.location.reload();
+}
+
+/** ホーム画面で呼ぶ：開いている間は、新しい版が出ていれば読み直してよい（来たときにも確かめる） */
+export function useReloadWhenNewer() {
   useEffect(() => {
-    const l = () => rerender((n) => n + 1);
-    listeners.add(l);
+    atHome = true;
+    if (autoUpdate()) void checkUpdate(Date.now());
     return () => {
-      listeners.delete(l);
+      atHome = false;
     };
   }, []);
-  return updateReady;
 }
 
 /**

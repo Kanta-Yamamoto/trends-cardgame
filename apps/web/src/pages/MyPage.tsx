@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { NameField, nameStatus } from "../auth/NameField";
 import { fmt, totalGems, useWallet } from "../gacha/wallet";
+import { InviteFriends } from "../InviteFriends";
 import { api, type User, useSession } from "../online/session";
 import "../styles/account.css";
 
@@ -47,11 +48,12 @@ const I = {
   gem: ["M7 4h10l4 5-9 11L3 9z", "M3 9h18M12 20L8.5 9 12 4l3.5 5z"],
   logout: ["M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3", "M10 8l-4 4 4 4M6 12h10"],
   chevron: ["M9 6l6 6-6 6"],
+  invite: ["M9 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7z", "M2.5 20a6.5 6.5 0 0 1 13 0", "M19 8v6M16 11h6"],
 };
 
 /**
  * マイページ（10月27日。モックの A 案）：ホームの左上の札から開く。
- * 今は名前を変えるだけ。フレンド・プロフカードはこれから足す場所として「準備中」の行を置く
+ * 名前を変える・友だちを招待する。フレンド・プロフカードはこれから足す場所として「準備中」の行を置く
  */
 export function MyPage() {
   const user = useSession((s) => s.user);
@@ -66,6 +68,7 @@ export function MyPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState(0);
+  const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -143,6 +146,17 @@ export function MyPage() {
       </section>
 
       <div className="sec">
+        <h2>友だち</h2>
+      </div>
+      <div className="ac-rows">
+        <button type="button" className="ac-row g2" onClick={() => setInviting(true)}>
+          <Icon d={I.invite} />
+          <span className="grow">友だちを招待</span>
+          <Icon d={I.chevron} className="ac-chev" />
+        </button>
+      </div>
+
+      <div className="sec">
         <h2>これから増えるもの</h2>
       </div>
       <div className="ac-rows">
@@ -184,6 +198,16 @@ export function MyPage() {
       {toast > 0 && (
         <div key={toast} className="ac-toast g3" role="status">
           名前を「{user.name}」に変えました
+        </div>
+      )}
+      {inviting && (
+        <div className="sheet" role="dialog" aria-modal="true" aria-label="友だちを招待">
+          <button type="button" className="sheet-bg" aria-label="閉じる" onClick={() => setInviting(false)} />
+          <section className="ac-sheet">
+            <div className="ac-grip" aria-hidden="true" />
+            <h2>友だちを招待</h2>
+            <InviteFriends />
+          </section>
         </div>
       )}
       {editing && (

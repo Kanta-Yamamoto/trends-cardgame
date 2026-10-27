@@ -4,8 +4,9 @@ import { Link, useNavigate } from "react-router";
 import { ATTR_META } from "../cards/meta";
 import { markNewsSeen, NEWS, unseenCount } from "../home/news";
 import { InstallGuide, useCanInstall } from "../InstallButton";
+import { InviteFriends } from "../InviteFriends";
 import { api, useSession } from "../online/session";
-import { dismissGuide, refreshApp } from "../pwa";
+import { dismissGuide, refreshApp, useReloadWhenNewer } from "../pwa";
 import { MusicToggle } from "../sound/MusicToggle";
 import { usePageMusic } from "../sound/music";
 import "../styles/home.css";
@@ -112,7 +113,10 @@ const I = {
   ],
   refresh: ["M20 11a8 8 0 1 0-2.3 5.7", "M20 4v7h-7"],
   logout: ["M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3", "M10 8l-4 4 4 4M6 12h10"],
+  invite: ["M9 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7z", "M2.5 20a6.5 6.5 0 0 1 13 0", "M19 8v6M16 11h6"],
 };
+
+const SHEET_TITLE = { news: "お知らせ", menu: "メニュー", invite: "友だちを招待" } as const;
 
 export function Home() {
   const user = useSession((s) => s.user);
@@ -121,12 +125,14 @@ export function Home() {
   const navigate = useNavigate();
   const canInstall = useCanInstall();
   usePageMusic("home");
+  // 新しい版が出ていれば、ホームにいるあいだに黙って読み直す（pwa.ts）
+  useReloadWhenNewer();
 
   const [charaId, setCharaId] = useState(loadChara);
   const chara = CHARAS.find((c) => c.id === charaId) ?? CHARAS[0];
   const [hop, setHop] = useState(0);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const [sheet, setSheet] = useState<"news" | "menu" | null>(null);
+  const [sheet, setSheet] = useState<"news" | "menu" | "invite" | null>(null);
   const [guide, setGuide] = useState(false);
   const [unseen, setUnseen] = useState(unseenCount);
   const [head, setHead] = useState(0);
@@ -331,17 +337,12 @@ export function Home() {
       </nav>
 
       {sheet && (
-        <div
-          className="hm-sheet-wrap"
-          role="dialog"
-          aria-modal="true"
-          aria-label={sheet === "news" ? "お知らせ" : "メニュー"}
-        >
+        <div className="hm-sheet-wrap" role="dialog" aria-modal="true" aria-label={SHEET_TITLE[sheet]}>
           <button type="button" className="hm-sheet-bg" aria-label="閉じる" onClick={() => setSheet(null)} />
           <section className="hm-sheet">
             <div className="hm-grip" aria-hidden="true" />
             <div className="hm-sheet-head">
-              <h2>{sheet === "news" ? "お知らせ" : "メニュー"}</h2>
+              <h2>{SHEET_TITLE[sheet]}</h2>
               <button
                 type="button"
                 className="hm-icon-btn hm-glass"
@@ -351,7 +352,9 @@ export function Home() {
                 <Icon d={I.close} />
               </button>
             </div>
-            {sheet === "news" ? (
+            {sheet === "invite" ? (
+              <InviteFriends />
+            ) : sheet === "news" ? (
               <ul className="hm-news-list">
                 {NEWS.map((n) => (
                   <li key={n.id}>
@@ -368,6 +371,10 @@ export function Home() {
                 <button type="button" onClick={() => navigate("/ranking")}>
                   <Icon d={I.trophy} />
                   ランキング
+                </button>
+                <button type="button" onClick={() => setSheet("invite")}>
+                  <Icon d={I.invite} />
+                  友だちを招待
                 </button>
                 {canInstall && (
                   <button

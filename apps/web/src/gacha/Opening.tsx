@@ -3,6 +3,7 @@ import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } fr
 import { HoloCard } from "../cards/HoloCard";
 import { frameSize } from "../frame";
 import { PACK_NAME, Pack } from "./Pack";
+import { grab, letGo, newTear, PACK_H, PACK_W, pull, shape, step, still, type TearEvent } from "./tear";
 
 /** 開けたパックの 1 枚（isNew：このガチャの前は持っていなかった） */
 export interface PulledCard {
@@ -15,12 +16,24 @@ const BY_ID = new Map(CARDS.map((c) => [c.id, c]));
 /**
  * 当たり（5 枚目が★4・★5）の時間（ミリ秒）。10月27日にオーナーとモックで決めた形：
  * 宙に浮かせ（lift）→ 真ん中を軸に回す絞り（sq。全体の 26% で 30% まで加速して回り、残りでゆっくり）。表は見せず、まわりから後ろの光が漏れる
- * → whiteFrom の割合から白が画面を覆う → 白いまま（hold）→ 白が引いて（whiteOut）当たりのカードを見せる画面。★5 は長く、★4 は短く
+ * → whiteFrom の割合から白が画面を覆う → 白いまま（hold）→ 白が引いて（whiteOut）当たりのカードを見せる。★5 は長く、★4 は短く
  */
 const HIT = {
   4: { lift: 350, sq: 1500, whiteFrom: 0.7, hold: 150, whiteOut: 700 },
   5: { lift: 450, sq: 2300, whiteFrom: 0.72, hold: 320, whiteOut: 1000 },
 } as const;
+/**
+ * ★5 の当たりのカード（10月27日。オーナー：「画面全体を枠とみなして、絵と効果を全体的に出したい」「カードの枠を成して出してあげたい」
+ * 「何秒か表示したあとに元のカードの大きさまで縮小して一連の動作を終えて」）。白が引くと、画面そのものをカードの枠にして出す
+ * （カード面を画面の形いっぱいに描く。絵は画面を覆い、名前・効果の板は下）。白が引き始めてから show の間見せる
+ * → 枠ごと舞台のカードの大きさ・位置まで縮める（shrink。形もカードの比に戻る）→ 大きいカードを薄く消して舞台のカードに渡す（settle）。
+ * 見せている間にタップすると、すぐ縮め始める
+ */
+const BIG = { show: 3500, shrink: 800, settle: 250 } as const;
+/** カードの縦横比（幅 / 高さ。cards.css の aspect-ratio と同じ） */
+const CARD_RATIO = 63 / 88;
+/** 舞台のカードの幅（gacha.css の .gx-card と同じ。舞台ごと --s 倍になる） */
+const CARD_W = 210;
 /** 開け終わったときの 5 枚の並び（上に 3 枚、下に 2 枚。舞台の真ん中からの位置） */
 const GRID = [
   [-118, -96],
@@ -31,15 +44,16 @@ const GRID = [
 ] as const;
 
 type Phase = "idle" | "tear" | "rise" | "reveal" | "done";
-/** 当たりの流れ：lift 浮かせる → sq 回す → white 白が覆う → hold 白いまま → present 当たりの画面 → shown 見せ終わった */
-type Hit = "" | "lift" | "sq" | "white" | "hold" | "present" | "shown";
+/**
+ * 当たりの流れ：lift 浮かせる → sq 回す → white 白が覆う → hold 白いまま → present 当たりの画面（★5 は画面いっぱいのカード）
+ * →（★5 だけ）shrink 舞台のカードの大きさまで縮める → settle 舞台のカードに渡す → shown 見せ終わった
+ */
+type Hit = "" | "lift" | "sq" | "white" | "hold" | "present" | "shrink" | "settle" | "shown";
 
 interface St {
   /** 何パック目か */
   at: number;
   phase: Phase;
-  /** 切り取り線をどこまで切ったか（0〜1） */
-  cut: number;
   /** 何枚目をめくっているか */
   cur: number;
   flipped: boolean;
@@ -47,7 +61,17 @@ interface St {
   /** 10 パックの結果を出しているか */
   summary: boolean;
 }
-const FIRST: St = { at: 0, phase: "idle", cut: 0, cur: 0, flipped: false, hit: "", summary: false };
+const FIRST: St = { at: 0, phase: "idle", cur: 0, flipped: false, hit: "", summary: false };
+
+/** 裂くときの手ごたえの震え（Android の Chrome だけ。iPhone の Safari は震わせられない） */
+const BUZZ: Record<TearEvent, number> = { notch: 14, tick: 6, done: 28 };
+function buzz(e: TearEvent) {
+  try {
+    navigator.vibrate?.(BUZZ[e]);
+  } catch {
+    // 震わせられなくても、裂ける
+  }
+}
 
 /** 舞台の大きさ：画面の高さに合わせて、全体を拡大・縮小する */
 function stageScale() {
@@ -56,7 +80,7 @@ function stageScale() {
 }
 
 /**
- * パックを開ける（画面いっぱい）。パックの上を横になぞって裂き、1 枚ずつめくる。
+ * パックを開ける（画面いっぱい）。パックの上半分を横になぞって裂き（手ごたえは tear.ts）、1 枚ずつめくる。
  * 5 枚目が★4・★5 のときは、浮かせて回し、漏れた光が白く画面を覆ってから、当たりのカードを見せる。
  * 10 パックは 1 パックずつ同じ開け方で、スキップすると 10 パックの結果へ
  */
@@ -78,14 +102,21 @@ export function Opening({
   const ref = useRef(s);
   ref.current = s;
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const cutIv = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
-  const drag = useRef<{ x0: number; w: number; moved: boolean } | null>(null);
+  /** 裂く手ごたえ。指の動きのたびに React を描き直さず、毎フレーム CSS 変数だけを書く（カード 5 枚を描き直さない） */
+  const tr = useRef(newTear());
+  const floatRef = useRef<HTMLDivElement>(null);
+  const raf = useRef(0);
+  const drag = useRef<{ x0: number; box: DOMRect; moved: boolean } | null>(null);
 
+  const stopTear = () => {
+    cancelAnimationFrame(raf.current);
+    raf.current = 0;
+    drag.current = null;
+  };
   const stopAll = () => {
     for (const t of timers.current) clearTimeout(t);
     timers.current = [];
-    clearInterval(cutIv.current);
-    drag.current = null;
+    stopTear();
   };
   const later = (fn: () => void, ms: number) => {
     timers.current.push(setTimeout(fn, ms));
@@ -98,7 +129,7 @@ export function Opening({
     return () => {
       window.removeEventListener("resize", onResize);
       for (const t of timers.current) clearTimeout(t);
-      clearInterval(cutIv.current);
+      cancelAnimationFrame(raf.current);
     };
   }, []);
 
@@ -109,27 +140,60 @@ export function Opening({
   const last = cards[4];
   const rarity = last?.card.rarity ?? 3;
   const rare = rarity >= 4;
-  const t = HIT[rarity >= 5 ? 5 : 4];
+  const big = rarity >= 5;
+  const t = HIT[big ? 5 : 4];
   const many = packs.length > 1;
 
   const tear = () => {
-    patch({ phase: "tear", cut: 1 });
+    patch({ phase: "tear" });
     later(() => patch({ phase: "rise" }), 500);
     later(() => patch({ phase: "reveal" }), 1150);
   };
-  const autoCut = () => {
-    clearInterval(cutIv.current);
-    cutIv.current = setInterval(() => {
-      const c = Math.min(1, ref.current.cut + 16 / 380);
-      if (c >= 1) {
-        clearInterval(cutIv.current);
-        tear();
-      } else patch({ cut: c });
-    }, 16);
+  /** 手ごたえを 1 フレームすすめ、パックの傾き・切り取り線・上の端・口の開きを CSS 変数に書く。止まったら回すのをやめる */
+  const frame = (prev: number) => (now: number) => {
+    const t = tr.current;
+    for (const e of step(t, Math.min(0.05, Math.max(0, (now - prev) / 1000)))) {
+      buzz(e);
+      if (e === "done") tear();
+    }
+    const el = floatRef.current;
+    if (el) {
+      const f = shape(t);
+      const px = (k: string, v: number) => el.style.setProperty(k, `${v.toFixed(2)}px`);
+      const deg = (k: string, v: number) => el.style.setProperty(k, `${v.toFixed(2)}deg`);
+      px("--tip", f.tip);
+      px("--yl", f.yl);
+      px("--yt", f.yt);
+      px("--yr", f.yr);
+      deg("--ang", f.ang);
+      px("--hx", f.hx);
+      px("--mouth", f.mouth);
+      px("--mouth-end", f.mouthEnd);
+      px("--band", f.band);
+      deg("--rot", f.rot);
+      px("--px", f.rot * 1.4);
+      deg("--capr", f.capR);
+      deg("--capl", f.capL);
+      el.classList.toggle("grip", t.hold);
+      el.classList.toggle("torn", t.tip > 0);
+    }
+    raf.current = el && !still(t) ? requestAnimationFrame(frame(now)) : 0;
+  };
+  const run = () => {
+    if (!raf.current) raf.current = requestAnimationFrame(frame(performance.now()));
+  };
+  /** 指の位置を、パックの中の位置（幅 PACK_W・高さ PACK_H）にする */
+  const packAt = (e: PointerEvent<HTMLButtonElement>): [number, number] => {
+    const b = drag.current?.box;
+    if (!b?.width || !b.height) return [0, 0];
+    return [((e.clientX - b.left) / b.width) * PACK_W, ((e.clientY - b.top) / b.height) * PACK_H];
   };
   const packDown = (e: PointerEvent<HTMLButtonElement>) => {
-    if (ref.current.phase !== "idle") return;
-    drag.current = { x0: e.clientX, w: e.currentTarget.getBoundingClientRect().width, moved: false };
+    const el = floatRef.current;
+    if (ref.current.phase !== "idle" || !el) return;
+    drag.current = { x0: e.clientX, box: el.getBoundingClientRect(), moved: false };
+    grab(tr.current, ...packAt(e));
+    run();
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
@@ -139,23 +203,25 @@ export function Opening({
   const packMove = (e: PointerEvent<HTMLButtonElement>) => {
     const d = drag.current;
     if (!d || ref.current.phase !== "idle") return;
-    const dx = Math.abs(e.clientX - d.x0);
-    if (dx > 6) d.moved = true;
-    const cut = Math.min(1, dx / (d.w * 0.85));
-    if (cut >= 1) {
-      drag.current = null;
-      tear();
-    } else patch({ cut });
+    if (Math.abs(e.clientX - d.x0) > 6) d.moved = true;
+    pull(tr.current, ...packAt(e));
+    run();
   };
   const packUp = () => {
     const d = drag.current;
     if (!d) return;
     drag.current = null;
-    // 押しただけ・7 割まで切ったときは、残りを自動で切る
-    if (!d.moved || ref.current.cut >= 0.7) autoCut();
-    else patch({ cut: 0 });
+    letGo(tr.current, !d.moved);
+    run();
   };
 
+  /** ★5：画面いっぱいのカードを、舞台のカードの大きさまで縮めて、一連の流れを終える */
+  const shrinkBig = () => {
+    if (ref.current.hit !== "present") return;
+    patch({ hit: "shrink" });
+    later(() => patch({ hit: "settle" }), BIG.shrink);
+    later(() => patch({ hit: "shown" }), BIG.shrink + BIG.settle);
+  };
   const tapCard = () => {
     const p = ref.current;
     if (p.phase !== "reveal" || (p.hit !== "" && p.hit !== "shown")) return;
@@ -167,6 +233,7 @@ export function Opening({
         // 白に覆われたところでカードを表にしておく（見せるのは当たりの画面）
         later(() => patch({ hit: "hold", flipped: true }), t.lift + t.sq);
         later(() => patch({ hit: "present" }), t.lift + t.sq + t.hold);
+        if (big) later(shrinkBig, t.lift + t.sq + t.hold + BIG.show);
       } else patch({ flipped: true });
     } else if (p.cur === 4) patch({ phase: "done" });
     else patch({ cur: p.cur + 1, flipped: false });
@@ -179,6 +246,7 @@ export function Opening({
   };
   const nextPack = () => {
     stopAll();
+    tr.current = newTear();
     setS({ ...FIRST, at: ref.current.at + 1 });
   };
 
@@ -199,7 +267,13 @@ export function Opening({
     "--sq": `${t.sq}ms`,
     "--win": `${Math.round(t.sq * (1 - t.whiteFrom))}ms`,
     "--wout": `${t.whiteOut}ms`,
+    "--shrink": `${BIG.shrink}ms`,
+    "--settle": `${BIG.settle}ms`,
   } as CSSProperties;
+  const bigOn = big && (hit === "present" || hit === "shrink" || hit === "settle");
+  // ★5 の画面いっぱいのカードを縮めた先：舞台のカード（真ん中から 10px 上。.gx-stage の translateY）
+  const toW = CARD_W * scale;
+  const toH = toW / CARD_RATIO;
 
   return (
     <div className="gx-open" style={vars} role="dialog" aria-modal="true" aria-label="パックを開ける">
@@ -219,17 +293,16 @@ export function Opening({
       <div className="gx-stage">
         {(phase === "idle" || phase === "tear" || phase === "rise") && (
           <div className={`gx-pk-out ${phase === "rise" ? "sink" : ""}`}>
-            <div className="gx-pk-float">
-              {phase !== "idle" && <div className="gx-leak" />}
-              <Pack capOff={phase !== "idle"} />
-              {phase === "idle" && s.cut > 0 && (
-                <div className="gx-cut" style={{ width: `${s.cut * 100}%` }} />
-              )}
-              {phase === "idle" && s.cut === 0 && (
-                <div className="gx-guide" aria-hidden="true">
-                  <i />
-                </div>
-              )}
+            <div className="gx-pk-float" ref={floatRef}>
+              <div className="gx-pk-pull">
+                {phase !== "idle" && <div className="gx-leak" />}
+                <Pack capOff={phase !== "idle"} />
+                {phase === "idle" && (
+                  <div className="gx-guide" aria-hidden="true">
+                    <i />
+                  </div>
+                )}
+              </div>
               <button
                 type="button"
                 className="gx-pk-btn"
@@ -277,7 +350,8 @@ export function Opening({
           if (i === 4 && hit === "hold") cls += " now";
           if (i === 4 && (hit === "lift" || squeezing)) cls += " lift";
           if (i === 4 && squeezing) cls += " sq";
-          if (i === 4 && rare && (hit === "shown" || (phase === "done" && hit !== ""))) cls += " hit";
+          if (i === 4 && rare && (hit === "settle" || hit === "shown" || (phase === "done" && hit !== "")))
+            cls += " hit";
           return (
             // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが 2 枚出ることがあるので、パックの中の順番で見分ける
             <div key={`${s.at}-${i}`} className={`gx-card ${cls}`} style={{ transform: tf, zIndex: z }}>
@@ -337,7 +411,7 @@ export function Opening({
         </div>
       )}
 
-      {hit === "present" && last && (
+      {hit === "present" && !big && last && (
         <div className="gx-present">
           <button type="button" className="gx-pr-bg" aria-label="次へ" onClick={closePresent} />
           <div className="gx-pr-halo" aria-hidden="true" />
@@ -356,6 +430,29 @@ export function Opening({
           <div className="gx-pr-foot">
             <p>タップで次へ</p>
           </div>
+        </div>
+      )}
+      {bigOn && last && (
+        <div className={`gx-big ${hit}`}>
+          <div
+            className="gx-big-card"
+            style={
+              hit === "present"
+                ? undefined
+                : {
+                    left: `calc(50% - ${toW / 2}px)`,
+                    top: `calc(50% - 10px - ${toH / 2}px)`,
+                    width: toW,
+                    height: toH,
+                  }
+            }
+          >
+            <div className="gx-big-in">
+              <HoloCard card={last.card} interactive fill />
+            </div>
+          </div>
+          {last.isNew && <span className="gx-pr-new gx-big-new">NEW</span>}
+          <button type="button" className="gx-big-tap" aria-label="次へ" onClick={shrinkBig} />
         </div>
       )}
       <div

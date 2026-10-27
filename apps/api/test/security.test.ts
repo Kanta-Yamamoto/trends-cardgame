@@ -7,7 +7,7 @@ import type { NestExpressApplication } from "@nestjs/platform-express";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientIp, INVITE_COOKIE, type Limits, protect, RateLimiter } from "../src/security";
+import { clientIp, INVITE_COOKIE, inviteForClient, type Limits, protect, RateLimiter } from "../src/security";
 import { serveWeb } from "../src/web";
 
 @Controller()
@@ -20,6 +20,10 @@ class FakeApi {
   }
   @Get("auth/config") config() {
     return { devLogin: false };
+  }
+  // AuthController の GET /auth/invite と同じ中身
+  @Get("auth/invite") invite() {
+    return inviteForClient();
   }
   @Put("me/decks") save() {
     return { ok: true };
@@ -42,8 +46,9 @@ describe("protect", () => {
 
   beforeAll(async () => {
     process.env.INVITE_CODE = "open-sesame";
-    writeFileSync(join(dir, "index.html"), "<title>TRENDS</title><div id=root>");
+    writeFileSync(join(dir, "index.html"), "<head><title>TRENDS</title></head><div id=root>");
     writeFileSync(join(dir, "app.js"), "//");
+    writeFileSync(join(dir, "ogp.jpg"), "jpg");
     const mod = await Test.createTestingModule({ imports: [FakeModule] }).compile();
     app = mod.createNestApplication<NestExpressApplication>();
     protect(app, limits);
@@ -71,17 +76,23 @@ describe("protect", () => {
     await http().put("/me/decks").expect(403);
   });
 
-  it("死活の確認・robots.txt・ログインの設定は、招待なしでも見られる", async () => {
+  it("死活の確認・robots.txt・ログインの設定・プレビューの絵は、招待なしでも見られる", async () => {
     await http().get("/health").expect(200);
     await http().get("/auth/config").expect(200);
+    await http().get("/ogp.jpg").expect(200);
     const robots = await http().get("/robots.txt").expect(200);
-    expect(robots.text).toContain("Disallow: /");
+    // 検索エンジンは全部お断り。リンクのプレビューを作るロボット（X など）だけ通す
+    expect(robots.text).toContain("User-agent: *\nDisallow: /");
+    expect(robots.text).toContain("User-agent: Twitterbot\nAllow: /");
   });
 
-  it("合言葉付きの URL で開くと、クッキーを置いて合言葉を URL から消し、そのあとは全部使える", async () => {
-    const res = await http().get("/online?invite=open-sesame&room=AB12").set("Accept", "text/html");
-    expect(res.status).toBe(302);
-    expect(res.headers.location).toBe("/online?room=AB12");
+  it("合言葉付きの URL で開くと、クッキーを置いてそのまま画面を返し、そのあとは全部使える", async () => {
+    const res = await http().get("/online/AB12?invite=open-sesame").set("Accept", "text/html");
+    // 開き直させない（クッキーを持ち越さないプレビューのロボットにも、画面とプレビューが届くように）
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("id=root");
+    expect(res.text).toContain('property="og:title" content="TRENDS のオンライン対戦に誘われました"');
+    expect(res.headers["cache-control"]).toBe("no-store");
     const set = String(res.headers["set-cookie"]?.[0] ?? "");
     expect(set).toContain(`${INVITE_COOKIE}=`);
     expect(set).toContain("HttpOnly");
@@ -98,6 +109,21 @@ describe("protect", () => {
     const inv = await http().get("/auth/invite").set("Cookie", cookie).expect(200);
     expect(inv.body.invite).toBe("open-sesame");
     await http().get("/auth/invite").expect(403);
+  });
+
+  it("招待リンクは、招待のプレビュー（題名・絵）を付けて返す", async () => {
+    const res = await http()
+      .get("/?invite=open-sesame")
+      .set("Accept", "text/html")
+      .set("Host", "trends.example")
+      .set("X-Forwarded-Proto", "https")
+      .set("X-Forwarded-For", "192.0.2.50");
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('property="og:title" content="TRENDS に招待されました"');
+    expect(res.text).toContain('property="og:image" content="https://trends.example/ogp.jpg"');
+    expect(res.text).toContain('name="twitter:card" content="summary_large_image"');
+    // 合言葉そのものは、プレビューにも書かない
+    expect(res.text).not.toContain("open-sesame");
   });
 
   it("違う合言葉やクッキーは通さず、間違いが続くと断る", async () => {

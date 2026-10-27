@@ -3,12 +3,14 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Post,
   Put,
   Req,
   UnauthorizedException,
   UseGuards,
 } from "@nestjs/common";
+import { inviteForClient } from "../security";
 import { AuthGuard } from "./auth.guard";
 import { AuthService, authConfig, type PublicUser } from "./auth.service";
 
@@ -20,6 +22,13 @@ export class AuthController {
   @Get("config")
   config() {
     return authConfig();
+  }
+
+  /** 公開前の招待リンクの合言葉。招待済みの人だけが届く（security.ts の守りが、招待されていない人を断る） */
+  @Get("invite")
+  @Header("Cache-Control", "no-store")
+  invite() {
+    return inviteForClient();
   }
 
   @Post("google")

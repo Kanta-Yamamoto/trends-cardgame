@@ -313,4 +313,17 @@ describe("ログインとオンライン対戦", () => {
       delete process.env.INVITE_CODE;
     }
   });
+
+  it("友だちを誘うリンクに付ける合言葉を渡す（守りが効いていなければ null）", async () => {
+    const res = await request(app.getHttpServer()).get("/auth/invite").expect(200);
+    expect(res.body).toEqual({ invite: null });
+    expect(res.headers["cache-control"]).toBe("no-store");
+    process.env.INVITE_CODE = "test-invite";
+    try {
+      const on = await request(app.getHttpServer()).get("/auth/invite").expect(200);
+      expect(on.body).toEqual({ invite: "test-invite" });
+    } finally {
+      delete process.env.INVITE_CODE;
+    }
+  });
 });
