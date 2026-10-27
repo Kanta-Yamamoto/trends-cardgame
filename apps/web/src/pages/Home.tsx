@@ -187,9 +187,9 @@ export function Home() {
       <div className="hm-dots" aria-hidden="true" />
 
       <header className="hm-top">
-        <Link to="/ranking" className="hm-plate hm-glass" aria-label="ランキング">
+        <Link to="/me" className="hm-plate hm-glass" aria-label="マイページ">
           <span className="hm-avatar" aria-hidden="true">
-            {user?.name.slice(0, 1) ?? "?"}
+            {user ? Array.from(user.name)[0] : "?"}
           </span>
           <span className="hm-plate-text">
             <span className="hm-pname">{user?.name ?? ""}</span>

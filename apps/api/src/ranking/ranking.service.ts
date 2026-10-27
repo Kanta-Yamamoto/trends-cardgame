@@ -70,11 +70,14 @@ export class RankingService {
         rating: users.rating,
         games: users.ratedGames,
         wins: users.wins,
+        nameSet: users.nameSet,
       })
       .from(users)
       .where(gt(users.ratedGames, 0))
       .orderBy(desc(users.rating));
-    this.snapshot = { at: now, entries: rankEntries(rows) };
+    // 名前をまだ決めていない人（10月27日より前に Google の名前のまま遊んだ人）は、名前を出さない
+    const named = rows.map(({ nameSet, ...r }) => ({ ...r, name: nameSet ? r.name : "プレイヤー" }));
+    this.snapshot = { at: now, entries: rankEntries(named) };
     return this.snapshot;
   }
 

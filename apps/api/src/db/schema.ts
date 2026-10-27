@@ -1,6 +1,6 @@
 import type { CardEffect, DarkSide } from "@trends/cards";
 import type { Clock, CpuGameRecord, GameState } from "@trends/game-core";
-import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 /** カードの定義。元データは packages/cards/src/cards.json で、seed で取り込む */
 export const cards = pgTable("cards", {
@@ -49,13 +49,19 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   /** Google の sub（アカウントごとに変わらない ID） */
   sub: text("sub").notNull().unique(),
+  /** プレイヤー名（ランキング・対戦の相手の画面に出る）。Google の名前は使わず、本人が決める */
   name: text("name").notNull(),
+  /** 本人がプレイヤー名を決めたか（10月27日から。決めるまでは初期登録の画面だけを出す） */
+  nameSet: boolean("name_set").notNull().default(false),
   picture: text("picture"),
   /** レーティング（ランダムマッチの勝ち負けで上下する。1500 から） */
   rating: integer("rating").notNull().default(1500),
   /** レーティングが動いた対戦の数と、そのうちの勝ち数 */
   ratedGames: integer("rated_games").notNull().default(0),
   wins: integer("wins").notNull().default(0),
+  /** ジェム（ガチャに使う）。有償（お金で買った分）と無償（配った分）を分けて持つ。使うときは無償から */
+  gemsPaid: integer("gems_paid").notNull().default(0),
+  gemsFree: integer("gems_free").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 export type UserRow = typeof users.$inferSelect;
@@ -137,5 +143,44 @@ export const cpuGames = pgTable("cpu_games", {
   winner: text("winner"),
   turns: integer("turns").notNull(),
   record: jsonb("record").$type<CpuGameRecord>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** 持っているカード（ガチャで出た枚数）。デッキを組むときの決まりにはまだ使わない（10月27日） */
+export const userCards = pgTable(
+  "user_cards",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    cardId: text("card_id").notNull(),
+    count: integer("count").notNull().default(0),
+    firstAt: timestamp("first_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.cardId] })],
+);
+
+/** ジェムの出入りの記録（配った・使った・買った）。paid・free は増えた分（使ったら負） */
+export const gemLogs = pgTable("gem_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  paid: integer("paid").notNull().default(0),
+  free: integer("free").notNull().default(0),
+  /** welcome（初めて名前を決めたときに配った）/ gacha（ガチャに使った）/ purchase（買った） */
+  reason: text("reason").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** ガチャを回した記録（出たカード。あとで実際の出方が提供割合どおりかを確かめる） */
+export const gachaPulls = pgTable("gacha_pulls", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  packs: integer("packs").notNull(),
+  /** パックごとの 5 枚の ID */
+  cards: jsonb("cards").$type<string[][]>().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

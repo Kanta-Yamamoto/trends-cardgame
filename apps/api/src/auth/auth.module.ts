@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
 import { appSettings } from "../db/schema";
-import { AuthController } from "./auth.controller";
+import { AuthController, ProfileController } from "./auth.controller";
 import { AuthGuard } from "./auth.guard";
 import { AuthService } from "./auth.service";
 
@@ -32,7 +32,7 @@ async function sessionSecret(db: Db) {
       useFactory: async (db: Db) => ({ secret: await sessionSecret(db), signOptions: { expiresIn: "30d" } }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, ProfileController],
   providers: [AuthService, AuthGuard],
   exports: [AuthService, AuthGuard],
 })

@@ -44,6 +44,27 @@ export {
   viewUnit,
   withRushBoost,
 } from "./engine";
+export {
+  type GachaCard,
+  openPack,
+  PACK_COUNTS,
+  PACK_PRICE,
+  PACK_SIZE,
+  PACK_SLOTS,
+  type PackCount,
+  type PackPool,
+  type PackSlot,
+  packChance,
+  packPool,
+  slotOdds,
+} from "./gacha";
+export {
+  checkPlayerName,
+  PLAYER_NAME_MAX,
+  type PlayerNameCheck,
+  playerNameLength,
+  RESERVED_NAME_WORDS,
+} from "./player";
 export { expectedScore, RATING, rateGame } from "./rating";
 export {
   type CardSnapshot,
