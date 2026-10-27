@@ -28,6 +28,7 @@ import {
 } from "../game/decks";
 import { CATALOG as CARD_BY_ID, DECK_INFO } from "../game/store";
 import { useSession } from "../online/session";
+import { usePageMusic } from "../sound/music";
 
 type Filter = Attribute | "ニュートラル" | "全部";
 const FILTERS: Filter[] = ["全部", ...ATTRIBUTES, "ニュートラル"];
@@ -91,6 +92,8 @@ const countsOf = (cards: readonly string[]) => {
 
 /** デッキ構築：自分で 20 枚を組んで保存する（ログインしていればアカウントにも保存し、ほかの端末でも使える） */
 export function Decks() {
+  // デッキの一覧・作っている間とも、カード一覧と同じ曲を流す
+  usePageMusic("collection");
   const [list, setList] = useState<CustomDeck[]>(() => loadCustomDecks());
   const [editing, setEditing] = useState<CustomDeck | null>(null);
   const [picking, setPicking] = useState(false);
