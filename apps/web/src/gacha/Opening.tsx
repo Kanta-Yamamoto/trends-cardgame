@@ -3,7 +3,7 @@ import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } fr
 import { HoloCard } from "../cards/HoloCard";
 import { frameSize } from "../frame";
 import { PACK_NAME, Pack } from "./Pack";
-import { grab, letGo, newTear, PACK_W, pull, step, still, type TearEvent } from "./tear";
+import { grab, letGo, newTear, PACK_H, PACK_W, pull, shape, step, still, type TearEvent } from "./tear";
 
 /** 開けたパックの 1 枚（isNew：このガチャの前は持っていなかった） */
 export interface PulledCard {
@@ -91,7 +91,7 @@ export function Opening({
   const tr = useRef(newTear());
   const floatRef = useRef<HTMLDivElement>(null);
   const raf = useRef(0);
-  const drag = useRef<{ x0: number; left: number; width: number; moved: boolean } | null>(null);
+  const drag = useRef<{ x0: number; box: DOMRect; moved: boolean } | null>(null);
 
   const stopTear = () => {
     cancelAnimationFrame(raf.current);
@@ -133,7 +133,7 @@ export function Opening({
     later(() => patch({ phase: "rise" }), 500);
     later(() => patch({ phase: "reveal" }), 1150);
   };
-  /** 手ごたえを 1 フレームすすめ、パックの傾き・上の端・裂け目を CSS 変数に書く。止まったら回すのをやめる */
+  /** 手ごたえを 1 フレームすすめ、パックの傾き・切り取り線・上の端・口の開きを CSS 変数に書く。止まったら回すのをやめる */
   const frame = (prev: number) => (now: number) => {
     const t = tr.current;
     for (const e of step(t, Math.min(0.05, Math.max(0, (now - prev) / 1000)))) {
@@ -142,11 +142,22 @@ export function Opening({
     }
     const el = floatRef.current;
     if (el) {
-      el.style.setProperty("--tip", `${t.tip.toFixed(1)}px`);
-      el.style.setProperty("--rot", `${t.rot.x.toFixed(2)}deg`);
-      el.style.setProperty("--px", `${(t.rot.x * 1.4).toFixed(1)}px`);
-      el.style.setProperty("--capr", `${t.capR.x.toFixed(2)}deg`);
-      el.style.setProperty("--capl", `${t.capL.x.toFixed(2)}deg`);
+      const f = shape(t);
+      const px = (k: string, v: number) => el.style.setProperty(k, `${v.toFixed(2)}px`);
+      const deg = (k: string, v: number) => el.style.setProperty(k, `${v.toFixed(2)}deg`);
+      px("--tip", f.tip);
+      px("--yl", f.yl);
+      px("--yt", f.yt);
+      px("--yr", f.yr);
+      deg("--ang", f.ang);
+      px("--hx", f.hx);
+      px("--mouth", f.mouth);
+      px("--mouth-end", f.mouthEnd);
+      px("--band", f.band);
+      deg("--rot", f.rot);
+      px("--px", f.rot * 1.4);
+      deg("--capr", f.capR);
+      deg("--capl", f.capL);
       el.classList.toggle("grip", t.hold);
       el.classList.toggle("torn", t.tip > 0);
     }
@@ -155,17 +166,17 @@ export function Opening({
   const run = () => {
     if (!raf.current) raf.current = requestAnimationFrame(frame(performance.now()));
   };
-  /** 指の位置を、パックの中の x（幅 PACK_W）にする */
-  const packX = (clientX: number) => {
-    const d = drag.current;
-    return d ? ((clientX - d.left) / d.width) * PACK_W : 0;
+  /** 指の位置を、パックの中の位置（幅 PACK_W・高さ PACK_H）にする */
+  const packAt = (e: PointerEvent<HTMLButtonElement>): [number, number] => {
+    const b = drag.current?.box;
+    if (!b?.width || !b.height) return [0, 0];
+    return [((e.clientX - b.left) / b.width) * PACK_W, ((e.clientY - b.top) / b.height) * PACK_H];
   };
   const packDown = (e: PointerEvent<HTMLButtonElement>) => {
     const el = floatRef.current;
     if (ref.current.phase !== "idle" || !el) return;
-    const r = el.getBoundingClientRect();
-    drag.current = { x0: e.clientX, left: r.left, width: r.width || PACK_W, moved: false };
-    grab(tr.current, packX(e.clientX));
+    drag.current = { x0: e.clientX, box: el.getBoundingClientRect(), moved: false };
+    grab(tr.current, ...packAt(e));
     run();
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -177,7 +188,7 @@ export function Opening({
     const d = drag.current;
     if (!d || ref.current.phase !== "idle") return;
     if (Math.abs(e.clientX - d.x0) > 6) d.moved = true;
-    pull(tr.current, packX(e.clientX));
+    pull(tr.current, ...packAt(e));
     run();
   };
   const packUp = () => {
@@ -257,12 +268,9 @@ export function Opening({
                 {phase !== "idle" && <div className="gx-leak" />}
                 <Pack capOff={phase !== "idle"} />
                 {phase === "idle" && (
-                  <>
-                    <div className="gx-cut" />
-                    <div className="gx-guide" aria-hidden="true">
-                      <i />
-                    </div>
-                  </>
+                  <div className="gx-guide" aria-hidden="true">
+                    <i />
+                  </div>
                 )}
               </div>
               <button
