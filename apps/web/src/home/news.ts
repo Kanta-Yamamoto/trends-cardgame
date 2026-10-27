@@ -12,6 +12,12 @@ export interface NewsItem {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: "2026-10-27-music",
+    date: "10/27",
+    tag: "更新",
+    title: "ホーム画面で音楽が流れるようになりました（右上のボタンで止められます）",
+  },
+  {
     id: "2026-10-27-gacha",
     date: "10/27",
     tag: "更新",
