@@ -98,30 +98,32 @@ describe("パックを裂く手ごたえ（tear.ts）", () => {
 
   it("切り取り線は、なぞり始めた高さから指の高さへのまっすぐな線。斜めになぞれば斜めに裂ける", () => {
     const t = newTear();
-    grab(t, 4, 30);
-    swipe(t, 4, PACK_W, 500, 30, 70);
+    grab(t, 4, 20);
+    swipe(t, 4, PACK_W, 500, 20, 44);
     wait(t, 200);
     expect(t.done).toBe(true);
     const s = shape(t);
-    expect(s.yl).toBe(30);
-    expect(s.yr).toBeGreaterThan(64);
-    expect(s.yr).toBeLessThan(74);
-    expect(s.ang).toBeGreaterThan(9);
+    expect(s.yl).toBe(20);
+    expect(s.yr).toBeGreaterThan(41);
+    expect(s.yr).toBeLessThanOrEqual(46);
+    expect(s.ang).toBeGreaterThan(5);
     // まっすぐ横になぞれば、横にまっすぐ
     const flat = newTear();
-    grab(flat, 4, 50);
-    swipe(flat, 4, PACK_W, 400, 50);
-    expect(shape(flat).yr).toBeCloseTo(50, 5);
+    grab(flat, 4, 30);
+    swipe(flat, 4, PACK_W, 400, 30);
+    expect(shape(flat).yr).toBeCloseTo(30, 5);
   });
 
-  it("線はパックの上の方に収まる（下の方を押しても、傾けすぎても）", () => {
+  it("線はパックのタイトルより上に収まる（下の方を押しても、斜めに動かしても）", () => {
     const t = newTear();
     grab(t, 4, 260);
-    expect(t.y0).toBe(86);
-    swipe(t, 4, PACK_W, 400, 260, 10);
-    const s = shape(t);
-    expect(s.yr).toBeGreaterThanOrEqual(18 - 0.01);
-    expect(Math.abs(s.ang)).toBeLessThanOrEqual(19.3);
+    expect(t.y0).toBe(46);
+    swipe(t, 4, PACK_W, 400, 260, 0);
+    expect(shape(t).yr).toBeGreaterThanOrEqual(18 - 0.01);
+    const down = newTear();
+    grab(down, 4, 20);
+    swipe(down, 4, PACK_W, 400, 20, 200);
+    expect(shape(down).yr).toBeLessThanOrEqual(46 + 0.01);
   });
 
   it("上の端が浮いた分だけ口が開き、裂けきると口全体が開く", () => {
