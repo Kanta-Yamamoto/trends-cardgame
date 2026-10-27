@@ -4,7 +4,8 @@
  * - 切り口：指で引いても、NOTCH まではパックの端だけが引っぱられて浮く。そこを越えると破れて裂け始める
  * - 裂いている間、裂け目は指より GRIP だけ後ろにいて、速く動かすとさらに遅れる（LAG）。
  *   遅れた分だけパックが指の側へ傾き、裂けた上の端がめくれる（ゆっくり引いても、止めて押さえていても重さが残る）
- * - 裂けきるのは、指がパックの右端に来たとき（指をどこに置いても、置いた所から右端までで裂けきる）
+ * - 指がパックの右端に来たところで裂けきる（指をどこに置いても、置いた所から右端までで裂けきる）。
+ *   裂け目が 9 割（RIP_AT）まで来たら、残りは指を待たずに一気に裂ける
  * - 途中で指をはなすと、裂けた所まではそのまま残る（7 割を越えていれば、残りを自動で切る）
  * - 切り取り線は、なぞり始めた高さ（左端）から指の高さへ引いたまっすぐな線。斜めになぞれば斜めに裂ける（shape）
  */
@@ -18,6 +19,9 @@ const GRIP = 10;
 const LAG = 0.07;
 /** 自動で切るとき、端から端までの時間（秒） */
 const AUTO = 0.38;
+/** 裂け目がここまで来たら、残りは指を待たずに一気に裂ける（幅に対して）。その速さ（パックの中の px / 秒） */
+const RIP_AT = 0.9;
+const RIP_SPEED = 300;
 /** 置いた所から右端までが短すぎるとき、これだけは動かして裂けきる（幅に対して） */
 const MIN_RUN = 0.45;
 /** 切り取り線を引ける高さ：上の圧着の下から、パックのタイトル（TRENDS。上から 50px）の上まで */
@@ -49,6 +53,8 @@ export interface Tear {
   hold: boolean;
   /** 残りを自動で切っているか */
   auto: boolean;
+  /** 9 割まで来て、残りを一気に裂いているか */
+  rip: boolean;
   /** 裂けきったか */
   done: boolean;
   /** 切り取り線：左端の高さと傾き（右へ 1 進むと下へ slope） */
@@ -83,6 +89,7 @@ export function newTear(): Tear {
     notched: false,
     hold: false,
     auto: false,
+    rip: false,
     done: false,
     y0: 38,
     slope: 0,
@@ -144,7 +151,8 @@ function targets(t: Tear) {
   return {
     rot: Math.min(4, ten * 0.11),
     capR: t.notched ? 0 : Math.min(3, ten * 0.13),
-    capL: t.tip > 0 ? Math.min(13, 2.5 + 7 * (t.tip / PACK_W) + ten * 0.1) : 0,
+    // 裂けきったら、めくれていた切れ端は平らに戻りながら落ちていく
+    capL: !t.done && t.tip > 0 ? Math.min(13, 2.5 + 7 * (t.tip / PACK_W) + ten * 0.1) : 0,
   };
 }
 
@@ -169,16 +177,18 @@ export function step(t: Tear, dt: number): TearEvent[] {
     t.notched = true;
     ev.push("notch");
   }
-  if (t.notched && !t.done && (t.hold || t.auto)) {
-    const to = t.aim - GRIP;
-    t.tip = Math.min(PACK_W, Math.max(t.tip, t.tip + (to - t.tip) * (1 - Math.exp(-dt / LAG))));
-    // 残りわずかになったら一気に裂ける。指が右端まで来ていれば、少し手前からでも裂けきる
-    const rest = t.aim >= PACK_W + GRIP - 0.5 ? 15 : 4;
-    if (t.tip >= PACK_W - rest) {
-      t.tip = PACK_W;
+  if (t.notched && !t.done && (t.hold || t.auto || t.rip)) {
+    if (t.tip >= PACK_W * RIP_AT) t.rip = true;
+    if (t.rip) t.tip = Math.min(PACK_W, t.tip + RIP_SPEED * dt);
+    else {
+      const to = t.aim - GRIP;
+      t.tip = Math.min(PACK_W, Math.max(t.tip, t.tip + (to - t.tip) * (1 - Math.exp(-dt / LAG))));
+    }
+    if (t.tip >= PACK_W) {
       t.done = true;
       t.hold = false;
       t.auto = false;
+      t.rip = false;
       t.openAtDone = gap(t);
       // 上が取れた反動で、パックが逆に振れる
       t.rot.v -= 70;
@@ -204,7 +214,7 @@ export function step(t: Tear, dt: number): TearEvent[] {
 
 /** もう動かない（指も自動の切りもなく、ばねが止まり、裂けきったあとの口も閉じ終えた） */
 export function still(t: Tear) {
-  if (t.hold || t.auto || (t.done && t.since < MOUTH_CLOSE)) return false;
+  if (t.hold || t.auto || t.rip || (t.done && t.since < MOUTH_CLOSE)) return false;
   const to = targets(t);
   const near = (s: Spring, x: number) => Math.abs(s.x - x) < 0.02 && Math.abs(s.v) < 0.1;
   return near(t.rot, to.rot) && near(t.capR, to.capR) && near(t.capL, to.capL);

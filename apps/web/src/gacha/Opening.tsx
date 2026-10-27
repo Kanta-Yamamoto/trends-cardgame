@@ -44,7 +44,14 @@ const GRID = [
   [59, 76],
 ] as const;
 
-type Phase = "idle" | "tear" | "rise" | "reveal" | "done";
+/**
+ * 裂けきってから（ミリ秒）：tear 切れ端が落ちていく → out 開いた口から 5 枚が出てくる
+ * → rise カードを残してパックが下へ抜ける（2 割スッと下がり、そこから一定の速さで。gacha.css の gx-pk-pull）
+ * → reveal パックがカードの下から外れたら、カードが真ん中に来て、めくれる
+ */
+const OPEN_MS = { out: 320, rise: 320 + 600, reveal: 320 + 600 + 900, gone: 320 + 600 + 1050 } as const;
+
+type Phase = "idle" | "tear" | "out" | "rise" | "reveal" | "done";
 /**
  * 当たりの流れ：lift 浮かせる → sq 回す → white 白が覆う → hold 白いまま → present 当たりの画面（★5 は画面いっぱいのカード）
  * →（★5 だけ）shrink 舞台のカードの大きさまで縮める → settle 舞台のカードに渡す → shown 見せ終わった
@@ -61,8 +68,10 @@ interface St {
   hit: Hit;
   /** 10 パックの結果を出しているか */
   summary: boolean;
+  /** 抜いたパックが下へ消えきったか（めくり始めてからも、消えきるまでは描く） */
+  packGone: boolean;
 }
-const FIRST: St = { at: 0, phase: "idle", cur: 0, flipped: false, hit: "", summary: false };
+const FIRST: St = { at: 0, phase: "idle", cur: 0, flipped: false, hit: "", summary: false, packGone: false };
 
 /** 裂くときの手ごたえの震え（Android の Chrome だけ。iPhone の Safari は震わせられない） */
 const BUZZ: Record<TearEvent, number> = { notch: 14, tick: 6, done: 28 };
@@ -172,8 +181,10 @@ export function Opening({
 
   const tear = () => {
     patch({ phase: "tear" });
-    later(() => patch({ phase: "rise" }), 500);
-    later(() => patch({ phase: "reveal" }), 1150);
+    later(() => patch({ phase: "out" }), OPEN_MS.out);
+    later(() => patch({ phase: "rise" }), OPEN_MS.rise);
+    later(() => patch({ phase: "reveal" }), OPEN_MS.reveal);
+    later(() => patch({ packGone: true }), OPEN_MS.gone);
   };
   /** 手ごたえを 1 フレームすすめ、パックの傾き・切り取り線・上の端・口の開きを CSS 変数に書く。止まったら回すのをやめる */
   const frame = (prev: number) => (now: number) => {
@@ -324,8 +335,13 @@ export function Opening({
       </header>
 
       <div className="gx-stage">
-        {(phase === "idle" || phase === "tear" || phase === "rise") && (
-          <div className={`gx-pk-out ${phase === "rise" ? "sink" : ""}`}>
+        {(phase === "idle" ||
+          phase === "tear" ||
+          phase === "out" ||
+          phase === "rise" ||
+          (phase === "reveal" && !s.packGone)) && (
+          // めくり始めても、抜いているパックはそのまま（rise）下へ消えきるまで描く
+          <div className={`gx-pk-out ${phase === "reveal" ? "rise" : phase}`}>
             <div className="gx-pk-float" ref={floatRef}>
               <div className="gx-pk-pull">
                 {phase !== "idle" && <div className="gx-leak" />}
@@ -360,9 +376,16 @@ export function Opening({
           let cls = "";
           const flip = phase === "done" || (phase === "reveal" && (i < s.cur || (i === s.cur && s.flipped)));
           if (phase === "idle" || phase === "tear") {
-            tf = "translate(0px, 40px) scale(.86)";
+            // パックの中（パックの後ろに隠れている）
+            tf = "translate(0px, 30px) scale(.86)";
             z = 1;
             cls = "hid";
+          } else if (phase === "out" || phase === "rise") {
+            // 開いた口から上へ出てくる。5 枚はぴったり重ねて 1 枚に見せ、下の方はまだパックの中（パックが前に重なって隠す）。
+            // パックが下へ抜けるまでこのまま。抜けたあと（reveal）で束にずらす
+            tf = "translate(0px, -66px) scale(.86)";
+            z = i === 0 ? 50 : 40 - i;
+            cls = "out";
           } else if (phase === "done") {
             const g = GRID[i] ?? [0, 0];
             tf = `translate(${g[0]}px, ${g[1]}px) scale(.5)`;

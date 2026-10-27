@@ -15,6 +15,8 @@
 .gx-pk-body, .gx-pk-flap { position: absolute; inset: 0; border-radius: 8px; overflow: hidden; background: linear-gradient(165deg, #f4f9ff 0%, #cfe6ff 22%, #ffd6ee 42%, #d3fff1 62%, #fff0c4 80%, #dcecff 100%); }
 .gx-pk-body { clip-path: polygon(0 var(--yl), 100% var(--yr), 100% 100%, 0 100%); }
 .gx-pk-cap { position: absolute; inset: 0; }
+/* 裂けきった切れ端：ぱっと右へ外れて少しだけ上へ跳ね、自然に落ちながら画面の右へ流れて、早めに消える */
+.gx-pk-cap.off { transform-origin: 50% 24px; animation: gx-cap-fall 0.75s linear forwards; }
 /* 裂けた側は裂け目を軸にめくれ、まだ付いている側は右端を軸に浮く。付いている側は本体と 1.5px 重ねて、継ぎ目を見せない */
 .gx-pk-flap.l { clip-path: polygon(0 0, var(--tip) 0, var(--tip) var(--yt), 0 var(--yl)); transform-origin: var(--tip) var(--yt); transform: rotate(var(--capl)); }
 .gx-pk-flap.r { clip-path: polygon(var(--tip) 0, 100% 0, 100% calc(var(--yr) + 1.5px), var(--tip) calc(var(--yt) + 1.5px)); transform-origin: 100% var(--yr); transform: rotate(var(--capr)); }
@@ -156,8 +158,18 @@
 .gx-dim.on { opacity: 0.55; }
 /* 舞台：真ん中を原点にして置き、画面の高さに合わせて全体を拡大・縮小する（--s） */
 .gx-stage { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform: translateY(-10px) scale(var(--s, 1)); }
-.gx-pk-out { position: absolute; left: -100px; top: -165px; width: 200px; height: 330px; transition: transform 0.7s cubic-bezier(0.5, 0, 0.7, 0.4), opacity 0.6s; }
-.gx-pk-out.sink { transform: translateY(330px) scale(0.9); opacity: 0; }
+/* パックはカードより前に重ね、開いた口から出てくるカードの下の方を隠す。カードが出たら、パックは下へ抜けていく */
+.gx-pk-out { position: absolute; z-index: 55; left: -100px; top: -165px; width: 200px; height: 330px; }
+/* 抜くとき：2 割（66px）だけスッと下がり、そこからは遅めの一定の速さで抜けていく */
+.gx-pk-out.rise { animation: gx-pk-pull 1s linear forwards; pointer-events: none; }
+/* 抜く間は、真ん中がテカり、ふちが少し沈んで、ふくらんだ袋に見える。テカりは光の側に残るので、パックが下がるほど上へずれる */
+.gx-pk-gloss { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: linear-gradient(90deg, #1f48782e 0%, transparent 14%, transparent 86%, #1f48782e 100%); }
+.gx-pk-gloss::after { content: ""; position: absolute; left: 12%; right: 12%; top: 24%; height: 50%; background: radial-gradient(ellipse 9% 34% at 56% 46%, #ffffffeb 0%, #ffffff00 100%), radial-gradient(ellipse 34% 48% at 50% 50%, #ffffffb3 0%, #ffffff47 48%, #ffffff00 74%); }
+.gx-pk-out.rise .gx-pk-gloss { animation: gx-gloss-on 0.18s ease-out forwards; }
+.gx-pk-out.rise .gx-pk-gloss::after { animation: gx-gloss-slide 1s linear forwards; }
+/* カードが出てくる間は、口の中の銀色と漏れる光を消す（カードの前に重ならないように） */
+.gx-pk-out:is(.out, .rise) .gx-pk-mouth { opacity: 0; transition: opacity 0.2s; }
+.gx-pk-out:is(.out, .rise) .gx-leak { animation: gx-leak-off 0.35s ease-out forwards; }
 .gx-pk-float { position: relative; width: 200px; height: 330px; animation: gx-floaty 3.6s ease-in-out infinite; }
 .gx-pk-out .gx-pack { filter: drop-shadow(0 22px 30px #0008); }
 /* 持っている間は、浮き沈みを止める。指で引くと、下の方を軸に指の側へ傾く（gacha/tear.ts） */
@@ -173,6 +185,7 @@
 /* カード（裏と表。表は HoloCard） */
 .gx-card { position: absolute; left: -105px; top: -147px; width: 210px; height: 293px; perspective: 1000px; transition: transform 0.55s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.4s; }
 .gx-card.hid { opacity: 0; pointer-events: none; }
+.gx-card.out { transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.1s; }
 .gx-in { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.35s cubic-bezier(0.3, 0.7, 0.3, 1); }
 .gx-card.flip .gx-in { transform: rotateY(180deg); }
 .gx-card.now .gx-in { transition: none; }
@@ -266,8 +279,23 @@
 .gx-sum-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; max-width: 480px; margin: 0 auto; padding: 12px 16px max(18px, env(safe-area-inset-bottom, 0px)); border-radius: var(--r-xl) var(--r-xl) 0 0; background: var(--g3); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); border-top: 1px solid #fff; box-shadow: var(--sh-3); }
 
 @keyframes gx-floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-@keyframes gx-cap-fly { to { transform: translate(70px, -160px) rotate(32deg); opacity: 0; } }
+@keyframes gx-cap-fall {
+  0% { transform: perspective(500px) translate(0, 0) rotate(0deg) rotateX(0deg); animation-timing-function: cubic-bezier(0.2, 0.6, 0.45, 1); }
+  22% { transform: perspective(500px) translate(46px, -20px) rotate(5deg) rotateX(16deg); animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.6); }
+  35% { opacity: 1; }
+  60% { transform: perspective(500px) translate(124px, 44px) rotate(-5deg) rotateX(48deg); animation-timing-function: cubic-bezier(0.3, 0.2, 0.7, 0.8); }
+  100% { transform: perspective(500px) translate(206px, 176px) rotate(9deg) rotateX(-12deg); opacity: 0; }
+}
 @keyframes gx-leak { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+@keyframes gx-pk-pull {
+  0% { transform: translateY(0); animation-timing-function: cubic-bezier(0.15, 0.6, 0.7, 0.84); }
+  12% { transform: translateY(66px); animation-timing-function: linear; }
+  75% { opacity: 1; }
+  100% { transform: translateY(330px); opacity: 0; }
+}
+@keyframes gx-gloss-on { to { opacity: 1; } }
+@keyframes gx-gloss-slide { from { transform: translateY(26px); } to { transform: translateY(-64px); } }
+@keyframes gx-leak-off { from { transform: scaleY(1); opacity: 1; } to { transform: scaleY(1.1); opacity: 0; } }
 @keyframes gx-guide { 0% { transform: translateX(0); opacity: 0; } 15% { opacity: 1; } 80% { transform: translateX(212px); opacity: 1; } 100% { transform: translateX(212px); opacity: 0; } }
 @keyframes gx-squeeze { 0% { transform: rotateY(0deg); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.7); } 26% { transform: rotateY(30deg); animation-timing-function: cubic-bezier(0.25, 0.4, 0.55, 1); } 100% { transform: rotateY(82deg); } }
 @keyframes gx-lit { 0% { opacity: 0; } 26% { opacity: 0.35; } 100% { opacity: 1; } }

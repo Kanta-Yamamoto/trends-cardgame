@@ -18,25 +18,28 @@ function wait(t: Tear, ms: number): TearEvent[] {
 }
 
 describe("パックを裂く手ごたえ（tear.ts）", () => {
-  it("左から指を動かすと、指がパックの右端に来たところで裂けきる（手前では裂けきらない）", () => {
+  it("指を止めたら裂け目も止まり、9 割まで裂けたら、残りは指を待たずに一気に裂けきる", () => {
     const t = newTear();
     grab(t, 10, 38);
-    swipe(t, 10, 180, 300);
-    expect(t.done).toBe(false);
-    wait(t, 200);
+    swipe(t, 10, 160, 300);
+    wait(t, 300);
     expect(t.done).toBe(false); // 指を止めたら、裂け目も指の所で止まる
-    expect(t.tip).toBeGreaterThan(160);
-    expect(swipe(t, 180, PACK_W, 60).concat(wait(t, 200))).toContain("done");
+    expect(t.tip).toBeGreaterThan(140);
+    expect(t.tip).toBeLessThan(PACK_W * 0.9);
+    swipe(t, 160, 186, 80);
+    letGo(t, false); // 9 割を越えたら、指をはなしても裂けきる
+    const ev = wait(t, 150);
+    expect(ev).toContain("done");
     expect(t.tip).toBe(PACK_W);
   });
 
   it("真ん中に指を置いても、そこから右端までで裂けきる", () => {
     const t = newTear();
     grab(t, 100, 38);
-    swipe(t, 100, 190, 300);
+    swipe(t, 100, 170, 300);
     wait(t, 200);
     expect(t.done).toBe(false);
-    swipe(t, 190, PACK_W, 40);
+    swipe(t, 170, PACK_W, 60);
     wait(t, 200);
     expect(t.done).toBe(true);
   });
