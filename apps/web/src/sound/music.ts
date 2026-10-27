@@ -1,15 +1,19 @@
 import { useEffect, useSyncExternalStore } from "react";
 import BATTLE from "./battle.mp3";
+import DECK_SELECT from "./deck.mp3";
 import GACHA from "./gacha.mp3";
 import HOME from "./home.mp3";
+import PULL from "./pull.mp3";
 
 /**
  * 画面の音楽（10月27日）。曲のある画面を開いている間だけ流し、ほかの画面へ移ったとき・アプリが裏に回ったときは止める（戻ると続きから）。
  * 曲はどれもオーナーが Suno で作った
  * - ホーム：「未来の静けさ」（オーナー：「これ、ログイン時のホームの音楽にしたい」）
  * - ガチャ（/gacha）：「Glossy Shop Groove」、対戦中（CPU 戦・オンライン対戦の盤面）：「Breakbeat Focus」
- *   ガチャはパックを開けている間は消し、最後の結果の画面でゆっくり戻す（オーナー：「ガチャを引くところは静かにね。最後のリザルトのところからゆっくりフェードインする」。useMusicHush）
  *   （オーナー：「少しドラムの音が刺さるので高音をすこーーし…削ってもいいかも」。2.5kHz より上のドラムの山だけを軽く抑えてある。docs/history.md）
+ *   ガチャはパックを開けている間は、ガチャの曲の代わりに「Floating Anticipation」を小さめの音で流し、最後の結果の画面でガチャの曲をゆっくり戻す
+ *   （オーナー：「ガチャを引くところは静かにね。最後のリザルトのところからゆっくりフェードインする」「これ、ガチャのカードを引く時に小さめの音で流しておいて」。useMusicScene）
+ * - デッキを選ぶ画面（CPU 戦・オンライン対戦。DeckGrid）：「Deck Selection」（オーナー：「デッキを選択する画面でこの音楽を流して」）
  * 止めるボタン（MusicToggle）の設定は 1 つで、どの曲にも効く。
  * <audio> ではなく Web Audio で鳴らす：
  * - 音量とフェードが iPhone でも効く（iPhone では <audio> の volume を変えられない）
@@ -23,6 +27,9 @@ const TRACKS = {
   home: { url: HOME, volume: 0.7 },
   gacha: { url: GACHA, volume: 0.62 },
   battle: { url: BATTLE, volume: 0.66 },
+  deckSelect: { url: DECK_SELECT, volume: 0.66 },
+  /** ガチャのパックを開けている間。小さめ（ほかの曲より 8dB ほど小さく聞こえる） */
+  gachaPull: { url: PULL, volume: 0.26 },
 };
 export type MusicName = keyof typeof TRACKS;
 const NAMES = Object.keys(TRACKS) as MusicName[];
@@ -30,7 +37,7 @@ const NAMES = Object.keys(TRACKS) as MusicName[];
 /** 鳴り始め・止めるときのフェード（秒） */
 const FADE_IN = 1.2;
 const FADE_OUT = 0.4;
-/** 静かにしていたところから戻すとき（ガチャの結果の画面）のフェード（秒） */
+/** 場面の曲から画面の曲へ戻すとき（ガチャの結果の画面）のフェード（秒） */
 const FADE_SLOW = 3;
 /** 止めたかどうかを端末に覚える（"off" で止めている。名前はホームだけだった頃のまま） */
 const KEY = "trends.homeMusic";
@@ -54,9 +61,9 @@ const decks = Object.fromEntries(
 let ctx: AudioContext | null = null;
 /** 開いている画面の曲 */
 let current: MusicName | null = null;
-/** 曲のある画面でも、いまは静かにする（ガチャのパックを開けている間） */
-let hushed = false;
-/** 次に鳴らすときは、ゆっくり上げる（静かにしていたところから戻すとき） */
+/** 画面の曲の代わりに、いま流す場面の曲（ガチャのパックを開けている間） */
+let scene: MusicName | null = null;
+/** 次に鳴らすときは、ゆっくり上げる（場面の曲から画面の曲へ戻すとき） */
 let slowNext = false;
 let enabled = loadEnabled();
 let stopTimer = 0;
@@ -72,7 +79,7 @@ function loadEnabled(): boolean {
 
 /** 今流す曲（無ければ null） */
 function wanted(): MusicName | null {
-  return enabled && !hushed && document.visibilityState === "visible" ? current : null;
+  return enabled && document.visibilityState === "visible" ? (scene ?? current) : null;
 }
 
 /** 初めて要るときに一度だけ用意する（Web Audio のないブラウザ・テストでは何もしない） */
@@ -187,33 +194,39 @@ function sync() {
   );
 }
 
-/** この画面を開いている間、name の曲を流す（ホーム・ガチャ・対戦の盤面から呼ぶ） */
+function notify() {
+  for (const f of subscribers) f();
+}
+
+/** この画面を開いている間、name の曲を流す（ホーム・ガチャ・デッキ選び・対戦の盤面から呼ぶ） */
 export function usePageMusic(name: MusicName) {
   useEffect(() => {
     current = name;
+    notify();
     sync();
     return () => {
       if (current === name) current = null;
+      notify();
       sync();
     };
   }, [name]);
 }
 
 /**
- * hush の間は、開いている画面の曲を消す（止めたところは覚える）。
- * hush でなくなったら、止めたところから FADE_SLOW 秒かけてゆっくり上げる（ガチャのパックを開ける画面から呼ぶ）
+ * name の間は、開いている画面の曲の代わりに name の曲を流す（画面の曲は止めたところを覚える）。
+ * null に戻ったら、画面の曲を止めたところから FADE_SLOW 秒かけてゆっくり上げる（ガチャのパックを開ける画面から呼ぶ）
  */
-export function useMusicHush(hush: boolean) {
+export function useMusicScene(name: MusicName | null) {
   useEffect(() => {
-    if (!hush) return;
-    hushed = true;
+    if (!name) return;
+    scene = name;
     sync();
     return () => {
-      hushed = false;
+      if (scene === name) scene = null;
       slowNext = true;
       sync();
     };
-  }, [hush]);
+  }, [name]);
 }
 
 export function setMusicOn(on: boolean) {
@@ -223,7 +236,7 @@ export function setMusicOn(on: boolean) {
   } catch {
     // 覚えられなくても、開いている間は選んだとおり
   }
-  for (const f of subscribers) f();
+  notify();
   sync();
 }
 
@@ -235,5 +248,16 @@ export function useMusicOn(): boolean {
       return () => subscribers.delete(f);
     },
     () => enabled,
+  );
+}
+
+/** 開いている画面に曲があるか（上の帯に音楽のボタンを出すかに使う） */
+export function useMusicPage(): MusicName | null {
+  return useSyncExternalStore(
+    (f) => {
+      subscribers.add(f);
+      return () => subscribers.delete(f);
+    },
+    () => current,
   );
 }

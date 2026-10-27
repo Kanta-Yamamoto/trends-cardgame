@@ -125,7 +125,7 @@ button { font: inherit; color: inherit; }
 .topbar-back { flex: none; width: 44px; height: 44px; border-radius: 15px; display: grid; place-items: center; color: var(--ink); text-decoration: none; }
 .topbar-back svg { width: 22px; height: 22px; }
 .topbar-back:active { transform: scale(0.94); }
-/* 音楽を止める・流すボタン（曲の流れるガチャだけ。sound/MusicToggle.tsx） */
+/* 音楽を止める・流すボタン（曲の流れる画面だけ。sound/MusicToggle.tsx） */
 .topbar-music { flex: none; width: 44px; height: 44px; padding: 0; border-radius: 15px; display: grid; place-items: center; color: var(--ink); cursor: pointer; }
 .topbar-music svg { width: 22px; height: 22px; }
 .topbar-music:active { transform: scale(0.94); }
