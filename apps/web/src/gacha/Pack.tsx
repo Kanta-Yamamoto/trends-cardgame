@@ -53,7 +53,8 @@ function Print() {
  * パック（第1弾）の絵。capOff で、切り取り線より上が飛んでいく。
  * 外側は印刷、内側は銀色のフィルム。切り取り線（gacha/tear.ts の shape）で、本体・裂けた側（裂け目より左。
  * 裂け目を軸に --capl だけめくれる）・まだ付いている側（右端を軸に --capr だけ浮く）に切り分ける。
- * 裂けた所のふちと、上の端が浮いて開いた口に、内側の銀色が見える
+ * 裂けた所のふちと、上の端が浮いて開いた口に、内側の銀色が見える。
+ * カードを残してパックを抜く間は、真ん中がテカって袋らしく見える（gloss）
  */
 export function Pack({ capOff = false }: { capOff?: boolean }) {
   return (
@@ -61,6 +62,7 @@ export function Pack({ capOff = false }: { capOff?: boolean }) {
       <div className="gx-pk-body">
         <Print />
         <span className="gx-pk-edge" />
+        <span className="gx-pk-gloss" />
       </div>
       <span className="gx-pk-mouth" />
       <div className={`gx-pk-cap ${capOff ? "off" : ""}`}>

@@ -45,10 +45,11 @@ const GRID = [
 ] as const;
 
 /**
- * 裂けきってから（ミリ秒）：tear 上が飛んでいく → out 開いた口から 5 枚が出てくる
- * → rise カードを残してパックが下へ抜ける → reveal カードが真ん中に来て、めくれる
+ * 裂けきってから（ミリ秒）：tear 切れ端が落ちていく → out 開いた口から 5 枚が出てくる
+ * → rise カードを残してパックが下へ抜ける（2 割スッと下がり、そこから一定の速さで。gacha.css の gx-pk-pull）
+ * → reveal パックがカードの下から外れたら、カードが真ん中に来て、めくれる
  */
-const OPEN_MS = { out: 320, rise: 320 + 600, reveal: 320 + 600 + 400 } as const;
+const OPEN_MS = { out: 320, rise: 320 + 600, reveal: 320 + 600 + 900, gone: 320 + 600 + 1050 } as const;
 
 type Phase = "idle" | "tear" | "out" | "rise" | "reveal" | "done";
 /**
@@ -67,8 +68,10 @@ interface St {
   hit: Hit;
   /** 10 パックの結果を出しているか */
   summary: boolean;
+  /** 抜いたパックが下へ消えきったか（めくり始めてからも、消えきるまでは描く） */
+  packGone: boolean;
 }
-const FIRST: St = { at: 0, phase: "idle", cur: 0, flipped: false, hit: "", summary: false };
+const FIRST: St = { at: 0, phase: "idle", cur: 0, flipped: false, hit: "", summary: false, packGone: false };
 
 /** 裂くときの手ごたえの震え（Android の Chrome だけ。iPhone の Safari は震わせられない） */
 const BUZZ: Record<TearEvent, number> = { notch: 14, tick: 6, done: 28 };
@@ -181,6 +184,7 @@ export function Opening({
     later(() => patch({ phase: "out" }), OPEN_MS.out);
     later(() => patch({ phase: "rise" }), OPEN_MS.rise);
     later(() => patch({ phase: "reveal" }), OPEN_MS.reveal);
+    later(() => patch({ packGone: true }), OPEN_MS.gone);
   };
   /** 手ごたえを 1 フレームすすめ、パックの傾き・切り取り線・上の端・口の開きを CSS 変数に書く。止まったら回すのをやめる */
   const frame = (prev: number) => (now: number) => {
@@ -331,8 +335,13 @@ export function Opening({
       </header>
 
       <div className="gx-stage">
-        {(phase === "idle" || phase === "tear" || phase === "out" || phase === "rise") && (
-          <div className={`gx-pk-out ${phase}`}>
+        {(phase === "idle" ||
+          phase === "tear" ||
+          phase === "out" ||
+          phase === "rise" ||
+          (phase === "reveal" && !s.packGone)) && (
+          // めくり始めても、抜いているパックはそのまま（rise）下へ消えきるまで描く
+          <div className={`gx-pk-out ${phase === "reveal" ? "rise" : phase}`}>
             <div className="gx-pk-float" ref={floatRef}>
               <div className="gx-pk-pull">
                 {phase !== "idle" && <div className="gx-leak" />}
