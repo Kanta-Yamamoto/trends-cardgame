@@ -373,7 +373,9 @@ function useStage() {
 
 export function Play() {
   const deck = useGame((s) => s.deck);
-  return <section className="page play">{deck ? <Board /> : <DeckSelect />}</section>;
+  // チュートリアルの対戦は、チュートリアルの画面でだけ出す
+  const tutorial = useGame((s) => s.mode === "tutorial");
+  return <section className="page play">{deck && !tutorial ? <Board /> : <DeckSelect />}</section>;
 }
 
 function DeckSelect() {
@@ -1102,7 +1104,16 @@ let openingSeen = 0;
  * 対戦の画面。CPU 戦とオンライン対戦で共通（onQuit を渡すと「戻る」でそれを呼ぶ）。
  * 決着の前に「戻る」を押したら、確認を出してから抜ける。quitNotes はその確認に添える説明（オンライン対戦の、抜けたあとどうなるか）
  */
-export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: string[] } = {}) {
+export function Board({
+  onQuit,
+  quitNotes,
+  result,
+}: {
+  onQuit?: () => void;
+  quitNotes?: string[];
+  /** 決着の結果の代わりに出すもの（チュートリアル。broke は帯が砕けて白転・暗転したあと） */
+  result?: (o: { won: boolean; broke: boolean }) => React.ReactNode;
+} = {}) {
   const {
     game,
     deck,
@@ -2437,7 +2448,8 @@ export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: 
         </div>
       )}
 
-      {game.winner && resultOpen && (
+      {game.winner && resultOpen && result?.({ won: game.winner === ME, broke: resultOpen === "broke" })}
+      {game.winner && resultOpen && !result && (
         <Result
           game={game}
           onAgain={online ? undefined : () => start(deck)}

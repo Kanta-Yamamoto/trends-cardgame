@@ -1,6 +1,6 @@
 import { CARDS, type CardDef } from "@trends/cards";
 import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
 import { ATTR_META } from "../cards/meta";
 import { markNewsSeen, NEWS, unseenCount } from "../home/news";
 import { InstallGuide, useCanInstall } from "../InstallButton";
@@ -9,6 +9,8 @@ import { api, useSession } from "../online/session";
 import { dismissGuide, refreshApp, useReloadWhenNewer } from "../pwa";
 import { MusicToggle } from "../sound/MusicToggle";
 import { usePageMusic } from "../sound/music";
+import { useTutorial } from "../tutorial/progress";
+import { HomeTour } from "../tutorial/TourGuides";
 import "../styles/home.css";
 
 /**
@@ -114,6 +116,11 @@ const I = {
   refresh: ["M20 11a8 8 0 1 0-2.3 5.7", "M20 4v7h-7"],
   logout: ["M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3", "M10 8l-4 4 4 4M6 12h10"],
   invite: ["M9 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7z", "M2.5 20a6.5 6.5 0 0 1 13 0", "M19 8v6M16 11h6"],
+  guide: [
+    "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z",
+    "M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.5",
+    "M12 17.2v.1",
+  ],
 };
 
 const SHEET_TITLE = { news: "お知らせ", menu: "メニュー", invite: "友だちを招待" } as const;
@@ -138,6 +145,8 @@ export function Home() {
   const [head, setHead] = useState(0);
   const [mine, setMine] = useState<MyRating | null>(null);
   const raf = useRef(0);
+  const tutorial = useTutorial((s) => s.stage);
+  const setTutorial = useTutorial((s) => s.setStage);
 
   useEffect(() => {
     if (!token) return;
@@ -152,6 +161,8 @@ export function Home() {
   }, []);
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
 
+  // チュートリアルの対戦の途中で閉じたら、次に開いたときに続きから
+  if (tutorial === "battle") return <Navigate to="/tutorial" replace />;
   if (!chara) return null;
   const color = charaColor(chara);
   const headline = NEWS[head % Math.min(3, NEWS.length)];
@@ -376,6 +387,16 @@ export function Home() {
                   <Icon d={I.invite} />
                   友だちを招待
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTutorial("battle");
+                    navigate("/tutorial");
+                  }}
+                >
+                  <Icon d={I.guide} />
+                  遊び方（チュートリアル）
+                </button>
                 {canInstall && (
                   <button
                     type="button"
@@ -405,6 +426,7 @@ export function Home() {
           </section>
         </div>
       )}
+      {!sheet && <HomeTour />}
       {guide && (
         <InstallGuide
           onClose={(forever) => {

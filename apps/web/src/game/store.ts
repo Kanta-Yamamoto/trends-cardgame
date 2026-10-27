@@ -6,6 +6,7 @@ import {
   autoSacrifice,
   type CastTarget,
   createGame,
+  createTutorialGame,
   type GameEvent,
   type GameState,
   type PlayerId,
@@ -57,6 +58,15 @@ export const DECK_INFO: Record<DeckId, { name: string; text: string; ace?: strin
   },
 };
 
+/** チュートリアルの対戦で使うデッキの名前（盤面は createTutorialGame が作るので、カードの並びは使わない） */
+const TUTORIAL_DECK: DeckSel = {
+  ref: "tutorial",
+  name: "チュートリアル",
+  text: "",
+  cards: [],
+  attrs: ["炎"],
+};
+
 export const ME: PlayerId = "p1";
 export const CPU: PlayerId = "p2";
 
@@ -88,8 +98,11 @@ export interface RemoteLink {
 }
 
 interface GameStore {
-  /** cpu＝CPU と対戦／online＝ほかの人と対戦（状態はサーバーから届く） */
-  mode: "cpu" | "online";
+  /**
+   * cpu＝CPU と対戦／online＝ほかの人と対戦（状態はサーバーから届く）／
+   * tutorial＝チュートリアルの 1 ターンだけの対戦（CPU は動かず、記録も送らない。tutorial/Tutorial.tsx）
+   */
+  mode: "cpu" | "online" | "tutorial";
   /** 相手の名前 */
   foeName: string;
   /** 自分が選んだデッキ（構築済みか、自分で組んだもの）。null ならデッキ選択画面 */
@@ -109,6 +122,8 @@ interface GameStore {
   /** 自分の攻撃の演出中は true（操作を受け付けない） */
   animating: boolean;
   start: (deck: DeckSel, opts?: { seed?: number; first?: PlayerId }) => void;
+  /** チュートリアルの対戦を始める（いつも同じ盤面。game-core の createTutorialGame） */
+  startTutorial: () => void;
   quit: () => void;
   select: (s: Selection) => void;
   play: (slot: number) => void;
@@ -480,6 +495,28 @@ export const useGame = create<GameStore>((set, get) => {
       const wait = openingLeft();
       if (wait > 0) setTimeout(() => my === runId && runCpu(), wait);
       else runCpu();
+    },
+    startTutorial: () => {
+      // CPU 対戦の途中から来たら、そこまでの記録を送る。チュートリアルの手は記録しない（beginCpuLog を呼ばない）
+      abandonCpuLog(get().game);
+      runId++;
+      link = null;
+      inbox = [];
+      const game = createTutorialGame();
+      set({
+        mode: "tutorial",
+        foeName: "CPU",
+        deck: TUTORIAL_DECK,
+        foeDeckRef: null,
+        game,
+        log: [
+          { id: 1, e: { type: "turnStarted", player: ME, turn: game.turn, mana: game.players[ME].mana } },
+        ],
+        error: null,
+        selection: null,
+        cpuBusy: false,
+        animating: false,
+      });
     },
     quit: () => {
       abandonCpuLog(get().game);

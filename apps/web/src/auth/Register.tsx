@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router";
 import { fmt } from "../gacha/wallet";
 import { api, type User, useSession } from "../online/session";
+import { useTutorial } from "../tutorial/progress";
 import { NameField, nameStatus } from "./NameField";
 import "../styles/account.css";
 
@@ -20,6 +21,7 @@ export function RegisterScreen() {
   const token = useSession((s) => s.token);
   const setSession = useSession((s) => s.setSession);
   const logout = useSession((s) => s.logout);
+  const setStage = useTutorial((s) => s.setStage);
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,9 +39,11 @@ export function RegisterScreen() {
       .catch((err: Error) => setError(err.message))
       .finally(() => setBusy(false));
   };
-  const goHome = () => {
+  // 名前を決めたら、ちびミナモのチュートリアルへ（10月27日。初めてログインした人だけ。ホームのメニューからもいつでも見られる）
+  const begin = () => {
     if (!done) return;
-    navigate("/");
+    setStage("battle");
+    navigate("/tutorial");
     setSession({ token: done.token, user: done.user });
   };
 
@@ -66,8 +70,8 @@ export function RegisterScreen() {
                 はじめてのお礼に、ジェムを<b>{fmt(done.welcomeGems)}</b>贈りました
               </p>
             )}
-            <button type="button" className="btn lg" onClick={goHome}>
-              ホームへ
+            <button type="button" className="btn lg" onClick={begin}>
+              はじめる
             </button>
           </section>
         ) : (

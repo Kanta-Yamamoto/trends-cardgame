@@ -7,6 +7,7 @@ import { Gem, PACK_NAME, Pack } from "../gacha/Pack";
 import { fmt, totalGems, useWallet, type Wallet } from "../gacha/wallet";
 import { api, useSession } from "../online/session";
 import { usePageMusic } from "../sound/music";
+import { GachaTour } from "../tutorial/TourGuides";
 import { SlotTable } from "./GachaRates";
 import "../styles/gacha.css";
 
@@ -122,7 +123,8 @@ export function Gacha() {
         </div>
         <p className="gx-demo-note">カードは増えず、ジェムも減りません。</p>
         <div className="gx-demo-btns">
-          <button type="button" className="btn ghost" onClick={() => demo(1)}>
+          {/* data-tut：チュートリアルで押してもらうボタン（デモを消すときは、本物の 1 パックに付け替える） */}
+          <button type="button" className="btn ghost" data-tut="gacha-pack" onClick={() => demo(1)}>
             1パック
           </button>
           <button type="button" className="btn ghost" onClick={() => demo(10)}>
@@ -232,6 +234,7 @@ export function Gacha() {
         </div>
       )}
 
+      {!opening && !sheet && <GachaTour />}
       {opening && (
         <Opening
           key={opening.n}

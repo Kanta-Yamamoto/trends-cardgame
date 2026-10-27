@@ -17,6 +17,7 @@ import { Play } from "./pages/Play";
 import { Ranking } from "./pages/Ranking";
 import { Shop } from "./pages/Shop";
 import { TopBar } from "./TopBar";
+import { Tutorial } from "./tutorial/Tutorial";
 
 export function App() {
   // ログインしているあいだは、自分で組んだデッキをアカウントとそろえる
@@ -34,9 +35,11 @@ export function App() {
   if (user.nameSet === false) return <RegisterScreen />;
   // 最初に開く場所はホーム画面（10月26日）。ほかの画面は上の帯の「ホーム」で戻る
   const home = pathname === "/";
+  // チュートリアルは画面いっぱいに出すので、上の帯を出さない
+  const bare = pathname === "/tutorial";
   return (
     <div className={home ? "home-shell" : "shell"}>
-      {!home && <TopBar />}
+      {!home && !bare && <TopBar />}
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -50,6 +53,7 @@ export function App() {
           <Route path="/gacha/rates" element={<GachaRates />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/me" element={<MyPage />} />
+          <Route path="/tutorial" element={<Tutorial />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
