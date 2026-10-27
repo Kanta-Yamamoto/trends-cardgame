@@ -146,13 +146,6 @@ button { font: inherit; color: inherit; }
 .tag.ok { color: var(--ok); }
 .tag.ng { color: var(--ng); }
 .tag.ok::before, .tag.ng::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-/* 新しい版の帯：画面の枠（frame.ts）のいちばん下。対戦の画面より手前 */
-.update-bar {
-  position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom, 0px)); z-index: 300;
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 10px 12px 10px 16px; border-radius: 14px; font-size: 13px; font-weight: 800;
-  color: var(--ink); background: #fffffff0; border: 1px solid var(--pri-2); box-shadow: 0 10px 30px var(--shadow);
-}
 .spacer { flex: 1; }
 .page { padding-top: 18px; }
 .page-head h1 { margin: 0 0 6px; font-size: 24px; font-weight: 800; }
