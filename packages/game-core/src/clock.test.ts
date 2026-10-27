@@ -1,6 +1,6 @@
 import { CARDS, DECKS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
-import { CLOCK, clockAction, clockDeadline, clockFor, startClock, tickClock } from "./clock";
+import { CLOCK, clockAction, clockDeadline, clockFor, readyClock, startClock, tickClock } from "./clock";
 import { applyAction, createGame } from "./engine";
 import { expectedScore, RATING, rateGame } from "./rating";
 import type { GameState, RuleCard } from "./types";
@@ -30,11 +30,36 @@ describe("持ち時間", () => {
     c = tickClock(c, s, next, GO + 20_000);
     s = next;
     expect(c.bank).toEqual({ p1: CLOCK.bankMs - 20_000, p2: CLOCK.bankMs });
+    // p2 の画面が、すぐにターンの始めを見せ終えた
+    c = readyClock(c, s, "p2", s.turn, GO + 20_000);
     // p2 は 5 秒でターンを終えた → 5 秒減る
     next = endTurn(s);
     c = tickClock(c, s, next, GO + 25_000);
     expect(c.bank).toEqual({ p1: CLOCK.bankMs - 20_000, p2: CLOCK.bankMs - 5_000 });
-    expect(clockDeadline(c, next)).toBe(GO + 25_000 + CLOCK.turnMs);
+    expect(clockDeadline(c, next)).toBe(GO + 25_000 + CLOCK.turnGraceMs + CLOCK.turnMs);
+  });
+
+  it("ターンが変わったら、新しい手番の人の画面が見せ終える（ready）まで、10 秒を上限に時計を待たせる", () => {
+    const s = game();
+    const c0 = startClock(s, T0);
+    const next = endTurn(s);
+    const c = tickClock(c0, s, next, GO + 3_000);
+    // 待っているあいだは減らない（p2 から見ると、自分が p1）
+    expect(clockFor(c, next, GO + 5_000, "p2")).toMatchObject({
+      running: "p1",
+      turnLeft: CLOCK.turnMs,
+      holdMs: CLOCK.turnGraceMs - 2_000,
+    });
+    // 知らせが来なくても、上限を過ぎたら動き出す
+    expect(clockDeadline(c, next)).toBe(GO + 3_000 + CLOCK.turnGraceMs + CLOCK.turnMs);
+    // 手番の人の画面が見せ終えたら、そこから動く
+    const r = readyClock(c, next, "p2", next.turn, GO + 6_000);
+    expect(r.since).toBe(GO + 6_000);
+    expect(clockDeadline(r, next)).toBe(GO + 6_000 + CLOCK.turnMs);
+    // 手番でない人・違うターン・もう動いている時計の知らせは効かない
+    expect(readyClock(c, next, "p1", next.turn, GO + 6_000)).toBe(c);
+    expect(readyClock(c, next, "p2", next.turn + 1, GO + 6_000)).toBe(c);
+    expect(readyClock(r, next, "p2", next.turn, GO + 7_000)).toBe(r);
   });
 
   it("持ち時間を使い切ったら時間切れ負け。残りが 60 秒より少なければ、そこまでしか待たない", () => {

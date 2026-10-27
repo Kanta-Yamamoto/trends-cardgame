@@ -62,6 +62,11 @@ export class MatchesGateway
   private cpuTimers = new Map<string, NodeJS.Timeout>();
   /** CPU が最後に手を打った通算ターン（ターンの最初の 1 手だけ間を長くする） */
   private cpuTurn = new Map<string, number>();
+  /**
+   * 部屋ごとに、手を進めてから送り終えるまでを1つずつ順に行う列。
+   * 入り直した人に送る盤面が、あとの手より遅れて届いて、新しい盤面（決着）を古い盤面で上書きしないように
+   */
+  private rooms = new Map<string, Promise<unknown>>();
   private sweep: NodeJS.Timeout | null = null;
   /** だれもつないでいない部屋を閉じる時刻とタイマー（部屋ごと） */
   private closing = new Map<string, { at: number; timer: NodeJS.Timeout }>();
@@ -199,16 +204,21 @@ export class MatchesGateway
     @ConnectedSocket() client: Client,
     @MessageBody() body: { code?: string; deck?: string },
   ): Promise<Ack> {
-    return this.guard(client, async (user) => {
-      const row = await this.matches.join(String(body?.code ?? ""), user.id, body?.deck);
-      await client.join(row.code);
-      client.data.room = row.code;
-      this.keepOpen(row.code);
-      await this.sendMatch(row);
-      // 入り直したときに時間が過ぎていれば、ここで進める
-      this.schedule(row);
-      void this.driveCpu(row);
-    });
+    const code = String(body?.code ?? "");
+    return this.guard(client, (user) =>
+      this.inRoom(code, async () => {
+        const joined = await this.matches.join(code, user.id, body?.deck);
+        await client.join(joined.code);
+        client.data.room = joined.code;
+        this.keepOpen(joined.code);
+        // 送るのは、部屋の列の中で読んだ最新の盤面
+        const row = await this.matches.find(joined.code);
+        await this.sendMatch(row);
+        // 入り直したときに時間が過ぎていれば、ここで進める
+        this.schedule(row);
+        void this.driveCpu(row);
+      }),
+    );
   }
 
   @SubscribeMessage("action")
@@ -220,6 +230,29 @@ export class MatchesGateway
       if (!body?.action) throw new RuleError("bad_action", "操作がありません");
       await this.apply(String(body.code ?? ""), user, body.action);
     });
+  }
+
+  /** 手番の人の画面が、ターンの始めまでの演出を見せ終えた。待っている時計を動かし、両者に新しい時計を送る */
+  @SubscribeMessage("ready")
+  async ready(
+    @ConnectedSocket() client: Client,
+    @MessageBody() body: { code?: string; turn?: number },
+  ): Promise<Ack> {
+    const code = String(body?.code ?? "");
+    return this.guard(client, (user) =>
+      this.inRoom(code, async () => {
+        const row = await this.matches.ready(code, user.id, Number(body?.turn));
+        if (!row?.state || !row.clock) return;
+        const now = Date.now();
+        const sockets = await this.server.in(row.code).fetchSockets();
+        for (const s of sockets) {
+          const viewer = s.data.user as PublicUser | undefined;
+          if (!viewer) continue;
+          s.emit("clock", clockFor(row.clock, row.state, now, this.matches.seat(row, viewer.id)));
+        }
+        this.schedule(row);
+      }),
+    );
   }
 
   @SubscribeMessage("resign")
@@ -299,10 +332,9 @@ export class MatchesGateway
       () => {
         this.cpuTimers.delete(row.code);
         this.cpuTurn.set(row.code, state.turn);
-        this.matches
-          .cpuStep(row.code)
-          .then((steps) => this.broadcast(steps))
-          .catch((e) => console.error(e));
+        this.inRoom(row.code, async () => this.broadcast(await this.matches.cpuStep(row.code))).catch((e) =>
+          console.error(e),
+        );
       },
       hold + (first && !state.pending ? CPU_TURN_START_MS : CPU_STEP_MS),
     );
@@ -310,10 +342,12 @@ export class MatchesGateway
     this.cpuTimers.set(row.code, t);
   }
 
-  private async apply(code: string, user: PublicUser, action: Action) {
-    const { steps, error } = await this.matches.act(code, user.id, action);
-    await this.broadcast(steps);
-    if (error) throw new RuleError("late", error);
+  private apply(code: string, user: PublicUser, action: Action) {
+    return this.inRoom(code, async () => {
+      const { steps, error } = await this.matches.act(code, user.id, action);
+      await this.broadcast(steps);
+      if (error) throw new RuleError("late", error);
+    });
   }
 
   /** 進んだ手を、部屋の全員にその人から見た形で送る。決着でレーティングが動いたら、それも送る */
@@ -352,11 +386,12 @@ export class MatchesGateway
     const t = setTimeout(
       () => {
         this.timers.delete(row.code);
-        this.matches
-          .tick(row.code)
+        this.inRoom(row.code, async () => {
+          const { steps, row: now } = await this.matches.tick(row.code);
           // まだ切れていなければ（時計の誤差）、掛け直す
-          .then(({ steps, row: now }) => (steps.length ? this.broadcast(steps) : this.schedule(now)))
-          .catch((e) => console.error(e));
+          if (steps.length) await this.broadcast(steps);
+          else this.schedule(now);
+        }).catch((e) => console.error(e));
       },
       Math.max(0, at - Date.now()) + 20,
     );
@@ -386,6 +421,19 @@ export class MatchesGateway
         rating: row.ratings?.[pid] ?? null,
       });
     }
+  }
+
+  /** 部屋ごとの列に並べて、前の手を送り終えてから行う */
+  private inRoom<T>(code: string, job: () => Promise<T>): Promise<T> {
+    const key = code.toUpperCase();
+    const prev = this.rooms.get(key) ?? Promise.resolve();
+    const next = prev.then(job, job);
+    const tail = next.catch(() => undefined);
+    this.rooms.set(key, tail);
+    void tail.then(() => {
+      if (this.rooms.get(key) === tail) this.rooms.delete(key);
+    });
+    return next;
   }
 
   private async guard(client: Client, job: (user: PublicUser) => Promise<void>): Promise<Ack> {

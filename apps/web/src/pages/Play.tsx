@@ -1137,6 +1137,7 @@ export function Board({
     foeDeckRef,
     opening,
     resign,
+    foeMove,
   } = useGame();
   const online = mode === "online";
   // 盤面を出している間は、対戦の曲を流す（CPU 戦・オンライン対戦のどちらも。上の帯の左の音楽のボタンで止められる）
@@ -1220,6 +1221,20 @@ export function Board({
   /** バズが使えるようになった回数。増えるたびに、ボタンの枠の光を右回りに走らせる */
   const [buzzWake, setBuzzWake] = useState(0);
   const buzzWas = useRef(false);
+
+  // 相手の手（攻撃・カード・闇堕ち・時間切れ・決着）を見せ始めたら、開いている拡大・説明・確認・一覧を閉じて、盤面を見せる
+  // （10月28日：裏向きのカードの説明を開いたまま、相手の闇堕ちと攻撃で決着し、相手の画面だけ止まった）
+  // biome-ignore lint/correctness/useExhaustiveDependencies: foeMove が変わったときだけ閉じる
+  useEffect(() => {
+    setZoom(null);
+    setOmenAsk(null);
+    setTrashView(null);
+    setLogOpen(false);
+    setConfirmEnd(false);
+    setBuzzAsk(null);
+    setResignAsk(false);
+    setQuitAsk(false);
+  }, [foeMove]);
 
   const handUsable = (g: GameState, i: number) => {
     const id = g.players[ME].hand[i];
