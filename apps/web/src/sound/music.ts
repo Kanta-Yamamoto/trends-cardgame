@@ -8,6 +8,7 @@ import HOME from "./home.mp3";
  * 曲はどれもオーナーが Suno で作った
  * - ホーム：「未来の静けさ」（オーナー：「これ、ログイン時のホームの音楽にしたい」）
  * - ガチャ（/gacha）：「Glossy Shop Groove」、対戦中（CPU 戦・オンライン対戦の盤面）：「Breakbeat Focus」
+ *   ガチャはパックを開けている間は消し、最後の結果の画面でゆっくり戻す（オーナー：「ガチャを引くところは静かにね。最後のリザルトのところからゆっくりフェードインする」。useMusicHush）
  *   （オーナー：「少しドラムの音が刺さるので高音をすこーーし…削ってもいいかも」。2.5kHz より上のドラムの山だけを軽く抑えてある。docs/history.md）
  * 止めるボタン（MusicToggle）の設定は 1 つで、どの曲にも効く。
  * <audio> ではなく Web Audio で鳴らす：
@@ -29,6 +30,8 @@ const NAMES = Object.keys(TRACKS) as MusicName[];
 /** 鳴り始め・止めるときのフェード（秒） */
 const FADE_IN = 1.2;
 const FADE_OUT = 0.4;
+/** 静かにしていたところから戻すとき（ガチャの結果の画面）のフェード（秒） */
+const FADE_SLOW = 3;
 /** 止めたかどうかを端末に覚える（"off" で止めている。名前はホームだけだった頃のまま） */
 const KEY = "trends.homeMusic";
 /** ブラウザが音を出してよいと認める操作 */
@@ -51,6 +54,10 @@ const decks = Object.fromEntries(
 let ctx: AudioContext | null = null;
 /** 開いている画面の曲 */
 let current: MusicName | null = null;
+/** 曲のある画面でも、いまは静かにする（ガチャのパックを開けている間） */
+let hushed = false;
+/** 次に鳴らすときは、ゆっくり上げる（静かにしていたところから戻すとき） */
+let slowNext = false;
 let enabled = loadEnabled();
 let stopTimer = 0;
 const subscribers = new Set<() => void>();
@@ -65,7 +72,7 @@ function loadEnabled(): boolean {
 
 /** 今流す曲（無ければ null） */
 function wanted(): MusicName | null {
-  return enabled && document.visibilityState === "visible" ? current : null;
+  return enabled && !hushed && document.visibilityState === "visible" ? current : null;
 }
 
 /** 初めて要るときに一度だけ用意する（Web Audio のないブラウザ・テストでは何もしない） */
@@ -106,7 +113,7 @@ function fadeTo(c: AudioContext, g: GainNode, to: number, sec: number) {
   g.gain.linearRampToValueAtTime(to, now + sec);
 }
 
-function play(c: AudioContext, name: MusicName) {
+function play(c: AudioContext, name: MusicName, fadeIn: number) {
   const d = decks[name];
   (d.buffer ?? load(c, name))
     .then((buffer) => {
@@ -127,7 +134,7 @@ function play(c: AudioContext, name: MusicName) {
       }
       // 押す前で音を出させてもらえないときは、押したときに鳴る（unlock）
       c.resume().catch(() => {});
-      fadeTo(c, d.gain, TRACKS[name].volume, FADE_IN);
+      fadeTo(c, d.gain, TRACKS[name].volume, fadeIn);
     })
     .catch(() => {
       // 読めなければ鳴らさない（画面はそのまま使える）
@@ -167,7 +174,8 @@ function sync() {
     const g = decks[name].gain;
     if (name !== want && g) fadeTo(c, g, 0, FADE_OUT);
   }
-  if (want) play(c, want);
+  if (want) play(c, want, slowNext ? FADE_SLOW : FADE_IN);
+  slowNext = false;
   // 消え終わったら、流していない曲を止めて手放す。何も流さないなら Web Audio ごと止める（電池を使わない）
   stopTimer = window.setTimeout(
     () => {
@@ -189,6 +197,23 @@ export function usePageMusic(name: MusicName) {
       sync();
     };
   }, [name]);
+}
+
+/**
+ * hush の間は、開いている画面の曲を消す（止めたところは覚える）。
+ * hush でなくなったら、止めたところから FADE_SLOW 秒かけてゆっくり上げる（ガチャのパックを開ける画面から呼ぶ）
+ */
+export function useMusicHush(hush: boolean) {
+  useEffect(() => {
+    if (!hush) return;
+    hushed = true;
+    sync();
+    return () => {
+      hushed = false;
+      slowNext = true;
+      sync();
+    };
+  }, [hush]);
 }
 
 export function setMusicOn(on: boolean) {

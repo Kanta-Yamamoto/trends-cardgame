@@ -16,6 +16,7 @@ AIで描いたイラストを立体感のあるキラカードにして遊ぶ、
 - `legacy/prototype-src` — 試作の元ソース（参照用、ビルド対象外）
 - `assets/original` — 生成した元イラスト（印刷用）
 - `tools/cutout.py` — 元イラストから人物を切り抜く
+- `tools/app-icon.py` — アプリのアイコン（『演出家』）を `apps/web/public/icons/` に作る。Android（maskable）だけ引いた絵
 
 ## コマンド
 
