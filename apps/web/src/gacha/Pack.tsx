@@ -34,7 +34,22 @@ export function GemPill({ wallet }: { wallet: Wallet | null }) {
   );
 }
 
-/** パック（第1弾）の絵。capOff で、上の切り取り線より上が飛んでいく */
+/** 切り取り線より上の 1 枚分 */
+function CapSheet() {
+  return (
+    <div className="gx-pk-capin">
+      <span className="gx-pk-foil" />
+      <span className="gx-pk-crimp t" />
+      <span className="gx-pk-sheen" />
+    </div>
+  );
+}
+
+/**
+ * パック（第1弾）の絵。capOff で、上の切り取り線より上が飛んでいく。
+ * 切り取り線より上は、裂けた側（裂け目 --tip より左。裂け目を軸に --capl だけめくれる）と、
+ * まだ付いている側（右端を軸に --capr だけ浮く）の 2 枚に分けてある。変数が無ければ 1 枚に見える
+ */
 export function Pack({ capOff = false }: { capOff?: boolean }) {
   return (
     <div className="gx-pack" aria-hidden="true">
@@ -47,9 +62,12 @@ export function Pack({ capOff = false }: { capOff?: boolean }) {
         <span className="gx-pk-sheen" />
       </div>
       <div className={`gx-pk-cap ${capOff ? "off" : ""}`}>
-        <span className="gx-pk-foil" />
-        <span className="gx-pk-crimp t" />
-        <span className="gx-pk-sheen" />
+        <div className="gx-pk-flap l">
+          <CapSheet />
+        </div>
+        <div className="gx-pk-flap r">
+          <CapSheet />
+        </div>
       </div>
     </div>
   );

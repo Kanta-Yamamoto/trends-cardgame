@@ -10,9 +10,14 @@
 
 /* パック（第1弾）。上の 40px（切り取り線より上）をなぞって切ると飛んでいく */
 .gx-pack { position: relative; width: 200px; height: 300px; filter: drop-shadow(0 22px 30px #1f487847); }
-.gx-pk-body, .gx-pk-cap { position: absolute; inset: 0; border-radius: 8px; overflow: hidden; background: linear-gradient(165deg, #f4f9ff 0%, #cfe6ff 22%, #ffd6ee 42%, #d3fff1 62%, #fff0c4 80%, #dcecff 100%); }
+.gx-pk-body, .gx-pk-capin { position: absolute; inset: 0; border-radius: 8px; overflow: hidden; background: linear-gradient(165deg, #f4f9ff 0%, #cfe6ff 22%, #ffd6ee 42%, #d3fff1 62%, #fff0c4 80%, #dcecff 100%); }
 .gx-pk-body { clip-path: polygon(0% 40px, 10% 35px, 20% 42px, 30% 36px, 40% 43px, 50% 35px, 60% 42px, 70% 36px, 80% 43px, 90% 35px, 100% 41px, 100% 100%, 0% 100%); }
-.gx-pk-cap { clip-path: polygon(0% 0%, 100% 0%, 100% 41px, 90% 35px, 80% 43px, 70% 36px, 60% 42px, 50% 35px, 40% 43px, 30% 36px, 20% 42px, 10% 35px, 0% 40px); }
+.gx-pk-capin { clip-path: polygon(0% 0%, 100% 0%, 100% 41px, 90% 35px, 80% 43px, 70% 36px, 60% 42px, 50% 35px, 40% 43px, 30% 36px, 20% 42px, 10% 35px, 0% 40px); }
+/* 切り取り線より上：裂けた側（l）は裂け目を軸にめくれ、まだ付いている側（r）は右端を軸に浮く（gacha/tear.ts） */
+.gx-pk-cap { position: absolute; inset: 0; }
+.gx-pk-flap { position: absolute; inset: 0; }
+.gx-pk-flap.l { clip-path: inset(0 calc(100% - var(--tip, 0px)) 0 0); transform-origin: var(--tip, 0px) 40px; transform: rotate(var(--capl, 0deg)); }
+.gx-pk-flap.r { clip-path: inset(0 0 0 var(--tip, 0px)); transform-origin: 100% 40px; transform: rotate(var(--capr, 0deg)); }
 .gx-pk-cap.off { animation: gx-cap-fly 0.65s cubic-bezier(0.2, 0.7, 0.4, 1) forwards; }
 .gx-pk-crimp { position: absolute; left: 0; right: 0; height: 16px; background: repeating-linear-gradient(90deg, #ffffff99 0 2px, #1f48781f 2px 5px); }
 .gx-pk-crimp.t { top: 0; }
@@ -151,15 +156,21 @@
 .gx-pk-out.sink { transform: translateY(300px) scale(0.9); opacity: 0; }
 .gx-pk-float { position: relative; width: 200px; height: 300px; animation: gx-floaty 3.6s ease-in-out infinite; }
 .gx-pk-out .gx-pack { filter: drop-shadow(0 22px 30px #0008); }
-.gx-pk-btn { position: absolute; inset: -14px; z-index: 5; border: 0; padding: 0; background: none; cursor: pointer; touch-action: none; border-radius: 12px; }
-.gx-cut { position: absolute; left: 0; top: 37px; z-index: 4; height: 4px; border-radius: 2px; background: #fff; box-shadow: 0 0 10px 3px #ffffffb3, 0 0 24px 6px #bfe8ff80; pointer-events: none; }
-.gx-guide { position: absolute; left: -16px; top: 26px; z-index: 4; width: 232px; height: 26px; pointer-events: none; }
+/* 持っている間は、浮き沈みを止める。指で引くと、下の方を軸に指の側へ傾く（gacha/tear.ts） */
+.gx-pk-float.grip { animation-play-state: paused; }
+.gx-pk-pull { position: absolute; inset: 0; transform-origin: 50% 90%; transform: translateX(var(--px, 0px)) rotate(var(--rot, 0deg)); will-change: transform; }
+/* なぞる所はパックの上半分（まわりに少し余白）。開ける前のカードは透明でも指を取らない */
+.gx-pk-btn { position: absolute; left: -24px; right: -24px; top: -24px; height: 174px; z-index: 5; border: 0; padding: 0; background: none; cursor: pointer; touch-action: none; border-radius: 12px; }
+.gx-cut { position: absolute; left: 0; top: 37px; z-index: 4; width: var(--tip, 0px); height: 4px; border-radius: 2px; background: #fff; box-shadow: 0 0 10px 3px #ffffffb3, 0 0 24px 6px #bfe8ff80; pointer-events: none; }
+.gx-pk-float:not(.torn) .gx-cut { opacity: 0; }
+.gx-guide { position: absolute; left: -16px; top: 26px; z-index: 4; width: 232px; height: 26px; pointer-events: none; transition: opacity 0.15s; }
+.gx-pk-float.grip .gx-guide, .gx-pk-float.torn .gx-guide { opacity: 0; }
 .gx-guide::before { content: ""; position: absolute; left: 0; right: 0; top: 12px; border-top: 2px dashed #ffffffb3; }
 .gx-guide i { position: absolute; left: 0; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 6px #ffffff40; animation: gx-guide 1.6s ease-in-out infinite; }
 .gx-leak { position: absolute; left: -30px; right: -30px; top: -120px; height: 170px; z-index: -1; pointer-events: none; background: radial-gradient(ellipse 50% 60% at 50% 100%, #ffffffd9 0%, #bfe8ff66 40%, transparent 70%); transform-origin: 50% 100%; animation: gx-leak 0.6s ease-out both; }
 /* カード（裏と表。表は HoloCard） */
 .gx-card { position: absolute; left: -105px; top: -147px; width: 210px; height: 293px; perspective: 1000px; transition: transform 0.55s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.4s; }
-.gx-card.hid { opacity: 0; }
+.gx-card.hid { opacity: 0; pointer-events: none; }
 .gx-in { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.35s cubic-bezier(0.3, 0.7, 0.3, 1); }
 .gx-card.flip .gx-in { transform: rotateY(180deg); }
 .gx-card.now .gx-in { transition: none; }
