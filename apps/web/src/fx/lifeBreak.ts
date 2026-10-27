@@ -89,6 +89,20 @@ const BLUR = 6; // まわりのボケ（px）
 const DIM = 0.72; // まわりの明るさ
 
 const s = (ms: number) => ms / 1000;
+/** #rrggbb を k 倍の明るさに */
+const darker = (hex: string, k: number) =>
+  `#${[1, 3, 5]
+    .map((i) =>
+      Math.round(Number.parseInt(hex.slice(i, i + 2), 16) * k)
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+/** 0〜1 の濃さを、色に付ける 2 桁の 16 進に */
+const alpha = (a: number) =>
+  Math.round(Math.max(0, Math.min(1, a)) * 255)
+    .toString(16)
+    .padStart(2, "0");
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /** 実際の時間（ミリ秒）での演出の速さ。砕けた直後はふつう → スローモーション（slow）→ ふつうに戻る */
@@ -162,20 +176,10 @@ function svg(w: number, h: number): SVGSVGElement {
   return el;
 }
 
-/** ひび 1 本（太い下の線 under の上に、細い線 over）。破線の長さで、伸びる動きを付ける */
-function crackLine(
-  parent: SVGElement,
-  a: P,
-  b: P,
-  under: string,
-  over: string,
-  width: number,
-): SVGLineElement[] {
+/** ひび 1 本（太い線から順に重ねる。[色, 太さ]）。破線の長さで、伸びる動きを付ける */
+function crackLine(parent: SVGElement, a: P, b: P, layers: [string, number][]): SVGLineElement[] {
   const len = Math.hypot(b.x - a.x, b.y - a.y);
-  return [
-    [under, width * 2],
-    [over, width],
-  ].map(([color, w]) => {
+  return layers.map(([color, w]) => {
     const l = document.createElementNS(NS, "line");
     l.setAttribute("x1", String(a.x));
     l.setAttribute("y1", String(a.y));
@@ -250,6 +254,8 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
     return el;
   };
 
+  /** 負けた側のゲージの色（ひびと破片の色味） */
+  const tint = opts.tint ?? "#bfe6fa";
   // ひびの出どころ：ライフのゲージの左寄り（減りきった所）
   const g = opts.gauge?.getBoundingClientRect();
   const o: P = g
@@ -281,23 +287,24 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
   // 帯と同じ角の丸みで切る（ひびが帯の外にはみ出さない）
   crackBox.style.borderRadius = `${(Number.parseFloat(getComputedStyle(bar).borderTopLeftRadius) || 0) * scale}px`;
   crackBox.style.overflow = "hidden";
+  // ひびの色は黒ではなく、ガラスと同じ系統（オーナー：「ヒビの色を黒以外の、白とかガラスと同系統に」）。
+  // 白い芯のまわりに、負けた側のゲージの色を濃いめに引き、さらに淡くにじませる（白い帯の上でも見えるように）
+  const deep = darker(tint, 0.78);
+  const crack = (a: P, b: P, width: number, k: number) =>
+    crackLine(crackSvg, a, b, [
+      [`${tint}${alpha(0.4 * k)}`, width * 2.8],
+      [`${deep}${alpha(0.9 * k)}`, width * 1.4],
+      ["#ffffff", width * 0.75],
+    ]);
   const segs: { lines: SVGLineElement[]; stage: number; delay: number }[] = [];
   vtx.forEach((ray, i) => {
     const next = vtx[(i + 1) % RAYS] as P[];
     ray.forEach((v, j) => {
       const from = j === 0 ? o : (ray[j - 1] as P);
       // 放射のひびは、出どころに近いほど太い。輪のひびは内側だけ、ところどころ（クモの巣に見えすぎないように）
-      segs.push({
-        lines: crackLine(crackSvg, from, v, "#fffffff2", "#0d1729f0", Math.max(1.4, 2.8 - j * 0.45)),
-        stage: stageOf(j),
-        delay: 0,
-      });
+      segs.push({ lines: crack(from, v, Math.max(1.4, 2.8 - j * 0.45), 1), stage: stageOf(j), delay: 0 });
       if (j < 3 && rnd() < 0.7)
-        segs.push({
-          lines: crackLine(crackSvg, v, next[j] as P, "#ffffffd9", "#0d1729cc", 1.3),
-          stage: stageOf(j),
-          delay: 60,
-        });
+        segs.push({ lines: crack(v, next[j] as P, 1.3, 0.85), stage: stageOf(j), delay: 60 });
     });
   });
   for (const sg of segs)
@@ -336,7 +343,6 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
   // ---------- 2. 砕ける ----------
   // 破片：ひびの網の目の形の、文字のないガラス。
   // 勝ち：地は帯の色、角に相手のゲージの色をうっすら差し、ふちを白く光らせる。負け：黒いガラス、ふちは鈍い灰色
-  const tint = opts.tint ?? "#bfe6fa";
   const glass = mine
     ? { a: "#3a4352", b: "#141a24", c: "#05080d", edge: "#7d8899", edgeOp: 0.75, shine: 0.3 }
     : {
