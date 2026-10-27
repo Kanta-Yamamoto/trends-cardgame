@@ -32,6 +32,8 @@ type Rect = { left: number; top: number; width: number; height: number };
 type P = { x: number; y: number };
 
 export type LifeBreakEnd = "dark" | "white";
+/** ひびの色（モックで見比べる）：白く光る線（ふちにごく淡い影）／白だけ／薄い灰色／少し濃い灰色 */
+export type CrackColor = "white" | "whiteOnly" | "lightGray" | "gray";
 
 export interface LifeBreakOptions {
   /** 演出を置く層（画面座標。#fx-layer） */
@@ -51,6 +53,8 @@ export interface LifeBreakOptions {
   mine?: boolean;
   /** 切り替え方。省略すると、勝ちは白転・負けは暗転 */
   end?: LifeBreakEnd;
+  /** ひびの色。省略すると white */
+  crackColor?: CrackColor;
   /** 画面が覆われて、結果を出してよいとき（このあと明けて結果が見える） */
   onCovered?: () => void;
   /** 乱数（モックで同じ形を出し直すため）。省略で Math.random */
@@ -89,15 +93,6 @@ const BLUR = 6; // まわりのボケ（px）
 const DIM = 0.72; // まわりの明るさ
 
 const s = (ms: number) => ms / 1000;
-/** #rrggbb を k 倍の明るさに */
-const darker = (hex: string, k: number) =>
-  `#${[1, 3, 5]
-    .map((i) =>
-      Math.round(Number.parseInt(hex.slice(i, i + 2), 16) * k)
-        .toString(16)
-        .padStart(2, "0"),
-    )
-    .join("")}`;
 /** 0〜1 の濃さを、色に付ける 2 桁の 16 進に */
 const alpha = (a: number) =>
   Math.round(Math.max(0, Math.min(1, a)) * 255)
@@ -287,15 +282,20 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
   // 帯と同じ角の丸みで切る（ひびが帯の外にはみ出さない）
   crackBox.style.borderRadius = `${(Number.parseFloat(getComputedStyle(bar).borderTopLeftRadius) || 0) * scale}px`;
   crackBox.style.overflow = "hidden";
-  // ひびの色は黒ではなく、ガラスと同じ系統（オーナー：「ヒビの色を黒以外の、白とかガラスと同系統に」）。
-  // 白い芯のまわりに、負けた側のゲージの色を濃いめに引き、さらに淡くにじませる（白い帯の上でも見えるように）
-  const deep = darker(tint, 0.78);
+  // ひびには色を付けない（オーナー：「ヒビの色を黒以外の、白とかガラスと同系統に」「ガラスにヒビが入る時に、
+  // そのヒビの部分に色がつくのが違和感」「薄い灰色とかなのかなヒビの線って。比べたい」）。
+  // white：白く光る線。白い帯の上でも見えるよう、ふちにだけごく淡い灰色の影
+  const crackLayers: Record<CrackColor, (width: number, k: number) => [string, number][]> = {
+    white: (wd, k) => [
+      [`#5f6f86${alpha(0.32 * k)}`, wd * 2.2],
+      ["#ffffff", wd * 1.05],
+    ],
+    whiteOnly: (wd, k) => [[`#ffffff${alpha(k)}`, wd * 1.3]],
+    lightGray: (wd, k) => [[`#9aa5b5${alpha(0.9 * k)}`, wd * 1.1]],
+    gray: (wd, k) => [[`#6b778a${alpha(0.95 * k)}`, wd * 1.1]],
+  };
   const crack = (a: P, b: P, width: number, k: number) =>
-    crackLine(crackSvg, a, b, [
-      [`${tint}${alpha(0.4 * k)}`, width * 2.8],
-      [`${deep}${alpha(0.9 * k)}`, width * 1.4],
-      ["#ffffff", width * 0.75],
-    ]);
+    crackLine(crackSvg, a, b, crackLayers[opts.crackColor ?? "white"](width, k));
   const segs: { lines: SVGLineElement[]; stage: number; delay: number }[] = [];
   vtx.forEach((ray, i) => {
     const next = vtx[(i + 1) % RAYS] as P[];
