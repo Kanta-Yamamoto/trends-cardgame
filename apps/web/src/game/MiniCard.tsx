@@ -77,6 +77,7 @@ export function MiniCard({
       style={{ ...bg, ...style }}
       data-uid={uid}
       data-hand-card={inHand ? "" : undefined}
+      data-card={card.id}
       data-drop={drop}
       disabled={disabled}
       aria-label={

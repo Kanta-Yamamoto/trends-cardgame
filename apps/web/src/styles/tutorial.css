@@ -1,0 +1,136 @@
+/* チュートリアル（tutorial/）：ちびミナモの案内・暗い幕と光らせる輪・導入・勝ったあと。色は app.css の :root（①ソーダ） */
+
+/* ---------- 案内（Guide.tsx） ---------- */
+/* 画面座標で置く層（.vp-layer）。盤面の小窓（.zoom-sheet 60）より上、闇堕ちの演出（200）より下 */
+.tut-layer { z-index: 150; }
+/* 暗い幕：押してほしい場所だけ丸く抜く。押す・押さないは Guide が決めるので、幕そのものは押せない */
+.tut-dim { position: absolute; inset: 0; color: #061428; opacity: 0.6; pointer-events: none; animation: tut-fade 0.3s ease; }
+/* 光らせる輪：押す場所は脈打ち、見るだけの場所は静かに光る */
+.tut-ring { position: absolute; pointer-events: none; box-shadow: 0 0 0 2.5px #fff, 0 0 0 6px #5cc8f088, 0 0 22px 4px #5cc8f0aa; }
+.tut-ring.tap { animation: tut-ring 1.3s ease-in-out infinite; }
+.tut-ring.look { box-shadow: 0 0 0 2px #ffffffcc, 0 0 18px 2px #5cc8f077; }
+@keyframes tut-ring {
+  0%, 100% { box-shadow: 0 0 0 2.5px #fff, 0 0 0 5px #5cc8f088, 0 0 18px 2px #5cc8f099; }
+  50% { box-shadow: 0 0 0 2.5px #fff, 0 0 0 11px #5cc8f033, 0 0 30px 8px #5cc8f0cc; }
+}
+@keyframes tut-fade { from { opacity: 0; } }
+
+/* 丸い枠のちびミナモと吹き出し（光らせた場所と重ならない側に置く。位置は Guide が書く） */
+.tut-guide { position: absolute; display: flex; align-items: flex-end; gap: 8px; pointer-events: auto; animation: tut-in 0.35s cubic-bezier(.2, 1.4, .4, 1) backwards; }
+.tut-guide.at-top { align-items: flex-start; }
+@keyframes tut-in { from { opacity: 0; transform: translateY(8px) scale(0.96); } }
+/* 胸から上だけを丸く切り取る（元の絵は 512×768 の全身。幅を丸の 1.85 倍にして、頭が上に来るように上へずらす） */
+.tut-face {
+  position: relative; flex: none; width: 84px; height: 84px; border-radius: 50%; overflow: hidden;
+  background: radial-gradient(circle at 50% 38%, #ffffff 0%, #e3f4ff 55%, #a9dcf7 100%);
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #5cc8f0aa, 0 8px 22px -6px #06142888;
+  animation: tut-face-in 0.45s cubic-bezier(.2, 1.6, .4, 1) backwards;
+}
+.tut-face img { position: absolute; left: 50%; top: -15%; width: 185%; transform: translateX(-50%); user-select: none; pointer-events: none; animation: tut-swap 0.28s ease-out; }
+@keyframes tut-face-in { from { transform: scale(0.3); opacity: 0; } }
+@keyframes tut-swap { from { transform: translateX(-50%) translateY(4px) scale(0.97); } }
+.tut-bubble {
+  position: relative; flex: 1; min-width: 0; padding: 9px 13px 10px; border-radius: 18px;
+  background: #ffffffF5; border: 1px solid #fff; color: var(--ink);
+  box-shadow: 0 10px 28px -10px #061428aa, inset 0 1px 0 #fff;
+}
+/* 吹き出しのしっぽ（ちびミナモの方へ） */
+.tut-bubble::before { content: ""; position: absolute; left: -7px; bottom: 22px; width: 14px; height: 14px; background: #fffffff5; transform: rotate(45deg); border-radius: 3px; }
+.tut-guide.at-top .tut-bubble::before { bottom: auto; top: 22px; }
+.tut-who { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.12em; color: var(--pri-2); }
+.tut-bubble p, .ti-talk p, .tw-talk p { position: relative; margin: 2px 0 0; font-size: 13.5px; line-height: 1.6; font-weight: 500; animation: tut-text 0.3s ease-out; }
+@keyframes tut-text { from { opacity: 0; transform: translateY(3px); } }
+.tut-acts { position: relative; display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+.tut-skip { position: absolute; transform: translateX(-100%); white-space: nowrap; pointer-events: auto; z-index: 2; }
+
+/* ---------- 導入（MinamoIntro.tsx） ---------- */
+.tut-intro {
+  position: fixed; inset: 0; z-index: 150; overflow: hidden; color: var(--ink);
+  background: radial-gradient(120% 70% at 50% 34%, #ffffff 0%, #e6f5ff 46%, #c4e6fb 100%);
+  animation: tut-fade 0.4s ease;
+}
+.tut-intro.ph-leave { animation: ti-leave 0.65s ease forwards; pointer-events: none; }
+@keyframes ti-leave { 60% { opacity: 1; } to { opacity: 0; } }
+.ti-rays { position: absolute; left: 50%; top: 34%; width: 160%; aspect-ratio: 1; transform: translate(-50%, -50%); background: repeating-conic-gradient(from 0deg, #ffffff00 0deg 9deg, #ffffff99 9deg 13deg); mask: radial-gradient(closest-side, #000 20%, transparent 72%); -webkit-mask: radial-gradient(closest-side, #000 20%, transparent 72%); animation: ti-spin 40s linear infinite; opacity: 0.8; }
+@keyframes ti-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+/* 昇る泡 */
+.ti-bubbles i { position: absolute; bottom: -40px; left: calc(6% + var(--i) * 9.4%); width: var(--s, 14px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 32% 30%, #ffffffee 0 18%, #c9ecff55 40%, #8fd8ff33 70%, #ffffff88 100%); box-shadow: inset 0 0 0 1px #ffffffaa; animation: ti-rise calc(6s + var(--i) * 0.7s) linear calc(var(--i) * -0.9s) infinite; }
+@keyframes ti-rise { to { transform: translate(calc((var(--i) - 4.5) * 4px), -110vh); } }
+
+/* カード（水だけの背景・切り抜きのミナモを重ねる。3 枚の絵は同じ大きさで、同じ切り方） */
+.ti-card-wrap { position: absolute; left: 50%; top: 9%; width: min(62%, 260px); transform: translateX(-50%); animation: ti-card-in 0.6s cubic-bezier(.2, 1.2, .4, 1) backwards; }
+@keyframes ti-card-in { from { opacity: 0; transform: translateX(-50%) translateY(40px) scale(0.86); } }
+.ti-card { position: relative; aspect-ratio: 63 / 88; border-radius: 16px; overflow: hidden; background: #bfe6fb; box-shadow: 0 0 0 3px #fff, 0 0 0 6px #5cc8f066, 0 24px 50px -16px #0b3a6688; animation: ti-bob 3.2s ease-in-out 0.6s infinite; }
+@keyframes ti-bob { 50% { transform: translateY(-5px); } }
+.ti-art, .ti-bg, .ti-subj { position: absolute; inset: 0; background-position: center 30%; background-size: cover; background-repeat: no-repeat; }
+.ti-bg { opacity: 0; }
+/* 切り抜きの下（髪の先）は絵の下の縁で切れているので、ぼかして消す（引っ込むときに切れ目が見えないように。止まっているときは下の絵と重なって同じに見える） */
+.ti-subj { filter: drop-shadow(0 4px 8px #0006); -webkit-mask-image: linear-gradient(180deg, #000 50%, transparent 88%); mask-image: linear-gradient(180deg, #000 50%, transparent 88%); }
+/* 引っ込む：少し沈んでから、上の縁の外へひょこっと（召喚の演出の引っ込み方と同じ向き）。そのあいだに絵は水だけに */
+.ph-retract .ti-subj, .ph-pop .ti-subj, .ph-talk .ti-subj, .ph-leave .ti-subj { animation: ti-duck 0.36s cubic-bezier(.5, 0, .9, .4) forwards; }
+@keyframes ti-duck { 0% { transform: translateY(0); } 28% { transform: translateY(3%); } 100% { transform: translateY(-106%); } }
+.ph-retract .ti-bg, .ph-pop .ti-bg, .ph-talk .ti-bg, .ph-leave .ti-bg { animation: ti-fade-in 0.22s ease 0.08s forwards; }
+@keyframes ti-fade-in { to { opacity: 1; } }
+/* 引っ込んだ上の縁のしぶき */
+.ti-splash i { position: absolute; top: 2%; left: calc(22% + var(--i) * 9%); width: 7px; height: 7px; border-radius: 50%; background: #ffffffee; box-shadow: 0 0 6px #8fd8ff; opacity: 0; }
+.ph-retract .ti-splash i { animation: ti-drop 0.6s ease-out calc(0.3s + var(--i) * 0.02s) forwards; }
+@keyframes ti-drop { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(calc((var(--i) - 3) * 9px), 36px) scale(0.4); } }
+/* 名前の札（召喚の演出の札と同じ形） */
+.ti-name {
+  position: absolute; left: 50%; bottom: 8%; display: flex; align-items: baseline; gap: 0.5em; white-space: nowrap;
+  transform: translateX(-50%); padding: 0.38em 1.1em 0.32em; border-radius: 2em;
+  background: linear-gradient(100deg, #ffffff, #eaf8ff); box-shadow: 0 0 0 1.5px #5cc8f0, 0 6px 14px -6px #1f8fc4aa;
+  font: 800 19px / 1.05 "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif; letter-spacing: 0.06em;
+  animation: ti-name-in 0.45s cubic-bezier(.2, 1.8, .4, 1) 0.45s backwards;
+}
+.ti-name small { font: 700 0.6em / 1 var(--f-ui); letter-spacing: 0.1em; color: #4d7c96; }
+.ti-name b { font-weight: 800; color: transparent; background: linear-gradient(100deg, #1f8fc4, #5cc8f0 30%, #ff8fbf 50%, #5cc8f0 70%, #1f8fc4); -webkit-background-clip: text; background-clip: text; }
+@keyframes ti-name-in { from { opacity: 0; transform: translateX(-50%) scale(0.2); } }
+.ph-retract .ti-name, .ph-pop .ti-name, .ph-talk .ti-name, .ph-leave .ti-name { animation: ti-name-out 0.2s ease-in forwards; }
+@keyframes ti-name-out { to { opacity: 0; transform: translateX(-50%) scale(0.6); } }
+/* ちびミナモと入れ替わりに、カードが沈んで消える */
+.ph-pop .ti-card-wrap, .ph-talk .ti-card-wrap, .ph-leave .ti-card-wrap { animation: ti-card-out 0.42s cubic-bezier(.5, 0, .8, .5) forwards; }
+@keyframes ti-card-out { to { opacity: 0; transform: translateX(-50%) translateY(26px) scale(0.72); } }
+
+/* ちびミナモ（全身）：カードのあった所から、泡をはじいて跳び出す */
+.ti-chibi { position: absolute; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); width: min(66%, 290px); aspect-ratio: 512 / 768; transform: translateX(-50%); opacity: 0; pointer-events: none; }
+.ti-chibi img { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; animation: tut-swap-full 0.3s ease-out; }
+@keyframes tut-swap-full { from { transform: translateY(5px) scale(0.98); } }
+.ph-pop .ti-chibi, .ph-talk .ti-chibi { opacity: 1; animation: ti-pop 0.62s cubic-bezier(.2, 1.5, .4, 1) backwards; }
+@keyframes ti-pop {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-18%) scale(0.18); }
+  45% { opacity: 1; transform: translateX(-50%) translateY(-4%) scale(1.06, 0.95); }
+  70% { transform: translateX(-50%) translateY(0) scale(0.97, 1.03); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+.ph-talk .ti-chibi img { animation: ti-float 2.8s ease-in-out infinite; }
+@keyframes ti-float { 50% { transform: translateY(-6px); } }
+/* 「対戦へ」：左下の丸い枠の方へ縮んで消える */
+.ph-leave .ti-chibi { opacity: 1; animation: ti-to-corner 0.6s cubic-bezier(.5, 0, .7, 1) forwards; transform-origin: 50% 30%; }
+@keyframes ti-to-corner { to { opacity: 0; transform: translateX(-50%) translate(-34%, 30%) scale(0.22); } }
+/* 跳び出すときにはじける泡 */
+.ti-burst { position: absolute; left: 50%; top: 42%; width: 0; height: 0; }
+.ti-burst i { position: absolute; left: -6px; top: -6px; width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle at 32% 30%, #fff 0 22%, #bfe9ff 60%, #8fd8ff00 72%); box-shadow: inset 0 0 0 1.5px #ffffffcc; opacity: 0; }
+.ph-pop .ti-burst i { animation: ti-burst 0.7s cubic-bezier(.2, .8, .3, 1) 0.06s forwards; }
+@keyframes ti-burst {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(0.6); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(-120px) scale(1.4); }
+}
+
+/* 話す（下の吹き出し） */
+.ti-talk {
+  position: absolute; left: 14px; right: 14px; bottom: max(22px, env(safe-area-inset-bottom, 0px)); padding: 12px 16px 14px;
+  border-radius: 22px; animation: ti-talk-in 0.4s cubic-bezier(.2, 1.3, .4, 1) backwards;
+}
+.ti-talk p { font-size: 15px; }
+.ti-talk .btn:not(.small) { min-width: 140px; }
+@keyframes ti-talk-in { from { opacity: 0; transform: translateY(24px); } }
+.tut-intro .tut-skip { top: max(12px, env(safe-area-inset-top, 0px)); right: 12px; transform: none; }
+
+/* ---------- 勝ったあと（Tutorial.tsx の TutorialWin。ふつうの結果の画面の形に、ちびミナモを足す） ---------- */
+.tut-win { z-index: 150; }
+.tut-win .result-body { gap: 4px; }
+.tw-chibi { width: min(46%, 200px); aspect-ratio: 512 / 768; animation: ti-pop-up 0.6s cubic-bezier(.2, 1.5, .4, 1) 0.15s backwards; }
+.tw-chibi img { display: block; width: 100%; animation: ti-float 2.6s ease-in-out 0.8s infinite; }
+@keyframes ti-pop-up { from { opacity: 0; transform: translateY(30px) scale(0.6); } }
+.tw-talk { max-width: 340px; padding: 10px 14px 12px; border-radius: 18px; text-align: left; animation: tut-fade 0.5s 0.5s ease backwards; }
