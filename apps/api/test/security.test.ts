@@ -120,7 +120,7 @@ describe("protect", () => {
       .set("X-Forwarded-For", "192.0.2.50");
     expect(res.status).toBe(200);
     expect(res.text).toContain('property="og:title" content="TRENDS に招待されました"');
-    expect(res.text).toContain('property="og:image" content="https://trends.example/ogp.jpg"');
+    expect(res.text).toContain('property="og:image" content="https://trends.example/ogp.jpg?v=2"');
     expect(res.text).toContain('name="twitter:card" content="summary_large_image"');
     // 合言葉そのものは、プレビューにも書かない
     expect(res.text).not.toContain("open-sesame");

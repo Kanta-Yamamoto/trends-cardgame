@@ -52,7 +52,7 @@ describe("serveWeb", () => {
     expect(res.headers["cache-control"]).toBe("no-cache");
     const head = res.text.slice(0, res.text.indexOf("</head>"));
     expect(head).toContain('property="og:title" content="TRENDS"');
-    expect(head).toContain('property="og:image" content="https://trends.example/ogp.jpg"');
+    expect(head).toContain('property="og:image" content="https://trends.example/ogp.jpg?v=2"');
     // 対戦の部屋のリンクは、誘われたことが分かる題名にする
     const room = await request(app.getHttpServer()).get("/online/AB12").set("Accept", "text/html");
     expect(room.text).toContain("オンライン対戦に誘われました");
