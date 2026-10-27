@@ -1637,3 +1637,4 @@
   - 『トップアイドル』の元の絵（`assets/original/m1.webp`）から、体をスカートの下まで切り抜き直した（`apps/web/public/assets/cards/pack1-subject.webp`。`tools/cutout.py --model birefnet-general-lite`、下のフェードなし。768 × 1152）。パックの下の端まで体が続き、胸の下で消えなくなった。地下アイドルへの差し替えは要らなかった
   - いつものモデル（isnet-anime）では、スカートから下が背景として抜けてしまった。isnet-general-use・u2net_human_seg も人物を抜けなかった
   - カード面の切り抜き（`m1-subject.webp`）は胸の下で消える作りのまま（★5 のカード面の見た目を変えないため）。パックには別の絵を使う（Claude の案）
+- オーナー：「マージ使用」（マージしよう）→ この形で決まり。dev に入れて本番に出した
