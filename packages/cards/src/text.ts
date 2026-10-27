@@ -77,7 +77,6 @@ function sectionOf(e: CardEffect): Section {
     case "healBurn":
     case "healStrike":
     case "healBounce":
-    case "growOnTokenLost":
       return "whenever";
     case "conspiracyWin":
       return "turnStart";
@@ -283,8 +282,6 @@ function sentence(e: CardEffect, ctx: Ctx, prev: CardEffect | undefined): string
         return `自分の場のほかの${kaiwaiOr(e.kaiwai, "キャラクター")}1体につき攻撃力+1`;
       case "attackPerLostToken":
         return `このゲームで破壊された自分の${ctx.nameOf(e.card)}の数だけ攻撃力+1`;
-      case "growOnTokenLost":
-        return `自分の${ctx.nameOf(e.card)}が破壊されるたび、攻撃力+1`;
       case "extraAttackOnKill":
         return `${ENEMY}を破壊するたび、もう1回攻撃できる`;
       case "buffOnKill":
