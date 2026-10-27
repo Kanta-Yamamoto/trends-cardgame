@@ -8,6 +8,7 @@ import { ATTR_META } from "../cards/meta";
 import { useCollection } from "../gacha/collection";
 import { CardZoom } from "../game/CardZoom";
 import { useSession } from "../online/session";
+import { usePageMusic } from "../sound/music";
 
 /** 一覧に出すカード（同梱データにあるものだけ。API の DB に古い行が残っていても出さない） */
 const LISTED = new Set(CARDS.map((c) => c.id));
@@ -98,6 +99,7 @@ function GallerySkeleton() {
 }
 
 export function Gallery() {
+  usePageMusic("collection");
   // 同梱データをすぐ出し、サーバーの返事が来たら差し替える（起き上がり待ちで止まって見えないように）。
   // 失敗しても数回やり直し、それでもだめなときだけ知らせる
   const { data, isError, isLoading } = useQuery({
