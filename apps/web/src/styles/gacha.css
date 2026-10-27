@@ -220,17 +220,18 @@
   --shrink-ease: cubic-bezier(0.55, 0, 0.25, 1);
 }
 .gx-big-in { width: 100%; height: 100%; animation: gx-emerge var(--wout) cubic-bezier(0.2, 0.8, 0.3, 1) both; }
-/* 画面を枠にするので、カードは傾けない（キラの光だけ流れる） */
+/* 画面を枠にするので、カードは傾けない。遠近（perspective）も外す（3D の重なりの中で色を混ぜると、iPhone でちらつくことがある） */
 .gx-big .holo .card { transform: none; }
+.gx-big .holo { perspective: none !important; }
 .gx-big.settle .gx-big-card { opacity: 0; }
 /* 表面の虹（10月27日。オーナー：「表面に虹色のエフェクトが分かりやすくはいるといい」「このパック開封の時の星５だけ」）。
    カード面の上に重ねて色を混ぜる（overlay・hard-light）ので、暗いカードにも明るいカードにも虹が乗る。縮め始めたら消し、舞台のカードに渡す
-   ::before 箔：幅の広い虹の縞が全面にかかり、ゆっくり斜めに揺れる / ::after 帯：白い芯の虹の帯が、左上から右下へ斜めに走り抜ける */
+   ::before 箔：幅の広い虹の縞が全面にかかる / ::after 帯：白い芯の虹の帯が、左上から右下へ斜めに走り抜ける */
 .gx-big .holo .card::before, .gx-big .holo .card::after { content: ""; position: absolute; z-index: 30; pointer-events: none; transition: opacity calc(var(--shrink) * 0.6) ease-out; }
+/* 箔は動かさない（全面の色の混ぜ直しを毎フレームしないため。10月27日、スマホで処理落ちしてちらついた） */
 .gx-big .holo .card::before {
-  inset: -25%; opacity: 0.55; mix-blend-mode: overlay;
-  background: repeating-linear-gradient(125deg, #ff3d7f 0%, #ffb03b 3.3%, #fff45c 6.6%, #4dff9a 10%, #3dc8ff 13.3%, #8a5bff 16.6%, #ff3d7f 20%);
-  animation: gx-foil 6s ease-in-out infinite alternate;
+  inset: 0; opacity: 0.55; mix-blend-mode: overlay;
+  background: repeating-linear-gradient(125deg, #ff3d7f 0%, #ffb03b 5%, #fff45c 10%, #4dff9a 15%, #3dc8ff 20%, #8a5bff 25%, #ff3d7f 30%);
 }
 .gx-big .holo .card::after {
   left: 50%; top: 50%; width: 70%; height: 160%; opacity: 0.8; mix-blend-mode: hard-light;
@@ -289,9 +290,9 @@
 @keyframes gx-spill-core { 0% { opacity: 0; transform: scale(0.96); } 26% { opacity: 0.7; transform: scale(1.04); } 100% { opacity: 1; transform: scale(1.2); } }
 @keyframes gx-spill-glow { 0% { opacity: 0; transform: scale(0.3); } 26% { opacity: 0.4; transform: scale(0.7); } 100% { opacity: 1; transform: scale(1.9); } }
 @keyframes gx-breathe { 50% { scale: 1.06; } }
-@keyframes gx-foil { from { transform: translate(-8%, -4%); } to { transform: translate(8%, 4%); } }
 /* 帯：通り過ぎたら、少し間を置いてまた走る */
 @keyframes gx-band { 0% { transform: translate(-50%, -50%) rotate(35deg) translateX(-200%); } 65%, 100% { transform: translate(-50%, -50%) rotate(35deg) translateX(200%); } }
-@keyframes gx-emerge { from { transform: scale(1.06); filter: brightness(1.8) blur(6px); } to { transform: none; filter: none; } }
+/* 白の中から出る：大きさだけ（画面いっぱいの絵にぼかし・明るさを毎フレーム掛けると重い。白に隠れてほとんど見えない） */
+@keyframes gx-emerge { from { transform: scale(1.06); } to { transform: none; } }
 @keyframes gx-pr-in { from { transform: translate(-50%, -50%) scale(1.14); filter: brightness(1.8) blur(6px); } to { transform: translate(-50%, -50%) scale(1); filter: none; } }
 @keyframes gx-rise { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-110dvh) scale(1); opacity: 0; } }

@@ -653,6 +653,8 @@ export function DeckGrid({
   confirmLabel?: string;
   cta?: string;
 }) {
+  // デッキを選んでいる間は、デッキ選びの曲を流す（CPU 戦・オンライン対戦のどちらも）
+  usePageMusic("deckSelect");
   const [pending, setPending] = useState<DeckSel | null>(null);
   const [chosen, setChosen] = useState<DeckSel | null>(null);
   // 決まりを守れていない自分のデッキ（属性が2つの、前に組んだデッキなど）は選べない。デッキ構築で直してもらう

@@ -3,6 +3,7 @@ import { GemPill } from "./gacha/Pack";
 import { useWallet } from "./gacha/wallet";
 import { useSession } from "./online/session";
 import { MusicToggle } from "./sound/MusicToggle";
+import { useMusicPage } from "./sound/music";
 
 /** 画面ごとの題名（上の帯に出す）。小さい字は題名の下の説明 */
 const TITLES: Record<string, { title: string; sub?: string }> = {
@@ -24,11 +25,12 @@ function titleOf(pathname: string) {
   return TITLES[pathname] ?? { title: "" };
 }
 
-/** ホーム以外の画面の上の帯：左にホームへ戻るボタン、続けて画面の題名。曲の流れるガチャでは、右に音楽のボタン */
+/** ホーム以外の画面の上の帯：左にホームへ戻るボタン、続けて画面の題名。曲の流れる画面（ガチャ・デッキ選び）では、右に音楽のボタン */
 export function TopBar() {
   const { pathname } = useLocation();
   const name = useSession((st) => st.user?.name);
   const wallet = useWallet((st) => st.wallet);
+  const music = useMusicPage();
   const back = BACK[pathname] ?? "/";
   const { title, sub = pathname === "/online" && name ? `${name} でログイン中` : undefined } =
     titleOf(pathname);
@@ -51,12 +53,8 @@ export function TopBar() {
         {title}
         {sub && <small>{sub}</small>}
       </h1>
-      {pathname === "/gacha" && (
-        <>
-          <MusicToggle className="topbar-music g1" />
-          <GemPill wallet={wallet} />
-        </>
-      )}
+      {music && <MusicToggle className="topbar-music g1" />}
+      {pathname === "/gacha" && <GemPill wallet={wallet} />}
     </div>
   );
 }

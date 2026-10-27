@@ -2,7 +2,7 @@ import { CARDS, type CardDef } from "@trends/cards";
 import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } from "react";
 import { HoloCard } from "../cards/HoloCard";
 import { frameSize } from "../frame";
-import { useMusicHush } from "../sound/music";
+import { useMusicScene } from "../sound/music";
 import { PACK_NAME, Pack } from "./Pack";
 import { grab, letGo, newTear, PACK_H, PACK_W, pull, shape, step, still, type TearEvent } from "./tear";
 
@@ -150,8 +150,31 @@ export function Opening({
   const big = rarity >= 5;
   const t = HIT[big ? 5 : 4];
   const many = packs.length > 1;
-  // 開けている間はガチャの曲を消し、最後の結果（1 パックは 5 枚が並んだところ、10 パックは結果の一覧）でゆっくり戻す
-  useMusicHush(!(s.summary || (!many && s.phase === "done")));
+  // ★5 の絵は、当たりの画面で画面いっぱいに出す前に、読み込んで展開しておく（出た瞬間に絵が遅れて出て、ちらつかないように）。
+  // 絵の場所はカード面ごとに CSS にもあるので、舞台に置いた 5 枚目のカード面から集める
+  const root = useRef<HTMLDivElement>(null);
+  const warmed = useRef<HTMLImageElement[]>([]);
+  const warmKey = big && s.phase === "reveal" ? `${s.at}-${last?.id}` : "";
+  useEffect(() => {
+    if (!warmKey) return;
+    const el = root.current?.querySelectorAll<HTMLElement>(".gx-card")[4];
+    if (!el) return;
+    const urls = new Set<string>();
+    for (const n of [el, ...el.querySelectorAll<HTMLElement>("*")]) {
+      const cs = getComputedStyle(n);
+      for (const v of [cs.backgroundImage, cs.maskImage, cs.getPropertyValue("-webkit-mask-image")])
+        for (const m of v.matchAll(/url\("?([^")]+)"?\)/g))
+          if (m[1] && !m[1].startsWith("data:")) urls.add(m[1]);
+    }
+    warmed.current = [...urls].map((u) => {
+      const img = new Image();
+      img.src = u;
+      img.decode().catch(() => {});
+      return img;
+    });
+  }, [warmKey]);
+  // 開けている間はガチャの曲の代わりに小さめの曲を流し、最後の結果（1 パックは 5 枚が並んだところ、10 パックは結果の一覧）でガチャの曲をゆっくり戻す
+  useMusicScene(s.summary || (!many && s.phase === "done") ? null : "gachaPull");
 
   const tear = () => {
     patch({ phase: "tear" });
@@ -286,7 +309,14 @@ export function Opening({
   const toH = toW / CARD_RATIO;
 
   return (
-    <div className="gx-open" style={vars} role="dialog" aria-modal="true" aria-label="パックを開ける">
+    <div
+      ref={root}
+      className="gx-open"
+      style={vars}
+      role="dialog"
+      aria-modal="true"
+      aria-label="パックを開ける"
+    >
       <div className={`gx-dim ${hit === "lift" || squeezing ? "on" : ""}`} />
       <header className="gx-open-head">
         <h1>
@@ -465,7 +495,8 @@ export function Opening({
             }
           >
             <div className="gx-big-in">
-              <HoloCard card={last.card} interactive fill />
+              {/* 平らに出すので、触っていないときの揺れ（毎フレーム、光の位置を書き換えて描き直す）は止める */}
+              <HoloCard card={last.card} interactive idle={false} fill />
             </div>
           </div>
           {last.isNew && <span className="gx-pr-new gx-big-new">NEW</span>}
