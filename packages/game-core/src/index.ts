@@ -9,6 +9,7 @@ export {
   startClock,
   tickClock,
 } from "./clock";
+export { type Collection, extraCopies, isRentalDeck, missingCards } from "./collection";
 export {
   CUSTOM_DECK_PREFIX,
   deckAttributes,

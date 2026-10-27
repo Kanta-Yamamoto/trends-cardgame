@@ -192,6 +192,11 @@ button { font: inherit; color: inherit; }
 .deck-check { position: absolute; z-index: 2; right: 9px; top: 9px; width: 26px; height: 26px; border-radius: 50%; display: none; place-items: center; background: var(--pri-2); color: #fff; box-shadow: 0 0 0 2px #fff; }
 .deck-check svg { width: 15px; height: 15px; }
 .deck-pick.on .deck-check { display: grid; }
+/* レンタルデッキ（持っていないカードが入っている。10月27日）。選んだときは右上がチェックになるので隠す */
+.deck-rental { position: absolute; z-index: 2; right: 9px; top: 10px; height: 22px; padding: 0 9px; border-radius: 11px; background: var(--g3); color: var(--pri-3); font-size: 11px; font-weight: 800; line-height: 22px; box-shadow: var(--sh-1); }
+.deck-pick.on .deck-rental { display: none; }
+.deck-dock-text .deck-rental-tag { display: inline-flex; overflow: visible; margin-right: 6px; vertical-align: 2px; color: var(--pri-3); font-size: 11px; line-height: 22px; }
+.deck-confirm-hero .deck-rental { right: 14px; top: 16px; }
 .deck-name { position: absolute; z-index: 2; left: 12px; right: 10px; bottom: 12px; font-size: 15px; font-weight: 800; line-height: 1.25; text-shadow: 0 1px 4px #0009; }
 /* 属性の丸（属性の色はここだけ） */
 .at { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; color: #fff; font-size: 10px; font-weight: 900; font-style: normal; box-shadow: 0 0 0 1.5px #fff; flex: none; text-shadow: none; }
@@ -815,6 +820,11 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 @keyframes g-shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
 @media (prefers-reduced-motion: reduce) { .g-item.loading::before, .g-skel-card, .g-skel-line { animation: none; } }
 .g-item { min-width: 0; }
+/* 持っていないカードは灰色、持っているカードは下に枚数（10月27日）。3 枚以上（ダブり）は水色で目立たせる */
+.g-item.unowned .holo { filter: grayscale(1); opacity: 0.55; }
+.g-own-row { display: flex; justify-content: center; height: 22px; margin-top: 5px; }
+.g-own { display: inline-grid; place-items: center; min-width: 34px; height: 22px; padding: 0 9px; border-radius: 11px; background: var(--g3); box-shadow: var(--sh-1), inset 0 0 0 1px #fff; color: var(--ink); font: 400 14px/1 var(--f-mark); letter-spacing: 0.02em; }
+.g-own.extra { color: #fff; background: var(--pri-grad); box-shadow: 0 3px 8px #1780c447; }
 /* カードの拡大（カード一覧・デッキ構築・対戦中）：上にカード、下にすりガラスの説明の台。地はカードの絵をぼかした明るい幕 */
 .card-zoom { display: block; padding: 0; }
 .card-zoom-bg { overflow: hidden; background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 46%, var(--bg-bot) 100%); -webkit-backdrop-filter: none; backdrop-filter: none; }

@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { ATTRIBUTES, type Attribute, CARDS, type CardDef } from "@trends/cards";
+import { extraCopies } from "@trends/game-core";
 import { useEffect, useState } from "react";
 import { BUNDLED_CARDS, fetchCards } from "../api/client";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
+import { useCollection } from "../gacha/collection";
 import { CardZoom } from "../game/CardZoom";
+import { useSession } from "../online/session";
 
 /** 一覧に出すカード（同梱データにあるものだけ。API の DB に古い行が残っていても出さない） */
 const LISTED = new Set(CARDS.map((c) => c.id));
@@ -47,12 +50,26 @@ function useArtReady(card: CardDef) {
   return ready;
 }
 
-/** 一覧の 1 枚。絵が届くまでは、カードの形の光る板（スケルトン）を出し、届いたらふわっと出す */
-function GalleryItem({ card, onOpen }: { card: CardDef; onOpen: () => void }) {
+/**
+ * 一覧の 1 枚。絵が届くまでは、カードの形の光る板（スケルトン）を出し、届いたらふわっと出す。
+ * 持っていないカードは灰色、持っているカードは今までどおりで、下に枚数（10月27日。3 枚以上はダブりなので色を変える）。
+ * owned が null のあいだ（持っているカードをまだ取れていない）は、どちらの印も出さない
+ */
+function GalleryItem({ card, owned, onOpen }: { card: CardDef; owned: number | null; onOpen: () => void }) {
   const ready = useArtReady(card);
+  const missing = owned === 0;
   return (
-    <div className={`g-item ${ready ? "ready" : "loading"}`} aria-busy={!ready || undefined}>
+    <div
+      className={`g-item ${ready ? "ready" : "loading"} ${missing ? "unowned" : ""}`}
+      aria-busy={!ready || undefined}
+    >
       <HoloCard card={card} compact onClick={onOpen} />
+      {/* 持っていないカードは枚数を出さず、行の高さだけそろえる */}
+      {owned !== null && (
+        <span className="g-own-row">
+          {owned > 0 && <span className={`g-own ${extraCopies(owned) > 0 ? "extra" : ""}`}>×{owned}</span>}
+        </span>
+      )}
     </div>
   );
 }
@@ -92,6 +109,13 @@ export function Gallery() {
   });
   const [filter, setFilter] = useState<Filter>(null);
   const [zoomId, setZoomId] = useState<string | null>(null);
+  const token = useSession((s) => s.token);
+  const owned = useCollection((s) => s.cards);
+  const loadOwned = useCollection((s) => s.load);
+  useEffect(() => {
+    void loadOwned(token);
+  }, [token, loadOwned]);
+  const countOf = (id: string) => (owned ? (owned[id] ?? 0) : null);
 
   // 同じ★の中は、属性ごと（ニュートラルは最後）に、コストの低い順
   const group = (c: CardDef) => (c.attributes[0] ? ATTRIBUTES.indexOf(c.attributes[0]) : ATTRIBUTES.length);
@@ -145,11 +169,15 @@ export function Gallery() {
           <section key={row.rarity} className="g-row" aria-label={`★${row.rarity}`}>
             <h2 className="g-row-head">
               <span className="g-stars">{"★".repeat(row.rarity)}</span>
-              <small>{row.cards.length}枚</small>
+              <small>
+                {owned
+                  ? `持っている ${row.cards.filter((c) => (owned[c.id] ?? 0) > 0).length} / ${row.cards.length}種類`
+                  : `${row.cards.length}枚`}
+              </small>
             </h2>
             <div className="gallery">
               {row.cards.map((c) => (
-                <GalleryItem key={c.id} card={c} onOpen={() => setZoomId(c.id)} />
+                <GalleryItem key={c.id} card={c} owned={countOf(c.id)} onOpen={() => setZoomId(c.id)} />
               ))}
             </div>
           </section>

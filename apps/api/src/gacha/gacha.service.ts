@@ -1,5 +1,11 @@
 import { randomInt } from "node:crypto";
-import { BadRequestException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { CARDS } from "@trends/cards";
 import { openPack, PACK_COUNTS, PACK_PRICE, type PackCount, packPool } from "@trends/game-core";
 import { and, eq, inArray, sql } from "drizzle-orm";
@@ -18,6 +24,12 @@ export interface PulledCard {
   id: string;
   isNew: boolean;
 }
+
+/**
+ * 本物のガチャ（ジェムを使い、カードを足す）を開けてよいか。10月27日、オーナー：「ジェムは今使えると良くない」。
+ * それまでは画面のデモだけ（サーバーは呼ばない）。GACHA_OPEN=true のときだけ開ける（テスト・あとで出すとき）
+ */
+export const gachaOpen = () => process.env.GACHA_OPEN === "true";
 
 /** パックに入るカード（★ごと。カードデータから一度だけ作る） */
 const POOL = packPool(CARDS);
@@ -39,11 +51,21 @@ export class GachaService {
     return u;
   }
 
+  /** 持っているカード（ID ごとの枚数） */
+  async collection(userId: string): Promise<Record<string, number>> {
+    const rows = await this.db
+      .select({ id: userCards.cardId, count: userCards.count })
+      .from(userCards)
+      .where(eq(userCards.userId, userId));
+    return Object.fromEntries(rows.filter((r) => r.count > 0).map((r) => [r.id, r.count]));
+  }
+
   /**
    * パックを開ける（1 か 10）。ジェムは無償から先に使う。ジェムを減らす・カードを足す・記録するのは 1 つのトランザクションで。
    * rand は差し替えられる（テスト用）
    */
   async open(userId: string, packs: unknown, rand = secureRandom) {
+    if (!gachaOpen()) throw new ForbiddenException("ガチャは準備中です");
     if (!PACK_COUNTS.includes(packs as PackCount))
       throw new BadRequestException("開けるパックの数が違います");
     const count = packs as PackCount;
