@@ -24,9 +24,12 @@ import "./cards/rare5.css";
 import "./cards/stats.css";
 import "./styles/app.css";
 import { FRAME_ID, watchFrame } from "./frame";
+import { stripInviteFromUrl } from "./invite";
 import { isStandalone, registerPwa } from "./pwa";
 import { lockZoom } from "./viewport";
 
+// 招待リンク（?invite=合言葉）で開いたら、アドレスバーから合言葉を消す（サーバーはクッキーを置いて画面を返すだけ）
+stripInviteFromUrl();
 registerPwa();
 // 本番を入れ替えたあと、開いたままの古い画面が、消えたファイル（あとから読む部品）を読みに行くと失敗する。
 // そのときは画面を読み直して、新しい版に切り替える（読み直しを繰り返さないよう、30 秒に 1 回まで）

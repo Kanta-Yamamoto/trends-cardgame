@@ -2,13 +2,16 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { NextFunction, Request, Response } from "express";
+import { OGP_IMAGE } from "./ogp";
 
 /**
  * 公開前の守り（新しいライブラリは使わない）。main.ts で、画面を配る前・API の前に差し込む。
  *
  * 1. 招待リンク：INVITE_CODE（Secret Manager の invite-code）が入っているときだけ効く。
  *    `?invite=合言葉` 付きの URL で一度開くと、その端末に「招待済み」のクッキー（合言葉のハッシュ）を置き、
- *    URL から合言葉を消して開き直す。クッキーの無い人には「準備中」の画面だけを出し、API・オンライン対戦も断る。
+ *    そのまま画面を返す（URL の合言葉は画面が消す。invite.ts）。リンクのプレビュー（OGP）を取りに来るロボットは
+ *    クッキーを持ち越さないので、開き直させずに、その返事でプレビューを読めるようにしている（ogp.ts）。
+ *    クッキーの無い人には「準備中」の画面だけを出し、API・オンライン対戦も断る。
  *    合言葉を変えると、前のリンクと前のクッキーはまとめて使えなくなる。
  * 2. 回数の制限：同じ IP からの呼び出しを1台のメモリで数える（Cloud Run は1台なので、これで足りる）
  * 3. 安全のための応答ヘッダーと、検索エンジンに載せない指示（noindex・robots.txt）
@@ -17,12 +20,20 @@ import type { NextFunction, Request, Response } from "express";
 export const INVITE_COOKIE = "trends_invite";
 const YEAR_S = 365 * 24 * 60 * 60;
 
-/** 招待なしでも通す道（死活の確認・robots.txt・ログインの設定は、デプロイの確認に使う） */
-const OPEN_PATHS = ["/health", "/robots.txt", "/auth/config"];
+/**
+ * 招待なしでも通す道（死活の確認・robots.txt・ログインの設定は、デプロイの確認に使う。
+ * プレビューの絵は、リンクのプレビューを作るロボットが招待なしで取りに来る）
+ */
+const OPEN_PATHS = ["/health", "/robots.txt", "/auth/config", OGP_IMAGE];
 
 const inviteCode = () => process.env.INVITE_CODE?.trim() ?? "";
 /** 招待リンクの守りが効いているか */
 export const inviteRequired = () => inviteCode() !== "";
+/**
+ * 招待済みの人に渡す合言葉（GET /auth/invite。友だちを誘うリンク・対戦の部屋のリンクに付ける）。
+ * 招待されていない人は、守りがここまで通さない
+ */
+export const inviteForClient = () => ({ invite: inviteRequired() ? inviteCode() : null });
 
 const digest = (code: string) => createHash("sha256").update(`trends-invite:${code}`).digest("base64url");
 
@@ -108,7 +119,21 @@ export const defaultLimits = (): Limits => ({
 const API_PREFIXES = ["/cards", "/health", "/auth", "/matches", "/me", "/rankings", "/logs", "/socket.io"];
 const isApiPath = (path: string) => API_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
 
-const ROBOTS = "User-agent: *\nDisallow: /\n";
+/**
+ * リンクのプレビュー（OGP）を作るロボット。X などは robots.txt を守り、断られるとプレビューを出さないので、
+ * これだけは通す（検索エンジンは今までどおり全部お断り）
+ */
+const PREVIEW_BOTS = [
+  "Twitterbot",
+  "facebookexternalhit",
+  "Facebot",
+  "Line",
+  "Discordbot",
+  "Slackbot",
+  "TelegramBot",
+  "WhatsApp",
+];
+export const ROBOTS = `${PREVIEW_BOTS.map((b) => `User-agent: ${b}\nAllow: /\n`).join("\n")}\nUser-agent: *\nDisallow: /\n`;
 
 /** 招待されていない人に出す画面（外の物は読まない。サービスワーカーが保存しないよう 403 で返す） */
 export const GATE_HTML = `<!doctype html>
@@ -172,13 +197,6 @@ function tooMany(res: Response, wait: number) {
     .json({ statusCode: 429, message: "アクセスが多すぎます。少し待ってからやり直してください" });
 }
 
-/** 合言葉の付いた URL から、合言葉だけを抜いた URL（ほかの ? の値は残す） */
-function withoutInvite(req: Request) {
-  const url = new URL(req.originalUrl, "http://x");
-  url.searchParams.delete("invite");
-  return `${url.pathname}${url.search}`;
-}
-
 /** 守りを差し込む。ほかの app.use・画面の配信より前に呼ぶ */
 export function protect(app: NestExpressApplication, limits: Limits = defaultLimits()) {
   app.getHttpAdapter().getInstance().disable("x-powered-by");
@@ -199,7 +217,8 @@ export function protect(app: NestExpressApplication, limits: Limits = defaultLim
       return res.send(ROBOTS);
     }
 
-    // 合言葉付きで開いた：合っていれば招待済みのクッキーを置き、合言葉を URL から消して開き直す
+    // 合言葉付きで開いた：合っていれば招待済みのクッキーを置き、そのまま通す
+    // （開き直させると、クッキーを持ち越さないプレビューのロボットが「準備中」を読んでしまう）
     const given = typeof req.query.invite === "string" ? req.query.invite.trim() : "";
     if (given && inviteRequired() && req.method === "GET") {
       if (limits.invite.blocked(ip)) return tooMany(res, Math.ceil(limits.invite.windowMs / 1000));
@@ -210,18 +229,14 @@ export function protect(app: NestExpressApplication, limits: Limits = defaultLim
           `${INVITE_COOKIE}=${digest(inviteCode())}; Path=/; Max-Age=${YEAR_S}; HttpOnly; SameSite=Lax${secure}`,
         );
         res.setHeader("Cache-Control", "no-store");
-        return res.redirect(302, withoutInvite(req));
+        // 画面を配るところ（web.ts）が、招待のプレビューを付ける
+        res.locals.invited = true;
+        return next();
       }
       limits.invite.take(ip);
     }
 
-    const invited = isInvited(req);
-    // 招待済みの人には合言葉を教える（対戦の部屋のリンクに付けて、まだ招待されていない友だちにも送れるように）
-    if (invited && req.path === "/auth/invite" && req.method === "GET") {
-      res.setHeader("Cache-Control", "no-store");
-      return res.json({ invite: inviteRequired() ? inviteCode() : null });
-    }
-    if (invited || OPEN_PATHS.includes(req.path)) return next();
+    if (isInvited(req) || OPEN_PATHS.includes(req.path)) return next();
 
     // 招待されていない
     res.setHeader("Cache-Control", "no-store");

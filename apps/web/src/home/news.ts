@@ -12,6 +12,12 @@ export interface NewsItem {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: "2026-10-27-invite",
+    date: "10/27",
+    tag: "更新",
+    title: "メニューとマイページの「友だちを招待」から、友だちに送るリンクを出せるようになりました",
+  },
+  {
     id: "2026-10-27-music",
     date: "10/27",
     tag: "更新",

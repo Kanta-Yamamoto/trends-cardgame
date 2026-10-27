@@ -85,6 +85,13 @@
 
   /* 一覧（文字を小さく） */
   .card.is-compact .duo-effect { font-size: 0.72em; line-height: 1.5; }
+  /* 縦に長いとき（fill）の『フィクサー』：白い地に隙間が空かないよう、人物を形いっぱいに広げ、文字の帯の少し上で地に溶かす
+     （カードの比のときの 56%〜74% と同じ所。下から 8.7em〜14.7em） */
+  &.s-fixer .card.is-fill .duo-sub {
+    background-size: cover; background-position: 50% 0;
+    mask-image: linear-gradient(to top, transparent 8.7em, #000 14.7em);
+    -webkit-mask-image: linear-gradient(to top, transparent 8.7em, #000 14.7em);
+  }
   .card.is-compact .duo-kind { display: none; }
   /* 文字を隠して絵だけを見せる */
   .card.text-hidden .duo-plate { opacity: 0; translate: 0 15%; pointer-events: none; }
