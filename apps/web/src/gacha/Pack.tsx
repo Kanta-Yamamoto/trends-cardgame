@@ -34,12 +34,16 @@ export function GemPill({ wallet }: { wallet: Wallet | null }) {
   );
 }
 
-/** パックの表の印刷。本体と、切り取り線より上の 2 枚に同じ絵を重ね、線で切り分ける */
+/**
+ * パックの表の印刷。本体と、切り取り線より上の 2 枚に同じ絵を重ね、線で切り分ける。
+ * 表紙のアイドルは『トップアイドル』の元の絵から、体を下の方まで切り抜いたもの（pack1-subject。
+ * カード面の切り抜き m1-subject は胸の下で消えるので、パックには使わない）
+ */
 function Print() {
   return (
     <>
       <span className="gx-pk-foil" />
-      <img className="gx-pk-chara" src="/assets/cards/m1-subject.webp" alt="" draggable={false} />
+      <img className="gx-pk-chara" src="/assets/cards/pack1-subject.webp" alt="" draggable={false} />
       <span className="gx-pk-logo">TRENDS</span>
       <span className="gx-pk-band">第1弾</span>
       <span className="gx-pk-crimp t" />

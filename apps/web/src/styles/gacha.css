@@ -15,8 +15,8 @@
 .gx-pk-body, .gx-pk-flap { position: absolute; inset: 0; border-radius: 8px; overflow: hidden; background: linear-gradient(165deg, #f4f9ff 0%, #cfe6ff 22%, #ffd6ee 42%, #d3fff1 62%, #fff0c4 80%, #dcecff 100%); }
 .gx-pk-body { clip-path: polygon(0 var(--yl), 100% var(--yr), 100% 100%, 0 100%); }
 .gx-pk-cap { position: absolute; inset: 0; }
-/* 裂けきった切れ端：ぱっと右へ外れ、パックの右側をひらひら落ちていく（パックより上には行かない） */
-.gx-pk-cap.off { transform-origin: 50% 24px; animation: gx-cap-fall 1.1s linear forwards; }
+/* 裂けきった切れ端：ぱっと右へ外れて少しだけ上へ跳ね、自然に落ちながら画面の右へ流れて、早めに消える */
+.gx-pk-cap.off { transform-origin: 50% 24px; animation: gx-cap-fall 0.75s linear forwards; }
 /* 裂けた側は裂け目を軸にめくれ、まだ付いている側は右端を軸に浮く。付いている側は本体と 1.5px 重ねて、継ぎ目を見せない */
 .gx-pk-flap.l { clip-path: polygon(0 0, var(--tip) 0, var(--tip) var(--yt), 0 var(--yl)); transform-origin: var(--tip) var(--yt); transform: rotate(var(--capl)); }
 .gx-pk-flap.r { clip-path: polygon(var(--tip) 0, 100% 0, 100% calc(var(--yr) + 1.5px), var(--tip) calc(var(--yt) + 1.5px)); transform-origin: 100% var(--yr); transform: rotate(var(--capr)); }
@@ -280,13 +280,11 @@
 
 @keyframes gx-floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes gx-cap-fall {
-  0% { transform: perspective(500px) translate(0, 0) rotate(0deg) rotateX(0deg); animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
-  14% { transform: perspective(500px) translate(52px, 8px) rotate(3deg) rotateX(12deg); animation-timing-function: ease-in-out; }
-  32% { transform: perspective(500px) translate(108px, 56px) rotate(-9deg) rotateX(55deg); animation-timing-function: ease-in-out; }
-  50% { transform: perspective(500px) translate(136px, 118px) rotate(12deg) rotateX(-25deg); animation-timing-function: ease-in-out; }
-  68% { transform: perspective(500px) translate(118px, 186px) rotate(-8deg) rotateX(60deg); animation-timing-function: ease-in-out; }
-  86% { transform: perspective(500px) translate(140px, 262px) rotate(10deg) rotateX(-20deg); opacity: 1; animation-timing-function: ease-in-out; }
-  100% { transform: perspective(500px) translate(128px, 330px) rotate(-6deg) rotateX(45deg); opacity: 0; }
+  0% { transform: perspective(500px) translate(0, 0) rotate(0deg) rotateX(0deg); animation-timing-function: cubic-bezier(0.2, 0.6, 0.45, 1); }
+  22% { transform: perspective(500px) translate(46px, -20px) rotate(5deg) rotateX(16deg); animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.6); }
+  35% { opacity: 1; }
+  60% { transform: perspective(500px) translate(124px, 44px) rotate(-5deg) rotateX(48deg); animation-timing-function: cubic-bezier(0.3, 0.2, 0.7, 0.8); }
+  100% { transform: perspective(500px) translate(206px, 176px) rotate(9deg) rotateX(-12deg); opacity: 0; }
 }
 @keyframes gx-leak { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
 @keyframes gx-pk-pull {
