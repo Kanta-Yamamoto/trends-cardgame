@@ -421,6 +421,7 @@ export function OnlineRoom() {
             );
         }),
       resign: () => socket.emit("resign", { code }, () => {}),
+      ready: (turn: number) => socket.emit("ready", { code, turn }),
     };
     socket.on("connect", () => {
       socket.emit("join", { code, deck: deck?.ref }, (ack: { ok: boolean; error?: string }) => {
@@ -452,6 +453,8 @@ export function OnlineRoom() {
       if (u.clock !== undefined) useLive.getState().setClock(u.clock);
       useGame.getState().receive(u);
     });
+    // 相手が自分のターンの始めを見せ終えて、時計が動き出した
+    socket.on("clock", (c: ClockView | null) => useLive.getState().setClock(c));
     socket.on("rated", (r: RatingChange) => useLive.getState().setRating(r));
     return () => {
       socket.disconnect();

@@ -9,6 +9,8 @@ import type { Action, GameState, PlayerId, RuleCard } from "./types";
  * - 持ち時間を使い切ったら、時間切れで負け
  * - 相手の手番の途中で差し出し（フィクサー）を選ぶ番になったら、手番の人の時計は止め、選ぶ人は 15 秒以内に選ぶ。
  *   過ぎたら自動で選ぶ（相手が選ばないせいで手番の人が時間切れにならないように）
+ * - ターンが変わったら、新しい手番の人の時計は、その人の画面が相手の手を見せ終える（ready）まで待つ。
+ *   待つのは 10 秒まで（画面が知らせてこなくても、そこで動き出す）
  * 時刻はミリ秒（Date.now()）。サーバーが持ち、画面には clockFor で残りの時間だけ渡す。
  */
 export const CLOCK = {
@@ -17,6 +19,8 @@ export const CLOCK = {
   pickMs: 15_000,
   /** 対戦の始めだけ、時計が動き出すまで待つ（部屋に入る・オープニングの間） */
   startGraceMs: 5_000,
+  /** ターンが変わったとき、新しい手番の人の画面が相手の手の演出を見せ終えるのを待つ上限 */
+  turnGraceMs: 10_000,
 } as const;
 
 export interface Clock {
@@ -78,7 +82,23 @@ function settle(clock: Clock, state: GameState, now: number): Clock {
 export function tickClock(clock: Clock, prev: GameState, next: GameState, now: number): Clock {
   if (next.turn === prev.turn || next.winner) return settle(clock, next, now);
   const bank = { ...clock.bank, [prev.active]: Math.max(0, clock.bank[prev.active] - used(clock, now)) };
-  return settle({ bank, since: now, spent: 0, pickSince: null }, next, now);
+  return settle({ bank, since: now + CLOCK.turnGraceMs, spent: 0, pickSince: null }, next, now);
+}
+
+/**
+ * 手番の人の画面が、ターンの始めまでの演出を見せ終えた（turn は通算ターン）。待っている時計をすぐ動かす。
+ * 違うターン・手番でない人・もう動いている時計なら、そのまま返す
+ */
+export function readyClock(
+  clock: Clock,
+  state: GameState,
+  player: PlayerId,
+  turn: number,
+  now: number,
+): Clock {
+  if (state.winner || state.active !== player || state.turn !== turn) return clock;
+  if (clock.since === null || clock.since <= now) return clock;
+  return { ...clock, since: now };
 }
 
 /** このターンで使える時間（ターンの 60 秒か、残りの持ち時間の短いほう） */

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { DECKS } from "@trends/cards";
-import { type Action, type GameState, HIDDEN_CARD } from "@trends/game-core";
+import { type Action, type ClockView, type GameState, HIDDEN_CARD } from "@trends/game-core";
 import { io, type Socket } from "socket.io-client";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -144,6 +144,17 @@ describe("ログインとオンライン対戦", () => {
     expect(r1.state.active).toBe("p2");
     expect(r2.state.active).toBe("p1");
     expect(r2.action.player).toBe("p2"); // 相手の操作として届く
+
+    // 新しい手番の人の時計は、その人の画面が見せ終える（ready）まで待つ。ready で動き出し、両者に届く
+    expect((r2 as UpdateMsg & { clock: ClockView }).clock).toMatchObject({ running: "p1" });
+    expect((r2 as UpdateMsg & { clock: ClockView }).clock.holdMs).toBeGreaterThan(5_000);
+    // 手番でない人の知らせは効かない（時計は届かない）
+    expect(await emit(first, "ready", { code, turn: r1.state.turn })).toEqual({ ok: true });
+    const [k1, k2] = [next<ClockView>(first, "clock"), next<ClockView>(second, "clock")];
+    expect(await emit(second, "ready", { code, turn: r2.state.turn })).toEqual({ ok: true });
+    const [c1, c2] = [await k1, await k2];
+    expect(c2).toMatchObject({ running: "p1", holdMs: 0 });
+    expect(c1).toMatchObject({ running: "p2", holdMs: 0 });
 
     // 3人目は入れない。再接続（同じ人がもう一度 join）はできる
     const c = await connect(await login("さぶろう"));

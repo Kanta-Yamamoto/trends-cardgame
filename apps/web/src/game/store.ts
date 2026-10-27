@@ -95,6 +95,11 @@ export interface RemoteUpdate {
 export interface RemoteLink {
   send: (a: Action) => Promise<string | null>;
   resign: () => void;
+  /**
+   * 自分のターンが始まった手を見せ終えた（turn は通算ターン）。サーバーはここから自分の時計を動かす
+   * （相手の手の演出を見ている間に、持ち時間が減らないように）
+   */
+  ready?: (turn: number) => void;
 }
 
 interface GameStore {
@@ -121,6 +126,11 @@ interface GameStore {
   cpuDelay: number;
   /** 自分の攻撃の演出中は true（操作を受け付けない） */
   animating: boolean;
+  /**
+   * 相手の手（相手の操作・時間切れ・決着）を見せ始めるたびに増える。
+   * 画面はこれが変わったら、開いている拡大・確認・一覧を閉じて、相手の手を見せる
+   */
+  foeMove: number;
   start: (deck: DeckSel, opts?: { seed?: number; first?: PlayerId }) => void;
   /** チュートリアルの対戦を始める（いつも同じ盤面。game-core の createTutorialGame） */
   startTutorial: () => void;
@@ -193,6 +203,23 @@ let link: RemoteLink | null = null;
 /** サーバーから届いた手を、順番に1つずつ反映する */
 let inbox: RemoteUpdate[] = [];
 /**
+ * 届いた手の演出1つを待つ上限（ms）。演出が止まったり（途中で消えた・画面が裏に回った）失敗したりしても、
+ * 盤面は必ず進める（10月28日：相手の画面だけ、決着の手が出ないまま止まった）
+ */
+export const STEP_LIMIT_MS = 12_000;
+/** 演出を待つ。失敗しても上限を過ぎても、そこで切り上げる（盤面を進めるのは呼んだ側） */
+async function settle(p: Promise<unknown> | undefined): Promise<void> {
+  if (!p) return;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([p, new Promise<void>((r) => (timer = setTimeout(r, STEP_LIMIT_MS)))]);
+  } catch (e) {
+    console.warn("[対戦] 演出で失敗しました。盤面だけ進めます", e);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+/**
  * 対戦の始めのオープニング（両者のデッキを見せる）の長さ（ms）。この間は CPU も相手の手も止めておく。
  * テストでは待たない。動きを減らす設定のときは短く
  */
@@ -203,7 +230,8 @@ export function openingMs(): number {
 /** オープニングが終わる時刻（Date.now()）。それまでは CPU を動かさず、届いた相手の手も見せない */
 let openingEnds = 0;
 const openingLeft = () => Math.max(0, openingEnds - Date.now());
-let draining = false;
+/** 届いた手を見せている run（runId）。つなぎ直したら runId が変わり、古い run は次の区切りで止まる */
+let drainingRun: number | null = null;
 
 type PlaceAction = Extract<Action, { type: "play" }>;
 
@@ -253,56 +281,79 @@ export const useGame = create<GameStore>((set, get) => {
     return [...log, ...events.map((e) => ({ id: ++id, e, ...(fx ? { fx } : {}) }))].slice(-60);
   };
 
-  /** 効果を見せる（出したキャラクターを先に置いてから） */
-  const present = async (game: GameState, a: Action, events: GameEvent[], next: GameState) => {
+  /**
+   * 効果を見せる（出したキャラクターを先に置いてから）。
+   * alive が false になったら（上限を過ぎて盤面を進めた・対戦が変わった）、途中の盤面を画面に出さない
+   */
+  const present = async (
+    game: GameState,
+    a: Action,
+    events: GameEvent[],
+    next: GameState,
+    alive: () => boolean = () => true,
+  ) => {
     const shown = isPlace(a) ? placedOnly(game, a, next) : game;
     if (shown !== game) set({ game: shown });
-    await presenter?.resolveEffects?.(shown, a, events, next, (g) => set({ game: g }));
+    await presenter?.resolveEffects?.(shown, a, events, next, (g) => {
+      if (alive()) set({ game: g });
+    });
   };
 
+  /** 相手の手を見せ始める（画面が、開いている拡大・確認を閉じる） */
+  const foeMoved = () => set({ foeMove: get().foeMove + 1 });
+
   const drain = async () => {
-    if (draining) return;
-    draining = true;
     const my = runId;
-    if (openingLeft() > 0) await new Promise((r) => setTimeout(r, openingLeft()));
-    while (inbox.length > 0 && my === runId) {
-      const u = inbox.shift() as RemoteUpdate;
-      const g = get().game;
-      if (u.action.type === "attack" && presenter && g) {
-        set({ animating: true });
-        await presenter.beforeAttack(g, u.action);
-        if (my !== runId) break;
-      }
-      // 相手が出した・使ったカードは、出来事からカードを知って大きく見せる
-      const a = u.action;
-      if (a.type === "buzz" && presenter?.buzz && g) {
-        set({ animating: true });
-        await presenter.buzz(g, a);
-        if (my !== runId) break;
-      }
-      if (u.events.some((e) => e.type === "darkFall") && presenter?.darkFall && g) {
-        set({ animating: true });
-        await showDarkFalls(u.events);
-        if (my !== runId) break;
-      }
-      if ((a.type === "play" || a.type === "cast") && a.player === CPU && presenter?.revealFoe && g) {
-        const ev = u.events.find((e) => e.type === "played" || e.type === "cast");
-        if (ev && "cardId" in ev) {
+    if (drainingRun === my) return;
+    drainingRun = my;
+    try {
+      if (openingLeft() > 0) await new Promise((r) => setTimeout(r, openingLeft()));
+      while (inbox.length > 0 && my === runId) {
+        const u = inbox.shift() as RemoteUpdate;
+        const g = get().game;
+        const a = u.action;
+        if (a.player !== ME || a.type === "timeout" || u.state.winner) foeMoved();
+        if (a.type === "attack" && presenter && g) {
           set({ animating: true });
-          await presenter.revealFoe(g, ev.cardId, a);
+          await settle(presenter.beforeAttack(g, a));
           if (my !== runId) break;
         }
+        // 相手が出した・使ったカードは、出来事からカードを知って大きく見せる
+        if (a.type === "buzz" && presenter?.buzz && g) {
+          set({ animating: true });
+          await settle(presenter.buzz(g, a));
+          if (my !== runId) break;
+        }
+        if (u.events.some((e) => e.type === "darkFall") && presenter?.darkFall && g) {
+          set({ animating: true });
+          await settle(showDarkFalls(u.events));
+          if (my !== runId) break;
+        }
+        if ((a.type === "play" || a.type === "cast") && a.player === CPU && presenter?.revealFoe && g) {
+          const ev = u.events.find((e) => e.type === "played" || e.type === "cast");
+          if (ev && "cardId" in ev) {
+            set({ animating: true });
+            await settle(presenter.revealFoe(g, ev.cardId, a));
+            if (my !== runId) break;
+          }
+        }
+        const fx = hasEffects(a, u.events) && !!presenter?.resolveEffects && !!g;
+        if (fx && g) {
+          set({ animating: true });
+          let alive = true;
+          await settle(present(g, a, u.events, u.state, () => alive && my === runId));
+          alive = false;
+          if (my !== runId) break;
+        }
+        set({ game: u.state, log: appendLog(u.events, fx), animating: false });
+        // 自分のターンが始まった手を見せ終えたら、サーバーに知らせて時計を動かしてもらう
+        if (!u.state.winner && u.state.active === ME && u.state.turn !== g?.turn) link?.ready?.(u.state.turn);
       }
-      if (hasEffects(a, u.events) && presenter?.resolveEffects && g) {
-        set({ animating: true });
-        await present(g, a, u.events, u.state);
-        if (my !== runId) break;
-        set({ game: u.state, log: appendLog(u.events, true), animating: false });
-        continue;
-      }
-      set({ game: u.state, log: appendLog(u.events), animating: false });
+    } finally {
+      if (drainingRun === my) drainingRun = null;
+      // つなぎ直しのあいだに届いた手は、新しい run で見せる
+      if (my !== runId && inbox.length > 0) void drain();
     }
-    draining = false;
   };
 
   /** オンライン：操作をサーバーに送る。結果は receive で届く */
@@ -424,6 +475,7 @@ export const useGame = create<GameStore>((set, get) => {
       if (!a || !g || g.winner) return finish();
       // 相手（ME）の差し出しを待っている間は止まる（選んだら settleCpu から続きを考え直す）
       if (g.pending && !g.pending.waiting.includes(CPU)) return finish();
+      foeMoved();
       if (a.type === "attack" && presenter) await presenter.beforeAttack(g, a);
       if (a.type === "buzz" && presenter?.buzz) await presenter.buzz(g, a);
       if ((a.type === "play" || a.type === "cast") && presenter?.revealFoe) {
@@ -451,6 +503,7 @@ export const useGame = create<GameStore>((set, get) => {
     cpuBusy: false,
     cpuDelay: 900,
     animating: false,
+    foeMove: 0,
     start: (deck, opts = {}) => {
       runId++;
       link = null;
@@ -624,13 +677,13 @@ export const useGame = create<GameStore>((set, get) => {
     startOnline: ({ deck, foeName, foeDeckRef, state, link: l }) => {
       if (get().mode === "cpu") abandonCpuLog(get().game);
       const same = get().mode === "online" && get().deck?.ref === deck.ref && link === l;
-      if (!same) runId++;
+      // つなぎ直しでも、見せている途中の古い手は打ち切る（終わったあとに、届いた最新の盤面を古い盤面で上書きしないように）
+      runId++;
       // 始まったばかりの対戦に入ったときだけオープニングを見せる（途中からの再接続では見せない）
       const fresh = !same && state.turn === 1;
       if (fresh) openingEnds = Date.now() + openingMs();
       link = l;
       inbox = [];
-      draining = false;
       set({
         mode: "online",
         foeName,

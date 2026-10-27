@@ -6,6 +6,7 @@ export {
   clockAction,
   clockDeadline,
   clockFor,
+  readyClock,
   startClock,
   tickClock,
 } from "./clock";
