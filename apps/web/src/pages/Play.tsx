@@ -1713,6 +1713,8 @@ export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: 
         frame: frameRect(),
         board: document.querySelector<HTMLElement>(".pstage"),
         gauge: bar.querySelector<HTMLElement>(".lp-bar"),
+        // 破片の色味は、負けた側のライフのゲージの色
+        tint: loser === ME ? "#8fdcfb" : "#ffb0b8",
         onCovered: () => {
           if (live) setResultOpen("broke");
         },
