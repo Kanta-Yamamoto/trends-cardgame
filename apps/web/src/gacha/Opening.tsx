@@ -22,9 +22,10 @@ const HIT = {
   5: { lift: 450, sq: 2300, whiteFrom: 0.72, hold: 320, whiteOut: 1000 },
 } as const;
 /**
- * ★5 の当たりのカード（10月27日。オーナー：「画面全体を枠とみなして、絵と効果を全体的に出したい」「縦横比は守って」
- * 「何秒か表示したあとに元のカードの大きさまで縮小して一連の動作を終えて」）。白が引くと、カードを縦横比のまま画面いっぱいに出し、
- * 白が引き始めてから show の間見せる → 舞台のカードの大きさ・位置まで縮める（shrink）→ 大きいカードを薄く消して舞台のカードに渡す（settle）。
+ * ★5 の当たりのカード（10月27日。オーナー：「画面全体を枠とみなして、絵と効果を全体的に出したい」「カードの枠を成して出してあげたい」
+ * 「何秒か表示したあとに元のカードの大きさまで縮小して一連の動作を終えて」）。白が引くと、画面そのものをカードの枠にして出す
+ * （カード面を画面の形いっぱいに描く。絵は画面を覆い、名前・効果の板は下）。白が引き始めてから show の間見せる
+ * → 枠ごと舞台のカードの大きさ・位置まで縮める（shrink。形もカードの比に戻る）→ 大きいカードを薄く消して舞台のカードに渡す（settle）。
  * 見せている間にタップすると、すぐ縮め始める
  */
 const BIG = { show: 3500, shrink: 800, settle: 250 } as const;
@@ -226,10 +227,9 @@ export function Opening({
     "--settle": `${BIG.settle}ms`,
   } as CSSProperties;
   const bigOn = big && (hit === "present" || hit === "shrink" || hit === "settle");
-  // ★5 のカードを画面いっぱいに出す大きさ（縦横比はそのまま）と、縮めた先（舞台のカード）の倍率
-  const frame = frameSize();
-  const bigW = Math.min(frame.width, frame.height * CARD_RATIO);
-  const toStage = (CARD_W * scale) / bigW;
+  // ★5 の画面いっぱいのカードを縮めた先：舞台のカード（真ん中から 10px 上。.gx-stage の translateY）
+  const toW = CARD_W * scale;
+  const toH = toW / CARD_RATIO;
 
   return (
     <div className="gx-open" style={vars} role="dialog" aria-modal="true" aria-label="パックを開ける">
@@ -391,38 +391,24 @@ export function Opening({
       )}
       {bigOn && last && (
         <div className={`gx-big ${hit}`}>
-          <div className="gx-big-bg" aria-hidden="true">
-            {[50, 120, 210, 280, 340, 170].map((x, i) => (
-              <i
-                key={x}
-                className="gx-pr-spark"
-                style={{ left: `${(x / 390) * 100}%`, animationDelay: `${[0, 1.6, 0.8, 2.4, 3.3, 4.1][i]}s` }}
-              />
-            ))}
-          </div>
-          {last.isNew && (
-            <span
-              className="gx-pr-new gx-big-new"
-              style={{ top: Math.max(12, (frame.height - bigW / CARD_RATIO) / 2 - 42) }}
-            >
-              NEW
-            </span>
-          )}
           <div
             className="gx-big-card"
-            style={{
-              width: bigW,
-              // 舞台のカードは、真ん中から 10px 上（.gx-stage の translateY）
-              transform:
-                hit === "present"
-                  ? "translate(-50%, -50%)"
-                  : `translate(-50%, calc(-50% - 10px)) scale(${toStage})`,
-            }}
+            style={
+              hit === "present"
+                ? undefined
+                : {
+                    left: `calc(50% - ${toW / 2}px)`,
+                    top: `calc(50% - 10px - ${toH / 2}px)`,
+                    width: toW,
+                    height: toH,
+                  }
+            }
           >
             <div className="gx-big-in">
-              <HoloCard card={last.card} interactive />
+              <HoloCard card={last.card} interactive fill />
             </div>
           </div>
+          {last.isNew && <span className="gx-pr-new gx-big-new">NEW</span>}
           <button type="button" className="gx-big-tap" aria-label="次へ" onClick={shrinkBig} />
         </div>
       )}

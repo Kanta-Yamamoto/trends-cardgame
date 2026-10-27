@@ -191,17 +191,19 @@
 .gx-pr-new { position: absolute; z-index: 2; left: 50%; top: calc(47% - min(189px, 49vw) - 40px); transform: translateX(-50%); height: 30px; padding: 0 16px; border-radius: 15px; background: var(--pri-grad); color: #fff; font: 400 18px/30px var(--f-mark); letter-spacing: 0.08em; box-shadow: 0 6px 16px #1780c447; animation: pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) calc(var(--wout) * 0.6) both; }
 .gx-pr-foot { position: absolute; left: 16px; right: 16px; bottom: max(24px, env(safe-area-inset-bottom, 0px)); z-index: 2; pointer-events: none; display: grid; justify-items: center; gap: 10px; animation: fade 0.6s ease-out var(--wout) both; }
 .gx-pr-foot p { margin: 0; font-size: 13px; font-weight: 800; color: var(--ink-2); letter-spacing: 0.04em; }
-/* ★5 の当たり：カードを縦横比のまま画面いっぱいに出し、何秒か見せてから舞台のカードの大きさまで縮める（地は薄くなって舞台に戻る） */
-.gx-big { position: absolute; inset: 0; z-index: 85; overflow: hidden; color: var(--ink); }
-.gx-big-bg { position: absolute; inset: 0; background: radial-gradient(circle at 50% 46%, #ffffff 0%, #eef8ff 42%, #cfe6f8 100%); transition: opacity var(--shrink) ease-in-out; }
-.gx-big.shrink .gx-big-bg, .gx-big.settle .gx-big-bg { opacity: 0; }
-.gx-big-card { position: absolute; z-index: 1; left: 50%; top: 50%; transform-origin: 50% 50%; pointer-events: none; transition: transform var(--shrink) cubic-bezier(0.55, 0, 0.25, 1), opacity var(--settle) ease-out; }
-.gx-big-in { animation: gx-emerge var(--wout) cubic-bezier(0.2, 0.8, 0.3, 1) both; }
-.gx-big-in .holo { width: 100%; }
-/* 画面を枠とみなすので、カードは傾けない（キラの光だけ流れる） */
+/* ★5 の当たり：画面そのものをカードの枠にして出し（カード面を画面の形いっぱいに描く）、何秒か見せてから、枠ごと舞台のカードの大きさまで縮める */
+.gx-big { position: absolute; inset: 0; z-index: 85; overflow: hidden; }
+.gx-big-card {
+  position: absolute; z-index: 1; left: 0; top: env(safe-area-inset-top, 0px); width: 100%;
+  height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); pointer-events: none;
+  transition: left var(--shrink) var(--shrink-ease), top var(--shrink) var(--shrink-ease), width var(--shrink) var(--shrink-ease), height var(--shrink) var(--shrink-ease), opacity var(--settle) ease-out;
+  --shrink-ease: cubic-bezier(0.55, 0, 0.25, 1);
+}
+.gx-big-in { width: 100%; height: 100%; animation: gx-emerge var(--wout) cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+/* 画面を枠にするので、カードは傾けない（キラの光だけ流れる） */
 .gx-big .holo .card { transform: none; }
 .gx-big.settle .gx-big-card { opacity: 0; }
-.gx-big-new { transition: opacity 0.3s; }
+.gx-big-new { top: calc(env(safe-area-inset-top, 0px) + 16px); transition: opacity 0.3s; }
 .gx-big.shrink .gx-big-new, .gx-big.settle .gx-big-new { opacity: 0; }
 .gx-big-tap { position: absolute; inset: 0; z-index: 3; border: 0; padding: 0; background: none; cursor: pointer; }
 .gx-open-hint { position: absolute; left: 0; right: 0; bottom: calc(max(24px, env(safe-area-inset-bottom, 0px)) + 64px); z-index: 61; margin: 0; text-align: center; font-size: 13px; font-weight: 800; color: #ffffffd9; letter-spacing: 0.04em; pointer-events: none; }
