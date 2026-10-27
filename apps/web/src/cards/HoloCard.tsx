@@ -84,6 +84,11 @@ interface Props {
   textHidden?: boolean;
   /** 闇堕ちの姿で描く（名前・効果・数値・絵だけを闇堕ちのものにし、デザインはそのまま） */
   darkForm?: boolean;
+  /**
+   * 縦横比を固定せず、親の形いっぱいに描く（絵は広がった形を覆い、名前・効果の板は下に寄ったまま）。
+   * ガチャの★5 の当たりで、画面そのものをカードの枠として出すときに使う。親に高さが要る
+   */
+  fill?: boolean;
 }
 
 export function HoloCard({
@@ -94,6 +99,7 @@ export function HoloCard({
   compact = false,
   textHidden = false,
   darkForm = false,
+  fill = false,
 }: Props) {
   const dark = darkForm ? card.dark : undefined;
   const shown: CardDef = dark
@@ -169,7 +175,7 @@ export function HoloCard({
   const body = (
     <div
       ref={cardRef}
-      className={`card ${live ? "is-live" : "is-still"} ${compact ? "is-compact" : ""} ${textHidden ? "text-hidden" : ""} ${dark ? "is-darkform" : ""}`}
+      className={`card ${live ? "is-live" : "is-still"} ${compact ? "is-compact" : ""} ${textHidden ? "text-hidden" : ""} ${dark ? "is-darkform" : ""} ${fill ? "is-fill" : ""}`}
       style={darkVars}
       role="img"
       aria-label={
@@ -187,7 +193,7 @@ export function HoloCard({
   const perspective: CSSProperties = { perspective: 1100 };
 
   return (
-    <div className={`holo ${cls}`} style={onClick ? undefined : perspective}>
+    <div className={`holo ${cls} ${fill ? "holo-fill" : ""}`} style={onClick ? undefined : perspective}>
       {onClick ? (
         <button type="button" className="holo-btn" style={perspective} onClick={onClick}>
           {body}
