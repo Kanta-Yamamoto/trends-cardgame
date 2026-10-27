@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router";
 import { dismissGuide, isAndroid, isIos, shouldAutoGuide, useInstall } from "./pwa";
+import { useTutorial } from "./tutorial/progress";
 
 type Platform = "android" | "ios";
 interface Step {
@@ -99,10 +100,12 @@ export function useCanInstall() {
 export function InstallAutoGuide() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
-  const inGame = pathname.startsWith("/play") || /^\/online\/.+/.test(pathname);
+  const inGame =
+    pathname.startsWith("/play") || pathname.startsWith("/tutorial") || /^\/online\/.+/.test(pathname);
 
   useEffect(() => {
-    if (inGame || !shouldAutoGuide()) return;
+    // チュートリアルの間は出さない（終わったあとは、次に開いたときから）
+    if (inGame || useTutorial.getState().stage !== "done" || !shouldAutoGuide()) return;
     const t = setTimeout(() => setOpen(true), 1500);
     return () => clearTimeout(t);
   }, [inGame]);
