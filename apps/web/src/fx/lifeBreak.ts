@@ -4,18 +4,23 @@ import { gsap } from "gsap";
  * 決着：負けた側のプレイヤーの帯（ライフのゲージ）が砕け、破片が画面のこちらへ飛んできて、それをきっかけに結果へ切り替わる。
  * オーナー：「体力が0以下になったら、プレイヤーの体力ゲージが壊れるか破壊されるかして、はっきり負けた、勝ったを認識させた上で
  * その破壊された破片が画面のこちらまで飛んできて、その破片を暗転とか切り替えのきっかけにして勝ち負けのリザルト画面を表示する」。
- * 1 回目のモックへの直し（10月27日）：「破壊された瞬間がスローモーションになればいい」「飛んでくる時は周りがボケてる感じで、
- * その破片だけがゆっくりから普通の速度になりつつこっちに向かってきて、ぶつかる！となって暗転か白転」「文字無しの破片でいい」。
+ * モックへの直し（10月27日）：「破壊された瞬間がスローモーションになればいい」「飛んでくる時は周りがボケてる感じで、
+ * その破片だけがゆっくりから普通の速度になりつつこっちに向かってきて、ぶつかる！となって暗転か白転」「文字無しの破片でいい」
+ * 「勝ちの時には、相手の破片がこっちにくる時に、キラッと光ってほしい」「負けの時には破片が黒かったり全体的にああ、負けたんだな、、、
+ * という雰囲気感、色合い」「破片が、できれば飛んでくる時にぐるっとそれ自体が回転してくるといい」。
  * モック「決着の演出」（claude.ai の Artifact）は、このファイルをそのまま組み込んで動かしている（動きと秒数は同じ）。
  *
  * 時間割（0 は始まり。始まるのは、最後の一撃の数字とライフ 0 を見せ終えてから。Play.tsx が待つ）：
  * 1. ひび 0〜0.56 秒：ライフのゲージから、帯にひびが 3 段（0・0.17・0.34 秒）で広がる。そのたびに帯が小さく揺れて光る
- * 2. 砕ける 0.56 秒：帯が、ひびの形の文字のないガラスの破片になってはじける（帯の元の姿は隠す）。0.05 秒だけふつうの速さ
- * 3. スローモーション 0.61〜1.26 秒：時間がふつうの 7% の速さに落ちる（0.09 秒かけて）。破片はほとんど止まって漂い、
- *    まわり（盤面とほかの破片）が 0.42 秒かけてボケて暗くなる。こちらへ来る破片 1 枚だけがくっきりしたまま、ゆっくり近づき始める
- * 4. 飛んでくる 1.26〜1.81 秒：時間が 0.46 秒かけてふつうの速さに戻り、その破片が回りながら一気に近づいて画面いっぱいになる
- * 5. ぶつかる 1.81 秒：破片が揺れて光り、end で切り替える
- *    - dark（暗転）：0.08 秒で黒くなる → 0.26 秒そのまま → 結果を出して 0.52 秒で明ける
+ * 2. 砕ける 0.56 秒：帯が、ひびの形の文字のないガラスの破片になってはじける（帯の元の姿は隠す）。0.05 秒だけふつうの速さ。
+ *    勝ち（相手の帯）は白いガラスに相手のゲージの色、負け（自分の帯）は黒いガラス
+ * 3. スローモーション 0.61〜1.26 秒：時間がふつうの 7% の速さに落ちる（0.09 秒かけて）。ほかの破片はほとんど止まって漂い、
+ *    まわりが 0.42 秒かけてボケる（勝ちは少し暗く、負けは色を失って暗く沈み、四隅から暗くなる）。
+ *    こちらへ来る破片 1 枚だけがくっきりしたまま、まわりより速い 22% の速さでゆっくり近づき始める。勝ちはその角がキラッと光る
+ * 4. 飛んでくる 1.26〜1.81 秒：時間が 0.46 秒かけてふつうの速さに戻り、その破片が縦の軸でぐるっと 1 回転しながら一気に近づき、
+ *    正面を向いて画面いっぱいになる。勝ちは半分来たところでもう一度キラッと光る
+ * 5. ぶつかる 1.81 秒：破片が揺れ、end で切り替える（省略すると、勝ちは白転・負けは暗転）
+ *    - dark（暗転）：画面全体が一瞬光ってから 0.08 秒で黒くなる → 0.26 秒そのまま → 結果を出して 0.52 秒で明ける
  *    - white（白転）：白く光り、そのまま白い結果の画面へ明ける
  *
  * 破片の動きは「演出の中の時間」で決め、実際の時間との対応（スローモーションの速さの変わり方）を 1 か所で決める。
@@ -33,13 +38,18 @@ export interface LifeBreakOptions {
   layer: HTMLElement;
   /** 画面の枠（画面座標） */
   frame: Rect;
-  /** まわりとしてボケさせる盤面 */
+  /** 砕けた瞬間に揺らす盤面 */
   board?: HTMLElement | null;
   /** ひびの出どころ（ライフのゲージ）。無ければ帯の真ん中 */
   gauge?: HTMLElement | null;
   /** 破片の色味（負けた側のゲージの色） */
   tint?: string;
-  /** 切り替え方（ゲームは dark） */
+  /**
+   * 砕けるのが見ている人の帯か（負け）。負けは破片が黒く、まわりが色を失って暗く沈む。
+   * 勝ち（相手の帯）は、こちらへ来る破片がキラッと光る
+   */
+  mine?: boolean;
+  /** 切り替え方。省略すると、勝ちは白転・負けは暗転 */
   end?: LifeBreakEnd;
   /** 画面が覆われて、結果を出してよいとき（このあと明けて結果が見える） */
   onCovered?: () => void;
@@ -226,7 +236,8 @@ let glassId = 0;
 
 export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
   const rnd = opts.random ?? Math.random;
-  const end = opts.end ?? "dark";
+  const mine = !!opts.mine;
+  const end = opts.end ?? (mine ? "dark" : "white");
   const { layer, frame } = opts;
   const r = bar.getBoundingClientRect();
   const w = r.width;
@@ -323,14 +334,43 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
   );
 
   // ---------- 2. 砕ける ----------
-  // 破片：ひびの網の目の形の、文字のないガラス。地は帯の色、角に負けた側のゲージの色をうっすら差し、ふちを白く光らせる
-  const baseColor = getComputedStyle(bar).backgroundColor || "#ffffff";
+  // 破片：ひびの網の目の形の、文字のないガラス。
+  // 勝ち：地は帯の色、角に相手のゲージの色をうっすら差し、ふちを白く光らせる。負け：黒いガラス、ふちは鈍い灰色
   const tint = opts.tint ?? "#bfe6fa";
+  const glass = mine
+    ? { a: "#3a4352", b: "#141a24", c: "#05080d", edge: "#7d8899", edgeOp: 0.75, shine: 0.3 }
+    : {
+        a: "#ffffff",
+        b: getComputedStyle(bar).backgroundColor || "#ffffff",
+        c: tint,
+        edge: "#ffffff",
+        edgeOp: 1,
+        shine: 0.9,
+      };
+  // まわりをボケさせる幕：盤面の上・破片の下に置き、うしろ（盤面の地・カード・演出の舞台）をまとめてボケさせる。
+  // 負けは色を抜いて暗く沈め、四隅から暗くする。幕の濃さ（opacity）だけを動かす（ボケの強さを毎回書き換えるより軽い）
+  // 幕は演出の層の中ではなく、層のすぐ下に置く（広い画面では層を枠の形で切り抜いていて、切り抜いた層の中からはうしろをボケさせられないため）
+  const veil = box(frame, {
+    opacity: "0",
+    zIndex: String((Number.parseInt(getComputedStyle(layer).zIndex, 10) || 1) - 1),
+    background: mine
+      ? "radial-gradient(120% 90% at 50% 46%, transparent 28%, #04070ce6 100%)"
+      : "transparent",
+  });
+  (layer.parentElement ?? document.body).appendChild(veil);
+  placed.push(veil);
+  const veilFilter = mine
+    ? `blur(${BLUR}px) grayscale(0.9) brightness(0.5)`
+    : `blur(${BLUR}px) brightness(${DIM}) saturate(1.2)`;
+  veil.style.setProperty("backdrop-filter", veilFilter);
+  veil.style.setProperty("-webkit-backdrop-filter", veilFilter);
   type Shard = {
     el: HTMLElement;
     shade: SVGPolygonElement;
     shine: SVGLinearGradientElement;
     c: P;
+    /** 重心からいちばん遠い角（重心から見た位置。キラッと光らせる所） */
+    tip: P;
     area: number;
     bw: number;
     bh: number;
@@ -360,21 +400,25 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
       const local = pts.map((p) => `${(p.x - minX).toFixed(1)},${(p.y - minY).toFixed(1)}`).join(" ");
       sv.innerHTML =
         `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">` +
-        `<stop offset="0" stop-color="#ffffff" stop-opacity="0.97"/>` +
-        `<stop offset="0.55" stop-color="${baseColor}" stop-opacity="0.92"/>` +
-        `<stop offset="1" stop-color="${tint}" stop-opacity="0.9"/></linearGradient>` +
+        `<stop offset="0" stop-color="${glass.a}" stop-opacity="0.97"/>` +
+        `<stop offset="0.55" stop-color="${glass.b}" stop-opacity="0.93"/>` +
+        `<stop offset="1" stop-color="${glass.c}" stop-opacity="0.92"/></linearGradient>` +
         `<linearGradient id="${id}-s" x1="-1" y1="0" x2="-0.4" y2="0.3"><stop offset="0" stop-color="#ffffff" stop-opacity="0"/>` +
-        `<stop offset="0.5" stop-color="#ffffff" stop-opacity="0.9"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient></defs>` +
+        `<stop offset="0.5" stop-color="#ffffff" stop-opacity="${glass.shine}"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient></defs>` +
         // ふちの線は、大きくしても太らない（画面いっぱいにしたとき、白い太い帯にならないように）
-        `<polygon points="${local}" fill="url(#${id})" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` +
+        `<polygon points="${local}" fill="url(#${id})" stroke="${glass.edge}" stroke-opacity="${glass.edgeOp}" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` +
         `<polygon points="${local}" fill="url(#${id}-s)"/>` +
         `<polygon points="${local}" fill="${end === "white" ? "#ffffff" : "#03060c"}" opacity="0"/>`;
       el.appendChild(sv);
+      const far = pts.reduce((a, b) =>
+        Math.hypot(b.x - c.x, b.y - c.y) > Math.hypot(a.x - c.x, a.y - c.y) ? b : a,
+      );
       shards.push({
         el: place(el),
         shade: sv.lastElementChild as SVGPolygonElement,
         shine: sv.querySelector(`#${id}-s`) as SVGLinearGradientElement,
         c,
+        tip: { x: far.x - c.x, y: far.y - c.y },
         area,
         bw,
         bh,
@@ -393,7 +437,9 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
       { left: r.left + o.x - 90, top: r.top + o.y - 90, width: 180, height: 180 },
       {
         borderRadius: "50%",
-        background: "radial-gradient(circle, #ffffff 0%, #d6f2ffcc 28%, #7fd0ff44 52%, transparent 72%)",
+        background: mine
+          ? "radial-gradient(circle, #c9d1dc 0%, #8a96a888 30%, transparent 70%)"
+          : "radial-gradient(circle, #ffffff 0%, #d6f2ffcc 28%, #7fd0ff44 52%, transparent 72%)",
         opacity: "0",
       },
     ),
@@ -432,9 +478,33 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
   const big = hero
     ? Math.max(frame.width / Math.max(8, hero.bw), frame.height / Math.max(8, hero.bh)) * 2.4
     : 1;
+  // 飛んでくる間に、破片そのものが縦の軸でぐるっと 1 回転し、ぶつかる瞬間に正面を向く（ゆっくり回り始め、時間が戻ると速く回る）
   const turn = (rnd() < 0.5 ? -1 : 1) * (90 + rnd() * 60);
-  const tilt = { x: 40 + rnd() * 20, y: 30 + rnd() * 20 };
+  const flip = rnd() < 0.5 ? -360 : 360;
   const total = heroAt(HIT);
+  // 勝ち：こちらへ来る破片の角が、キラッと 2 回光る（近づき始めたときと、半分来たとき）
+  const half = (() => {
+    for (let t = BREAK; t < HIT; t++) if (heroAt(t) >= total / 2) return t;
+    return APPROACH;
+  })();
+  const glints =
+    mine || !hero
+      ? []
+      : [
+          { at: BREAK + BURST + 200, dur: 320, size: 1.25 },
+          { at: half - 40, dur: 260, size: 1 },
+        ];
+  const twinkle = glints.length
+    ? place(box({ left: 0, top: 0, width: 72, height: 72 }, { opacity: "0" }))
+    : null;
+  if (twinkle)
+    twinkle.innerHTML =
+      '<svg viewBox="-36 -36 72 72" width="72" height="72" style="overflow:visible">' +
+      '<defs><radialGradient id="lb-twinkle"><stop offset="0" stop-color="#ffffff"/><stop offset="0.3" stop-color="#ffffff" stop-opacity="0.75"/>' +
+      '<stop offset="1" stop-color="#bfe9ff" stop-opacity="0"/></radialGradient></defs>' +
+      '<circle r="16" fill="url(#lb-twinkle)"/>' +
+      '<path d="M0,-36 L3,-3 L36,0 L3,3 L0,36 L-3,3 L-36,0 L-3,-3 Z" fill="#ffffff"/>' +
+      '<path d="M0,-15 L1.6,-1.6 L15,0 L1.6,1.6 L0,15 L-1.6,1.6 L-15,0 L-1.6,-1.6 Z" fill="#ffffff" transform="rotate(45)"/></svg>';
   const drive = { t: 0 };
   tl.to(
     drive,
@@ -448,11 +518,13 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
         // まわりがボケて暗くなる（スローモーションに入ってから）
         const focus = clamp01((real - BREAK - BURST) / FOCUS);
         const fe = 1 - (1 - focus) ** 2;
-        if (opts.board)
-          opts.board.style.filter = `blur(${(BLUR * fe).toFixed(2)}px) brightness(${1 - (1 - DIM) * fe})`;
+        veil.style.opacity = String(fe);
         // 白い閃光：演出の中の時間で消える（スローモーションの間は、うっすら残る）
         const ft = te * 1000;
-        gsap.set(flash, { scale: 0.3 + 1.5 * (1 - Math.exp(-ft / 40)), opacity: Math.exp(-ft / 45) });
+        gsap.set(flash, {
+          scale: 0.3 + 1.5 * (1 - Math.exp(-ft / 40)),
+          opacity: (mine ? 0.6 : 1) * Math.exp(-ft / 45),
+        });
         const fade = clamp01((real - APPROACH - 150) / (HIT - APPROACH - 150));
         for (const m of motion)
           gsap.set(m.sh.el, {
@@ -473,17 +545,41 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
         const mix = 0.6 * lat + 0.4 * ((z - 1) / (big - 1 || 1));
         // ぶつかった瞬間に揺れる
         const knock = real > HIT ? 1 - (real - HIT) / KNOCK : 0;
+        const hx = (fc.x - start.x) * mix + (rnd() - 0.5) * 20 * knock;
+        const hy = (fc.y - start.y) * mix + (rnd() - 0.5) * 20 * knock;
+        const spinY = flip * p;
+        const spinX = 28 * Math.sin(p * Math.PI);
+        const spinZ = turn * lat;
         gsap.set(hero.el, {
-          x: (fc.x - start.x) * mix + (rnd() - 0.5) * 20 * knock,
-          y: (fc.y - start.y) * mix + (rnd() - 0.5) * 20 * knock,
+          x: hx,
+          y: hy,
           scale: z,
-          rotation: turn * lat,
-          rotationX: tilt.x * (1 - p) ** 1.5,
-          rotationY: -tilt.y * (1 - p) ** 1.5,
+          rotation: spinZ,
+          rotationX: spinX,
+          rotationY: spinY,
           transformPerspective: 900,
           // ボケたまわりから浮かび上がるように、ふちをうっすら光らせる（近づいてからは外す。大きいほど重いので）
-          filter: p < 0.8 ? `drop-shadow(0 0 ${(7 / z).toFixed(2)}px #ffffffcc)` : "none",
+          filter:
+            p < 0.8 ? `drop-shadow(0 0 ${(7 / z).toFixed(2)}px ${mine ? "#8a96a880" : "#ffffffcc"})` : "none",
         });
+        if (twinkle) {
+          // 光る角の画面の位置（回転をざっと当てはめる。奥行きの歪みは無視）
+          const rad = (d: number) => (d * Math.PI) / 180;
+          const lx = hero.tip.x * z * Math.cos(rad(spinY));
+          const ly = hero.tip.y * z * Math.cos(rad(spinX));
+          const cz = Math.cos(rad(spinZ));
+          const sz = Math.sin(rad(spinZ));
+          const g = glints.find((gl) => real >= gl.at && real < gl.at + gl.dur);
+          const k = g ? (real - g.at) / g.dur : 0;
+          const peak = g ? Math.sin(Math.PI * k) : 0;
+          gsap.set(twinkle, {
+            x: start.x + hx + lx * cz - ly * sz - 36,
+            y: start.y + hy + lx * sz + ly * cz - 36,
+            scale: (g?.size ?? 1) * (0.15 + 1.1 * peak),
+            rotation: 90 * k,
+            opacity: peak,
+          });
+        }
         // スローモーションの間に、破片の面を光がすっと走る（この 1 枚に目を向けさせる）
         const g = -1 + 2.6 * clamp01((real - BREAK - BURST - 120) / (APPROACH - BREAK - BURST - 40));
         hero.shine.setAttribute("x1", g.toFixed(3));
@@ -509,10 +605,10 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
   let covered = 0;
   if (end === "dark") {
     // ぶつかった瞬間、画面全体が一瞬白く光ってから黒くなる
-    const spark = place(box(frame, { background: "#ffffff", opacity: "0" }));
+    const spark = place(box(frame, { background: mine ? "#c9d1dc" : "#ffffff", opacity: "0" }));
     tl.fromTo(
       spark,
-      { opacity: 0.75 },
+      { opacity: mine ? 0.35 : 0.75 },
       { opacity: 0, duration: s(110), ease: "power1.out", immediateRender: false },
       s(HIT),
     );
@@ -526,7 +622,15 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
     tl.call(hideShards, [], s(HIT - 20 + FLASH));
     covered = HIT - 20 + FLASH + HOLD * 0.8;
   }
-  tl.call(() => opts.onCovered?.(), [], s(covered));
+  // 覆われたら、まわりをボケさせる幕など、覆いの下に残ったものを外してから結果を出す（明ける間に結果までボケないように）
+  tl.call(
+    () => {
+      for (const el of placed) if (el !== cover) el.remove();
+      opts.onCovered?.();
+    },
+    [],
+    s(covered),
+  );
   tl.to(cover, { opacity: 0, duration: s(REVEAL), ease: "power2.out" }, s(covered));
 
   let finish: () => void = () => {};
@@ -545,10 +649,7 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
     bar.style.visibility = "";
     bar.style.translate = "";
     bar.style.filter = "";
-    if (opts.board) {
-      opts.board.style.translate = "";
-      opts.board.style.filter = "";
-    }
+    if (opts.board) opts.board.style.translate = "";
     finish();
   };
   return { done, cancel, timeline: tl };

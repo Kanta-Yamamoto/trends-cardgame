@@ -1678,7 +1678,7 @@ export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: 
   }, [log, openingOn]);
 
   // 決着：最後の一撃（ダメージの数字・ライフが 0 になるところ）やターン開始のバナーを見せ終えてから、
-  // 負けた側のプレイヤーの帯が砕け、破片がこちらへ飛んできて暗転し、明けたら結果（fx/lifeBreak.ts）。
+  // 負けた側のプレイヤーの帯が砕け、破片がこちらへ飛んできてぶつかり、暗転（負け）・白転（勝ち）して、明けたら結果（fx/lifeBreak.ts）。
   // 山札切れ・特殊勝利は、砕ける前にきっかけ（空の山札・勝ったカード）を光らせる。降参・時間切れも同じ流れ
   const winner = game?.winner ?? null;
   useEffect(() => {
@@ -1713,8 +1713,10 @@ export function Board({ onQuit, quitNotes }: { onQuit?: () => void; quitNotes?: 
         frame: frameRect(),
         board: document.querySelector<HTMLElement>(".pstage"),
         gauge: bar.querySelector<HTMLElement>(".lp-bar"),
-        // 破片の色味は、負けた側のライフのゲージの色
+        // 破片の色味は、負けた側のライフのゲージの色。負けは破片が黒く、まわりが暗く沈む。勝ちは破片がキラッと光る。
+        // 切り替えは、勝ちは白転・負けは暗転（Claude の案。オーナーは「暗転か白転」まで）
         tint: loser === ME ? "#8fdcfb" : "#ffb0b8",
+        mine: loser === ME,
         onCovered: () => {
           if (live) setResultOpen("broke");
         },
