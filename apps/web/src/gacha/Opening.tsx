@@ -15,12 +15,24 @@ const BY_ID = new Map(CARDS.map((c) => [c.id, c]));
 /**
  * 当たり（5 枚目が★4・★5）の時間（ミリ秒）。10月27日にオーナーとモックで決めた形：
  * 宙に浮かせ（lift）→ 真ん中を軸に回す絞り（sq。全体の 26% で 30% まで加速して回り、残りでゆっくり）。表は見せず、まわりから後ろの光が漏れる
- * → whiteFrom の割合から白が画面を覆う → 白いまま（hold）→ 白が引いて（whiteOut）当たりのカードを見せる画面。★5 は長く、★4 は短く
+ * → whiteFrom の割合から白が画面を覆う → 白いまま（hold）→ 白が引いて（whiteOut）当たりのカードを見せる。★5 は長く、★4 は短く
  */
 const HIT = {
   4: { lift: 350, sq: 1500, whiteFrom: 0.7, hold: 150, whiteOut: 700 },
   5: { lift: 450, sq: 2300, whiteFrom: 0.72, hold: 320, whiteOut: 1000 },
 } as const;
+/**
+ * ★5 の当たりのカード（10月27日。オーナー：「画面全体を枠とみなして、絵と効果を全体的に出したい」「カードの枠を成して出してあげたい」
+ * 「何秒か表示したあとに元のカードの大きさまで縮小して一連の動作を終えて」）。白が引くと、画面そのものをカードの枠にして出す
+ * （カード面を画面の形いっぱいに描く。絵は画面を覆い、名前・効果の板は下）。白が引き始めてから show の間見せる
+ * → 枠ごと舞台のカードの大きさ・位置まで縮める（shrink。形もカードの比に戻る）→ 大きいカードを薄く消して舞台のカードに渡す（settle）。
+ * 見せている間にタップすると、すぐ縮め始める
+ */
+const BIG = { show: 3500, shrink: 800, settle: 250 } as const;
+/** カードの縦横比（幅 / 高さ。cards.css の aspect-ratio と同じ） */
+const CARD_RATIO = 63 / 88;
+/** 舞台のカードの幅（gacha.css の .gx-card と同じ。舞台ごと --s 倍になる） */
+const CARD_W = 210;
 /** 開け終わったときの 5 枚の並び（上に 3 枚、下に 2 枚。舞台の真ん中からの位置） */
 const GRID = [
   [-118, -96],
@@ -31,8 +43,11 @@ const GRID = [
 ] as const;
 
 type Phase = "idle" | "tear" | "rise" | "reveal" | "done";
-/** 当たりの流れ：lift 浮かせる → sq 回す → white 白が覆う → hold 白いまま → present 当たりの画面 → shown 見せ終わった */
-type Hit = "" | "lift" | "sq" | "white" | "hold" | "present" | "shown";
+/**
+ * 当たりの流れ：lift 浮かせる → sq 回す → white 白が覆う → hold 白いまま → present 当たりの画面（★5 は画面いっぱいのカード）
+ * →（★5 だけ）shrink 舞台のカードの大きさまで縮める → settle 舞台のカードに渡す → shown 見せ終わった
+ */
+type Hit = "" | "lift" | "sq" | "white" | "hold" | "present" | "shrink" | "settle" | "shown";
 
 interface St {
   /** 何パック目か */
@@ -109,7 +124,8 @@ export function Opening({
   const last = cards[4];
   const rarity = last?.card.rarity ?? 3;
   const rare = rarity >= 4;
-  const t = HIT[rarity >= 5 ? 5 : 4];
+  const big = rarity >= 5;
+  const t = HIT[big ? 5 : 4];
   const many = packs.length > 1;
 
   const tear = () => {
@@ -156,6 +172,13 @@ export function Opening({
     else patch({ cut: 0 });
   };
 
+  /** ★5：画面いっぱいのカードを、舞台のカードの大きさまで縮めて、一連の流れを終える */
+  const shrinkBig = () => {
+    if (ref.current.hit !== "present") return;
+    patch({ hit: "shrink" });
+    later(() => patch({ hit: "settle" }), BIG.shrink);
+    later(() => patch({ hit: "shown" }), BIG.shrink + BIG.settle);
+  };
   const tapCard = () => {
     const p = ref.current;
     if (p.phase !== "reveal" || (p.hit !== "" && p.hit !== "shown")) return;
@@ -167,6 +190,7 @@ export function Opening({
         // 白に覆われたところでカードを表にしておく（見せるのは当たりの画面）
         later(() => patch({ hit: "hold", flipped: true }), t.lift + t.sq);
         later(() => patch({ hit: "present" }), t.lift + t.sq + t.hold);
+        if (big) later(shrinkBig, t.lift + t.sq + t.hold + BIG.show);
       } else patch({ flipped: true });
     } else if (p.cur === 4) patch({ phase: "done" });
     else patch({ cur: p.cur + 1, flipped: false });
@@ -199,7 +223,13 @@ export function Opening({
     "--sq": `${t.sq}ms`,
     "--win": `${Math.round(t.sq * (1 - t.whiteFrom))}ms`,
     "--wout": `${t.whiteOut}ms`,
+    "--shrink": `${BIG.shrink}ms`,
+    "--settle": `${BIG.settle}ms`,
   } as CSSProperties;
+  const bigOn = big && (hit === "present" || hit === "shrink" || hit === "settle");
+  // ★5 の画面いっぱいのカードを縮めた先：舞台のカード（真ん中から 10px 上。.gx-stage の translateY）
+  const toW = CARD_W * scale;
+  const toH = toW / CARD_RATIO;
 
   return (
     <div className="gx-open" style={vars} role="dialog" aria-modal="true" aria-label="パックを開ける">
@@ -277,7 +307,8 @@ export function Opening({
           if (i === 4 && hit === "hold") cls += " now";
           if (i === 4 && (hit === "lift" || squeezing)) cls += " lift";
           if (i === 4 && squeezing) cls += " sq";
-          if (i === 4 && rare && (hit === "shown" || (phase === "done" && hit !== ""))) cls += " hit";
+          if (i === 4 && rare && (hit === "settle" || hit === "shown" || (phase === "done" && hit !== "")))
+            cls += " hit";
           return (
             // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが 2 枚出ることがあるので、パックの中の順番で見分ける
             <div key={`${s.at}-${i}`} className={`gx-card ${cls}`} style={{ transform: tf, zIndex: z }}>
@@ -337,7 +368,7 @@ export function Opening({
         </div>
       )}
 
-      {hit === "present" && last && (
+      {hit === "present" && !big && last && (
         <div className="gx-present">
           <button type="button" className="gx-pr-bg" aria-label="次へ" onClick={closePresent} />
           <div className="gx-pr-halo" aria-hidden="true" />
@@ -356,6 +387,29 @@ export function Opening({
           <div className="gx-pr-foot">
             <p>タップで次へ</p>
           </div>
+        </div>
+      )}
+      {bigOn && last && (
+        <div className={`gx-big ${hit}`}>
+          <div
+            className="gx-big-card"
+            style={
+              hit === "present"
+                ? undefined
+                : {
+                    left: `calc(50% - ${toW / 2}px)`,
+                    top: `calc(50% - 10px - ${toH / 2}px)`,
+                    width: toW,
+                    height: toH,
+                  }
+            }
+          >
+            <div className="gx-big-in">
+              <HoloCard card={last.card} interactive fill />
+            </div>
+          </div>
+          {last.isNew && <span className="gx-pr-new gx-big-new">NEW</span>}
+          <button type="button" className="gx-big-tap" aria-label="次へ" onClick={shrinkBig} />
         </div>
       )}
       <div
