@@ -151,7 +151,8 @@ function targets(t: Tear) {
   return {
     rot: Math.min(4, ten * 0.11),
     capR: t.notched ? 0 : Math.min(3, ten * 0.13),
-    capL: t.tip > 0 ? Math.min(13, 2.5 + 7 * (t.tip / PACK_W) + ten * 0.1) : 0,
+    // 裂けきったら、めくれていた切れ端は平らに戻りながら落ちていく
+    capL: !t.done && t.tip > 0 ? Math.min(13, 2.5 + 7 * (t.tip / PACK_W) + ten * 0.1) : 0,
   };
 }
 

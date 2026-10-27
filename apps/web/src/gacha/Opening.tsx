@@ -342,8 +342,9 @@ export function Opening({
             z = 1;
             cls = "hid";
           } else if (phase === "out" || phase === "rise") {
-            // 開いた口から上へ出てくる。下の方はまだパックの中（パックが前に重なって隠す）。パックが下へ抜けるまでこのまま
-            tf = `translate(${i * 3}px, ${-66 - i * 5}px) scale(.86)`;
+            // 開いた口から上へ出てくる。5 枚はぴったり重ねて 1 枚に見せ、下の方はまだパックの中（パックが前に重なって隠す）。
+            // パックが下へ抜けるまでこのまま。抜けたあと（reveal）で束にずらす
+            tf = "translate(0px, -66px) scale(.86)";
             z = i === 0 ? 50 : 40 - i;
             cls = "out";
           } else if (phase === "done") {
