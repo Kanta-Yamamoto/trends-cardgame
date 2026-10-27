@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from "react";
 import BATTLE from "./battle.mp3";
+import COLLECTION from "./collection.mp3";
 import DECK_SELECT from "./deck.mp3";
 import GACHA from "./gacha.mp3";
 import HOME from "./home.mp3";
@@ -14,6 +15,7 @@ import PULL from "./pull.mp3";
  *   ガチャはパックを開けている間は、ガチャの曲の代わりに「Floating Anticipation」を小さめの音で流し、最後の結果の画面でガチャの曲をゆっくり戻す
  *   （オーナー：「ガチャを引くところは静かにね。最後のリザルトのところからゆっくりフェードインする」「これ、ガチャのカードを引く時に小さめの音で流しておいて」。useMusicScene）
  * - デッキを選ぶ画面（CPU 戦・オンライン対戦。DeckGrid）：「Deck Selection」（オーナー：「デッキを選択する画面でこの音楽を流して」）
+ * - カード一覧（/cards）・デッキを組む（/decks）：「Harmonic Lift」（オーナー：「これ、カード一覧とデッキ選択画面で。ホームよりも９割くらいの大きさで」）
  * 止めるボタン（MusicToggle）の設定は 1 つで、どの曲にも効く。
  * <audio> ではなく Web Audio で鳴らす：
  * - 音量とフェードが iPhone でも効く（iPhone では <audio> の volume を変えられない）
@@ -28,6 +30,8 @@ const TRACKS = {
   gacha: { url: GACHA, volume: 0.62 },
   battle: { url: BATTLE, volume: 0.66 },
   deckSelect: { url: DECK_SELECT, volume: 0.66 },
+  /** ホームの 9 割の大きさ（ホームより 0.9dB 小さく聞こえる） */
+  collection: { url: COLLECTION, volume: 0.54 },
   /** ガチャのパックを開けている間。小さめ（ほかの曲より 8dB ほど小さく聞こえる） */
   gachaPull: { url: PULL, volume: 0.26 },
 };
@@ -198,7 +202,7 @@ function notify() {
   for (const f of subscribers) f();
 }
 
-/** この画面を開いている間、name の曲を流す（ホーム・ガチャ・デッキ選び・対戦の盤面から呼ぶ） */
+/** この画面を開いている間、name の曲を流す（ホーム・ガチャ・カード一覧・デッキを組む・デッキ選び・対戦の盤面から呼ぶ） */
 export function usePageMusic(name: MusicName) {
   useEffect(() => {
     current = name;
