@@ -4,7 +4,8 @@ import { HoloCard } from "../cards/HoloCard";
 
 /**
  * カードを押したときの拡大：画面に重ねる小窓に、カードだけを大きく出す（説明の台は出さない。デッキを組む画面・カード一覧）。
- * カードを押すと、文字を隠して絵だけを見られる（前の拡大 CardZoom と同じ。10月28日、小窓に替えたときに抜けていたのを戻した）。
+ * 上の目のボタン（× の左）で、文字を隠して絵だけを見られる（10月28日。小窓に替えたときに抜けていたのを戻した。
+ * カードを押して隠すと、カードを傾ける動きと被るので、ボタンにした。オーナーがモックの D を選んだ）。
  * 闇堕ちを持つカードは、下の切り替えで闇堕ちの姿も見られる。外側・×・Esc で閉じる。
  * nav を渡すと、下に「前へ・次へ」を出して、重ねたまま前後のカードへ移れる（← → キーでも）
  */
@@ -32,6 +33,27 @@ export function CardPopup({
   return (
     <div className="card-pop" role="dialog" aria-modal="true" aria-label={`${card.name} を拡大`}>
       <button type="button" className="card-pop-bg" aria-label="閉じる" onClick={onClose} />
+      <button
+        type="button"
+        className="card-zoom-close card-pop-eye g1"
+        aria-label={textHidden ? "文字を出す" : "文字を隠す"}
+        aria-pressed={textHidden}
+        onClick={() => setTextHidden((v) => !v)}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+          <circle cx="12" cy="12" r="3" />
+          {textHidden && <path d="M4 4l16 16" />}
+        </svg>
+      </button>
       <button type="button" className="card-zoom-close g1" aria-label="閉じる" onClick={onClose}>
         <svg
           viewBox="0 0 24 24"
@@ -45,15 +67,7 @@ export function CardPopup({
         </svg>
       </button>
       <div className="card-pop-body">
-        <HoloCard
-          card={card}
-          darkForm={dark}
-          interactive
-          idle={false}
-          textHidden={textHidden}
-          onClick={() => setTextHidden((v) => !v)}
-        />
-        <p className="card-pop-note">カードを押すと、文字を隠して絵だけを見られます</p>
+        <HoloCard card={card} darkForm={dark} interactive idle={false} textHidden={textHidden} />
         {card.dark && (
           <div className="seg g3" role="tablist" aria-label="カードの姿">
             <button
