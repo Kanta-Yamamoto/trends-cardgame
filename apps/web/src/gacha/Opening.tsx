@@ -543,6 +543,10 @@ export function Opening({
               {/* 平らに出すので、触っていないときの揺れ（毎フレーム、光の位置を書き換えて描き直す）は止める */}
               <HoloCard card={last.card} interactive idle={false} fill />
             </div>
+            {/* テカリ：角のつやと、すべる光（枠の虹は gacha.css の .card::before） */}
+            <span className="gx-big-shine" aria-hidden="true">
+              <i />
+            </span>
           </div>
           {last.isNew && <span className="gx-pr-new gx-big-new">NEW</span>}
           <button type="button" className="gx-big-tap" aria-label="次へ" onClick={shrinkBig} />

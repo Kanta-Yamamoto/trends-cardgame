@@ -231,26 +231,30 @@
 .gx-big .holo .card { transform: none; }
 .gx-big .holo { perspective: none !important; }
 .gx-big.settle .gx-big-card { opacity: 0; }
-/* 表面の虹（10月28日。オーナー：本番の虹（全面の虹の縞＋虹の帯）は「強すぎる」、白い光の帯だけでは「弱すぎる」。
-   「カード全体ではなく、一部分やカードの枠などでもう少し強くして見せてほしい」）。全面には掛けず、枠と、通り過ぎる帯だけに虹をのせる。
-   縮め始めたら消し、舞台のカードに渡す
-   ::before 枠：カードのふち（幅の 2.4%）に、色が一周する虹の線。動かさず、色も混ぜない（毎フレームの描き直し・混ぜ直しをしない）
-   ::after 帯：白い芯の虹の帯が、左上から右下へ 1 回通る（hard-light で混ぜるので、明るいカードにも暗いカードにも色が見える） */
-.gx-big .holo .card::before, .gx-big .holo .card::after { content: ""; position: absolute; z-index: 30; pointer-events: none; transition: opacity calc(var(--shrink) * 0.6) ease-out; }
+/* 当たりの光（10月28日。オーナー：本番の虹（全面の虹の縞＋虹の帯）は「強すぎる」、白い光の帯だけでは「弱すぎる」。
+   「星5でカードが当たったときにあ、こいつはレアなんだなってことを光で理解させたい。わくと、カードのテカリで」
+   → モックの案から「虹の線は今のまま、光の面が滑る、で確定」）。縮め始めたら消し、舞台のカードに渡す
+   枠（.card::before）：カードのふち（幅の 2.4%）に、色が一周する虹の線。動かさず、色も混ぜない
+   テカリ（.gx-big-shine）：角に薄いつや（動かさない）＋ 細長いやわらかい光が、つやのある紙に映り込むように左上から右下へすべる（i）。
+   どちらも色を混ぜない重ね方で、動かすのは位置と濃さだけ（毎フレームの描き直し・混ぜ直しをしない） */
 .gx-big .holo .card::before {
-  inset: 0; padding: 2.4%; opacity: 0.85;
+  content: ""; position: absolute; z-index: 30; inset: 0; padding: 2.4%; opacity: 0.85; pointer-events: none;
   background: conic-gradient(from 210deg, #ff8fc4, #ffc58f, #fff08f, #8ff0c0, #8fd2ff, #b49bff, #ff8fc4);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  transition: opacity calc(var(--shrink) * 0.6) ease-out;
 }
-.gx-big .holo .card::after {
-  left: 50%; top: 50%; width: 48%; height: 150%; opacity: 0.45; mix-blend-mode: hard-light;
-  background: linear-gradient(90deg, transparent 6%, #ff7ab4 22%, #ffb878 32%, #ffe680 41%, #ffffff 50%, #7deab0 59%, #78c8ff 68%, #ab92ff 78%, transparent 94%);
-  transform: translate(-50%, -50%) rotate(22deg) translateX(-270%);
-  animation: gx-sheen 4.2s cubic-bezier(0.35, 0, 0.65, 1) 0.4s infinite;
+.gx-big-shine {
+  position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; border-radius: 4.2% / 3%; container-type: size;
+  background: linear-gradient(150deg, #ffffff59 0%, #ffffff1a 20%, transparent 38%, transparent 72%, #ffffff12 86%, #ffffff40 100%);
+  transition: opacity calc(var(--shrink) * 0.6) ease-out;
 }
-.gx-big.shrink .holo .card::before, .gx-big.shrink .holo .card::after,
-.gx-big.settle .holo .card::before, .gx-big.settle .holo .card::after { opacity: 0; }
+.gx-big-shine i {
+  position: absolute; left: 0; top: 0; width: 150cqw; height: 34cqw; margin: -17cqw 0 0 -75cqw; border-radius: 50%; rotate: -32deg;
+  background: radial-gradient(closest-side, #ffffffe6, #ffffff99 22%, #ffffff33 55%, #ffffff00);
+  animation: gx-gloss 4.2s cubic-bezier(0.4, 0, 0.3, 1) 0.4s infinite both;
+}
+.gx-big.shrink .holo .card::before, .gx-big.settle .holo .card::before, .gx-big.shrink .gx-big-shine, .gx-big.settle .gx-big-shine { opacity: 0; }
 .gx-big-new { top: calc(env(safe-area-inset-top, 0px) + 16px); transition: opacity 0.3s; }
 .gx-big.shrink .gx-big-new, .gx-big.settle .gx-big-new { opacity: 0; }
 .gx-big-tap { position: absolute; inset: 0; z-index: 3; border: 0; padding: 0; background: none; cursor: pointer; }
@@ -344,8 +348,8 @@
 @keyframes gx-spill-core { 0% { opacity: 0; transform: scale(0.96); } 26% { opacity: 0.7; transform: scale(1.04); } 100% { opacity: 1; transform: scale(1.2); } }
 @keyframes gx-spill-glow { 0% { opacity: 0; transform: scale(0.3); } 26% { opacity: 0.4; transform: scale(0.7); } 100% { opacity: 1; transform: scale(1.9); } }
 @keyframes gx-breathe { 50% { scale: 1.06; } }
-/* 虹の帯：2 秒ほどで通り過ぎ、間を置いてまた通る（★5 を見せている 3.5 秒の間は 1 回） */
-@keyframes gx-sheen { 0% { transform: translate(-50%, -50%) rotate(22deg) translateX(-270%); } 50%, 100% { transform: translate(-50%, -50%) rotate(22deg) translateX(270%); } }
+/* テカリ：光が 2 秒ほどでカードをすべり抜け、間を置いてまた（★5 を見せている 3.5 秒の間は 1 回） */
+@keyframes gx-gloss { 0% { transform: translate(-10cqw, 10cqh); opacity: 0; } 12% { opacity: 1; } 60% { transform: translate(85cqw, 70cqh); opacity: 0.9; } 75%, 100% { transform: translate(105cqw, 85cqh); opacity: 0; } }
 /* 白い舞台：霞は 1 周 48 秒でゆっくり巡りながら息をする。光の粒は、ふっと灯って消える */
 @keyframes gx-haze { from { transform: translate(-50%, -50%) rotate(0deg) scale(1); } 50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.08); } to { transform: translate(-50%, -50%) rotate(360deg) scale(1); } }
 @keyframes gx-mote { 0%, 100% { transform: scale(0.2); opacity: 0; } 18% { transform: scale(1); opacity: 1; } 42% { transform: scale(0.35); opacity: 0; } }
