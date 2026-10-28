@@ -44,6 +44,26 @@ const GRID = [
   [59, 76],
 ] as const;
 
+/** ★5 を引いたあとの白い舞台で、きらめく光の粒（画面の中の位置 %・きらめき始めるまでの秒） */
+const MOTES = [
+  [12, 18, 0.2],
+  [30, 11, 1.9],
+  [71, 14, 0.9],
+  [88, 24, 2.6],
+  [8, 38, 1.4],
+  [93, 43, 0.4],
+  [17, 57, 2.2],
+  [84, 61, 1.1],
+  [6, 74, 3.0],
+  [27, 84, 0.7],
+  [62, 88, 2.4],
+  [91, 79, 1.6],
+  [48, 7, 3.3],
+  [79, 34, 2.9],
+  [21, 31, 3.6],
+  [69, 75, 0],
+] as const;
+
 /**
  * 裂けきってから（ミリ秒）：tear 切れ端が落ちていく → out 開いた口から 5 枚が出てくる
  * → rise カードを残してパックが下へ抜ける（2 割スッと下がり、そこから一定の速さで。gacha.css の gx-pk-pull）
@@ -308,6 +328,10 @@ export function Opening({
     "--settle": `${BIG.settle}ms`,
   } as CSSProperties;
   const bigOn = big && (hit === "present" || hit === "shrink" || hit === "settle");
+  // ★5 を引いたら、白が画面を覆ったところから舞台の地を白にし、5 枚の並びまでそのまま（スキップしたときも）
+  const lux = big && (hit === "hold" || bigOn || hit === "shown");
+  // 白い舞台の霞と光の粒は、大きいカードを舞台に戻してから（大きいカードの後ろで動かすと、見えないのに重くなる）
+  const luxFx = big && (hit === "settle" || hit === "shown");
   // ★5 の画面いっぱいのカードを縮めた先：舞台のカード（真ん中から 10px 上。.gx-stage の translateY）
   const toW = CARD_W * scale;
   const toH = toW / CARD_RATIO;
@@ -315,12 +339,24 @@ export function Opening({
   return (
     <div
       ref={root}
-      className="gx-open"
+      className={`gx-open ${lux ? "lux" : ""}`}
       style={vars}
       role="dialog"
       aria-modal="true"
       aria-label="パックを開ける"
     >
+      <div className="gx-lux" aria-hidden="true">
+        {luxFx && (
+          <>
+            <span className="gx-lux-haze" />
+            <span className="gx-lux-motes">
+              {MOTES.map(([x, y, d]) => (
+                <i key={`${x}-${y}`} style={{ left: `${x}%`, top: `${y}%`, animationDelay: `${d}s` }} />
+              ))}
+            </span>
+          </>
+        )}
+      </div>
       <div className={`gx-dim ${hit === "lift" || squeezing ? "on" : ""}`} />
       <header className="gx-open-head">
         <h1>
@@ -507,6 +543,10 @@ export function Opening({
               {/* 平らに出すので、触っていないときの揺れ（毎フレーム、光の位置を書き換えて描き直す）は止める */}
               <HoloCard card={last.card} interactive idle={false} fill />
             </div>
+            {/* テカリ：角のつやと、すべる光（枠の虹は gacha.css の .card::before） */}
+            <span className="gx-big-shine" aria-hidden="true">
+              <i />
+            </span>
           </div>
           {last.isNew && <span className="gx-pr-new gx-big-new">NEW</span>}
           <button type="button" className="gx-big-tap" aria-label="次へ" onClick={shrinkBig} />
