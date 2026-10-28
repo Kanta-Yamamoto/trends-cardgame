@@ -230,25 +230,55 @@
 .gx-big .holo .card { transform: none; }
 .gx-big .holo { perspective: none !important; }
 .gx-big.settle .gx-big-card { opacity: 0; }
-/* 表面の虹（10月27日。オーナー：「表面に虹色のエフェクトが分かりやすくはいるといい」「このパック開封の時の星５だけ」）。
-   カード面の上に重ねて色を混ぜる（overlay・hard-light）ので、暗いカードにも明るいカードにも虹が乗る。縮め始めたら消し、舞台のカードに渡す
-   ::before 箔：幅の広い虹の縞が全面にかかる / ::after 帯：白い芯の虹の帯が、左上から右下へ斜めに走り抜ける */
-.gx-big .holo .card::before, .gx-big .holo .card::after { content: ""; position: absolute; z-index: 30; pointer-events: none; transition: opacity calc(var(--shrink) * 0.6) ease-out; }
-/* 箔は動かさない（全面の色の混ぜ直しを毎フレームしないため。10月27日、スマホで処理落ちしてちらついた） */
-.gx-big .holo .card::before {
-  inset: 0; opacity: 0.55; mix-blend-mode: overlay;
-  background: repeating-linear-gradient(125deg, #ff3d7f 0%, #ffb03b 5%, #fff45c 10%, #4dff9a 15%, #3dc8ff 20%, #8a5bff 25%, #ff3d7f 30%);
-}
+/* 表面の光（10月28日。オーナー：「虹色に光る演出が過剰」「トップページでキャラが光る程度の感じで良くて、それをよく見たら少し虹色だなって感じの位がいい」。
+   10月27日の、全面の虹の縞と虹の帯はやめた）。ホームのキャラクターの光（home.css の .hm-shine）と同じくらいの強さ：
+   白い芯の光の帯が左上から右下へ斜めに 1 回通り、帯のふちだけに淡い虹がのる（screen で明るくするだけ）。縮め始めたら消し、舞台のカードに渡す */
 .gx-big .holo .card::after {
-  left: 50%; top: 50%; width: 70%; height: 160%; opacity: 0.8; mix-blend-mode: hard-light;
-  background: linear-gradient(90deg, transparent 0%, #ff3d7f 16%, #ffb03b 28%, #fff45c 40%, #ffffff 50%, #4dff9a 60%, #3dc8ff 72%, #8a5bff 84%, transparent 100%);
-  animation: gx-band 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  content: ""; position: absolute; z-index: 30; left: 50%; top: 50%; width: 60%; height: 170%; pointer-events: none; mix-blend-mode: screen;
+  background: linear-gradient(90deg, transparent 12%, #ffc8e640 30%, #ffeccc59 41%, #ffffffa6 50%, #d4f7ea59 59%, #bfe6ff4d 68%, #dccdff33 78%, transparent 90%);
+  transform: translate(-50%, -50%) rotate(22deg) translateX(-230%);
+  animation: gx-sheen 4.2s cubic-bezier(0.35, 0, 0.65, 1) 0.4s infinite;
+  transition: opacity calc(var(--shrink) * 0.6) ease-out;
 }
-.gx-big.shrink .holo .card::before, .gx-big.shrink .holo .card::after,
-.gx-big.settle .holo .card::before, .gx-big.settle .holo .card::after { opacity: 0; }
+.gx-big.shrink .holo .card::after, .gx-big.settle .holo .card::after { opacity: 0; }
 .gx-big-new { top: calc(env(safe-area-inset-top, 0px) + 16px); transition: opacity 0.3s; }
 .gx-big.shrink .gx-big-new, .gx-big.settle .gx-big-new { opacity: 0; }
 .gx-big-tap { position: absolute; inset: 0; z-index: 3; border: 0; padding: 0; background: none; cursor: pointer; }
+/* ★5 を引いたあとの白い舞台（10月28日。オーナー：「後ろの色を黒じゃなくて白色かつ、カードとは異なるレア感の演出のために洗練されたエフェクトにしてあげたい」）。
+   白が画面を覆ったところで地を白に替え、縮めたカード・5 枚の並びまでそのまま。カードの光（白い帯）とは別の動き：
+   地には淡い虹色の霞がゆっくり巡り、ところどころで小さな光の粒がふっと灯る。動かすのは大きさ・回転・濃さだけ（描き直さない） */
+.gx-lux { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity 0.6s ease-out; background: radial-gradient(circle at 50% 46%, #ffffff 0%, #fbfdff 40%, #e8f3fb 100%); }
+.gx-open.lux .gx-lux { opacity: 1; }
+.gx-lux-haze {
+  position: absolute; left: 50%; top: 46%; width: 230%; aspect-ratio: 1; animation: gx-haze 48s linear infinite;
+  background:
+    radial-gradient(circle at 36% 38%, #ffd6ec9e 0%, #ffd6ec00 19%),
+    radial-gradient(circle at 63% 35%, #cfe8ffb3 0%, #cfe8ff00 20%),
+    radial-gradient(circle at 66% 62%, #e2d9ffa6 0%, #e2d9ff00 18%),
+    radial-gradient(circle at 38% 64%, #d2f5e8b3 0%, #d2f5e800 19%),
+    radial-gradient(circle at 50% 50%, #fff3d68c 0%, #fff3d600 13%);
+}
+/* 光の粒：淡い光のにじみ（i）の真ん中に、虹色の小さな四つ星（::before） */
+.gx-lux-motes i {
+  --m: 12px;
+  position: absolute; width: calc(var(--m) * 2.4); height: calc(var(--m) * 2.4); margin: calc(var(--m) * -1.2) 0 0 calc(var(--m) * -1.2); opacity: 0;
+  border-radius: 50%; background: radial-gradient(circle, #ffffff 0%, #d9ecff8c 22%, #ffe0f240 42%, transparent 66%);
+  animation: gx-mote 4.4s ease-in-out infinite both;
+}
+.gx-lux-motes i::before {
+  content: ""; position: absolute; left: 50%; top: 50%; width: var(--m); height: var(--m); margin: calc(var(--m) / -2) 0 0 calc(var(--m) / -2);
+  background: linear-gradient(135deg, #ff9fd0, #ffd58f 35%, #86e6c4 65%, #8cc8ff);
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+}
+.gx-lux-motes i:nth-child(3n) { --m: 16px; }
+.gx-lux-motes i:nth-child(4n + 1) { --m: 8px; }
+/* 白い地に合わせて、文字・ボタン・カードの影を明るい画面の色に */
+.gx-open.lux { color: var(--ink); }
+.gx-open.lux .gx-demo-mark, .gx-open.lux .gx-open-head .gx-count, .gx-open.lux .gx-open-hint { color: var(--ink-2); }
+.gx-open.lux .gx-open-hint b { color: var(--ink); }
+.gx-open.lux .btn.ghost.gx-dk { color: var(--ink); background: var(--g3); border: 1px solid #fff; box-shadow: var(--sh-1); }
+.gx-open.lux .gx-face, .gx-open.lux .gx-card.hit .gx-face { filter: drop-shadow(0 12px 22px #1f487833); }
+.gx-open.lux .gx-new { background: var(--pri-grad); color: #fff; box-shadow: 0 6px 16px #1780c447; }
 .gx-open-hint { position: absolute; left: 0; right: 0; bottom: calc(max(24px, env(safe-area-inset-bottom, 0px)) + 64px); z-index: 61; margin: 0; text-align: center; font-size: 13px; font-weight: 800; color: #ffffffd9; letter-spacing: 0.04em; pointer-events: none; }
 .gx-open-hint b { font: 400 15px/1 var(--f-mark); margin-left: 6px; color: #fff; }
 .gx-open-dock { position: absolute; left: 16px; right: 16px; bottom: max(20px, env(safe-area-inset-bottom, 0px)); z-index: 80; display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
@@ -302,8 +332,11 @@
 @keyframes gx-spill-core { 0% { opacity: 0; transform: scale(0.96); } 26% { opacity: 0.7; transform: scale(1.04); } 100% { opacity: 1; transform: scale(1.2); } }
 @keyframes gx-spill-glow { 0% { opacity: 0; transform: scale(0.3); } 26% { opacity: 0.4; transform: scale(0.7); } 100% { opacity: 1; transform: scale(1.9); } }
 @keyframes gx-breathe { 50% { scale: 1.06; } }
-/* 帯：通り過ぎたら、少し間を置いてまた走る */
-@keyframes gx-band { 0% { transform: translate(-50%, -50%) rotate(35deg) translateX(-200%); } 65%, 100% { transform: translate(-50%, -50%) rotate(35deg) translateX(200%); } }
+/* 表面の光：2 秒ほどで通り過ぎ、間を置いてまた通る（★5 を見せている 3.5 秒の間は 1 回） */
+@keyframes gx-sheen { 0% { transform: translate(-50%, -50%) rotate(22deg) translateX(-230%); } 50%, 100% { transform: translate(-50%, -50%) rotate(22deg) translateX(230%); } }
+/* 白い舞台：霞は 1 周 48 秒でゆっくり巡りながら息をする。光の粒は、ふっと灯って消える */
+@keyframes gx-haze { from { transform: translate(-50%, -50%) rotate(0deg) scale(1); } 50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.08); } to { transform: translate(-50%, -50%) rotate(360deg) scale(1); } }
+@keyframes gx-mote { 0%, 100% { transform: scale(0.2); opacity: 0; } 18% { transform: scale(1); opacity: 1; } 42% { transform: scale(0.35); opacity: 0; } }
 /* 白の中から出る：大きさだけ（画面いっぱいの絵にぼかし・明るさを毎フレーム掛けると重い。白に隠れてほとんど見えない） */
 @keyframes gx-emerge { from { transform: scale(1.06); } to { transform: none; } }
 @keyframes gx-pr-in { from { transform: translate(-50%, -50%) scale(1.14); filter: brightness(1.8) blur(6px); } to { transform: translate(-50%, -50%) scale(1); filter: none; } }
