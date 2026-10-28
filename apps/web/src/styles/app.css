@@ -68,6 +68,14 @@ html, body { touch-action: manipulation; }
    キーボードで操作したときの枠（:focus-visible）は残す */
 * { -webkit-tap-highlight-color: transparent; }
 :focus:not(:focus-visible) { outline: none; }
+/* タップの印（tapMark.ts）：押した所が、やわらかい光の円（直径 68px）で 0.32 秒だけ明るくなる。
+   中は白、まわりは水色なので、明るい画面でも濃い青の盤面でも見える。画面の座標に置き、何も邪魔しない */
+.tap-mark { position: fixed; left: 0; top: 0; z-index: 2147483000; width: 0; height: 0; pointer-events: none; }
+.tap-mark::before {
+  content: ""; position: absolute; left: -34px; top: -34px; width: 68px; height: 68px; border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, #2fa8e48c 35%, #2fa8e400 70%); animation: tap-mark 0.32s ease-out forwards;
+}
+@keyframes tap-mark { from { transform: scale(0.4); opacity: 1; } to { transform: scale(1.1); opacity: 0; } }
 /* 画面の枠（frame.ts）：すべての画面と演出を、スマホの縦の画面1つの中だけで出す。
    スマホの縦（幅 480px まで）では、枠は何もしない（ページのスクロール・全画面の要素・演出の層は、枠を入れる前と同じ）。
    それより広い画面（PC・横持ち）だけ、枠に transform を持たせて、中の position: fixed（モーダル・全画面の演出）を枠いっぱいに収め、

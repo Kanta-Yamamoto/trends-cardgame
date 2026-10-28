@@ -26,6 +26,7 @@ import "./styles/app.css";
 import { FRAME_ID, watchFrame } from "./frame";
 import { stripInviteFromUrl } from "./invite";
 import { isStandalone, registerPwa } from "./pwa";
+import { watchTaps } from "./tapMark";
 import { lockZoom } from "./viewport";
 
 // 招待リンク（?invite=合言葉）で開いたら、アドレスバーから合言葉を消す（サーバーはクッキーを置いて画面を返すだけ）
@@ -66,4 +67,6 @@ createRoot(root).render(
 );
 
 watchFrame();
+// 押した所に、やわらかい光を一瞬出す（どの画面でも）
+watchTaps();
 requestAnimationFrame(() => watchFrame());
