@@ -1084,11 +1084,12 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .db-filter .g-chip { height: 32px; padding: 0 12px 0 5px; font-size: 12px; }
 .db-filter .g-chip.all { padding: 0 12px; }
 .db-filter .g-chip .at { width: 22px; height: 22px; }
-/* カードの行：コスト・名前と札・効果文（2 行まで）・枚数の増減。入れたカードは水色のふち */
+/* カードの行：カードの絵（文字は抜く）・名前と札・効果文（2 行まで）・枚数の増減。入れたカードは水色のふち、属性が合わないカードは絵を薄く */
 .db-list { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; }
-.db-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 10px 10px 8px; border-radius: 18px; transition: background 0.2s, box-shadow 0.2s; }
+.db-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px 8px 8px; border-radius: 18px; transition: background 0.2s, box-shadow 0.2s; }
 .db-row.in { background: #e7f6ffeb; box-shadow: 0 0 0 1.5px var(--pri-2), var(--sh-2); }
-.db-cost { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font: 400 17px/1 var(--f-mark); color: #fff; background: var(--ink); box-shadow: 0 0 0 2px #f2c14e; }
+.db-art { display: block; width: 62px; }
+.db-row.off .db-art .holo { filter: grayscale(0.85); opacity: 0.45; }
 .db-card { display: grid; gap: 3px; min-width: 0; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
 .db-title { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .db-title .at { width: 18px; height: 18px; font-size: 9px; }
@@ -1106,6 +1107,10 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .db-step { width: 34px; height: 34px; border-radius: 50%; padding: 0; border: 1px solid #fff; background: #fff; box-shadow: 0 2px 6px var(--shadow); color: var(--ink); font-size: 20px; font-weight: 800; line-height: 1; cursor: pointer; }
 .db-step.plus { color: var(--pri-3); }
 .db-step:disabled { opacity: 0.3; cursor: default; }
+/* カードの拡大：画面に重ねる小窓（カードだけ。闇堕ちを持つカードは姿の切り替え） */
+.db-pop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 72px 24px max(24px, env(safe-area-inset-bottom, 0px)); animation: fade 0.15s ease-out; }
+.db-pop-bg { position: absolute; inset: 0; border: 0; padding: 0; background: #283c5a59; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); cursor: pointer; }
+.db-pop-body { position: relative; display: grid; gap: 14px; width: min(100%, 340px, calc((100dvh - 190px) * 0.716)); animation: pop 0.25s cubic-bezier(.2, 1.4, .4, 1); }
 /* ---------- 効果の語の解説（押すと小窓） ---------- */
 .help-sheet { z-index: 80; }
 .help-body { position: relative; width: min(420px, 100%); display: grid; gap: 10px; padding: 20px 22px; border-radius: 22px; color: var(--ink); background: #fffffff5; border: 1px solid #fff; box-shadow: 0 20px 50px #0b1a3055; animation: pop 0.3s cubic-bezier(.2, 1.4, .4, 1); }
