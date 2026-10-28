@@ -64,6 +64,10 @@
 * { box-sizing: border-box; }
 /* 素早い2回タップで拡大しない（iPhone はメタタグの user-scalable=no を無視するので CSS で止める） */
 html, body { touch-action: manipulation; }
+/* タップした所に出る、ブラウザの青い（iPhone は灰色の）四角と、押したあとに残る選択の枠を出さない（10月28日。オーナー：ガチャでカードを押すと「カードの周辺までふくめて、タップの反応箇所に青枠が表示されます」「見た目でダサい」）。
+   キーボードで操作したときの枠（:focus-visible）は残す */
+* { -webkit-tap-highlight-color: transparent; }
+:focus:not(:focus-visible) { outline: none; }
 /* 画面の枠（frame.ts）：すべての画面と演出を、スマホの縦の画面1つの中だけで出す。
    スマホの縦（幅 480px まで）では、枠は何もしない（ページのスクロール・全画面の要素・演出の層は、枠を入れる前と同じ）。
    それより広い画面（PC・横持ち）だけ、枠に transform を持たせて、中の position: fixed（モーダル・全画面の演出）を枠いっぱいに収め、
