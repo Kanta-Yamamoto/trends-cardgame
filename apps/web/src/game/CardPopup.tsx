@@ -4,6 +4,7 @@ import { HoloCard } from "../cards/HoloCard";
 
 /**
  * カードを押したときの拡大：画面に重ねる小窓に、カードだけを大きく出す（説明の台は出さない。デッキを組む画面・カード一覧）。
+ * カードを押すと、文字を隠して絵だけを見られる（前の拡大 CardZoom と同じ。10月28日、小窓に替えたときに抜けていたのを戻した）。
  * 闇堕ちを持つカードは、下の切り替えで闇堕ちの姿も見られる。外側・×・Esc で閉じる。
  * nav を渡すと、下に「前へ・次へ」を出して、重ねたまま前後のカードへ移れる（← → キーでも）
  */
@@ -18,6 +19,7 @@ export function CardPopup({
   onClose: () => void;
 }) {
   const [dark, setDark] = useState(false);
+  const [textHidden, setTextHidden] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -43,7 +45,15 @@ export function CardPopup({
         </svg>
       </button>
       <div className="card-pop-body">
-        <HoloCard card={card} darkForm={dark} interactive idle={false} />
+        <HoloCard
+          card={card}
+          darkForm={dark}
+          interactive
+          idle={false}
+          textHidden={textHidden}
+          onClick={() => setTextHidden((v) => !v)}
+        />
+        <p className="card-pop-note">カードを押すと、文字を隠して絵だけを見られます</p>
         {card.dark && (
           <div className="seg g3" role="tablist" aria-label="カードの姿">
             <button

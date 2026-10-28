@@ -18,6 +18,17 @@ describe("カードの拡大の小窓（CardPopup）", () => {
     expect(tab.getAttribute("aria-selected")).toBe("true");
   });
 
+  it("カードを押すと、文字を隠して絵だけになる。もう一度押すと戻る", () => {
+    const { container } = render(<CardPopup card={plain} onClose={() => {}} />);
+    const card = () => container.querySelector(".card");
+    expect(card()?.classList.contains("text-hidden")).toBe(false);
+    const btn = container.querySelector(".holo-btn") as HTMLButtonElement;
+    fireEvent.click(btn);
+    expect(card()?.classList.contains("text-hidden")).toBe(true);
+    fireEvent.click(btn);
+    expect(card()?.classList.contains("text-hidden")).toBe(false);
+  });
+
   it("外側・×・Esc で閉じる", () => {
     const onClose = vi.fn();
     render(<CardPopup card={plain} onClose={onClose} />);
