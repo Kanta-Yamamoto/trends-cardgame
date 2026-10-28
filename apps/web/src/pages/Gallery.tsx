@@ -6,7 +6,7 @@ import { BUNDLED_CARDS, fetchCards } from "../api/client";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { useCollection } from "../gacha/collection";
-import { CardZoom } from "../game/CardZoom";
+import { CardPopup } from "../game/CardPopup";
 import { useSession } from "../online/session";
 import { usePageMusic } from "../sound/music";
 
@@ -17,7 +17,8 @@ type Filter = Attribute | "ニュートラル" | null;
 
 /**
  * カード一覧。★5 から順に、★ごとのまとまりで 3 列に並べる（縦にスクロールするだけで全部見られる）。
- * 押すと拡大し、拡大したまま「前へ・次へ」で、絞り込んだ並びの前後のカードを順に見られる
+ * 絵は文字なし（コストと★だけ）で、下に名前と持っている枚数（10月28日）。
+ * 押すと画面に重ねる小窓で拡大し、重ねたまま「前へ・次へ」で、絞り込んだ並びの前後のカードを順に見られる
  */
 /** カードの絵（背景と切り抜き）を読み込み終えたか。初めて開いたときは絵が届くまで時間がかかる */
 function useArtReady(card: CardDef) {
@@ -53,7 +54,8 @@ function useArtReady(card: CardDef) {
 
 /**
  * 一覧の 1 枚。絵が届くまでは、カードの形の光る板（スケルトン）を出し、届いたらふわっと出す。
- * 持っていないカードは灰色、持っているカードは今までどおりで、下に枚数（10月27日。3 枚以上はダブりなので色を変える）。
+ * 絵からは名前・効果文を抜き（コストと★は残る）、下に名前を出す。効果文は押したときの小窓で読む（10月28日）。
+ * 持っていないカードは灰色で「持っていない」、持っているカードは下に枚数（10月27日。3 枚以上はダブりなので色を変える）。
  * owned が null のあいだ（持っているカードをまだ取れていない）は、どちらの印も出さない
  */
 function GalleryItem({ card, owned, onOpen }: { card: CardDef; owned: number | null; onOpen: () => void }) {
@@ -64,11 +66,17 @@ function GalleryItem({ card, owned, onOpen }: { card: CardDef; owned: number | n
       className={`g-item ${ready ? "ready" : "loading"} ${missing ? "unowned" : ""}`}
       aria-busy={!ready || undefined}
     >
-      <HoloCard card={card} compact onClick={onOpen} />
-      {/* 持っていないカードは枚数を出さず、行の高さだけそろえる */}
+      <HoloCard card={card} compact textHidden onClick={onOpen} />
+      <button type="button" className="g-name" onClick={onOpen}>
+        {card.name}
+      </button>
       {owned !== null && (
         <span className="g-own-row">
-          {owned > 0 && <span className={`g-own ${extraCopies(owned) > 0 ? "extra" : ""}`}>×{owned}</span>}
+          {owned > 0 ? (
+            <span className={`g-own ${extraCopies(owned) > 0 ? "extra" : ""}`}>×{owned}</span>
+          ) : (
+            <span className="g-own-none">持っていない</span>
+          )}
         </span>
       )}
     </div>
@@ -186,10 +194,9 @@ export function Gallery() {
         ))
       )}
       {zoom && (
-        <CardZoom
+        <CardPopup
           key={zoom.id}
           card={zoom}
-          darkPreview
           nav={{
             index: zoomAt + 1,
             total: order.length,

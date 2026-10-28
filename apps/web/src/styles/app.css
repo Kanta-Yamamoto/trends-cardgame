@@ -822,16 +822,19 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
   background: linear-gradient(100deg, #ffffff80 30%, #ffffffeb 50%, #ffffff80 70%) 0 0 / 220% 100%;
   animation: g-shimmer 1.25s linear infinite;
 }
-.g-item.loading::before { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: 4.2% / 3%; pointer-events: none; }
+.g-item.loading::before { content: ""; position: absolute; inset: 0 0 auto; aspect-ratio: 63 / 88; z-index: 1; border-radius: 4.2% / 3%; pointer-events: none; }
 .g-skel-card { aspect-ratio: 63 / 88; border-radius: 4.2% / 3%; }
 .g-item.loading .g-skel-card { opacity: 1; background: none; animation: none; }
 .g-skel-line { display: inline-block; height: 16px; border-radius: 6px; }
 @keyframes g-shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
 @media (prefers-reduced-motion: reduce) { .g-item.loading::before, .g-skel-card, .g-skel-line { animation: none; } }
 .g-item { min-width: 0; }
+/* 絵の下に名前（絵の中の名前・効果文は抜く。10月28日） */
+.g-name { display: block; width: 100%; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--ink); font-size: 12.5px; font-weight: 800; line-height: 1.3; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
 /* 持っていないカードは灰色、持っているカードは下に枚数（10月27日）。3 枚以上（ダブり）は水色で目立たせる */
 .g-item.unowned .holo { filter: grayscale(1); opacity: 0.55; }
-.g-own-row { display: flex; justify-content: center; height: 22px; margin-top: 5px; }
+.g-own-row { display: flex; justify-content: center; height: 22px; margin-top: 3px; }
+.g-own-none { align-self: center; font-size: 11px; font-weight: 800; color: var(--ink-3); }
 .g-own { display: inline-grid; place-items: center; min-width: 34px; height: 22px; padding: 0 9px; border-radius: 11px; background: var(--g3); box-shadow: var(--sh-1), inset 0 0 0 1px #fff; color: var(--ink); font: 400 14px/1 var(--f-mark); letter-spacing: 0.02em; }
 .g-own.extra { color: #fff; background: var(--pri-grad); box-shadow: 0 3px 8px #1780c447; }
 /* カードの拡大（カード一覧・デッキ構築・対戦中）：上にカード、下にすりガラスの説明の台。地はカードの絵をぼかした明るい幕 */
@@ -1107,10 +1110,15 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .db-step { width: 34px; height: 34px; border-radius: 50%; padding: 0; border: 1px solid #fff; background: #fff; box-shadow: 0 2px 6px var(--shadow); color: var(--ink); font-size: 20px; font-weight: 800; line-height: 1; cursor: pointer; }
 .db-step.plus { color: var(--pri-3); }
 .db-step:disabled { opacity: 0.3; cursor: default; }
-/* カードの拡大：画面に重ねる小窓（カードだけ。闇堕ちを持つカードは姿の切り替え） */
-.db-pop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 72px 24px max(24px, env(safe-area-inset-bottom, 0px)); animation: fade 0.15s ease-out; }
-.db-pop-bg { position: absolute; inset: 0; border: 0; padding: 0; background: #283c5a59; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); cursor: pointer; }
-.db-pop-body { position: relative; display: grid; gap: 14px; width: min(100%, 340px, calc((100dvh - 190px) * 0.716)); animation: pop 0.25s cubic-bezier(.2, 1.4, .4, 1); }
+/* カードの拡大：画面に重ねる小窓（CardPopup。デッキを組む画面・カード一覧。カードだけ。闇堕ちを持つカードは姿の切り替え、カード一覧は前後へ） */
+.card-pop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 72px 24px max(24px, env(safe-area-inset-bottom, 0px)); animation: fade 0.15s ease-out; }
+.card-pop-bg { position: absolute; inset: 0; border: 0; padding: 0; background: #283c5a59; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); cursor: pointer; }
+.card-pop-body { position: relative; display: grid; gap: 14px; width: min(100%, 340px, calc((100dvh - 190px) * 0.716)); animation: pop 0.25s cubic-bezier(.2, 1.4, .4, 1); }
+.card-pop:has(.card-pop-nav) .card-pop-body { width: min(100%, 340px, calc((100dvh - 250px) * 0.716)); }
+.card-pop-nav { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.card-pop-nav .btn { height: 42px; padding: 0 16px; font-size: 13px; white-space: nowrap; }
+.card-pop-nav .btn:disabled { opacity: 0.35; cursor: default; }
+.card-pop-nav span { text-align: center; font: 400 15px/1 var(--f-mark); color: #fff; text-shadow: 0 1px 4px #0006; }
 /* ---------- 効果の語の解説（押すと小窓） ---------- */
 .help-sheet { z-index: 80; }
 .help-body { position: relative; width: min(420px, 100%); display: grid; gap: 10px; padding: 20px 22px; border-radius: 22px; color: var(--ink); background: #fffffff5; border: 1px solid #fff; box-shadow: 0 20px 50px #0b1a3055; animation: pop 0.3s cubic-bezier(.2, 1.4, .4, 1); }
