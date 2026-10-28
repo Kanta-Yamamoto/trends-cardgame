@@ -1127,6 +1127,10 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .card-pop-bg { position: absolute; inset: 0; border: 0; padding: 0; background: #283c5a59; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); cursor: pointer; }
 .card-pop-body { position: relative; display: grid; gap: 14px; width: min(100%, 340px, calc((100dvh - 190px) * 0.716)); animation: pop 0.25s cubic-bezier(.2, 1.4, .4, 1); }
 .card-pop:has(.card-pop-nav) .card-pop-body { width: min(100%, 340px, calc((100dvh - 250px) * 0.716)); }
+/* 文字を隠す目のボタン（× の左）。押している間は水色。× と目は、見た目より少し広く押せる（指で押しやすく。2 つのあいだの 8px は半分ずつ） */
+.card-pop-eye { right: 66px; }
+.card-pop-eye[aria-pressed="true"] { color: #fff; background: var(--pri-grad); border-color: #fff; }
+.card-pop .card-zoom-close::before { content: ""; position: absolute; inset: -6px -4px -10px; }
 .card-pop-nav { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; }
 .card-pop-nav .btn { height: 42px; padding: 0 16px; font-size: 13px; white-space: nowrap; }
 .card-pop-nav .btn:disabled { opacity: 0.35; cursor: default; }

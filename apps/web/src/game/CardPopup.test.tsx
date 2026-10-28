@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { CARDS } from "@trends/cards";
 import { describe, expect, it, vi } from "vitest";
 import { CardPopup } from "./CardPopup";
@@ -16,6 +16,18 @@ describe("カードの拡大の小窓（CardPopup）", () => {
     const tab = screen.getByRole("tab", { name: "闇堕ちの姿" });
     fireEvent.click(tab);
     expect(tab.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("目のボタンで、文字を隠して絵だけになる。もう一度押すと戻る。カードを押しても変わらない", () => {
+    const { container } = render(<CardPopup card={plain} onClose={() => {}} />);
+    const hidden = () => container.querySelector(".card")?.classList.contains("text-hidden");
+    expect(hidden()).toBe(false);
+    const pop = within(container);
+    fireEvent.click(pop.getByRole("button", { name: "文字を隠す" }));
+    expect(hidden()).toBe(true);
+    fireEvent.click(pop.getByRole("button", { name: "文字を出す" }));
+    expect(hidden()).toBe(false);
+    expect(container.querySelector(".holo-btn")).toBeNull();
   });
 
   it("外側・×・Esc で閉じる", () => {

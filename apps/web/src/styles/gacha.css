@@ -220,13 +220,25 @@
 .gx-pr-foot p { margin: 0; font-size: 13px; font-weight: 800; color: var(--ink-2); letter-spacing: 0.04em; }
 /* ★5 の当たり：画面そのものをカードの枠にして出し（カード面を画面の形いっぱいに描く）、何秒か見せてから、枠ごと舞台のカードの大きさまで縮める */
 .gx-big { position: absolute; inset: 0; z-index: 85; overflow: hidden; }
+/* 縮めるときは、カード面の大きさ（レイアウト）は変えず、枠ごと transform で動かす（Opening.tsx の shrinkBig）。
+   10月28日。前は幅・高さを毎フレーム変えていて、そのたびにカード面を組み直し（文字の大きさを決める --w の書き直しで 2 回）、
+   画面いっぱいの層を描き直していたので、縮める間コマ落ちしてガタついて見えた（オーナー：「カードの表示がジャミります」） */
 .gx-big-card {
   position: absolute; z-index: 1; left: 0; top: env(safe-area-inset-top, 0px); width: 100%;
   height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); pointer-events: none;
-  transition: left var(--shrink) var(--shrink-ease), top var(--shrink) var(--shrink-ease), width var(--shrink) var(--shrink-ease), height var(--shrink) var(--shrink-ease), opacity var(--settle) ease-out;
-  --shrink-ease: cubic-bezier(0.55, 0, 0.25, 1);
+  transition: transform var(--shrink) cubic-bezier(0.55, 0, 0.25, 1), opacity var(--settle) ease-out;
 }
-.gx-big-in { width: 100%; height: 100%; animation: gx-emerge var(--wout) cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+.gx-big-in { position: absolute; inset: 0; animation: gx-emerge var(--wout) cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+/* 縮めた先の形：カードの比の、ふつうのカード面（高さは画面いっぱい・真ん中）。画面いっぱいのカード面の後ろに置いておき、
+   ほぼ縮みきったところで、短く入れ替える（縦長のまま縮み、最後にカードの形になる）。
+   中の動き（泡など）は止めておく（見えない間・縮める間に描き直さない） */
+.gx-big-end { position: absolute; left: 50%; top: 0; height: 100%; aspect-ratio: 63 / 88; translate: -50% 0; opacity: 0; will-change: opacity; }
+.gx-big-end, .gx-big-end *, .gx-big-end *::before, .gx-big-end *::after { animation-play-state: paused !important; }
+.gx-big-end .holo { width: 100%; }
+/* 入れ替えは、小さくなってから短く（大きいうちに入れ替えると、文字の板が大きく二重に見え、カードの形の方は画面の横にはみ出す） */
+.gx-big:is(.shrink, .settle) .gx-big-end { opacity: 1; transition: opacity calc(var(--shrink) * 0.15) linear calc(var(--shrink) * 0.5); }
+.gx-big:is(.shrink, .settle) .gx-big-in { opacity: 0; transition: opacity calc(var(--shrink) * 0.15) linear calc(var(--shrink) * 0.55); }
+.gx-big:is(.shrink, .settle) .gx-big-in *, .gx-big:is(.shrink, .settle) .gx-big-in *::before, .gx-big:is(.shrink, .settle) .gx-big-in *::after { animation-play-state: paused !important; }
 /* 画面を枠にするので、カードは傾けない。遠近（perspective）も外す（3D の重なりの中で色を混ぜると、iPhone でちらつくことがある） */
 .gx-big .holo .card { transform: none; }
 .gx-big .holo { perspective: none !important; }
