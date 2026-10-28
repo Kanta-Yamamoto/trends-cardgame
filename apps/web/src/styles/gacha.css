@@ -191,9 +191,10 @@
 .gx-card.now .gx-in { transition: none; }
 .gx-back, .gx-face { position: absolute; inset: 0; border-radius: 12px; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .gx-back { border: 3px solid #fff; box-shadow: 0 14px 26px #0007; transition: box-shadow 0.45s; background: radial-gradient(circle at 50% 50%, #f2cf7a 0 9%, transparent 10%), radial-gradient(circle at 50% 50%, transparent 0 22%, #f2cf7a55 23% 25%, transparent 26%), repeating-linear-gradient(45deg, #1b2a48 0 7px, #16223b 7px 14px); }
-.gx-face { transform: rotateY(180deg); filter: drop-shadow(0 14px 22px #0008); }
+/* 影は box-shadow で付ける（drop-shadow の効果は、まわりが動くたびに掛け直されて重い。10月28日、★5 の白い舞台・調停者で処理落ちした） */
+.gx-face { transform: rotateY(180deg); box-shadow: 0 14px 22px #0008; }
 .gx-face .holo { width: 100%; }
-.gx-card.hit .gx-face { filter: drop-shadow(0 0 16px #ffffffcc) drop-shadow(0 14px 22px #0008); }
+.gx-card.hit .gx-face { box-shadow: 0 0 16px #ffffffcc, 0 14px 22px #0008; }
 .gx-new { position: absolute; left: 50%; top: -34px; transform: translateX(-50%); height: 38px; padding: 0 18px; border-radius: 19px; background: #fff; color: var(--pri-3); font: 400 26px/38px var(--f-mark); letter-spacing: 0.06em; box-shadow: 0 4px 12px #0005; }
 .gx-tap { position: absolute; left: -135px; top: -170px; width: 270px; height: 340px; z-index: 60; border: 0; padding: 0; background: none; cursor: pointer; }
 /* 当たり：宙に浮かせ、真ん中を軸に回す（左が手前）。30% までは加速、そこからゆっくり。表は見せず、まわりから後ろの光が漏れる */
@@ -230,34 +231,45 @@
 .gx-big .holo .card { transform: none; }
 .gx-big .holo { perspective: none !important; }
 .gx-big.settle .gx-big-card { opacity: 0; }
-/* 表面の光（10月28日。オーナー：「虹色に光る演出が過剰」「トップページでキャラが光る程度の感じで良くて、それをよく見たら少し虹色だなって感じの位がいい」。
-   10月27日の、全面の虹の縞と虹の帯はやめた）。ホームのキャラクターの光（home.css の .hm-shine）と同じくらいの強さ：
-   白い芯の光の帯が左上から右下へ斜めに 1 回通り、帯のふちだけに淡い虹がのる（screen で明るくするだけ）。縮め始めたら消し、舞台のカードに渡す */
-.gx-big .holo .card::after {
-  content: ""; position: absolute; z-index: 30; left: 50%; top: 50%; width: 60%; height: 170%; pointer-events: none; mix-blend-mode: screen;
-  background: linear-gradient(90deg, transparent 12%, #ffc8e640 30%, #ffeccc59 41%, #ffffffa6 50%, #d4f7ea59 59%, #bfe6ff4d 68%, #dccdff33 78%, transparent 90%);
-  transform: translate(-50%, -50%) rotate(22deg) translateX(-230%);
-  animation: gx-sheen 4.2s cubic-bezier(0.35, 0, 0.65, 1) 0.4s infinite;
-  transition: opacity calc(var(--shrink) * 0.6) ease-out;
+/* 表面の虹（10月28日。オーナー：本番の虹（全面の虹の縞＋虹の帯）は「強すぎる」、白い光の帯だけでは「弱すぎる」。
+   「カード全体ではなく、一部分やカードの枠などでもう少し強くして見せてほしい」）。全面には掛けず、枠と、通り過ぎる帯だけに虹をのせる。
+   縮め始めたら消し、舞台のカードに渡す
+   ::before 枠：カードのふち（幅の 2.4%）に、色が一周する虹の線。動かさず、色も混ぜない（毎フレームの描き直し・混ぜ直しをしない）
+   ::after 帯：白い芯の虹の帯が、左上から右下へ 1 回通る（hard-light で混ぜるので、明るいカードにも暗いカードにも色が見える） */
+.gx-big .holo .card::before, .gx-big .holo .card::after { content: ""; position: absolute; z-index: 30; pointer-events: none; transition: opacity calc(var(--shrink) * 0.6) ease-out; }
+.gx-big .holo .card::before {
+  inset: 0; padding: 2.4%; opacity: 0.85;
+  background: conic-gradient(from 210deg, #ff8fc4, #ffc58f, #fff08f, #8ff0c0, #8fd2ff, #b49bff, #ff8fc4);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
 }
-.gx-big.shrink .holo .card::after, .gx-big.settle .holo .card::after { opacity: 0; }
+.gx-big .holo .card::after {
+  left: 50%; top: 50%; width: 48%; height: 150%; opacity: 0.45; mix-blend-mode: hard-light;
+  background: linear-gradient(90deg, transparent 6%, #ff7ab4 22%, #ffb878 32%, #ffe680 41%, #ffffff 50%, #7deab0 59%, #78c8ff 68%, #ab92ff 78%, transparent 94%);
+  transform: translate(-50%, -50%) rotate(22deg) translateX(-270%);
+  animation: gx-sheen 4.2s cubic-bezier(0.35, 0, 0.65, 1) 0.4s infinite;
+}
+.gx-big.shrink .holo .card::before, .gx-big.shrink .holo .card::after,
+.gx-big.settle .holo .card::before, .gx-big.settle .holo .card::after { opacity: 0; }
 .gx-big-new { top: calc(env(safe-area-inset-top, 0px) + 16px); transition: opacity 0.3s; }
 .gx-big.shrink .gx-big-new, .gx-big.settle .gx-big-new { opacity: 0; }
 .gx-big-tap { position: absolute; inset: 0; z-index: 3; border: 0; padding: 0; background: none; cursor: pointer; }
 /* ★5 を引いたあとの白い舞台（10月28日。オーナー：「後ろの色を黒じゃなくて白色かつ、カードとは異なるレア感の演出のために洗練されたエフェクトにしてあげたい」）。
-   白が画面を覆ったところで地を白に替え、縮めたカード・5 枚の並びまでそのまま。カードの光（白い帯）とは別の動き：
-   地には淡い虹色の霞がゆっくり巡り、ところどころで小さな光の粒がふっと灯る。動かすのは大きさ・回転・濃さだけ（描き直さない） */
+   白が画面を覆ったところで地を白に替え、縮めたカード・5 枚の並びまでそのまま。カードの虹（枠と帯）とは別の動き：
+   地には淡い虹色の霞がゆっくり巡り、ところどころで小さな光の粒がふっと灯る（オーナー：「霞と粒で確定でおけー」）。
+   霞と粒は、大きいカードを舞台に戻してから出す（大きいカードの後ろで動かすと、見えないのに重くなる。Opening.tsx の luxFx）。動かすのは大きさ・回転・濃さだけ */
 .gx-lux { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity 0.6s ease-out; background: radial-gradient(circle at 50% 46%, #ffffff 0%, #fbfdff 40%, #e8f3fb 100%); }
 .gx-open.lux .gx-lux { opacity: 1; }
 .gx-lux-haze {
-  position: absolute; left: 50%; top: 46%; width: 230%; aspect-ratio: 1; animation: gx-haze 48s linear infinite;
+  position: absolute; left: 50%; top: 46%; width: 150%; aspect-ratio: 1; animation: gx-haze 48s linear infinite, fade 1.2s ease-out;
   background:
-    radial-gradient(circle at 36% 38%, #ffd6ec9e 0%, #ffd6ec00 19%),
-    radial-gradient(circle at 63% 35%, #cfe8ffb3 0%, #cfe8ff00 20%),
-    radial-gradient(circle at 66% 62%, #e2d9ffa6 0%, #e2d9ff00 18%),
-    radial-gradient(circle at 38% 64%, #d2f5e8b3 0%, #d2f5e800 19%),
-    radial-gradient(circle at 50% 50%, #fff3d68c 0%, #fff3d600 13%);
+    radial-gradient(ellipse 26% 26% at 29% 32%, #ffd6ec9e, #ffd6ec00),
+    radial-gradient(ellipse 28% 28% at 70% 27%, #cfe8ffb3, #cfe8ff00),
+    radial-gradient(ellipse 25% 25% at 75% 68%, #e2d9ffa6, #e2d9ff00),
+    radial-gradient(ellipse 26% 26% at 32% 71%, #d2f5e8b3, #d2f5e800),
+    radial-gradient(ellipse 14% 14% at 50% 50%, #fff3d68c, #fff3d600);
 }
+.gx-lux-motes { position: absolute; inset: 0; animation: fade 1.2s ease-out; }
 /* 光の粒：淡い光のにじみ（i）の真ん中に、虹色の小さな四つ星（::before） */
 .gx-lux-motes i {
   --m: 12px;
@@ -277,7 +289,7 @@
 .gx-open.lux .gx-demo-mark, .gx-open.lux .gx-open-head .gx-count, .gx-open.lux .gx-open-hint { color: var(--ink-2); }
 .gx-open.lux .gx-open-hint b { color: var(--ink); }
 .gx-open.lux .btn.ghost.gx-dk { color: var(--ink); background: var(--g3); border: 1px solid #fff; box-shadow: var(--sh-1); }
-.gx-open.lux .gx-face, .gx-open.lux .gx-card.hit .gx-face { filter: drop-shadow(0 12px 22px #1f487833); }
+.gx-open.lux .gx-face, .gx-open.lux .gx-card.hit .gx-face { box-shadow: 0 12px 22px #1f487833; }
 .gx-open.lux .gx-new { background: var(--pri-grad); color: #fff; box-shadow: 0 6px 16px #1780c447; }
 .gx-open-hint { position: absolute; left: 0; right: 0; bottom: calc(max(24px, env(safe-area-inset-bottom, 0px)) + 64px); z-index: 61; margin: 0; text-align: center; font-size: 13px; font-weight: 800; color: #ffffffd9; letter-spacing: 0.04em; pointer-events: none; }
 .gx-open-hint b { font: 400 15px/1 var(--f-mark); margin-left: 6px; color: #fff; }
@@ -332,8 +344,8 @@
 @keyframes gx-spill-core { 0% { opacity: 0; transform: scale(0.96); } 26% { opacity: 0.7; transform: scale(1.04); } 100% { opacity: 1; transform: scale(1.2); } }
 @keyframes gx-spill-glow { 0% { opacity: 0; transform: scale(0.3); } 26% { opacity: 0.4; transform: scale(0.7); } 100% { opacity: 1; transform: scale(1.9); } }
 @keyframes gx-breathe { 50% { scale: 1.06; } }
-/* 表面の光：2 秒ほどで通り過ぎ、間を置いてまた通る（★5 を見せている 3.5 秒の間は 1 回） */
-@keyframes gx-sheen { 0% { transform: translate(-50%, -50%) rotate(22deg) translateX(-230%); } 50%, 100% { transform: translate(-50%, -50%) rotate(22deg) translateX(230%); } }
+/* 虹の帯：2 秒ほどで通り過ぎ、間を置いてまた通る（★5 を見せている 3.5 秒の間は 1 回） */
+@keyframes gx-sheen { 0% { transform: translate(-50%, -50%) rotate(22deg) translateX(-270%); } 50%, 100% { transform: translate(-50%, -50%) rotate(22deg) translateX(270%); } }
 /* 白い舞台：霞は 1 周 48 秒でゆっくり巡りながら息をする。光の粒は、ふっと灯って消える */
 @keyframes gx-haze { from { transform: translate(-50%, -50%) rotate(0deg) scale(1); } 50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.08); } to { transform: translate(-50%, -50%) rotate(360deg) scale(1); } }
 @keyframes gx-mote { 0%, 100% { transform: scale(0.2); opacity: 0; } 18% { transform: scale(1); opacity: 1; } 42% { transform: scale(0.35); opacity: 0; } }

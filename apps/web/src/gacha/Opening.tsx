@@ -330,6 +330,8 @@ export function Opening({
   const bigOn = big && (hit === "present" || hit === "shrink" || hit === "settle");
   // ★5 を引いたら、白が画面を覆ったところから舞台の地を白にし、5 枚の並びまでそのまま（スキップしたときも）
   const lux = big && (hit === "hold" || bigOn || hit === "shown");
+  // 白い舞台の霞と光の粒は、大きいカードを舞台に戻してから（大きいカードの後ろで動かすと、見えないのに重くなる）
+  const luxFx = big && (hit === "settle" || hit === "shown");
   // ★5 の画面いっぱいのカードを縮めた先：舞台のカード（真ん中から 10px 上。.gx-stage の translateY）
   const toW = CARD_W * scale;
   const toH = toW / CARD_RATIO;
@@ -344,7 +346,7 @@ export function Opening({
       aria-label="パックを開ける"
     >
       <div className="gx-lux" aria-hidden="true">
-        {lux && (
+        {luxFx && (
           <>
             <span className="gx-lux-haze" />
             <span className="gx-lux-motes">
