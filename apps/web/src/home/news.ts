@@ -12,6 +12,12 @@ export interface NewsItem {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: "2026-10-28-gacha5",
+    date: "10/28",
+    tag: "更新",
+    title: "ガチャで★5が出たときの光り方と、そのあとの画面が変わりました。表示も軽くなりました",
+  },
+  {
     id: "2026-10-27-music3",
     date: "10/27",
     tag: "更新",
