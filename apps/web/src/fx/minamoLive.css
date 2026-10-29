@@ -10,18 +10,20 @@
 .ml-up > .mini { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; animation: none; box-shadow: 0 20px 50px -14px #000, 0 0 40px -8px #5cc8f066; z-index: 1; }
 /* 演出の間はスタッツ・キーワードを出さない（カードが浮くときに消え、枠へ戻るときに戻る） */
 .ml-up .mini-stats, .ml-up .mini-kws { opacity: var(--ml-st, 1); }
+/* 写しの中に足す絵と札は、カードの「.mini > * { position: relative }」（app.css。あとから読み込まれる）に負けないよう .ml-up を付けて強くする。
+   負けると絵がカードの段（グリッド）の 1 つに押し込まれ、上半分が出なくなる */
 /* 水だけの背景（絵の上に重ねて、ミナモが消えたように見せる）。下は効果の帯の黒 */
-.ml-bg { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, #000a 100%), var(--ml-bg) center 30% / cover; opacity: 0; }
+.ml-up .ml-bg { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, #000a 100%), var(--ml-bg) center 30% / cover; opacity: 0; }
 /* カードの中のミナモ（切り抜き）。カードの絵と同じ向き・同じ切り方で、切り抜き全体（顔・手・髪）をそのまま見せる。
    上の縁の外から下りてきて、絵と同じ位置に止まる。カードの枠の外には映らない */
-.ml-subj {
+.ml-up .ml-subj {
   position: absolute; inset: 0; background: var(--ml-subject) center 30% / cover no-repeat;
   transform: translateY(-106%); will-change: transform; filter: drop-shadow(0 4px 8px #0008);
 }
 
 /* 名前（カード面のミナモの名前札と同じ形：白い丸い札に、水色とピンクのグラデーションの丸ゴシック）。顔を出したときにポンと出る。
    カードの写しは transform で拡大しているので、文字の大きさは拡大率（--ml-k）で割って 20px 相当にする */
-.ml-name {
+.ml-up .ml-name {
   position: absolute; left: 50%; bottom: 9%; z-index: 2; white-space: nowrap; opacity: 0;
   display: flex; align-items: baseline; gap: 0.5em;
   transform: translate(-50%, 0) scale(0); padding: 0.38em 1.1em 0.32em; border-radius: 2em;
