@@ -14,3 +14,5 @@ apps/web/android/
 # Claude Code の作業机と個人の設定（.claude/settings.json は共有する）
 .claude/*
 !.claude/settings.json
+# SNS に出す動画の書き出し先（pnpm promo:video）
+sns/

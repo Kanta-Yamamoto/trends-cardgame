@@ -9,5 +9,8 @@ onlyBuiltDependencies:
   - "@swc/core"
   - "esbuild"
   - "prisma"
+# ffmpeg の本体は CI・Docker で落とさない。使うときに tools/promo-video.mjs が取りに行く
+ignoredBuiltDependencies:
+  - "ffmpeg-static"
 # 公開されてから3日（4320 分）たっていない版は入れない（乗っ取られた版はたいてい数時間〜1日で見つかって消されるため）
 minimumReleaseAge: 4320

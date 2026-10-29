@@ -1,0 +1,19 @@
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+.promo {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(60% 45% at 50% 48%, rgba(120, 200, 255, 0.35), transparent 70%),
+    linear-gradient(180deg, #0b1f45 0%, #071430 100%);
+}
+.promo-card {
+  width: 68%;
+}
