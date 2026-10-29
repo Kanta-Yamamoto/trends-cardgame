@@ -264,7 +264,7 @@ async function showDarkFalls(events: GameEvent[]) {
 }
 /**
  * 演出を見せてから state を進める操作（差し出しは、選ばれたキャラクターが糸で引き抜かれるのを見せる）。
- * 攻撃は、倒れたキャラクターの【破壊されたとき】などでキャラクターが出るときだけ（倒れて消えてから出すため）
+ * 攻撃は、倒れたキャラクターの【破壊されたとき】が働く・キャラクターが出るときだけ（倒れてから順に見せるため）
  */
 const hasEffects = (a: Action, events: GameEvent[]) =>
   isPlace(a) ||
@@ -272,7 +272,8 @@ const hasEffects = (a: Action, events: GameEvent[]) =>
   a.type === "endTurn" ||
   a.type === "sacrifice" ||
   a.type === "darkFall" ||
-  (a.type === "attack" && events.some((e) => e.type === "summoned"));
+  // 攻撃：【破壊されたとき】が働いた（抜け殻から魂が抜け出る）・効果でキャラクターが出たときは、攻撃のあとに順に見せる
+  (a.type === "attack" && events.some((e) => e.type === "summoned" || e.type === "deathTriggered"));
 
 export const useGame = create<GameStore>((set, get) => {
   const appendLog = (events: GameEvent[], fx = false) => {

@@ -790,6 +790,10 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 
 /* 投稿・登場時の効果：飛ぶ光と文字の札 */
 .fx-orb { position: fixed; border-radius: 50%; background: radial-gradient(circle, #fff 0 25%, var(--c) 55%, transparent 72%); box-shadow: 0 0 18px 6px var(--c); }
+/* 【破壊されたとき】の魂（fx/deathSoul.ts）：白 × 淡いミント。闇堕ちの紫・黒とは分ける */
+.fx-mote, .fx-soul { position: fixed; left: 0; top: 0; border-radius: 50%; pointer-events: none; mix-blend-mode: screen; }
+.fx-mote { background: radial-gradient(circle, #fff 0 14%, #d6fff0e6 26%, #8ceccc55 50%, transparent 70%); }
+.fx-soul { background: radial-gradient(circle, #fff 0 15%, #d6fff0eb 24%, #8ceccc52 48%, transparent 70%); }
 .fx-label { position: fixed; padding: 3px 10px; border-radius: 99px; font: 900 15px/1.2 var(--f-ui); color: #0b1018; background: var(--c); box-shadow: 0 0 16px var(--c), 0 3px 8px #000a; white-space: nowrap; }
 .foe-reveal.mine { animation-duration: 1s; }
 .foe-reveal.mine .fr-label { background: #2f7fd8; }
@@ -1163,6 +1167,9 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .mini.on-field .mini-stats { grid-row: 3; padding: 0 4px 4px; }
 .mini.on-field .mini-atk, .mini.on-field .mini-hp { min-width: 21px; height: 21px; font-size: 12px; }
 .mini.on-field .mini-kw { font-size: 9px; padding: 1px 5px; }
+/* 【破壊されたとき】を持つキャラクターの印：攻撃力と体力の間に、白いドクロ（10月29日。光るのは fx/deathSoul.ts） */
+.mini-skull { position: absolute; left: 50%; bottom: 4px; width: 19px; height: 19px; margin-left: -9.5px; border-radius: 50%; display: grid; place-items: center; background: #0b1018e6; color: #f4fffb; box-shadow: 0 0 0 1.5px #ffffffc8; pointer-events: none; }
+.mini-skull svg { width: 13px; height: 13px; display: block; }
 .mini.on-field.is-dark::before { background: linear-gradient(180deg, #2a0d3a22 40%, #07020bcc 100%); }
 
 /* 闇のフィールド：闇堕ちを持つカードが倒されると「予兆」（持ち主の側から紫に染まる）、闇堕ちの姿が場にいる間は「闇」 */

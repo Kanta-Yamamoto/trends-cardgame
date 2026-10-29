@@ -154,6 +154,7 @@ export function viewUnit(state: GameState, _owner: PlayerId, unit: Unit, catalog
     maxHp,
     keywords,
     guard: keywords.includes("ガード"),
+    deathEffect: effectsOf(unit, catalog).some((e) => triggerOf(e) === "death"),
     exposed: !!unit.exposed,
     asleep: state.turn <= unit.boundUntil,
   };
@@ -576,7 +577,7 @@ function resolveDeaths(
   const destroyed: string[] = [];
   // 「破壊されたとき」の効果で、さらに倒れることがある。落ち着くまで繰り返す
   for (let round = 0; round < 10; round++) {
-    const deaths: { owner: PlayerId; effects: CardEffect[] }[] = [];
+    const deaths: { owner: PlayerId; slot: number; cardId: string; effects: CardEffect[] }[] = [];
     let removed = false;
     for (const owner of ["p1", "p2"] as const) {
       const p = state.players[owner];
@@ -609,13 +610,18 @@ function resolveDeaths(
             emit({ type: "darkOmen", player: owner, slot, cardId: u.cardId });
           }
         }
-        if (onDeath.length) deaths.push({ owner, effects: onDeath });
+        if (onDeath.length) deaths.push({ owner, slot, cardId: u.cardId, effects: onDeath });
       });
     }
     if (!removed) break;
-    for (const d of deaths)
+    for (const d of deaths) {
+      // 画面が「どのカードの【破壊されたとき】か」を見せるための印。このあとに、その効果の出来事が size 個続く
+      const fx: GameEvent[] = [];
       for (const e of d.effects)
-        runEffect(e, { state, player: d.owner, catalog, config, emit, playedBefore: 0 });
+        runEffect(e, { state, player: d.owner, catalog, config, emit: (x) => fx.push(x), playedBefore: 0 });
+      emit({ type: "deathTriggered", player: d.owner, slot: d.slot, cardId: d.cardId, size: fx.length });
+      for (const x of fx) emit(x);
+    }
   }
   return destroyed;
 }
