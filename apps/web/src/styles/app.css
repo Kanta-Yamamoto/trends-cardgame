@@ -401,17 +401,15 @@ button.pb-main:disabled { cursor: default; }
 button.pile { cursor: pointer; }
 button.pile:disabled { cursor: default; }
 .pile-count { position: absolute; top: -6px; right: 0; min-width: 22px; height: 20px; padding: 0 5px; border-radius: 99px; display: grid; place-items: center; font: 800 12px/1 var(--f-mark); color: var(--night); background: var(--text); box-shadow: 0 2px 6px #000a; z-index: 1; font-variant-numeric: tabular-nums; }
+/* カードの裏面：闇堕ちの色（紫黒の地に火の粉、真ん中に紫の雫）。裏向きになるのは闇堕ちだけなので、山札もこの面にそろえる */
 .cardback, .fx-cardback {
-  border-radius: 6px; border: 1.5px solid #e6c97a;
-  background:
-    radial-gradient(circle at 50% 50%, #f2cf7a 0 9%, transparent 10%),
-    radial-gradient(circle at 50% 50%, transparent 0 22%, #f2cf7a55 23% 25%, transparent 26%),
-    repeating-linear-gradient(45deg, #1b2a48 0 6px, #16223b 6px 12px);
+  border-radius: 6px; border: 1px solid #d6a8ffaa;
+  background: #22092f url("/assets/cardback.svg") center / 100% 100% no-repeat;
 }
 .cardback { width: 34px; aspect-ratio: 63 / 88; display: block; }
-.cardback.depth-1 { box-shadow: 2px 2px 0 #0d1526, 2px 2px 0 1px #e6c97a55; }
-.cardback.depth-2 { box-shadow: 2px 2px 0 #0d1526, 2px 2px 0 1px #e6c97a55, 4px 4px 0 #0d1526, 4px 4px 0 1px #e6c97a44; }
-.cardback.depth-3 { box-shadow: 2px 2px 0 #0d1526, 2px 2px 0 1px #e6c97a55, 4px 4px 0 #0d1526, 4px 4px 0 1px #e6c97a44, 6px 6px 0 #0d1526, 6px 6px 0 1px #e6c97a33; }
+.cardback.depth-1 { box-shadow: 2px 2px 0 #07010b, 2px 2px 0 1px #d6a8ff55; }
+.cardback.depth-2 { box-shadow: 2px 2px 0 #07010b, 2px 2px 0 1px #d6a8ff55, 4px 4px 0 #07010b, 4px 4px 0 1px #d6a8ff44; }
+.cardback.depth-3 { box-shadow: 2px 2px 0 #07010b, 2px 2px 0 1px #d6a8ff55, 4px 4px 0 #07010b, 4px 4px 0 1px #d6a8ff44, 6px 6px 0 #07010b, 6px 6px 0 1px #d6a8ff33; }
 .cardback.empty { opacity: 0.2; }
 .trash-top, .trash-empty { width: 34px; aspect-ratio: 63 / 88; border-radius: 6px; display: block; background-size: cover; background-position: center 30%; filter: grayscale(0.6) brightness(0.7); border: 1px solid #ffffff40; overflow: hidden; }
 .trash-top i { display: block; font-style: normal; font-size: 8px; font-weight: 800; color: #fff; padding: 3px; text-shadow: 0 1px 2px #000; line-height: 1.2; }
@@ -1217,12 +1215,11 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .omen-card {
   position: absolute; inset: -1.5px; border-radius: inherit; overflow: hidden;
   border: 1.5px solid #d6a8ff;
-  background:
-    radial-gradient(circle at 50% 50%, transparent 0 20%, #d6a8ff55 21% 23%, transparent 24%),
-    repeating-linear-gradient(45deg, #3b1258 0 6px, #2a0d3f 6px 12px);
+  background: #22092f url("/assets/cardback-omen.svg") center / 100% 100% no-repeat;
   box-shadow: 0 0 12px #b06bff77, inset 0 0 12px #000a;
 }
-.omen-card .omen-flame { bottom: 22%; height: 52%; }
+/* 炎は裏面の輪の真ん中に（山札の裏面の雫と同じ位置） */
+.omen-card .omen-flame { bottom: 35%; height: 34%; }
 .slot.omen-ready .omen-card { animation: omen-ready 1.6s ease-in-out infinite; }
 @keyframes omen-ready { 50% { box-shadow: 0 0 0 2px #f1dcff, 0 0 22px #b06bffcc, inset 0 0 12px #000a; } }
 .dark-confirm .end-confirm-body { --text: #f3eaff; --muted: #cdb4e6; --line: #ffffff22; color: var(--text); background: #1d0f2bf5; border-color: #b06bff99; box-shadow: 0 20px 50px #000c, 0 0 30px #b06bff55; }

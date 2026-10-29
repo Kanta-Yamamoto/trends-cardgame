@@ -19,10 +19,13 @@
     "db:migrate": "pnpm --filter @trends/api db:migrate",
     "db:seed": "pnpm --filter @trends/api db:seed",
     "db:generate": "pnpm --filter @trends/api db:generate",
-    "logs:cpu": "node tools/cpu-logs.mjs"
+    "logs:cpu": "node tools/cpu-logs.mjs",
+    "promo:video": "node tools/promo-video.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
+    "ffmpeg-static": "5.2.0",
+    "playwright-core": "1.57.0",
     "turbo": "^2.11.8",
     "typescript": "^5.9.3"
   }

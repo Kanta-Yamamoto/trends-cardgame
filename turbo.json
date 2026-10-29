@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalPassThroughEnv": ["TRENDS_URL", "TRENDS_INVITE"],
+  "globalPassThroughEnv": ["TRENDS_URL", "TRENDS_INVITE", "TRENDS_WEB"],
   "tasks": {
     "build": { "dependsOn": ["^build"], "outputs": ["dist/**"] },
     "typecheck": { "dependsOn": ["^build"] },
