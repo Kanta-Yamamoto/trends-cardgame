@@ -1,9 +1,10 @@
-import type { AttackTarget, GameEvent, GameState, PlayerId, RuleCard, Unit } from "@trends/game-core";
+import type { AttackTarget, GameEvent, GameState, PlayerId, RuleCard } from "@trends/game-core";
 import { viewUnit, withRushBoost } from "@trends/game-core";
 import { gsap } from "gsap";
 import { frameRect } from "../frame";
 import { blackFlash } from "../fx/blackFlash";
 import { buzzPower } from "../fx/buzzPower";
+import { riseSoul, SOUL, soulFly, soulSize } from "../fx/deathSoul";
 import { dissolve } from "../fx/dissolve";
 import { healMist } from "../fx/healMist";
 import { impact } from "../fx/impact";
@@ -314,8 +315,11 @@ export async function animateAttack(
   const dv = def ? viewUnit(game, foeId, def, catalog) : null;
   const dmg = av.attack;
   const counter = dv?.attack ?? 0;
-  /** 倒れたら墓地へ行く（闇堕ちは、あとでプレイヤーが選んだときだけ） */
-  const goesToTrash = (_u: Unit) => true;
+  /**
+   * 倒れたら墓地へ行く（闇堕ちは、あとでプレイヤーが選んだときだけ）。
+   * 【破壊されたとき】を持つキャラクターは送らない（抜け殻になって残り、魂が抜け出てから墓地へ。fx/deathSoul.ts）
+   */
+  const goesToTrash = (v: { deathEffect: boolean }) => !v.deathEffect;
 
   const a = atkEl.getBoundingClientRect();
   const d = defEl.getBoundingClientRect();
@@ -378,8 +382,8 @@ export async function animateAttack(
   atkEl.style.zIndex = "";
 
   // 倒れるものはトラッシュへ
-  if (def && dv && dmg >= dv.hp && goesToTrash(def)) void toTrash(defEl, foeId);
-  if (def && counter >= av.hp && goesToTrash(atk)) void toTrash(atkEl, player);
+  if (def && dv && dmg >= dv.hp && goesToTrash(dv)) void toTrash(defEl, foeId);
+  if (def && counter >= av.hp && goesToTrash(av)) void toTrash(atkEl, player);
   await wait(60);
 }
 
@@ -648,11 +652,14 @@ export async function summonCue(
   from: HTMLElement | Point | null,
   slot: HTMLElement | null,
   color: string,
+  /** 【破壊されたとき】に出す：魂（fx/deathSoul.ts）が尾を引いて枠へ飛ぶ */
+  soul = false,
 ): Promise<void> {
   if (!slot || !canAnimate() || reduced()) return;
   const to = center(slot.getBoundingClientRect());
   const source = from instanceof HTMLElement ? center(from.getBoundingClientRect()) : from;
-  if (source) await fly(source, to, color);
+  if (source && soul) await soulFly(layer(), source, to, soulSize(slot));
+  else if (source) await fly(source, to, color);
   // 枠に光が集まる（大きな輪が、枠の大きさまで縮んで光る）
   const ring = document.createElement("div");
   ring.className = "fx-burst";
@@ -715,10 +722,19 @@ export async function animateEffects(
     skip?: ReadonlySet<number>;
     /** いなくなるキャラクターが消え終わるまで待つ（このあとに、効果で出るキャラクターを置くとき） */
     untilGone?: boolean;
+    /** このすぐあとに【破壊されたとき】の魂が抜け出る：消えるのを見せ切るまで待たない */
+    soulNext?: boolean;
+    /**
+     * 【破壊されたとき】の効果：破壊されたキャラクター（el。抜け殻になってその枠に残っている）から魂が抜け出て、効果の先へ飛ぶ。
+     * from は抜け殻が見つからないときの出どころ（いた枠）。当たったら、抜け殻を墓地へ送る。魂の出たあとの点を onRise に渡す
+     */
+    soul?: { el: HTMLElement | null; owner: PlayerId; onRise?: (at: Point | null) => void };
   },
 ): Promise<void> {
   if (!canAnimate() || reduced()) return;
-  const source = opts.from instanceof HTMLElement ? center(opts.from.getBoundingClientRect()) : opts.from;
+  const fromPoint = opts.from instanceof HTMLElement ? center(opts.from.getBoundingClientRect()) : opts.from;
+  const source = opts.soul ? await riseSoul(layer(), opts.soul.el, fromPoint) : fromPoint;
+  opts.soul?.onRise?.(source);
   const unitEl = (p: PlayerId, slot: number) => {
     const u = shown.players[p].field[slot];
     return u ? q(`[data-uid="${u.uid}"]`) : null;
@@ -835,6 +851,15 @@ export async function animateEffects(
         });
         break;
       }
+      case "drew":
+        // 【破壊されたとき】に引く：魂が山札へ飛ぶ（引いたカードが手札へ来るのは、このあとのいつもの見せ方）
+        if (opts.soul && e.player === opts.soul.owner)
+          hits.push({
+            el: q(`[data-pile="deck-${e.player}"]`),
+            color: SOUL.mid,
+            land: (el) => glow(el, SOUL.glow),
+          });
+        break;
       case "stolen":
         hits.push({
           el: unitEl(e.player === "p1" ? "p2" : "p1", e.from),
@@ -853,14 +878,22 @@ export async function animateEffects(
   const flights = hits.map(async (h, i) => {
     await wait(i * gap);
     if (!h.el) return;
-    if (source) await fly(source, center(h.el.getBoundingClientRect()), h.color);
+    const to = center(h.el.getBoundingClientRect());
+    if (source && opts.soul) await soulFly(layer(), source, to, soulSize(opts.soul.el));
+    else if (source) await fly(source, to, h.color);
     h.land(h.el);
   });
   await Promise.all(flights);
+  // 【破壊されたとき】の抜け殻は、当たったらすぐに墓地へ（ほかに倒れたキャラクターは、当たったところを見せてから）
+  if (opts.soul?.el) {
+    const shell = opts.soul.el;
+    const owner = opts.soul.owner;
+    void wait(hits.length > 0 ? 140 : 0).then(() => toTrash(shell, owner, "trash", true));
+  }
   // 当たったところを少し見せてから
   if (hits.length > 0) await wait(520);
   const gone = retireUnits(shown, events, next, opts.skip);
-  await (opts.untilGone ? gone : wait(hits.length > 0 ? 460 : 0));
+  await (opts.untilGone ? gone : wait(hits.length > 0 && !opts.soulNext ? 460 : 0));
 }
 
 /**
@@ -921,8 +954,12 @@ export async function animateJudge(
     if (e.type !== "damaged") return [];
     const u = shown.players[e.player].field[e.slot];
     const el = u && u.uid !== arbiterUid ? q(`[data-uid="${u.uid}"]`) : null;
-    return u && el ? [{ el, uid: u.uid, owner: e.player }] : [];
+    return u && el ? [{ el, uid: u.uid, owner: e.player, slot: e.slot }] : [];
   });
+  // 【破壊されたとき】が働く対象は、ここでは送らない（抜け殻になって残り、魂が抜け出てから墓地へ）
+  const shells = new Set(
+    after.flatMap((e) => (e.type === "deathTriggered" ? [`${e.player}:${e.slot}`] : [])),
+  );
   if (!board || targets.length === 0) {
     void retireUnits(shown, events, next);
     return;
@@ -935,7 +972,7 @@ export async function animateJudge(
   await thrust(board, arbiter, targets, (uid) => {
     // その対象を、いつもの消え方で墓地へ（残る対象はそのまま）
     const t = targets.find((x) => x.uid === uid);
-    if (t && !alive.has(uid)) {
+    if (t && !alive.has(uid) && !shells.has(`${t.owner}:${t.slot}`)) {
       // 抜け殻が消えたあと、続きの効果を見せている間に元のカードが見えないように隠す
       void toTrash(t.el, t.owner, "trash", true);
     }

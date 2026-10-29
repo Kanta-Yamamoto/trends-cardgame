@@ -45,6 +45,7 @@ import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { frameRect, frameSize } from "../frame";
 import { COLLAGE_PASTE, collagePaste } from "../fx/collagePaste";
+import { SOUL } from "../fx/deathSoul";
 import { fieldEntry, landed } from "../fx/fieldEntry";
 import { GOD_DESCENT_CARDS, godDescent } from "../fx/godDescent";
 import { IDOL_LIVE, idolLive } from "../fx/idolLive";
@@ -127,21 +128,27 @@ function withoutGone(cur: GameState, events: GameEvent[], alive: ReadonlySet<num
   return out;
 }
 
-/** そのカードが【破壊されたとき】に出すキャラクターの数（闇の姿の効果も見る） */
-const summonsOnDeath = (from: string) => {
-  const c = CATALOG[from];
-  return [...(c?.effects ?? []), ...(c?.dark?.effects ?? [])].reduce(
-    (n, f) => (f.on === "death" && f.do === "summon" ? n + f.count : n),
-    0,
-  );
-};
+/** その枠のキャラクターを除いた state */
+function withoutSlot(cur: GameState, player: PlayerId, slot: number): GameState {
+  const p = cur.players[player];
+  return {
+    ...cur,
+    players: { ...cur.players, [player]: { ...p, field: p.field.map((x, i) => (i === slot ? null : x)) } },
+  };
+}
+
+const slotEl = (player: PlayerId, slot: number) =>
+  document.querySelector<HTMLElement>(`[data-slot="${player}:${slot}"]`);
 
 /**
- * 出来事を、効果でキャラクターが出たところ（summoned）で区切って、前から順に見せる。
+ * 出来事を、効果でキャラクターが出たところ（summoned）と、【破壊されたとき】が働いたところ（deathTriggered）で区切って、前から順に見せる。
  * 区切りの前の出来事（出たこと・効果が当たる・破壊されたキャラクターが消える）を見せ終えてから、
  * 出す枠への合図（summonCue）のあとに、出たキャラクターを1体ずつ置く。
- * だから【場に出たとき】に出すものは出したキャラクターの着地のあと、【破壊されたとき】に出すものは破壊されて消えたあとに出る。
- * 合図は from（効果の出どころ）から飛ばし、【破壊されたとき】に出すものは、破壊されたキャラクターがいた所から飛ばす。
+ * だから【場に出たとき】に出すものは出したキャラクターの着地のあとに出る。合図は from（効果の出どころ）から飛ばす。
+ *
+ * 【破壊されたとき】（10月29日）：働くキャラクターは、破壊されても墓地へ送らず、抜け殻にして枠に残す。
+ * 相手と一緒に倒れたら、相手が消え始めるのと同時に、抜け殻から魂が抜け出て効果の先へ飛び（fx/deathSoul.ts）、当たってから抜け殻が墓地へ行く。
+ * 【破壊されたとき】に出すキャラクターは、抜け殻が消えたあとに、魂のいた所から合図を飛ばして置く。
  * 見せ終えた state を返す
  */
 async function presentPhased(
@@ -154,49 +161,31 @@ async function presentPhased(
   const alive = new Set(
     (["p1", "p2"] as const).flatMap((p) => next.players[p].field.flatMap((u) => (u ? [u.uid] : []))),
   );
-  let cur = shown;
-  // 直前に破壊されたキャラクターのいた所と、【破壊されたとき】に出す残りの数（合図の出どころ。破壊された順に出る）
-  let fell: { player: PlayerId; left: number; at: Point }[] = [];
-  let i = 0;
-  while (i < events.length) {
-    if (events[i]?.type !== "summoned") {
-      let j = i;
-      while (j < events.length && events[j]?.type !== "summoned") j++;
-      const part = events.slice(i, j);
-      const after = withoutGone(cur, part, alive);
-      fell = part.flatMap((e) => {
-        if (e.type !== "destroyed") return [];
-        const left = summonsOnDeath(e.cardId);
-        const u = cur.players[e.player].field[e.slot];
-        const el = u ? document.querySelector<HTMLElement>(`[data-uid="${u.uid}"]`) : null;
-        if (!el || left === 0) return [];
-        const r = el.getBoundingClientRect();
-        return [{ player: e.player, left, at: { x: r.left + r.width / 2, y: r.top + r.height / 2 } }];
-      });
-      const more = j < events.length;
-      if (hasVisibleEffects(part)) await animateEffects(cur, part, after, { ...opts, untilGone: more });
-      else if (more) await retireUnits(cur, part, after, opts.skip);
-      else void retireUnits(cur, part, after, opts.skip);
-      // このあとにキャラクターが出るなら、いなくなったキャラクターを画面から除いて、空いた枠を見せる
-      if (more && after !== cur) {
-        cur = after;
-        show(cur);
-        await gwait(120);
+  // 抜け殻になる破壊（このあとに、そのキャラクターの【破壊されたとき】が働く）の出来事の位置
+  const shellAt = new Set<number>();
+  events.forEach((e, k) => {
+    if (e.type !== "deathTriggered") return;
+    for (let j = k - 1; j >= 0; j--) {
+      const d = events[j];
+      if (d?.type === "destroyed" && d.player === e.player && d.slot === e.slot && d.cardId === e.cardId) {
+        shellAt.add(j);
+        break;
       }
-      i = j;
-      continue;
     }
-    const e = events[i++] as Extract<GameEvent, { type: "summoned" }>;
+  });
+  let cur = shown;
+
+  /** 出たキャラクターを、合図のあとに置く */
+  const place = async (
+    e: Extract<GameEvent, { type: "summoned" }>,
+    from: HTMLElement | Point | null,
+    tint: string,
+    soul = false,
+  ) => {
     const unit = next.players[e.player].field[e.slot];
     // 同じ操作のうちに倒れたなど、最後の state にいないものは置かない（あとの演出に任せる）
-    if (!unit || unit.cardId !== e.cardId || cur.players[e.player].field[e.slot]) continue;
-    const source = fell.find((f) => f.player === e.player && f.left > 0);
-    if (source) source.left--;
-    await summonCue(
-      source?.at ?? opts.from,
-      document.querySelector<HTMLElement>(`[data-slot="${e.player}:${e.slot}"]`),
-      opts.tint ?? "#fff3c4",
-    );
+    if (!unit || unit.cardId !== e.cardId || cur.players[e.player].field[e.slot]) return;
+    await summonCue(from, slotEl(e.player, e.slot), tint, soul);
     const p = cur.players[e.player];
     cur = {
       ...cur,
@@ -206,7 +195,76 @@ async function presentPhased(
       },
     };
     show(cur);
-    await gwait(280);
+    await gwait(soul ? 0 : 280);
+  };
+
+  let i = 0;
+  while (i < events.length) {
+    const head = events[i];
+    if (head?.type === "deathTriggered") {
+      // 【破壊されたとき】：抜け殻から魂が抜け出て、効果の先へ飛ぶ
+      let end = i + 1 + head.size;
+      const group = events.slice(i + 1, end);
+      // 効果で倒れたキャラクター（すぐあとの破壊）も、当たったところを見せてから一緒に送る
+      while (events[end]?.type === "destroyed" && !shellAt.has(end)) end++;
+      const effects = [...group, ...events.slice(i + 1 + head.size, end)].filter(
+        (e) => e.type !== "summoned",
+      );
+      const summons = group.filter((e) => e.type === "summoned");
+      const unit = cur.players[head.player].field[head.slot];
+      const el = unit ? document.querySelector<HTMLElement>(`[data-uid="${unit.uid}"]`) : null;
+      const at = slotEl(head.player, head.slot)?.getBoundingClientRect();
+      let rose: Point | null = at ? { x: at.left + at.width / 2, y: at.top + at.height / 2 } : null;
+      let after = withoutGone(cur, effects, alive);
+      if (unit && after.players[head.player].field[head.slot]?.uid === unit.uid)
+        after = withoutSlot(after, head.player, head.slot);
+      await animateEffects(cur, effects, after, {
+        from: rose,
+        tint: SOUL.mid,
+        skip: opts.skip,
+        soul: { el, owner: head.player, onRise: (p) => (rose = p ?? rose) },
+      });
+      if (end < events.length || summons.length > 0) {
+        cur = after;
+        show(cur);
+      }
+      // 出すキャラクター：抜け殻が消えていく間に、魂がそのまま枠へ飛ぶ（2体なら少しずらして同時に）。着いた枠から置く
+      const from = rose;
+      await Promise.all(
+        summons.map(async (e, k) => {
+          if (e.type !== "summoned") return;
+          await gwait(k * 120);
+          await place(e, from, SOUL.mid, true);
+        }),
+      );
+      if (summons.length > 0) await gwait(280);
+      i = end;
+      continue;
+    }
+    if (head?.type !== "summoned") {
+      let j = i;
+      while (j < events.length && events[j]?.type !== "summoned" && events[j]?.type !== "deathTriggered") j++;
+      // 抜け殻になるキャラクターは、ここでは墓地へ送らない
+      const part = events.slice(i, j).filter((_, k) => !shellAt.has(i + k));
+      const after = withoutGone(cur, part, alive);
+      const more = j < events.length;
+      const summonNext = events[j]?.type === "summoned";
+      const soulNext = events[j]?.type === "deathTriggered";
+      if (hasVisibleEffects(part))
+        await animateEffects(cur, part, after, { ...opts, untilGone: summonNext, soulNext });
+      else if (summonNext) await retireUnits(cur, part, after, opts.skip);
+      else void retireUnits(cur, part, after, opts.skip);
+      // このあとにキャラクターが出る・魂が抜け出るなら、いなくなったキャラクターを画面から除いて、空いた枠を見せる
+      if (more && after !== cur) {
+        cur = after;
+        show(cur);
+        if (summonNext) await gwait(120);
+      }
+      i = j;
+      continue;
+    }
+    await place(head, opts.from, opts.tint ?? "#fff3c4");
+    i++;
   }
   return cur;
 }
@@ -233,6 +291,8 @@ function describe(e: GameEvent): string {
       return e.vanished
         ? `${who(e.player)}の ${nameOf(e.cardId)}（闇堕ちの姿）が消えた`
         : `${who(e.player)}の ${nameOf(e.cardId)} が破壊された`;
+    case "deathTriggered":
+      return `${who(e.player)}の ${nameOf(e.cardId)} の【破壊されたとき】が働いた`;
     case "darkOmen":
       return `${who(e.player)}の ${nameOf(e.cardId)} が破壊されて裏向きになった。破壊された次のターンから、${who(e.player)}のターンに闇堕ちの姿で出せる`;
     case "darkFall":
@@ -1373,8 +1433,8 @@ export function Board({
           const from = { x: f.left + f.width / 2, y: f.top + f.height / 2 };
           await presentPhased(shown, events, next, { from, tint }, show);
         } else if (a.type === "attack") {
-          // 攻撃で倒れて、【破壊されたとき】にキャラクターが出るとき（攻撃の演出は beforeAttack で見せ終えている）。
-          // 倒れたキャラクターが消え終わってから出す
+          // 攻撃で倒れて【破壊されたとき】が働く・キャラクターが出るとき（攻撃の演出は beforeAttack で見せ終えている）。
+          // 抜け殻から魂が抜け出て効果の先へ飛び、出すキャラクターは抜け殻が消えてから置く
           const atk = shown.players[a.player].field[a.from];
           const from = atk ? document.querySelector<HTMLElement>(`[data-uid="${atk.uid}"]`) : null;
           await presentPhased(shown, events, next, { from, tint: undefined }, show);

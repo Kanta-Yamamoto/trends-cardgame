@@ -523,6 +523,25 @@ describe("★5 の作り直し（ヒバナ・カグラ・陰謀論者・クサ�
     expect(s.players.p1.trash).toContain("burner");
     expect(s.players.p1.hand.length).toBeGreaterThan(hand);
   });
+  it("破壊されたとき：相打ちで両方が破壊されたあとに、どのカードの効果かの印（deathTriggered）、続けてその効果が出る", () => {
+    // p1 の f（1/1）が、相手の popper（1/1）と相打ち。popper の効果で p1 の wall に1ダメージ
+    let s = withFoe(["f", "wall"], ["popper"]);
+    s = play(s, 0, 0);
+    s = play(s, 0, 1);
+    s = end(end(s), "p2");
+    const r = hit(s, 0, 0);
+    const kinds = r.events.map((e) => e.type);
+    expect(kinds).toEqual(["battle", "destroyed", "destroyed", "deathTriggered", "damaged"]);
+    expect(r.events[3]).toEqual({ type: "deathTriggered", player: "p2", slot: 0, cardId: "popper", size: 1 });
+    expect(r.events[4]).toMatchObject({ player: "p1", slot: 1, amount: 1 });
+  });
+  it("場のキャラクターが【破壊されたとき】を持つか（沈黙なら持たない）", () => {
+    let s = withFoe(["note"], ["popper", "f"]);
+    expect(viewUnit(s, "p2", s.players.p2.field[0] as Unit, catalog).deathEffect).toBe(true);
+    expect(viewUnit(s, "p2", s.players.p2.field[1] as Unit, catalog).deathEffect).toBe(false);
+    s = cast(s, 0, { side: "enemy", slot: 0 });
+    expect(viewUnit(s, "p2", s.players.p2.field[0] as Unit, catalog).deathEffect).toBe(false);
+  });
   it("クサハミ：場に出たあとに自分の草が破壊されても、攻撃力は増えない（場に出たときに確定した数字のまま）", () => {
     let s = game(["eater", "cat"]);
     s = play(s, 0, 0);

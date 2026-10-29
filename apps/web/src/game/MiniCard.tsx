@@ -181,7 +181,28 @@ export function MiniCard({
           </span>
         </span>
       )}
+      {/* 【破壊されたとき】を持つキャラクターには、攻撃力と体力の間にドクロの印（倒すと何か起きると分かるように） */}
+      {onField && view?.deathEffect && (
+        <span className="mini-skull" title="【破壊されたとき】">
+          <SkullIcon />
+        </span>
+      )}
       {children}
     </button>
+  );
+}
+
+/** ドクロの印（目と鼻は印の地の色でくり抜く） */
+function SkullIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M12 2.2c-4.9 0-8.4 3.5-8.4 8 0 2.6 1.1 4.5 2.9 5.7v2.9c0 .6.4 1 1 1h1.6v-2.1h1.6v2.1h2.6v-2.1h1.6v2.1h1.6c.6 0 1-.4 1-1v-2.9c1.8-1.2 2.9-3.1 2.9-5.7 0-4.5-3.5-8-8.4-8z"
+      />
+      <circle cx="8.7" cy="10.7" r="2.2" fill="#0b1018" />
+      <circle cx="15.3" cy="10.7" r="2.2" fill="#0b1018" />
+      <path fill="#0b1018" d="M12 13.2l-1.3 2.3h2.6z" />
+    </svg>
   );
 }
