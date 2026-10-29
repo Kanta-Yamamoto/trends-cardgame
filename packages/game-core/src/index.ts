@@ -30,6 +30,7 @@ export {
   createGame,
   damageCutOn,
   darkFallSlots,
+  darkOmenAwake,
   darkOmens,
   delayedDamageOn,
   effectiveCost,

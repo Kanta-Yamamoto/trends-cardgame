@@ -11,6 +11,7 @@ import {
   createGame,
   damageCutOn,
   darkFallSlots,
+  darkOmenAwake,
   darkOmens,
   delayedDamageOn,
   effectiveCost,
@@ -22,7 +23,7 @@ import {
   withRushBoost,
 } from "./engine";
 import { planTurnSearch } from "./search";
-import { type Action, type GameState, type RuleCard, RuleError, type Unit } from "./types";
+import { type Action, type DarkOmen, type GameState, type RuleCard, RuleError, type Unit } from "./types";
 
 type Extra = Partial<RuleCard>;
 const icon = (id: string, cost: number, attack: number, hp: number, extra: Extra = {}): RuleCard => ({
@@ -879,7 +880,9 @@ describe("バトルと闇堕ち", () => {
     expect(r.events).toContainEqual({ type: "darkOmen", player: "p2", slot: 0, cardId: "ren" });
     expect(r.state.players.p2.field[0]).toBeNull();
     expect(r.state.players.p2.trash).toContain("ren");
-    expect(darkOmens(r.state, "p2")).toEqual([{ cardId: "ren", slot: 0, turn: r.state.turn }]);
+    expect(darkOmens(r.state, "p2")).toEqual([
+      { cardId: "ren", slot: 0, turn: r.state.turn, ownTurns: r.state.players.p2.turnsTaken },
+    ]);
   });
   it("ライフが0になったら勝ち、以降は操作できない", () => {
     let s = play(game(["twin"]), 0, 0);
@@ -1276,7 +1279,9 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     let s = play(game(["ren"]), 0, 3);
     s = killOnFoeTurn(s, 3);
     expect(s.players.p1.field[3]).toBeNull();
-    expect(darkOmens(s, "p1")).toEqual([{ cardId: "ren", slot: 3, turn: s.turn }]);
+    expect(darkOmens(s, "p1")).toEqual([
+      { cardId: "ren", slot: 3, turn: s.turn, ownTurns: s.players.p1.turnsTaken },
+    ]);
     // 自分のターンが来ても、自動では戻らない（10月26日に「自動で戻る」から変更）
     const started = run(s, { type: "endTurn", player: "p2" });
     expect(started.events.map((e) => e.type)).not.toContain("darkFall");
@@ -1329,6 +1334,39 @@ describe("闇堕ち（破壊された次の自分のターンの始めに、自�
     expect(s.players.p1.field[0]).toBeNull();
     expect(darkFallSlots(s, "p1")).toEqual([0]);
     expect(fall(s, 0).players.p1.field[0]?.dark).toBe(true);
+  });
+
+  it("裏向きのカードは、持ち主のターンが始まったら闇堕ちできるようになり、相手のターンでもそのまま", () => {
+    const awake = (s: GameState) => darkOmenAwake(s, "p1", darkOmens(s, "p1")[0] as DarkOmen);
+    // 自分のターンに破壊された：そのターンと相手のターンはまだ。次の自分のターンから
+    let s = withFoe(["ren"], ["big"]);
+    s = play(s, 0, 0);
+    const mine = s.players.p1.field[0] as Unit;
+    s.players.p1.field[0] = { ...mine, canAttack: true, attacksLeft: 1 };
+    s = hit(s, 0, 0).state;
+    expect(awake(s)).toBe(false);
+    s = end(s);
+    expect(awake(s)).toBe(false);
+    s = end(s, "p2");
+    expect(awake(s)).toBe(true);
+    // 闇堕ちさせずにターンを終えても、相手のターンのあいだ闇堕ちできる印のまま（押せるのは自分のターンだけ）
+    s = end(s);
+    expect(awake(s)).toBe(true);
+    expect(darkFallSlots(s, "p1")).toEqual([]);
+    // 相手のターンに破壊された：次の自分のターンから
+    let t = play(game(["ren"]), 0, 0);
+    t = killOnFoeTurn(t, 0);
+    expect(awake(t)).toBe(false);
+    t = end(t, "p2");
+    expect(awake(t)).toBe(true);
+  });
+
+  it("前の版の裏向きのカード（持ち主のターンの数が無い）も、手番の交代から闇堕ちできるか分かる", () => {
+    const s = game([]);
+    const old = { cardId: "ren", slot: 0, turn: s.turn };
+    expect(darkOmenAwake(s, "p1", old)).toBe(false);
+    expect(darkOmenAwake(end(s), "p1", old)).toBe(false);
+    expect(darkOmenAwake(end(end(s), "p2"), "p1", old)).toBe(true);
   });
 
   it("闇堕ちは自分のターンの好きなときにできる。しなければ裏向きのカードは残り続ける", () => {
