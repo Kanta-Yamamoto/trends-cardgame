@@ -1,5 +1,6 @@
 import { gsap } from "gsap";
 import type { Container, Filter, Texture } from "pixi.js";
+import { SHELL_FILTER } from "./deathSoul";
 import { type FxStage, fxEnabled, fxStage, type Pixi } from "./stage";
 
 type Rect = { left: number; top: number; width: number; height: number };
@@ -15,11 +16,20 @@ type Rect = { left: number; top: number; width: number; height: number };
  */
 export async function dissolve(ghost: HTMLElement): Promise<void> {
   const r = ghost.getBoundingClientRect();
+  // 【破壊されたとき】の抜け殻（fx/deathSoul.ts）は、白く薄い姿から黒く沈める
+  const s = ghost.dataset.shell ? SHELL_FILTER : { grayscale: 0, contrast: 1, brightness: 1 };
   const sink = ghost.animate(
     [
-      { filter: "brightness(1) grayscale(0)", transform: "none" },
-      { filter: "brightness(0.55) grayscale(0.7)", transform: "scale(1.04)", offset: 0.25 },
-      { filter: "brightness(0.06) grayscale(1)", transform: "scale(1.02)" },
+      {
+        filter: `grayscale(${s.grayscale}) contrast(${s.contrast}) brightness(${s.brightness})`,
+        transform: "none",
+      },
+      {
+        filter: `grayscale(0.7) contrast(${(s.contrast + 1) / 2}) brightness(0.55)`,
+        transform: "scale(1.04)",
+        offset: 0.25,
+      },
+      { filter: "grayscale(1) contrast(1) brightness(0.06)", transform: "scale(1.02)" },
     ],
     { duration: 260, easing: "cubic-bezier(.4,0,.6,1)", fill: "forwards" },
   );

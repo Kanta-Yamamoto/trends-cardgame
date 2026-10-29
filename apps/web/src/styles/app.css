@@ -64,6 +64,18 @@
 * { box-sizing: border-box; }
 /* 素早い2回タップで拡大しない（iPhone はメタタグの user-scalable=no を無視するので CSS で止める） */
 html, body { touch-action: manipulation; }
+/* タップした所に出る、ブラウザの青い（iPhone は灰色の）四角と、押したあとに残る選択の枠を出さない（10月28日。オーナー：ガチャでカードを押すと「カードの周辺までふくめて、タップの反応箇所に青枠が表示されます」「見た目でダサい」）。
+   キーボードで操作したときの枠（:focus-visible）は残す */
+* { -webkit-tap-highlight-color: transparent; }
+:focus:not(:focus-visible) { outline: none; }
+/* タップの印（tapMark.ts）：押した所が、やわらかい光の円（直径 68px）で 0.32 秒だけ明るくなる。
+   中は白、まわりは水色なので、明るい画面でも濃い青の盤面でも見える。画面の座標に置き、何も邪魔しない */
+.tap-mark { position: fixed; left: 0; top: 0; z-index: 2147483000; width: 0; height: 0; pointer-events: none; }
+.tap-mark::before {
+  content: ""; position: absolute; left: -34px; top: -34px; width: 68px; height: 68px; border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, #2fa8e48c 35%, #2fa8e400 70%); animation: tap-mark 0.32s ease-out forwards;
+}
+@keyframes tap-mark { from { transform: scale(0.4); opacity: 1; } to { transform: scale(1.1); opacity: 0; } }
 /* 画面の枠（frame.ts）：すべての画面と演出を、スマホの縦の画面1つの中だけで出す。
    スマホの縦（幅 480px まで）では、枠は何もしない（ページのスクロール・全画面の要素・演出の層は、枠を入れる前と同じ）。
    それより広い画面（PC・横持ち）だけ、枠に transform を持たせて、中の position: fixed（モーダル・全画面の演出）を枠いっぱいに収め、
@@ -776,6 +788,10 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 
 /* 投稿・登場時の効果：飛ぶ光と文字の札 */
 .fx-orb { position: fixed; border-radius: 50%; background: radial-gradient(circle, #fff 0 25%, var(--c) 55%, transparent 72%); box-shadow: 0 0 18px 6px var(--c); }
+/* 【破壊されたとき】の魂（fx/deathSoul.ts）：白 × 淡いミント。闇堕ちの紫・黒とは分ける */
+.fx-mote, .fx-soul { position: fixed; left: 0; top: 0; border-radius: 50%; pointer-events: none; mix-blend-mode: screen; }
+.fx-mote { background: radial-gradient(circle, #fff 0 14%, #d6fff0e6 26%, #8ceccc55 50%, transparent 70%); }
+.fx-soul { background: radial-gradient(circle, #fff 0 15%, #d6fff0eb 24%, #8ceccc52 48%, transparent 70%); }
 .fx-label { position: fixed; padding: 3px 10px; border-radius: 99px; font: 900 15px/1.2 var(--f-ui); color: #0b1018; background: var(--c); box-shadow: 0 0 16px var(--c), 0 3px 8px #000a; white-space: nowrap; }
 .foe-reveal.mine { animation-duration: 1s; }
 .foe-reveal.mine .fr-label { background: #2f7fd8; }
@@ -820,16 +836,19 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
   background: linear-gradient(100deg, #ffffff80 30%, #ffffffeb 50%, #ffffff80 70%) 0 0 / 220% 100%;
   animation: g-shimmer 1.25s linear infinite;
 }
-.g-item.loading::before { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: 4.2% / 3%; pointer-events: none; }
+.g-item.loading::before { content: ""; position: absolute; inset: 0 0 auto; aspect-ratio: 63 / 88; z-index: 1; border-radius: 4.2% / 3%; pointer-events: none; }
 .g-skel-card { aspect-ratio: 63 / 88; border-radius: 4.2% / 3%; }
 .g-item.loading .g-skel-card { opacity: 1; background: none; animation: none; }
 .g-skel-line { display: inline-block; height: 16px; border-radius: 6px; }
 @keyframes g-shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
 @media (prefers-reduced-motion: reduce) { .g-item.loading::before, .g-skel-card, .g-skel-line { animation: none; } }
 .g-item { min-width: 0; }
+/* 絵の下に名前（絵の中の名前・効果文は抜く。10月28日） */
+.g-name { display: block; width: 100%; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--ink); font-size: 12.5px; font-weight: 800; line-height: 1.3; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
 /* 持っていないカードは灰色、持っているカードは下に枚数（10月27日）。3 枚以上（ダブり）は水色で目立たせる */
 .g-item.unowned .holo { filter: grayscale(1); opacity: 0.55; }
-.g-own-row { display: flex; justify-content: center; height: 22px; margin-top: 5px; }
+.g-own-row { display: flex; justify-content: center; height: 22px; margin-top: 3px; }
+.g-own-none { align-self: center; font-size: 11px; font-weight: 800; color: var(--ink-3); }
 .g-own { display: inline-grid; place-items: center; min-width: 34px; height: 22px; padding: 0 9px; border-radius: 11px; background: var(--g3); box-shadow: var(--sh-1), inset 0 0 0 1px #fff; color: var(--ink); font: 400 14px/1 var(--f-mark); letter-spacing: 0.02em; }
 .g-own.extra { color: #fff; background: var(--pri-grad); box-shadow: 0 3px 8px #1780c447; }
 /* カードの拡大（カード一覧・デッキ構築・対戦中）：上にカード、下にすりガラスの説明の台。地はカードの絵をぼかした明るい幕 */
@@ -1082,11 +1101,12 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .db-filter .g-chip { height: 32px; padding: 0 12px 0 5px; font-size: 12px; }
 .db-filter .g-chip.all { padding: 0 12px; }
 .db-filter .g-chip .at { width: 22px; height: 22px; }
-/* カードの行：コスト・名前と札・効果文（2 行まで）・枚数の増減。入れたカードは水色のふち */
+/* カードの行：カードの絵（文字は抜く）・名前と札・効果文（2 行まで）・枚数の増減。入れたカードは水色のふち、属性が合わないカードは絵を薄く */
 .db-list { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; }
-.db-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 10px 10px 8px; border-radius: 18px; transition: background 0.2s, box-shadow 0.2s; }
+.db-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px 8px 8px; border-radius: 18px; transition: background 0.2s, box-shadow 0.2s; }
 .db-row.in { background: #e7f6ffeb; box-shadow: 0 0 0 1.5px var(--pri-2), var(--sh-2); }
-.db-cost { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font: 400 17px/1 var(--f-mark); color: #fff; background: var(--ink); box-shadow: 0 0 0 2px #f2c14e; }
+.db-art { display: block; width: 62px; }
+.db-row.off .db-art .holo { filter: grayscale(0.85); opacity: 0.45; }
 .db-card { display: grid; gap: 3px; min-width: 0; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
 .db-title { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .db-title .at { width: 18px; height: 18px; font-size: 9px; }
@@ -1104,6 +1124,19 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .db-step { width: 34px; height: 34px; border-radius: 50%; padding: 0; border: 1px solid #fff; background: #fff; box-shadow: 0 2px 6px var(--shadow); color: var(--ink); font-size: 20px; font-weight: 800; line-height: 1; cursor: pointer; }
 .db-step.plus { color: var(--pri-3); }
 .db-step:disabled { opacity: 0.3; cursor: default; }
+/* カードの拡大：画面に重ねる小窓（CardPopup。デッキを組む画面・カード一覧。カードだけ。闇堕ちを持つカードは姿の切り替え、カード一覧は前後へ） */
+.card-pop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 72px 24px max(24px, env(safe-area-inset-bottom, 0px)); animation: fade 0.15s ease-out; }
+.card-pop-bg { position: absolute; inset: 0; border: 0; padding: 0; background: #283c5a59; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); cursor: pointer; }
+.card-pop-body { position: relative; display: grid; gap: 14px; width: min(100%, 340px, calc((100dvh - 190px) * 0.716)); animation: pop 0.25s cubic-bezier(.2, 1.4, .4, 1); }
+.card-pop:has(.card-pop-nav) .card-pop-body { width: min(100%, 340px, calc((100dvh - 250px) * 0.716)); }
+/* 文字を隠す目のボタン（× の左）。押している間は水色。× と目は、見た目より少し広く押せる（指で押しやすく。2 つのあいだの 8px は半分ずつ） */
+.card-pop-eye { right: 66px; }
+.card-pop-eye[aria-pressed="true"] { color: #fff; background: var(--pri-grad); border-color: #fff; }
+.card-pop .card-zoom-close::before { content: ""; position: absolute; inset: -6px -4px -10px; }
+.card-pop-nav { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.card-pop-nav .btn { height: 42px; padding: 0 16px; font-size: 13px; white-space: nowrap; }
+.card-pop-nav .btn:disabled { opacity: 0.35; cursor: default; }
+.card-pop-nav span { text-align: center; font: 400 15px/1 var(--f-mark); color: #fff; text-shadow: 0 1px 4px #0006; }
 /* ---------- 効果の語の解説（押すと小窓） ---------- */
 .help-sheet { z-index: 80; }
 .help-body { position: relative; width: min(420px, 100%); display: grid; gap: 10px; padding: 20px 22px; border-radius: 22px; color: var(--ink); background: #fffffff5; border: 1px solid #fff; box-shadow: 0 20px 50px #0b1a3055; animation: pop 0.3s cubic-bezier(.2, 1.4, .4, 1); }
@@ -1132,6 +1165,9 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .mini.on-field .mini-stats { grid-row: 3; padding: 0 4px 4px; }
 .mini.on-field .mini-atk, .mini.on-field .mini-hp { min-width: 21px; height: 21px; font-size: 12px; }
 .mini.on-field .mini-kw { font-size: 9px; padding: 1px 5px; }
+/* 【破壊されたとき】を持つキャラクターの印：攻撃力と体力の間に、白いドクロ（10月29日。光るのは fx/deathSoul.ts） */
+.mini-skull { position: absolute; left: 50%; bottom: 4px; width: 19px; height: 19px; margin-left: -9.5px; border-radius: 50%; display: grid; place-items: center; background: #0b1018e6; color: #f4fffb; box-shadow: 0 0 0 1.5px #ffffffc8; pointer-events: none; }
+.mini-skull svg { width: 13px; height: 13px; display: block; }
 .mini.on-field.is-dark::before { background: linear-gradient(180deg, #2a0d3a22 40%, #07020bcc 100%); }
 
 /* 闇のフィールド：闇堕ちを持つカードが倒されると「予兆」（持ち主の側から紫に染まる）、闇堕ちの姿が場にいる間は「闇」 */

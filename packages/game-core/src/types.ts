@@ -195,6 +195,8 @@ export type GameEvent =
   | { type: "destroyed"; player: PlayerId; cardId: string; slot: number; vanished?: boolean }
   /** 裏向きのカード：闇堕ちを持つカードが破壊され、その枠に裏向きで残った（自分のターンに闇堕ちさせられる） */
   | { type: "darkOmen"; player: PlayerId; slot: number; cardId: string }
+  /** 【破壊されたとき】が働いた（slot は破壊されたキャラクターがいた枠）。このすぐあとの size 個が、その効果の出来事 */
+  | { type: "deathTriggered"; player: PlayerId; slot: number; cardId: string; size: number }
   | { type: "darkFall"; player: PlayerId; slot: number; cardId: string }
   /** バズ：そのキャラクターに攻撃力+2・体力+2と突進 */
   | { type: "buzz"; player: PlayerId; slot: number; cardId: string; attack: number; hp: number; left: number }
@@ -223,8 +225,6 @@ export type GameEvent =
       cardId: string;
       attack: number;
       hp: number;
-      /** tokenLost：自分のトークンが破壊されたことで強くなった（クサハミ）。画面は、破壊を見せ終えてから「+N」を出す */
-      cause?: "tokenLost";
     }
   | { type: "healed"; player: PlayerId; slot: number; cardId: string; amount: number }
   | { type: "leaderDamaged"; player: PlayerId; amount: number; lp: number }
@@ -283,6 +283,8 @@ export interface UnitView {
   maxHp: number;
   keywords: Keyword[];
   guard: boolean;
+  /** 【破壊されたとき】の効果を持っている（沈黙なら持たない。闇堕ちの姿は闇の姿の効果で見る） */
+  deathEffect: boolean;
   exposed: boolean;
   asleep: boolean;
 }

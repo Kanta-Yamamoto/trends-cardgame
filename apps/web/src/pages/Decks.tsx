@@ -11,8 +11,9 @@ import {
 } from "@trends/cards";
 import { useCallback, useMemo, useState } from "react";
 import { EffectText } from "../cards/EffectText";
+import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
-import { CardZoom } from "../game/CardZoom";
+import { CardPopup } from "../game/CardPopup";
 import { CostStrip } from "../game/CostStrip";
 import { AttrDots, DeckAce, deckGradient } from "../game/DeckArt";
 import { pushDecks, useDecksChanged } from "../game/deckSync";
@@ -306,11 +307,15 @@ function DeckEditor({
   const errors = deckErrors(cards);
   const total = cards.length;
 
+  /** 属性が合わず入れられないカード（行の絵を薄くする） */
+  const attrBlocked = (c: CardDef) => {
+    const a = c.attributes[0];
+    return !!a && !attrs.includes(a) && attrs.length >= MAX_DECK_ATTRIBUTES;
+  };
   const canAdd = (c: CardDef) => {
     if ((counts.get(c.id) ?? 0) >= MAX_COPIES) return false;
     if (total >= DECK_SIZE) return false;
-    const a = c.attributes[0];
-    if (a && !attrs.includes(a) && attrs.length >= MAX_DECK_ATTRIBUTES) return false;
+    if (attrBlocked(c)) return false;
     // 闇堕ちを持つカードは、種類を問わず2枚まで
     if (c.dark && cards.filter((id) => CARD_BY_ID[id]?.dark).length >= MAX_DARK_CARDS) return false;
     return true;
@@ -461,8 +466,11 @@ function DeckEditor({
           const a = c.attributes[0];
           const meta = a ? ATTR_META[a] : null;
           return (
-            <li key={c.id} className={`db-row g2 ${n > 0 ? "in" : ""}`}>
-              <span className="db-cost">{c.cost}</span>
+            <li key={c.id} className={`db-row g2 ${n > 0 ? "in" : ""} ${attrBlocked(c) ? "off" : ""}`}>
+              {/* 左はカードの絵。名前・効果文は抜き、コストと★だけ残す（文字は右の行で読む） */}
+              <span className="db-art">
+                <HoloCard card={c} compact textHidden onClick={() => setZoom(c)} />
+              </span>
               <button type="button" className="db-card" onClick={() => setZoom(c)}>
                 <span className="db-title">
                   {a && meta ? (
@@ -522,7 +530,7 @@ function DeckEditor({
           );
         })}
       </ul>
-      {zoom && <CardZoom key={zoom.id} card={zoom} darkPreview onClose={() => setZoom(null)} />}
+      {zoom && <CardPopup key={zoom.id} card={zoom} onClose={() => setZoom(null)} />}
     </section>
   );
 }

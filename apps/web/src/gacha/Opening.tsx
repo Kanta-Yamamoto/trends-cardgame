@@ -27,7 +27,8 @@ const HIT = {
  * ★5 の当たりのカード（10月27日。オーナー：「画面全体を枠とみなして、絵と効果を全体的に出したい」「カードの枠を成して出してあげたい」
  * 「何秒か表示したあとに元のカードの大きさまで縮小して一連の動作を終えて」）。白が引くと、画面そのものをカードの枠にして出す
  * （カード面を画面の形いっぱいに描く。絵は画面を覆い、名前・効果の板は下）。白が引き始めてから show の間見せる
- * → 枠ごと舞台のカードの大きさ・位置まで縮める（shrink。形もカードの比に戻る）→ 大きいカードを薄く消して舞台のカードに渡す（settle）。
+ * → 枠ごと舞台のカードの大きさ・位置まで縮める（shrink。形もカードの比に戻る。transform だけで動かし、カード面は組み直さない）
+ * → 大きいカードを薄く消して舞台のカードに渡す（settle）。
  * 見せている間にタップすると、すぐ縮め始める
  */
 const BIG = { show: 3500, shrink: 800, settle: 250 } as const;
@@ -42,6 +43,26 @@ const GRID = [
   [118, -96],
   [-59, 76],
   [59, 76],
+] as const;
+
+/** ★5 を引いたあとの白い舞台で、きらめく光の粒（画面の中の位置 %・きらめき始めるまでの秒） */
+const MOTES = [
+  [12, 18, 0.2],
+  [30, 11, 1.9],
+  [71, 14, 0.9],
+  [88, 24, 2.6],
+  [8, 38, 1.4],
+  [93, 43, 0.4],
+  [17, 57, 2.2],
+  [84, 61, 1.1],
+  [6, 74, 3.0],
+  [27, 84, 0.7],
+  [62, 88, 2.4],
+  [91, 79, 1.6],
+  [48, 7, 3.3],
+  [79, 34, 2.9],
+  [21, 31, 3.6],
+  [69, 75, 0],
 ] as const;
 
 /**
@@ -115,6 +136,8 @@ export function Opening({
   /** 裂く手ごたえ。指の動きのたびに React を描き直さず、毎フレーム CSS 変数だけを書く（カード 5 枚を描き直さない） */
   const tr = useRef(newTear());
   const floatRef = useRef<HTMLDivElement>(null);
+  /** ★5 の画面いっぱいのカード（縮めるときに、ここに transform を書く） */
+  const bigRef = useRef<HTMLDivElement>(null);
   const raf = useRef(0);
   const drag = useRef<{ x0: number; box: DOMRect; moved: boolean } | null>(null);
 
@@ -255,6 +278,18 @@ export function Opening({
   /** ★5：画面いっぱいのカードを、舞台のカードの大きさまで縮めて、一連の流れを終える */
   const shrinkBig = () => {
     if (ref.current.hit !== "present") return;
+    // 縮めた先：舞台のカード（真ん中から 10px 上。.gx-stage の translateY）。縮めた先の形（.gx-big-end）は、画面いっぱいの枠と
+    // 同じ高さ・真ん中に置いてあるので、枠ごと高さが舞台のカードと同じになるまで縮め、真ん中を合わせる。
+    // 幅・高さを変えると、毎フレームカード面を組み直して描き直すので重く、コマ落ちしてガタつく。transform だけで動かす
+    const el = bigRef.current;
+    const box = el?.parentElement;
+    if (el && box) {
+      const r = el.getBoundingClientRect();
+      const c = box.getBoundingClientRect();
+      const k = (CARD_W * stageScale()) / CARD_RATIO / r.height;
+      const dy = c.top + c.height / 2 - 10 - (r.top + r.height / 2);
+      el.style.transform = `translate(0px, ${dy.toFixed(2)}px) scale(${k.toFixed(4)})`;
+    }
     patch({ hit: "shrink" });
     later(() => patch({ hit: "settle" }), BIG.shrink);
     later(() => patch({ hit: "shown" }), BIG.shrink + BIG.settle);
@@ -308,19 +343,32 @@ export function Opening({
     "--settle": `${BIG.settle}ms`,
   } as CSSProperties;
   const bigOn = big && (hit === "present" || hit === "shrink" || hit === "settle");
-  // ★5 の画面いっぱいのカードを縮めた先：舞台のカード（真ん中から 10px 上。.gx-stage の translateY）
-  const toW = CARD_W * scale;
-  const toH = toW / CARD_RATIO;
+  // ★5 を引いたら、白が画面を覆ったところから舞台の地を白にし、5 枚の並びまでそのまま（スキップしたときも）
+  const lux = big && (hit === "hold" || bigOn || hit === "shown");
+  // 白い舞台の霞と光の粒は、大きいカードを舞台に戻してから（大きいカードの後ろで動かすと、見えないのに重くなる）
+  const luxFx = big && (hit === "settle" || hit === "shown");
 
   return (
     <div
       ref={root}
-      className="gx-open"
+      className={`gx-open ${lux ? "lux" : ""}`}
       style={vars}
       role="dialog"
       aria-modal="true"
       aria-label="パックを開ける"
     >
+      <div className="gx-lux" aria-hidden="true">
+        {luxFx && (
+          <>
+            <span className="gx-lux-haze" />
+            <span className="gx-lux-motes">
+              {MOTES.map(([x, y, d]) => (
+                <i key={`${x}-${y}`} style={{ left: `${x}%`, top: `${y}%`, animationDelay: `${d}s` }} />
+              ))}
+            </span>
+          </>
+        )}
+      </div>
       <div className={`gx-dim ${hit === "lift" || squeezing ? "on" : ""}`} />
       <header className="gx-open-head">
         <h1>
@@ -490,23 +538,19 @@ export function Opening({
       )}
       {bigOn && last && (
         <div className={`gx-big ${hit}`}>
-          <div
-            className="gx-big-card"
-            style={
-              hit === "present"
-                ? undefined
-                : {
-                    left: `calc(50% - ${toW / 2}px)`,
-                    top: `calc(50% - 10px - ${toH / 2}px)`,
-                    width: toW,
-                    height: toH,
-                  }
-            }
-          >
+          <div className="gx-big-card" ref={bigRef}>
+            {/* 縮めた先の形（カードの比）。後ろに置いておき、ほぼ縮みきったところで入れ替える */}
+            <div className="gx-big-end">
+              <HoloCard card={last.card} />
+            </div>
             <div className="gx-big-in">
               {/* 平らに出すので、触っていないときの揺れ（毎フレーム、光の位置を書き換えて描き直す）は止める */}
               <HoloCard card={last.card} interactive idle={false} fill />
             </div>
+            {/* テカリ：角のつやと、すべる光（枠の虹は gacha.css の .card::before） */}
+            <span className="gx-big-shine" aria-hidden="true">
+              <i />
+            </span>
           </div>
           {last.isNew && <span className="gx-pr-new gx-big-new">NEW</span>}
           <button type="button" className="gx-big-tap" aria-label="次へ" onClick={shrinkBig} />

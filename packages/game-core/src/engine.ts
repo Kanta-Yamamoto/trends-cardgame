@@ -154,6 +154,7 @@ export function viewUnit(state: GameState, _owner: PlayerId, unit: Unit, catalog
     maxHp,
     keywords,
     guard: keywords.includes("ガード"),
+    deathEffect: effectsOf(unit, catalog).some((e) => triggerOf(e) === "death"),
     exposed: !!unit.exposed,
     asleep: state.turn <= unit.boundUntil,
   };
@@ -576,9 +577,7 @@ function resolveDeaths(
   const destroyed: string[] = [];
   // 「破壊されたとき」の効果で、さらに倒れることがある。落ち着くまで繰り返す
   for (let round = 0; round < 10; round++) {
-    const deaths: { owner: PlayerId; effects: CardEffect[] }[] = [];
-    // この回で破壊されたトークンの数（持ち主・カード ID ごと。クサハミの「破壊されるたび」に使う）
-    const lost: Record<PlayerId, Record<string, number>> = { p1: {}, p2: {} };
+    const deaths: { owner: PlayerId; slot: number; cardId: string; effects: CardEffect[] }[] = [];
     let removed = false;
     for (const owner of ["p1", "p2"] as const) {
       const p = state.players[owner];
@@ -593,7 +592,6 @@ function resolveDeaths(
         if (!vanished) p.trash.push(u.cardId);
         if (u.token) {
           p.tokensLost = { ...p.tokensLost, [u.cardId]: (p.tokensLost?.[u.cardId] ?? 0) + 1 };
-          lost[owner][u.cardId] = (lost[owner][u.cardId] ?? 0) + 1;
         }
         destroyed.push(u.cardId);
         emit(
@@ -612,25 +610,18 @@ function resolveDeaths(
             emit({ type: "darkOmen", player: owner, slot, cardId: u.cardId });
           }
         }
-        if (onDeath.length) deaths.push({ owner, effects: onDeath });
+        if (onDeath.length) deaths.push({ owner, slot, cardId: u.cardId, effects: onDeath });
       });
     }
     if (!removed) break;
-    // 自分のトークンが破壊されるたび、攻撃力+1（クサハミ）。同時に破壊された分はまとめて1回の強化にする
-    for (const owner of ["p1", "p2"] as const) {
-      state.players[owner].field.forEach((u, slot) => {
-        if (!u) return;
-        let n = 0;
-        for (const e of effectsOf(u, catalog))
-          if (e.do === "growOnTokenLost" && triggerOf(e) === "passive") n += lost[owner][e.card] ?? 0;
-        if (n === 0) return;
-        u.atkBuff += n;
-        emit({ type: "buffed", player: owner, slot, cardId: u.cardId, attack: n, hp: 0, cause: "tokenLost" });
-      });
-    }
-    for (const d of deaths)
+    for (const d of deaths) {
+      // 画面が「どのカードの【破壊されたとき】か」を見せるための印。このあとに、その効果の出来事が size 個続く
+      const fx: GameEvent[] = [];
       for (const e of d.effects)
-        runEffect(e, { state, player: d.owner, catalog, config, emit, playedBefore: 0 });
+        runEffect(e, { state, player: d.owner, catalog, config, emit: (x) => fx.push(x), playedBefore: 0 });
+      emit({ type: "deathTriggered", player: d.owner, slot: d.slot, cardId: d.cardId, size: fx.length });
+      for (const x of fx) emit(x);
+    }
   }
   return destroyed;
 }
@@ -797,7 +788,7 @@ function runEffect(e: CardEffect, ctx: Ctx) {
       break;
     }
     case "attackPerLostToken": {
-      // 出たとき（闇堕ちしたとき）に、それまでに破壊された数を数えて強化する。あとから変わらない
+      // 出たとき（闇堕ちしたとき）に、それまでに破壊された数を数えて強化する。あとから変わらない（そのあと破壊されても足さない）
       const n = me.tokensLost?.[e.card] ?? 0;
       if (n > 0 && self && ctx.selfSlot !== undefined) {
         self.atkBuff += n;
@@ -1253,7 +1244,6 @@ function runEffect(e: CardEffect, ctx: Ctx) {
         });
       }
       break;
-    case "growOnTokenLost":
     case "conspiracyWin":
     case "extraAttackOnKill":
     case "buffOnKill":
