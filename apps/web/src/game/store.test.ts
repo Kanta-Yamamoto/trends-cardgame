@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { cpuLogForTest } from "./cpuLog";
 import { builtinDeck } from "./decks";
-import { CATALOG, CPU, ME, setPresenter, useGame } from "./store";
+import { CATALOG, CPU, ME, STEP_LIMIT_MS, setPresenter, useGame } from "./store";
 
 describe("対戦ストア", () => {
   beforeEach(() => {
@@ -194,6 +194,37 @@ describe("対戦ストア", () => {
       setPresenter(null);
     }
   });
+
+  // 10月30日：演出が失敗・停止すると animating が戻らず、選んだ手札が持ち上がったまま、ターン終了とバズが押せなかった
+  for (const [kind, resolveEffects] of [
+    ["失敗", () => Promise.reject(new Error("演出の失敗"))],
+    ["停止", () => new Promise<void>(() => {})],
+  ] as const) {
+    it(`演出が${kind}しても、上限で切り上げて盤面を進め、操作できる状態に戻す`, async () => {
+      vi.useFakeTimers();
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      setPresenter({ beforeAttack: async () => {}, turnIntro: 0, resolveEffects });
+      try {
+        const g = structuredClone(useGame.getState().game);
+        if (!g) throw new Error("no game");
+        g.players[ME].mana = 10;
+        g.players[ME].hand = ["c14"];
+        g.players[ME].field = g.players[ME].field.map(() => null);
+        useGame.setState({ game: g });
+        useGame.getState().select({ kind: "hand", index: 0 });
+        useGame.getState().play(0);
+        expect(useGame.getState().animating).toBe(true);
+        await vi.advanceTimersByTimeAsync(STEP_LIMIT_MS);
+        expect(useGame.getState().animating).toBe(false);
+        expect(useGame.getState().selection).toBeNull();
+        expect(useGame.getState().game?.players[ME].field[0]?.cardId).toBe("c14");
+      } finally {
+        setPresenter(null);
+        warn.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+  }
 
   for (const delay of [0, 5]) {
     it(`『フィクサー』：CPU が出したら自分が選び、そのあと CPU がターンを続けて終える（待ち時間 ${delay}）`, async () => {
