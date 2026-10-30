@@ -14,6 +14,7 @@ import {
   RuleError,
 } from "@trends/game-core";
 import { create } from "zustand";
+import { beforeBuffs } from "./beforeBuffs";
 import { abandonCpuLog, beginCpuLog, logMove, logThought, watchPageHide } from "./cpuLog";
 import type { DeckSel } from "./decks";
 
@@ -235,10 +236,14 @@ let drainingRun: number | null = null;
 
 type PlaceAction = Extract<Action, { type: "play" }>;
 
-/** 出したキャラクターだけを場に置いた、効果の前の姿（演出のあいだ画面に出す） */
-function placedOnly(prev: GameState, a: PlaceAction, next: GameState): GameState {
-  const unit = next.players[a.player].field[a.slot];
-  if (!unit) return prev;
+/**
+ * 出したキャラクターだけを場に置いた、効果の前の姿（演出のあいだ画面に出す）。
+ * 【場に出たとき】の自分への強化（クサハミなど）は、まだ足さない（「+N」を見せてから数字を上げる）
+ */
+function placedOnly(prev: GameState, a: PlaceAction, events: GameEvent[], next: GameState): GameState {
+  const placed = next.players[a.player].field[a.slot];
+  if (!placed) return prev;
+  const unit = beforeBuffs(placed, a.player, a.slot, events);
   const me = prev.players[a.player];
   const after = next.players[a.player];
   return {
@@ -293,7 +298,7 @@ export const useGame = create<GameStore>((set, get) => {
     next: GameState,
     alive: () => boolean = () => true,
   ) => {
-    const shown = isPlace(a) ? placedOnly(game, a, next) : game;
+    const shown = isPlace(a) ? placedOnly(game, a, events, next) : game;
     if (shown !== game) set({ game: shown });
     await presenter?.resolveEffects?.(shown, a, events, next, (g) => {
       if (alive()) set({ game: g });
