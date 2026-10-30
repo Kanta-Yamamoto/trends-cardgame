@@ -1222,6 +1222,50 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .omen-card .omen-flame { bottom: 35%; height: 34%; }
 .slot.omen-ready .omen-card { animation: omen-ready 1.6s ease-in-out infinite; }
 @keyframes omen-ready { 50% { box-shadow: 0 0 0 2px #f1dcff, 0 0 22px #b06bffcc, inset 0 0 12px #000a; } }
+/*
+ * 裏向きのカードの印（10月30日。Play.tsx の OmenMark）：下の真ん中の白い丸。待つ間は砂時計、闇堕ちできるようになったら炎。
+ * 紫の裏面に溶けないよう、白い地に濃い紫の形で、外に濃い縁と白い縁を重ねる。
+ * 大きさ（--om-size）と回転（--om-turn）は、どちらも変数で動かす：transform の拡大は小さい絵を引き伸ばしてぼやけ、
+ * 大きさと回転を別の仕組みで動かすと一瞬ずれるため。印は真ん中の点（left・bottom の位置）を中心にふくらむ
+ */
+@property --om-size { syntax: "<length>"; inherits: false; initial-value: 22px; }
+@property --om-turn { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.omen-mark {
+  --om-base: 22px; --om-size: var(--om-base); --om-ring: #0b0312;
+  position: absolute; z-index: 4; left: 50%; bottom: calc(4px + (var(--om-base) - var(--om-size)) / 2);
+  width: var(--om-size); height: var(--om-size); margin-left: calc(var(--om-size) / -2);
+  transform: rotate(var(--om-turn));
+  display: grid; place-items: center; border-radius: 50%;
+  background: #fff; color: #2a0b3d; box-shadow: 0 0 0 1.5px var(--om-ring), 0 0 0 3px #fff, 0 2px 8px #000c;
+  pointer-events: none;
+}
+.omen-mark svg { grid-area: 1 / 1; width: 64%; height: 64%; display: block; fill: currentColor; }
+.omen-mark .om-cut { fill: #fff; }
+.omen-mark .om-ready, .omen-mark.awake .om-wait { opacity: 0; }
+.omen-mark.awake .om-ready { opacity: 1; }
+/* 1. 破壊されて裏向きになったら、砂時計が押される */
+.omen-mark.stamp:not(.awake) { animation: omen-mark-stamp 0.4s 0.3s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes omen-mark-stamp { from { --om-size: calc(var(--om-base) * 2.4); opacity: 0; } }
+/*
+ * 2. 闇堕ちできるようになったターンの始め（ターンの帯を見せ終えてから）：2 倍にふくらむ（0.25 秒）→ その大きさで一回転（0.6 秒）
+ *    → 元の大きさに戻る（0.25 秒）→ 砂時計が消えながら炎が浮かぶ（0.4 秒）。ふくらむ間は隣のカードより手前
+ */
+.omen-mark.turning { z-index: 6; animation: omen-mark-spin 1.1s 1s both; }
+@keyframes omen-mark-spin {
+  0% { --om-size: var(--om-base); --om-turn: 0deg; animation-timing-function: cubic-bezier(.2, .8, .3, 1.2); }
+  23% { --om-size: calc(var(--om-base) * 2); --om-turn: 0deg; animation-timing-function: cubic-bezier(.45, 0, .25, 1); }
+  77% { --om-size: calc(var(--om-base) * 2); --om-turn: 360deg; animation-timing-function: cubic-bezier(.5, 0, .6, 1); }
+  100% { --om-size: var(--om-base); --om-turn: 360deg; }
+}
+.omen-mark.turning .om-wait { animation: omen-mark-out 0.4s 2.1s ease-in both; }
+.omen-mark.turning .om-ready { animation: omen-mark-in 0.4s 2.1s ease-out both; }
+@keyframes omen-mark-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes omen-mark-in { from { opacity: 0; } to { opacity: 1; } }
+/* 3. 自分の裏向きのカードを今闇堕ちさせられる間：炎の印が光って脈打つ（カードのふちの光と同じ間） */
+.slot.omen-ready .omen-mark.awake:not(.turning) { animation: omen-mark-pulse 1.6s ease-in-out infinite; }
+@keyframes omen-mark-pulse {
+  50% { --om-size: calc(var(--om-base) * 1.15); box-shadow: 0 0 0 1.5px var(--om-ring), 0 0 0 3px #fff, 0 0 16px 5px #fff, 0 2px 8px #000c; }
+}
 .dark-confirm .end-confirm-body { --text: #f3eaff; --muted: #cdb4e6; --line: #ffffff22; color: var(--text); background: #1d0f2bf5; border-color: #b06bff99; box-shadow: 0 20px 50px #000c, 0 0 30px #b06bff55; }
 .dkc-state { margin: 0; font-size: 13px; line-height: 1.6; color: var(--text); }
 .dkc-wait { margin: 0; font-size: 12.5px; font-weight: 800; color: #f2cf7a; }
@@ -1242,7 +1286,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .director-field .df-crown, .director-crown { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .director-crown { z-index: 3; border-radius: inherit; }
 @keyframes director-in { from { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .field-mist, .omen-flame i, .field-dark.field-layer, .field-omen.field-layer, .slot.omen-ready .omen-card { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .field-mist, .omen-flame i, .field-dark.field-layer, .field-omen.field-layer, .slot.omen-ready .omen-card, .slot.omen-ready .omen-mark.awake:not(.turning) { animation: none; } }
 
 /* バズ：ボタン（残りの玉）、マスターの帯の残り、カットイン、盤面での対象の強調 */
 /* バズの色：ホログラム（シアン→紫→ピンク）。キラカードの光と同じ系統で、属性の色・闇の紫・ターン終了の金と重ならない */

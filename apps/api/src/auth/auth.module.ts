@@ -29,7 +29,21 @@ async function sessionSecret(db: Db) {
   imports: [
     JwtModule.registerAsync({
       inject: [DB],
-      useFactory: async (db: Db) => ({ secret: await sessionSecret(db), signOptions: { expiresIn: "30d" } }),
+      // 鍵は最初に使うとき（ログインを確かめる・作るとき）に読む。起動時に読むと、眠っている DB が起きるまで
+      // サーバーが画面を返せず、白い画面が長くなるため（main.ts）。読めなかったら、次に使うときに読み直す
+      useFactory: (db: Db) => {
+        let secret: Promise<string> | null = null;
+        return {
+          secretOrKeyProvider: () => {
+            secret ??= sessionSecret(db).catch((e) => {
+              secret = null;
+              throw e;
+            });
+            return secret;
+          },
+          signOptions: { expiresIn: "30d" },
+        };
+      },
     }),
   ],
   controllers: [AuthController, ProfileController],

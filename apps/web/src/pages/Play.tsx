@@ -8,9 +8,11 @@ import {
   type CastTarget,
   canUnitAttack,
   castTargets,
+  type DarkOmen,
   DEFAULT_CONFIG,
   damageCutOn,
   darkFallSlots,
+  darkOmenAwake,
   darkOmens,
   delayedDamageOn,
   effectiveCost,
@@ -671,6 +673,47 @@ function OmenSheet({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * 裏向きのカードの印（下の真ん中の白い丸）。破壊されて裏向きになったら砂時計が押され、闇堕ちできるようになった
+ * ターン（持ち主のターン）の始めに、2 倍にふくらんでぐるっと一回転し、元の大きさに戻ってから炎に変わる。
+ * 裏面（スリーブ）が変わっても読めるよう、裏面とは別に置く
+ */
+function OmenMark({ awake }: { awake: boolean }) {
+  // 印が出たときにすでに闇堕ちできる（読み込み直したときなど）なら、押す動きも回る動きも出さない
+  const [born] = useState(awake);
+  const was = useRef(awake);
+  const [turning, setTurning] = useState(false);
+  useEffect(() => {
+    if (awake && !was.current) setTurning(true);
+    was.current = awake;
+  }, [awake]);
+  return (
+    <span
+      className={`omen-mark ${born ? "" : "stamp"} ${awake ? "awake" : ""} ${turning ? "turning" : ""}`}
+      aria-hidden="true"
+      // 炎が浮かびきったら（回る・入れ替わるの最後）、動きを外す
+      onAnimationEnd={(e) => e.animationName === "omen-mark-in" && setTurning(false)}
+    >
+      <svg className="om-wait" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 2.5h12v1.8h-1.2c0 3.4-1.9 5.6-3.6 7.7 1.7 2.1 3.6 4.3 3.6 7.7H18v1.8H6v-1.8h1.2c0-3.4 1.9-5.6 3.6-7.7C9.1 9.9 7.2 7.7 7.2 4.3H6z" />
+        <path
+          className="om-cut"
+          d="M9.1 4.3h5.8c-.1 1.6-.8 2.9-1.6 4H10.7c-.8-1.1-1.5-2.4-1.6-4zM12 14.2c1.2 1.4 2.6 3 2.8 5.5H9.2c.2-2.5 1.6-4.1 2.8-5.5z"
+        />
+      </svg>
+      <svg className="om-ready" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2.5c.6 3.2 4.8 5.6 4.8 10.6A4.8 4.8 0 0 1 12 18a4.8 4.8 0 0 1-4.8-4.9c0-2.4 1.3-3.9 2.4-5 .2 1.6.9 2.6 1.8 3.1C11.2 8.3 11 5.4 12 2.5z" />
+        <path
+          className="om-cut"
+          d="M12 11.2c.3 1.5 2 2.3 2 4.1a2 2 0 0 1-4 0c0-1.3.9-2.1 2-4.1z"
+          opacity=".55"
+        />
+        <rect x="6" y="19.6" width="12" height="1.8" rx=".9" opacity=".6" />
+      </svg>
+    </span>
   );
 }
 
@@ -2062,6 +2105,7 @@ export function Board({
             onClick={() => setOmenAsk({ owner: CPU, slot })}
           >
             <OmenCard />
+            <OmenMark awake={darkOmenAwake(game, CPU, omenAt(CPU, slot) as DarkOmen)} />
           </button>
         ) : (
           <div key={key} data-slot={`${CPU}:${slot}`} className={`slot ${slot === 2 ? "center" : ""}`} />
@@ -2087,6 +2131,7 @@ export function Board({
               onClick={() => setOmenAsk({ owner: ME, slot })}
             >
               <OmenCard />
+              <OmenMark awake={darkOmenAwake(game, ME, omen)} />
             </button>
           );
         }

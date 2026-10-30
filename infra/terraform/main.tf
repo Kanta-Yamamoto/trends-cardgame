@@ -138,6 +138,9 @@ resource "google_cloud_run_v2_service" "api" {
       }
       resources {
         limits = { cpu = "1", memory = "512Mi" }
+
+        # 起動のときだけ CPU を増やす（眠っていたサーバーが起きるまでの白い画面を短くする。起動の間の分だけ課金）
+        startup_cpu_boost = true
       }
     }
   }

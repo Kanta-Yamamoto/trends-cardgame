@@ -205,6 +205,16 @@ export function darkFallSlots(state: GameState, player: PlayerId): number[] {
     .map((o) => o.slot);
 }
 
+/**
+ * 裏向きのカードが、闇堕ちできるようになったか（裏向きになってから、持ち主のターンが 1 度でも始まった）。
+ * 一度なったら、相手のターンでもそのまま（画面の印が、砂時計から炎に変わる）。今押せるかは darkFallSlots
+ */
+export function darkOmenAwake(state: GameState, player: PlayerId, omen: DarkOmen): boolean {
+  if (omen.ownTurns !== undefined) return (state.players[player].turnsTaken ?? 0) > omen.ownTurns;
+  // 前の版の対戦（ownTurns が無い）：手番の交代から見る
+  return state.active === player ? omen.turn < state.turn : omen.turn < state.turn - 1;
+}
+
 /** バズの残り回数 */
 export function buzzLeft(state: GameState, player: PlayerId): number {
   return state.players[player].buzzLeft ?? 0;
@@ -606,7 +616,10 @@ function resolveDeaths(
             // TL浄化で戻った姿や、闇堕ちの姿のまま手札に戻されたカードは、もう闇堕ちしない
             if (!u.darkUsed && spent >= 0) p.darkSpent = p.darkSpent.filter((_, i) => i !== spent);
           } else {
-            p.darkOmens = [...(p.darkOmens ?? []), { cardId: u.cardId, slot, turn: state.turn }];
+            p.darkOmens = [
+              ...(p.darkOmens ?? []),
+              { cardId: u.cardId, slot, turn: state.turn, ownTurns: p.turnsTaken ?? 0 },
+            ];
             emit({ type: "darkOmen", player: owner, slot, cardId: u.cardId });
           }
         }
