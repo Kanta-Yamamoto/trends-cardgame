@@ -58,6 +58,7 @@ import { fxEnabled } from "../fx/stage";
 import { warmFx } from "../fx/warm";
 import { useCollection } from "../gacha/collection";
 import { ArbiterField } from "../game/ArbiterField";
+import { beforeBuffs } from "../game/beforeBuffs";
 import { CardZoom } from "../game/CardZoom";
 import { CostStrip } from "../game/CostStrip";
 import { type DarkCut, DarkCutscene } from "../game/DarkCutscene";
@@ -184,9 +185,11 @@ async function presentPhased(
     tint: string,
     soul = false,
   ) => {
-    const unit = next.players[e.player].field[e.slot];
+    const last = next.players[e.player].field[e.slot];
     // 同じ操作のうちに倒れたなど、最後の state にいないものは置かない（あとの演出に任せる）
-    if (!unit || unit.cardId !== e.cardId || cur.players[e.player].field[e.slot]) return;
+    if (!last || last.cardId !== e.cardId || cur.players[e.player].field[e.slot]) return;
+    // 出したあとの強化（出したキャラクターに+1/+1 など）は、まだ足さない（「+N」を見せてから数字を上げる）
+    const unit = beforeBuffs(last, e.player, e.slot, events, events.indexOf(e) + 1);
     await summonCue(from, slotEl(e.player, e.slot), tint, soul);
     const p = cur.players[e.player];
     cur = {
@@ -1658,11 +1661,13 @@ export function Board({
         } else {
           // 闇堕ちで戻る毒草喰らいのクサハミ：全画面の演出のあと、枯れた草原が毒の茨になる演出で場に出す
           // （ふつうの着地・裏返しの代わり）。描かれる前に印を付けて、着地の演出を止めておく
+          // 【闇堕ちしたとき】の自分への強化は、まだ足さずに置く（「+N」を見せてから数字を上げる）
           let cur = shown;
-          for (const e of events) {
+          for (const [k, e] of events.entries()) {
             if (e.type !== "darkFall" || !KUSAHAMI_AMBUSH.has(e.cardId) || !fxEnabled()) continue;
-            const unit = next.players[e.player].field[e.slot];
-            if (!unit || unit.cardId !== e.cardId) continue;
+            const last = next.players[e.player].field[e.slot];
+            if (!last || last.cardId !== e.cardId) continue;
+            const unit = beforeBuffs(last, e.player, e.slot, events, k + 1);
             descending.current.add(unit.uid);
             withered.current.add(unit.uid);
             setAmbush(Date.now());
@@ -2602,7 +2607,6 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
         view.unit.exposeAtTurnEnd && "ターンの終わりに晒される",
         view.asleep && "眠り状態",
         view.unit.silenced && "沈黙状態",
-        view.hp < view.maxHp && "ダメージあり",
       ].filter((x): x is string => !!x)
     : [];
   return (
