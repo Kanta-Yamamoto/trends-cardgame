@@ -2607,7 +2607,6 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
         view.unit.exposeAtTurnEnd && "ターンの終わりに晒される",
         view.asleep && "眠り状態",
         view.unit.silenced && "沈黙状態",
-        view.hp < view.maxHp && "ダメージあり",
       ].filter((x): x is string => !!x)
     : [];
   return (
