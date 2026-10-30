@@ -8,7 +8,8 @@ import { stars } from "../cards/meta";
 
 /**
  * カードを画面いっぱいに大きく見せる（スマホで効果を読むため）。
- * 場のキャラクターなら、今の攻撃力・体力・状態も添える。カードを押すと文字を隠して絵だけを見られる。
+ * 攻撃力・体力は、強化やダメージを入れない元の値を出す（今の値は盤面のカードで見る）。場のキャラクターなら状態も添える。
+ * カードを押すと文字を隠して絵だけを見られる。
  * キーワード・状態・仕組みの説明は並べない。語を押すと解説の小窓が開く（docs/card-text.md「考え方」）。
  * darkPreview のときは、闇堕ちを持つカードの「闇堕ちすると」の姿と効果を添え、絵も切り替えられる
  * （対戦中もカード一覧でも）。initialDark で最初から闇堕ちの姿で開く。
@@ -97,13 +98,12 @@ export function CardZoom({
           {card.type === "icon" && (
             <p className="zs-stats">
               <span className="zs-st">
-                <b className="zs-ball atk">{live?.attack ?? (dark ? card.dark?.attack : card.attack)}</b>
+                <b className="zs-ball atk">{dark ? card.dark?.attack : card.attack}</b>
                 攻撃力
               </span>
               <span className="zs-st">
-                <b className="zs-ball hp">{live ? live.hp : dark ? card.dark?.hp : card.hp}</b>
+                <b className="zs-ball hp">{dark ? card.dark?.hp : card.hp}</b>
                 体力
-                {live && live.hp < live.maxHp && <span className="zs-max">（最大 {live.maxHp}）</span>}
               </span>
             </p>
           )}

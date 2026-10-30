@@ -2579,7 +2579,8 @@ export function Board({
 
 /**
  * 縦の舞台で、押したカードの説明を1本の帯で見せる（大きなカードを置く場所がないため）。
- * 絵・名前・コスト・攻撃力/体力・効果文（2行まで）。押すと画面いっぱいに拡大して全文を読める
+ * 絵・名前・コスト・攻撃力/体力・効果文（2行まで）。押すと画面いっぱいに拡大して全文を読める。
+ * 攻撃力・体力は強化やダメージを入れない元の値（今の値は盤面のカードで見る）
  */
 function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitView; onOpen: () => void }) {
   if (!card) {
@@ -2622,11 +2623,8 @@ function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitVi
               <i className="ps-cost">{card.cost}</i>
               {card.type === "icon" ? (
                 <>
-                  <i className="t-atk">{view?.attack ?? card.attack}</i>／
-                  <i className="t-hp">
-                    {view?.hp ?? card.hp}
-                    {view && view.hp < view.maxHp && <small>/{view.maxHp}</small>}
-                  </i>
+                  <i className="t-atk">{dark ? card.dark?.attack : card.attack}</i>／
+                  <i className="t-hp">{dark ? card.dark?.hp : card.hp}</i>
                 </>
               ) : (
                 <i className="ps-post">呪文</i>
