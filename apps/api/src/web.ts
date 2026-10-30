@@ -6,6 +6,7 @@ import { withPreview } from "./ogp";
 
 /** API の道（これ以外の画面の道は、Web の index.html を返す） */
 const API_PREFIXES = ["/cards", "/health", "/auth", "/matches", "/me", "/rankings", "/logs", "/socket.io"];
+export const isApiPath = (path: string) => API_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
 
 /**
  * WEB_DIST（Web のビルド結果）があれば、API と同じサーバーで画面も配る。
@@ -30,8 +31,7 @@ export function serveWeb(app: NestExpressApplication, dir = process.env.WEB_DIST
   // 画面は 1 つの index.html（SPA）。リンクのプレビュー（OGP）を差し込んで返す（ogp.ts）
   const index = readFileSync(resolve(dir, "index.html"), "utf8");
   app.use((req: Request, res: Response, next: NextFunction) => {
-    const isApi = API_PREFIXES.some((p) => req.path === p || req.path.startsWith(`${p}/`));
-    if (req.method !== "GET" || isApi || !req.accepts("html")) return next();
+    if (req.method !== "GET" || isApiPath(req.path) || !req.accepts("html")) return next();
     // 招待リンクで開いたときは、守り（security.ts）が保存させない指示を付けている
     if (!res.getHeader("Cache-Control")) res.setHeader("Cache-Control", "no-cache");
     res.type("html").send(withPreview(index, req, res.locals.invited === true));

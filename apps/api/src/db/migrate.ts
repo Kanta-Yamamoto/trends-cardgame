@@ -1,11 +1,11 @@
 import "dotenv/config";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { createDb } from "./client";
+import { migrateDb } from "./prepare";
 
-/** drizzle/ のマイグレーションを適用する（CI・デプロイ時に実行） */
+/** drizzle/ のマイグレーションを適用する（手元・CI で実行。本番はサーバーの起動のたびに main.ts が行う） */
 async function main() {
   const { db, pool } = createDb();
-  await migrate(db, { migrationsFolder: "drizzle" });
+  await migrateDb(db);
   console.log("migrated");
   await pool.end();
 }
