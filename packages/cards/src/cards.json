@@ -261,7 +261,24 @@
     "art": "/assets/cards/k5-art.jpg",
     "subject": "/assets/cards/k5-subject.webp",
     "original": "assets/original/k5.webp",
-    "token": true
+    "token": true,
+    "dark": {
+      "name": "呪いのコラ画像",
+      "attack": 3,
+      "hp": 1,
+      "keywords": ["速攻"],
+      "effect": "速攻。【闇堕ちしたとき】伝説のコラ画像を手札に加える。",
+      "art": "/assets/cards/k5-dark-art.jpg",
+      "subject": "/assets/cards/k5-dark-subject.webp",
+      "original": "assets/original/k5-dark.webp",
+      "effects": [
+        {
+          "on": "play",
+          "do": "addToHand",
+          "cards": ["t-kora"]
+        }
+      ]
+    }
   },
   {
     "id": "t-gachikoi",

@@ -609,8 +609,9 @@ function resolveDeaths(
             ? { type: "destroyed", player: owner, cardId: u.cardId, slot, vanished: true }
             : { type: "destroyed", player: owner, cardId: u.cardId, slot },
         );
-        // 闇堕ちを持つカードが元の姿で破壊されたら、裏向きのカード（その枠に裏向きで残る。自分のターンに闇堕ちさせられる）
-        if (!u.token && !u.dark && catalog[u.cardId]?.dark) {
+        // 闇堕ちを持つカードが元の姿で破壊されたら、裏向きのカード（その枠に裏向きで残る。自分のターンに闇堕ちさせられる）。
+        // 闇堕ちを持つトークン（伝説のコラ画像の写し）も同じ（10月31日。オーナー：「コラ画像は何回でも闇落ち OK」）
+        if (!u.dark && catalog[u.cardId]?.dark) {
           const spent = (p.darkSpent ?? []).indexOf(u.cardId);
           if (u.darkUsed || spent >= 0) {
             // TL浄化で戻った姿や、闇堕ちの姿のまま手札に戻されたカードは、もう闇堕ちしない
