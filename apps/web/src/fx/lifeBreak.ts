@@ -1,4 +1,5 @@
 import { gsap } from "gsap";
+import { FINISH_HIT, playSe } from "../sound/se";
 
 /**
  * 決着：負けた側のプレイヤーの帯（ライフのゲージ）が砕け、破片が画面のこちらへ飛んできて、それをきっかけに結果へ切り替わる。
@@ -628,6 +629,8 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
     tl.call(hideShards, [], s(HIT - 20 + FLASH));
     covered = HIT - 20 + FLASH + HOLD * 0.8;
   }
+  // 音の山が、破片のぶつかる瞬間に重なるように鳴らし始める
+  tl.call(() => playSe("finish"), [], s(HIT) - FINISH_HIT);
   // 覆われたら、まわりをボケさせる幕など、覆いの下に残ったものを外してから結果を出す（明ける間に結果までボケないように）
   tl.call(
     () => {
