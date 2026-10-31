@@ -3,6 +3,8 @@ import ARBITER from "./se/arbiter.wav";
 import ATTACK from "./se/attack.wav";
 import ATTACK_LIGHT from "./se/attack_light.wav";
 import FINISH from "./se/finish.wav";
+import FIXER_CHARGE from "./se/fixer_charge.wav";
+import FIXER_STRIKE from "./se/fixer_hit.wav";
 import LANDING from "./se/landing.wav";
 import SPELL from "./se/spell.wav";
 import SPELL_HIT from "./se/spell_hit.wav";
@@ -36,6 +38,10 @@ const SOUNDS = {
   spellHit: { url: SPELL_HIT, volume: 0.7 },
   /** 決着で、破片がこちらへ飛んでくるとき。勝ちも負けも同じ音（オーナー：「お互い勝った時負けた時の破片に合わせて」） */
   finish: { url: FINISH, volume: 0.7 },
+  /** 『フィクサー』の黒い閃光の溜め。演出の始まりに鳴らす（オーナー：「二個目の音源を先に流した後、間髪入れず撃ち抜くところで一個目の音を流す」） */
+  fixerCharge: { url: FIXER_CHARGE, volume: 0.6 },
+  /** 『フィクサー』の黒い閃光が撃ち抜く瞬間 */
+  fixerHit: { url: FIXER_STRIKE, volume: 0.8 },
   /** 攻撃力・体力が上がるとき（オーナー：「これとりあえずスタッツ上昇時の音」） */
   statUp: { url: STAT_UP, volume: 0.5 },
   /** ターンが入れ替わって、ターンの帯が出るとき。自分も相手も同じ音（オーナー：「相手の時もこっちの時も両方ともこの音にまず変えておいてください」） */
@@ -53,6 +59,9 @@ export const ARBITER_HIT = 0.15;
 
 /** finish の音の頭から山までの秒数。破片がぶつかるこの秒数前に鳴らし始める */
 export const FINISH_HIT = 1.055;
+
+/** fixerHit の音の頭から衝撃までの秒数。撃ち抜くこの秒数前に鳴らし始める */
+export const FIXER_HIT = 0.05;
 
 /** 攻撃の音と、音の頭から山までの秒数。当たるこの秒数前に鳴らし始める */
 export function attackSound(attack: number): { name: SeName; hit: number } {

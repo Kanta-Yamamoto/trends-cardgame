@@ -1,4 +1,5 @@
 import { gsap } from "gsap";
+import { FIXER_HIT, playSe } from "../sound/se";
 
 /**
  * 『フィクサー』の差し出し：黒い閃光（見た目だけ。ルールは game-core）。オーナーと詰めたモック
@@ -308,6 +309,9 @@ export function blackFlash(
   return new Promise((resolve) => {
     const t0 = performance.now();
     let finished = false;
+    // 始まりに溜めの音、撃ち抜く瞬間に一撃の音
+    playSe("fixerCharge");
+    setTimeout(() => playSe("fixerHit"), HIT - FIXER_HIT * 1000);
     /** 後片付け（途中で失敗しても必ず呼ぶ。GSAP の時計を止めたままにしない） */
     const finish = () => {
       if (finished) return;
