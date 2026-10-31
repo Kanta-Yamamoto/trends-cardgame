@@ -2267,7 +2267,7 @@ describe("自然属性の作り直し（10月25日。docs/design-nature.md）", 
     expect(stat(s, 1)).toEqual([4, 5]);
   });
 
-  it("呪いのコラ画像：闇堕ちしたとき、闇堕ちを持たない伝説のコラ画像（トークン）を手札に加える。それも先に出した数で育つ", () => {
+  it("呪いのコラ画像：闇堕ちしたとき、伝説のコラ画像（トークン）を手札に加える。それも先に出した数で育つ", () => {
     let s = game(["k5"], F(12), 20);
     s = put(s, 0, 0);
     (s.players.p1.field[0] as Unit).damage = 99;
@@ -2277,16 +2277,33 @@ describe("自然属性の作り直し（10月25日。docs/design-nature.md）", 
     expect(stat(s, 0)).toEqual([3, 1]);
     expect(dark.canAttack && !dark.rushOnly).toBe(true);
     expect(s.players.p1.hand).toContain("t-kora");
-    expect(local["t-kora"]?.dark).toBeUndefined();
 
     s.players.p1.mana = 10;
     s = put(s, s.players.p1.hand.indexOf("t-kora"), 1);
     expect(stat(s, 1)).toEqual([4, 5]);
-    // 写しは破壊されても闇堕ちしない（トークンもふつうのカードと同じく墓地へ行く。10月24日の水の作り直しから）
-    (s.players.p1.field[1] as Unit).damage = 99;
-    s = fin(s);
-    expect(darkOmens(s, "p1")).toEqual([]);
-    expect(s.players.p1.trash).toContain("t-kora");
+  });
+
+  it("伝説のコラ画像の写しも闇堕ちし、そのたびに写しを手札に加える（回数の上限なし。10月31日）", () => {
+    let s = game(["t-kora"], F(12), 20);
+    for (let round = 0; round < 3; round++) {
+      s.players.p1.mana = 10;
+      s = put(s, s.players.p1.hand.indexOf("t-kora"), 1);
+      (s.players.p1.field[1] as Unit).damage = 99;
+      s = fin(s);
+      // 写しも、破壊された枠で裏向きになり、ほかのカードと同じく墓地へ行く
+      expect(darkOmens(s, "p1").map((o) => [o.cardId, o.slot])).toEqual([["t-kora", 1]]);
+      expect(s.players.p1.trash).toContain("t-kora");
+      s = go(fin(s, "p2"), { type: "darkFall", player: "p1", slot: 1 }).state;
+      const dark = s.players.p1.field[1] as Unit;
+      expect([dark.cardId, dark.dark]).toEqual(["t-kora", true]);
+      expect(s.players.p1.hand).toContain("t-kora");
+      // 闇の姿が破壊されたら消える（墓地にも行かない）。次の写しを出せるように空ける
+      dark.damage = 99;
+      s = fin(s);
+      expect(s.players.p1.field[1]).toBeNull();
+      expect(darkOmens(s, "p1")).toEqual([]);
+      s = fin(s, "p2");
+    }
   });
 
   it("ワラ：空いている枠すべてに草を出し、自分のキャラクターすべてに突進を付ける", () => {
