@@ -39,6 +39,8 @@ const TRACKS = {
 export type MusicName = keyof typeof TRACKS;
 const NAMES = Object.keys(TRACKS) as MusicName[];
 
+/** 効果音と比べた音楽の大きさ。音楽の段階 3 は、段階の倍率だけなら 2 だった大きさ（オーナー：「音楽の今の2を3に、効果音をそのままに」「音楽を相対的に小さく」） */
+const BGM_SCALE = 0.6;
 /** 鳴り始め・止めるときのフェード（秒） */
 const FADE_IN = 1.2;
 const FADE_OUT = 0.4;
@@ -144,7 +146,7 @@ function play(c: AudioContext, name: MusicName, fadeIn: number) {
       }
       // 押す前で音を出させてもらえないときは、押したときに鳴る（unlock）
       c.resume().catch(() => {});
-      fadeTo(c, d.gain, TRACKS[name].volume * levelGain(levels.bgm), fadeIn);
+      fadeTo(c, d.gain, TRACKS[name].volume * BGM_SCALE * levelGain(levels.bgm), fadeIn);
     })
     .catch(() => {
       // 読めなければ鳴らさない（画面はそのまま使える）

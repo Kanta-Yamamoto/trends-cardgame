@@ -159,7 +159,7 @@ async function presentPhased(
   shown: GameState,
   events: GameEvent[],
   next: GameState,
-  opts: { from: HTMLElement | Point | null; tint?: string; skip?: ReadonlySet<number> },
+  opts: { from: HTMLElement | Point | null; tint?: string; skip?: ReadonlySet<number>; spell?: boolean },
   show: (g: GameState) => void,
 ): Promise<GameState> {
   const alive = new Set(
@@ -1479,12 +1479,13 @@ export function Board({
           if (a.player === ME && card) {
             const id = Date.now();
             setReveal({ id, cardId: card.id, kind: "cast", mine: true });
+            playSe("spell");
             setTimeout(() => setReveal((r) => (r?.id === id ? null : r)), 1000);
             await wait(visible ? 620 : 900);
           }
           const f = frameRect();
           const from = { x: f.left + f.width / 2, y: f.top + f.height / 2 };
-          await presentPhased(shown, events, next, { from, tint }, show);
+          await presentPhased(shown, events, next, { from, tint, spell: true }, show);
         } else if (a.type === "attack") {
           // 攻撃で倒れて【破壊されたとき】が働く・キャラクターが出るとき（攻撃の演出は beforeAttack で見せ終えている）。
           // 抜け殻から魂が抜け出て効果の先へ飛び、出すキャラクターは抜け殻が消えてから置く
@@ -1715,6 +1716,7 @@ export function Board({
       revealFoe: (g, cardId, a) =>
         new Promise<void>((resolve) => {
           setReveal({ id: Date.now(), cardId, kind: a.type });
+          if (a.type === "cast") playSe("spell");
           // 対象がある呪文は、狙われたキャラクターを光らせる（相手から見た enemy＝こちらのキャラクター）
           const t = a.type === "cast" ? a.target : undefined;
           const uid = t ? g.players[t.side === "enemy" ? ME : CPU].field[t.slot]?.uid : undefined;
