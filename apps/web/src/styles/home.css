@@ -113,15 +113,21 @@
 .hm-hop.a { animation: hm-hop-a 0.62s cubic-bezier(.3, 1.5, .5, 1); }
 .hm-hop.b { animation: hm-hop-b 0.62s cubic-bezier(.3, 1.5, .5, 1); }
 .hm-float { animation: hm-float 5.4s ease-in-out infinite; }
+/*
+ * 箱は舞台の幅いっぱいにして、絵は絵自身の幅で真ん中に寄せる。
+ * 箱の幅を絵の幅に合わせる作り（left: 50% と translate: -50%）にすると、iPhone の Safari が
+ * 絵を読み込んだあとに箱の幅を測り直さないことがあり、絵が右にずれた
+ */
 .hm-chara {
-  position: absolute; left: 50%; top: 1%; height: 128%; display: block; translate: -50% 0;
+  position: absolute; left: 0; right: 0; top: 1%; height: 128%; display: block;
   transform-origin: 50% 70%; animation: hm-breath 3.6s ease-in-out infinite, hm-chara-in 0.55s ease-out;
   -webkit-mask-image: linear-gradient(#000 64%, transparent 77%); mask-image: linear-gradient(#000 64%, transparent 77%);
 }
-.hm-chara img { display: block; height: 100%; width: auto; max-width: none; filter: drop-shadow(0 12px 20px var(--shadow)) drop-shadow(0 0 14px var(--chara-soft)); }
+.hm-chara img { position: absolute; left: 50%; top: 0; translate: -50% 0; display: block; height: 100%; width: auto; max-width: none; filter: drop-shadow(0 12px 20px var(--shadow)) drop-shadow(0 0 14px var(--chara-soft)); }
 .hm-shine {
-  position: absolute; inset: 0; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; mix-blend-mode: screen;
-  background: linear-gradient(112deg, transparent 38%, #beebff73 46%, #ffffffcc 50%, #ffc8e673 54%, transparent 62%) 0 0 / 320% 100%;
+  position: absolute; inset: 0; mix-blend-mode: screen;
+  -webkit-mask-size: auto 100%; mask-size: auto 100%; -webkit-mask-position: 50% 0; mask-position: 50% 0; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  background: linear-gradient(112deg, transparent 38%, #beebff73 46%, #ffffffcc 50%, #ffc8e673 54%, transparent 62%) 0 0 / 360% 100%;
   animation: hm-shine 6.5s ease-in-out infinite;
 }
 @keyframes hm-chara-in { from { opacity: 0; transform: translateY(12px); } }
