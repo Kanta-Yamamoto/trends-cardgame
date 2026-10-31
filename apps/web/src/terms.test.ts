@@ -16,6 +16,7 @@ function sources(dir: string): string[] {
 }
 
 describe("画面に出る文字は用語集に沿う（docs/glossary.md）", () => {
+  // 全ファイルを読むので、手元のマシンが混んでいると 5 秒を超える
   it("使わない呼び名を使っていない（コメントとカード名の中は除く）", () => {
     const found = sources(ROOT).flatMap((f) =>
       sourceTermViolations(readFileSync(f, "utf8"), PROPER_NAMES).map(
@@ -23,5 +24,5 @@ describe("画面に出る文字は用語集に沿う（docs/glossary.md）", () 
       ),
     );
     expect(found).toEqual([]);
-  });
+  }, 30_000);
 });
