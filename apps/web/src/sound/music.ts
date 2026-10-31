@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import BATTLE from "./battle.mp3";
 import COLLECTION from "./collection.mp3";
+import DARK from "./dark.mp3";
 import DECK_SELECT from "./deck.mp3";
 import GACHA from "./gacha.mp3";
 import HOME from "./home.mp3";
@@ -17,6 +18,7 @@ import PULL from "./pull.mp3";
  *   （オーナー：「ガチャを引くところは静かにね。最後のリザルトのところからゆっくりフェードインする」「これ、ガチャのカードを引く時に小さめの音で流しておいて」。useMusicScene）
  * - デッキを選ぶ画面（CPU 戦・オンライン対戦。DeckGrid）：「Deck Selection」（オーナー：「デッキを選択する画面でこの音楽を流して」）
  * - カード一覧（/cards）・デッキを組む（/decks）：「Harmonic Lift」（オーナー：「これ、カード一覧とデッキ選択画面で。ホームよりも９割くらいの大きさで」）
+ * - 闇堕ちのあと：「Tense Loop」を 1 周だけ流し、終わったら対戦の曲へ戻す（オーナー：「闇落ちした後に、流れる音楽」「一周終わったら BGM に戻す」。playMusicOnce）
  * 音の大きさの窓（SoundMenu）の設定は 1 つで、どの曲にも効く。音楽を 0 にすると曲を止める。
  * <audio> ではなく Web Audio で鳴らす：
  * - 音量とフェードが iPhone でも効く（iPhone では <audio> の volume を変えられない）
@@ -30,6 +32,7 @@ const TRACKS = {
   home: { url: HOME, volume: 0.7 },
   gacha: { url: GACHA, volume: 0.62 },
   battle: { url: BATTLE, volume: 0.66 },
+  dark: { url: DARK, volume: 0.66 },
   deckSelect: { url: DECK_SELECT, volume: 0.66 },
   /** ホームの 9 割の大きさ（ホームより 0.9dB 小さく聞こえる） */
   collection: { url: COLLECTION, volume: 0.54 },
@@ -70,6 +73,8 @@ let ctx: AudioContext | null = null;
 let current: MusicName | null = null;
 /** 画面の曲の代わりに、いま流す場面の曲（ガチャのパックを開けている間） */
 let scene: MusicName | null = null;
+/** 1 周だけ流している場面の曲 */
+let once: MusicName | null = null;
 /** 次に鳴らすときは、ゆっくり上げる（場面の曲から画面の曲へ戻すとき） */
 let slowNext = false;
 /** 次に鳴らすときは、すぐ今の大きさにする（音楽の大きさを変えたとき） */
@@ -136,11 +141,17 @@ function play(c: AudioContext, name: MusicName, fadeIn: number) {
         d.gain.connect(c.destination);
       }
       if (!d.source) {
-        const offset = d.offset % buffer.duration;
-        d.source = c.createBufferSource();
-        d.source.buffer = buffer;
-        d.source.loop = true;
-        d.source.connect(d.gain);
+        const offset = name === once ? 0 : d.offset % buffer.duration;
+        const source = c.createBufferSource();
+        d.source = source;
+        source.buffer = buffer;
+        source.loop = name !== once;
+        // 1 周流し終えたら、元の曲へ戻す（止めたときは d.source が先に空になるので、何もしない）
+        if (name === once)
+          source.onended = () => {
+            if (d.source === source) endOnce(d);
+          };
+        source.connect(d.gain);
         d.source.start(0, offset);
         d.startedAt = c.currentTime - offset;
       }
@@ -151,6 +162,16 @@ function play(c: AudioContext, name: MusicName, fadeIn: number) {
     .catch(() => {
       // 読めなければ鳴らさない（画面はそのまま使える）
     });
+}
+
+/** 1 周流し終えた場面の曲を手放して、元の曲へ戻す */
+function endOnce(d: Deck) {
+  d.source?.disconnect();
+  d.source = null;
+  d.offset = 0;
+  scene = null;
+  once = null;
+  sync();
 }
 
 /** 止めたところを覚えて、音の波を手放す */
@@ -212,10 +233,23 @@ export function usePageMusic(name: MusicName) {
     sync();
     return () => {
       if (current === name) current = null;
+      // 1 周だけの曲の途中で画面を離れたら、次の画面に持ち越さない
+      if (once) {
+        scene = null;
+        once = null;
+      }
       notify();
       sync();
     };
   }, [name]);
+}
+
+/** 開いている画面の曲の代わりに name の曲を 1 周だけ流し、終わったら元の曲へ戻す（流している間は流し直さない） */
+export function playMusicOnce(name: MusicName) {
+  if (once === name) return;
+  once = name;
+  scene = name;
+  sync();
 }
 
 /**

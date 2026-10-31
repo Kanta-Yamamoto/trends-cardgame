@@ -1,5 +1,6 @@
 import { gsap } from "gsap";
 import { frameRect } from "../frame";
+import { playSe } from "../sound/se";
 
 /**
  * 伝説のコラ画像が場に出たときの演出。ふつうの着地の代わりに見せる（10月26日、オーナーがモックで決めた「案1 と案3 の折衷」）。
@@ -296,6 +297,7 @@ async function loadArt(url: string | undefined): Promise<HTMLImageElement | null
 export async function collagePaste(o: CollagePasteOpts): Promise<void> {
   const { unit, layer } = o;
   const art = await loadArt(o.art);
+  setTimeout(() => playSe("aceEntry"), IMPACT);
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const f = frameRect();
   const ur = unit.getBoundingClientRect();

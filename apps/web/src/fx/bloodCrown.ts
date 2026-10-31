@@ -20,7 +20,7 @@ const TP = 500;
 const HOLD = 1000;
 const FADE = 600;
 /** エースがせり上がり始める時刻と長さ */
-const RISE_AT = FALL + 80;
+export const RISE_AT = FALL + 80;
 const RISE = 620;
 /** 演出全体の長さ（全体が消えるまで） */
 export const CROWN_MS = FALL + TP + HOLD + FADE;

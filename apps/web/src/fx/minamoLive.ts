@@ -1,6 +1,7 @@
 import { MINAMO_EPITHET } from "@trends/cards";
 import { gsap } from "gsap";
 import { frameRect } from "../frame";
+import { playSe } from "../sound/se";
 import "./minamoLive.css";
 
 /**
@@ -159,6 +160,7 @@ function canvasAt(parent: HTMLElement, left: number, top: number, w: number, h: 
 
 export async function minamoLive(o: MinamoLiveOpts): Promise<void> {
   const { unit, layer, subject, bg, name, epithet } = o;
+  setTimeout(() => playSe("aceEntry"), T_PEEK); // ミナモが顔を出す瞬間
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const f = frameRect();
   const ur = unit.getBoundingClientRect();

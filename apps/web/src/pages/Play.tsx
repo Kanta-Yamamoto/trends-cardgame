@@ -694,6 +694,12 @@ function OmenMark({ awake }: { awake: boolean }) {
     if (awake && !was.current) setTurning(true);
     was.current = awake;
   }, [awake]);
+  // 印が回り始めるとき（ターンの帯を見せ終えてから。app.css の omen-mark-spin の 1 秒あと）に音を鳴らす
+  useEffect(() => {
+    if (!turning) return;
+    const timer = setTimeout(() => playSe("omenUnlock"), 1000);
+    return () => clearTimeout(timer);
+  }, [turning]);
   return (
     <span
       className={`omen-mark ${born ? "" : "stamp"} ${awake ? "awake" : ""} ${turning ? "turning" : ""}`}
@@ -1791,6 +1797,8 @@ export function Board({
         if (id > 1) playSe("turnChange");
         t += 950;
         hold(t);
+      } else if (e.type === "darkOmen") {
+        playSe("darkOmen");
       } else if (e.type === "drew") {
         // ネ申の降臨で、神から手札へ飛ばし終えたカード
         if (fx && handedOver.current > 0) {
