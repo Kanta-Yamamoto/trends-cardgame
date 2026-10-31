@@ -410,6 +410,63 @@ export function castTargets(
   });
 }
 
+/**
+ * いま出せる・使える手札の位置（コストが足り、出す枠・呪文の対象があり、実際に反則にならないもの）。
+ * 自分のターンでない・差し出しや引き直しの途中なら空
+ */
+export function playableCards(state: GameState, player: PlayerId, catalog: Catalog): number[] {
+  if (state.winner || state.pending || state.mulligan || state.active !== player) return [];
+  const me = state.players[player];
+  const slot = openSlots(state, player)[0];
+  const ok = (a: Action) => {
+    try {
+      applyAction(state, a, catalog);
+      return true;
+    } catch (e) {
+      if (e instanceof RuleError) return false;
+      throw e;
+    }
+  };
+  return me.hand.flatMap((id, handIndex) => {
+    const card = catalog[id];
+    if (!card || effectiveCost(state, player, id, catalog) > me.mana) return [];
+    let a: Action | null;
+    if (card.type === "icon") a = slot === undefined ? null : { type: "play", player, handIndex, slot };
+    else if (card.target) {
+      const target = castTargets(state, player, id, catalog)[0];
+      a = target ? { type: "cast", player, handIndex, target } : null;
+    } else a = { type: "cast", player, handIndex };
+    return a && ok(a) ? [handIndex] : [];
+  });
+}
+
+/** このターンにまだできること（ターン終了の前に知らせる。何も無ければ確かめずに終えてよい） */
+export interface TurnOptions {
+  /** 攻撃できる自分のキャラクターの数（攻撃できる相手がいるもの） */
+  attackers: number;
+  /** 出せる・使える手札の枚数（playableCards） */
+  playable: number;
+  /** バズを使えるか */
+  buzz: boolean;
+  /** 闇堕ちさせられる裏向きのカードの数 */
+  darkFall: number;
+}
+
+/** このターンにまだできること。自分のターンでない・差し出しや引き直しの途中なら、すべて 0 */
+export function turnOptions(state: GameState, player: PlayerId, catalog: Catalog): TurnOptions {
+  if (state.winner || state.pending || state.mulligan || state.active !== player)
+    return { attackers: 0, playable: 0, buzz: false, darkFall: 0 };
+  const me = state.players[player];
+  return {
+    attackers: me.field.filter(
+      (u, from) => !!u && canUnitAttack(state, u) && attackTargets(state, player, from, catalog).length > 0,
+    ).length,
+    playable: playableCards(state, player, catalog).length,
+    buzz: buzzBlock(state, player) === null,
+    darkFall: darkFallSlots(state, player).length,
+  };
+}
+
 /** そのキャラクターが今攻撃できるか */
 export function canUnitAttack(state: GameState, u: Unit): boolean {
   return u.canAttack && u.attacksLeft > 0 && state.turn > u.boundUntil;

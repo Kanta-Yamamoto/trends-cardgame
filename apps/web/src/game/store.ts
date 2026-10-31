@@ -197,6 +197,14 @@ export interface Presenter {
   darkFall?: (cardId: string, player: PlayerId) => Promise<void>;
   /** バズのカットイン（プレイヤーとバズ）。state を進める前に見せる */
   buzz?: (game: GameState, action: Extract<Action, { type: "buzz" }>) => Promise<void>;
+  /**
+   * 手札の引き直し：戻すカードを山札へ飛ばし、show で引き直したあとの手札を出してから、山札から同じ枚数を引く。
+   * indexes は戻した手札の位置（相手は位置を見せないので null。count 枚を手札の枚数の所から飛ばす）
+   */
+  mulligan?: (
+    swap: { player: PlayerId; count: number; indexes: number[] | null },
+    show: () => void,
+  ) => Promise<void>;
 }
 let presenter: Presenter | null = null;
 export const setPresenter = (p: Presenter | null) => {
@@ -235,6 +243,15 @@ export function openingMs(): number {
 /** オープニングが終わる時刻（Date.now()）。それまでは CPU を動かさず、届いた相手の手も見せない */
 let openingEnds = 0;
 const openingLeft = () => Math.max(0, openingEnds - Date.now());
+/** オープニングのあとに続ける演出（始めの手札を配る）の分だけ、届いた手を見せるのを待たせる */
+export const holdOpening = (ms: number) => {
+  openingEnds = Math.max(openingEnds, Date.now() + ms);
+};
+/**
+ * まだ見せていない相手の引き直しの枚数。相手が先に選び終えても、自分の引き直しを見せ終えてから
+ * （引き直しが終わったときに）見せる。CPU 戦の CPU は、始めにすぐ選ぶのでここに入る
+ */
+let foeSwap = 0;
 /** 届いた手を見せている run（runId）。つなぎ直したら runId が変わり、古い run は次の区切りで止まる */
 let drainingRun: number | null = null;
 
@@ -309,6 +326,33 @@ export const useGame = create<GameStore>((set, get) => {
     });
   };
 
+  /**
+   * 手札の引き直しを見せる。自分の引き直しは、選んだカードを戻してから引き直したあとの手札を出して引く（show）。
+   * 相手の引き直しは、引き直しが終わったとき（自分の引き直しを見せ終えてから）に見せる
+   */
+  const showMulligan = async (
+    a: Extract<Action, { type: "mulligan" }>,
+    events: GameEvent[],
+    next: GameState,
+    show: () => void,
+  ) => {
+    const ev = events.find((e) => e.type === "mulliganed" && e.player === a.player);
+    const count = ev?.type === "mulliganed" ? ev.count : 0;
+    if (a.player === ME) {
+      const indexes = [...new Set(a.handIndexes)].slice(0, count);
+      if (count > 0) await presenter?.mulligan?.({ player: ME, count, indexes }, show);
+      else show();
+    } else {
+      foeSwap = count;
+      show();
+    }
+    if (!next.mulligan && foeSwap > 0) {
+      const n = foeSwap;
+      foeSwap = 0;
+      await presenter?.mulligan?.({ player: CPU, count: n, indexes: null }, () => {});
+    }
+  };
+
   /** 相手の手を見せ始める（画面が、開いている拡大・確認を閉じる） */
   const foeMoved = () => set({ foeMove: get().foeMove + 1 });
 
@@ -317,7 +361,8 @@ export const useGame = create<GameStore>((set, get) => {
     if (drainingRun === my) return;
     drainingRun = my;
     try {
-      if (openingLeft() > 0) await new Promise((r) => setTimeout(r, openingLeft()));
+      // 待つあいだに伸びることがある（始めの手札を配る演出）
+      while (openingLeft() > 0) await new Promise((r) => setTimeout(r, openingLeft()));
       while (inbox.length > 0 && my === runId) {
         const u = inbox.shift() as RemoteUpdate;
         const g = get().game;
@@ -346,6 +391,12 @@ export const useGame = create<GameStore>((set, get) => {
             await settle(presenter.revealFoe(g, ev.cardId, a));
             if (my !== runId) break;
           }
+        }
+        if (a.type === "mulligan" && presenter?.mulligan && g) {
+          set({ animating: true });
+          const next = u.state;
+          await settle(showMulligan(a, u.events, next, () => my === runId && set({ game: next })));
+          if (my !== runId) break;
         }
         const fx = hasEffects(a, u.events) && !!presenter?.resolveEffects && !!g;
         if (fx && g) {
@@ -559,8 +610,13 @@ export const useGame = create<GameStore>((set, get) => {
         cpuBusy: false,
         animating: false,
       });
-      // CPU は始めにすぐ引き直す（自分が選び終えたら、先攻のターンが始まる）
+      // CPU は始めにすぐ引き直す（自分が選び終えたら、先攻のターンが始まる）。引き直す演出は、自分の引き直しのあとに見せる
+      const before = get().log.length;
       dispatch({ type: "mulligan", player: CPU, handIndexes: planMulligan(game, CPU, CATALOG) });
+      const cpuSwap = get()
+        .log.slice(before)
+        .find((l) => l.e.type === "mulliganed")?.e;
+      foeSwap = cpuSwap?.type === "mulliganed" ? cpuSwap.count : 0;
       const my = runId;
       const wait = openingLeft();
       if (wait > 0) setTimeout(() => my === runId && runCpu(), wait);
@@ -632,13 +688,34 @@ export const useGame = create<GameStore>((set, get) => {
       then(commit({ type: "darkFall", player: ME, slot }), (ok) => ok && set({ selection: null }));
     },
     mulligan: (handIndexes) => {
-      if (!get().game?.mulligan?.waiting.includes(ME) || get().cpuBusy) return;
-      const a: Action = { type: "mulligan", player: ME, handIndexes };
+      const game = get().game;
+      if (!game?.mulligan?.waiting.includes(ME) || get().cpuBusy || get().animating) return;
+      const a = { type: "mulligan", player: ME, handIndexes } as const;
       if (get().mode === "online") {
         void sendRemote(a);
         return;
       }
-      if (dispatch(a)) settleCpu();
+      if (!presenter?.mulligan) {
+        if (dispatch(a)) settleCpu();
+        return;
+      }
+      // 戻す・引き直す（相手の引き直しも）を見せてから、記録を進めて CPU を動かす
+      let res: ReturnType<typeof applyAction>;
+      try {
+        res = applyAction(game, a, CATALOG);
+      } catch (e) {
+        if (e instanceof RuleError) return set({ error: e.message });
+        throw e;
+      }
+      const { state, events } = res;
+      const my = runId;
+      set({ animating: true, selection: null, error: null });
+      void settle(showMulligan(a, events, state, () => my === runId && set({ game: state }))).then(() => {
+        if (my !== runId) return;
+        set({ game: state, log: appendLog(events), animating: false });
+        logMove(a, game, state);
+        settleCpu();
+      });
     },
     cast: (target) => {
       const sel = get().selection;
@@ -708,6 +785,7 @@ export const useGame = create<GameStore>((set, get) => {
       // 始まったばかりの対戦に入ったときだけオープニングを見せる（途中からの再接続では見せない）
       const fresh = !same && state.turn === 1;
       if (fresh) openingEnds = Date.now() + openingMs();
+      if (!same) foeSwap = 0;
       link = l;
       inbox = [];
       set({

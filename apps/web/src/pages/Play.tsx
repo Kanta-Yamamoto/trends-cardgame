@@ -28,6 +28,8 @@ import {
   SLOTS,
   sacrificeCandidates,
   slotOpen,
+  type TurnOptions,
+  turnOptions,
   type Unit,
   type UnitView,
   viewUnit,
@@ -81,7 +83,11 @@ import {
   animateDraw,
   animateEffects,
   animateJudge,
+  animateReturn,
   animateSacrifice,
+  canShowDraw,
+  DRAW_MS,
+  DRAW_STEP_MS,
   flipCard,
   fxLayer,
   hasVisibleEffects,
@@ -94,7 +100,7 @@ import {
 } from "../game/fx";
 import { MiniCard } from "../game/MiniCard";
 import { endReason } from "../game/result";
-import { CATALOG, CPU, DECK_INFO, ME, openingMs, setPresenter, useGame } from "../game/store";
+import { CATALOG, CPU, DECK_INFO, holdOpening, ME, openingMs, setPresenter, useGame } from "../game/store";
 import { useDragPlay } from "../game/useDragPlay";
 import { type ClockLeft, formatClock, useClockLeft, useLive } from "../online/live";
 import { useSession } from "../online/session";
@@ -967,14 +973,16 @@ function DeckConfirm({
 }
 
 /** ターン終了の確認。まだ攻撃できるキャラクターや、残っているコストがあれば添える */
+/**
+ * ターン終了の確認。場と手札でまだできること（攻撃・出す・バズ・闇堕ち）があるときだけ出す。
+ * 何もできなければ、確かめずにターンを終える（Board の endTurnBtn）
+ */
 function EndTurnConfirm({
-  attackers,
-  mana,
+  options,
   onYes,
   onNo,
 }: {
-  attackers: number;
-  mana: number;
+  options: TurnOptions;
   onYes: () => void;
   onNo: () => void;
 }) {
@@ -984,8 +992,10 @@ function EndTurnConfirm({
     return () => window.removeEventListener("keydown", onKey);
   }, [onNo]);
   const notes = [
-    attackers > 0 && `まだ攻撃できるキャラクターが ${attackers} 体います`,
-    mana > 0 && `コストが ${mana} 残っています`,
+    options.attackers > 0 && `攻撃できるキャラクターが ${options.attackers} 体います`,
+    options.playable > 0 && `出せる手札が ${options.playable} 枚あります`,
+    options.buzz && "バズが使えます",
+    options.darkFall > 0 && "闇堕ちできる裏向きのカードがあります",
   ].filter((x): x is string => !!x);
   return (
     <div
@@ -996,18 +1006,18 @@ function EndTurnConfirm({
     >
       <button type="button" className="zoom-sheet-bg" aria-label="やめる" onClick={onNo} />
       <div className="end-confirm-body">
-        <p className="end-confirm-q">ターンを終了しますか？</p>
-        {notes.map((n) => (
-          <p key={n} className="end-confirm-note">
-            {n}
-          </p>
-        ))}
+        <p className="end-confirm-q">まだできることがあります</p>
+        <ul className="end-confirm-list">
+          {notes.map((n) => (
+            <li key={n}>{n}</li>
+          ))}
+        </ul>
         <div className="end-confirm-actions">
           <button type="button" className="btn ghost" onClick={onNo}>
-            いいえ
+            ターンを続ける
           </button>
           <button type="button" className="btn" onClick={onYes}>
-            はい、終了する
+            ターンを終了する
           </button>
         </div>
       </div>
@@ -1299,6 +1309,10 @@ function PostThrowArrow({ from }: { from: { x: number; y: number } | null }) {
 
 /** 見せ終わったオープニングの番号（store の opening） */
 let openingSeen = 0;
+/** 始めの手札を配り終えたオープニングの番号（画面を作り直しても、同じ対戦で配り直さない） */
+let dealtSeen = 0;
+/** 次の描画のあと（state を画面に出してから演出を始める） */
+const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 
 /**
  * 対戦の画面。CPU 戦とオンライン対戦で共通（onQuit を渡すと「戻る」でそれを呼ぶ）。
@@ -1503,6 +1517,46 @@ export function Board({
 
   /** 手札の引き直しの間（両者が選び終えるまで） */
   const mulliganOpen = !!game?.mulligan && !game.winner;
+  /** 始めの手札を配っている間（配り終えてから引き直しの窓を出す） */
+  const [dealing, setDealing] = useState(false);
+  /** 引き直しの戻す・引く演出を見せている間（store の演出が終わるまで。ターン開始の帯はそのあと） */
+  const [swapping, setSwapping] = useState(false);
+  useEffect(() => {
+    if (!animating) setSwapping(false);
+  }, [animating]);
+  /** 引き直しを送ったオープニングの番号（送ったら窓を閉じる） */
+  const [mullSent, setMullSent] = useState(-1);
+  /** 引き直しで新しく引くまで隠しておく、自分の手札の位置 */
+  const veil = useRef<number[]>([]);
+  // 対戦の始め：オープニングのあと、山札から始めの手札を1枚ずつ配る（自分の手札は表に返る）。
+  // 配り終えてから引き直しの窓を出す。配るあいだは、届いた相手の手も待たせる
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 引き直しが始まった（盤面が届いた）ときにも確かめる
+  useLayoutEffect(() => {
+    const g = useGame.getState().game;
+    if (!g?.mulligan || dealtSeen >= opening || !g.mulligan.waiting.includes(ME) || !canShowDraw()) return;
+    // オープニングの間は、配る前の手札を隠しておく（オープニングが消えていくときに透けて見えないように）
+    if (openingOn) {
+      for (const el of document.querySelectorAll<HTMLElement>(`[data-hand="${ME}"] [data-hand-card]`))
+        el.style.opacity = "0";
+      return;
+    }
+    dealtSeen = opening;
+    const mine = g.players[ME].hand.length;
+    const foes = g.players[CPU].hand.length;
+    holdOpening((Math.max(mine, foes) - 1) * DRAW_STEP_MS + DRAW_MS + 90);
+    setDealing(true);
+    const draws: Promise<void>[] = [];
+    for (let i = 0; i < mine; i++) draws.push(animateDraw(ME, i * DRAW_STEP_MS, i));
+    for (let i = 0; i < foes; i++) draws.push(animateDraw(CPU, i * DRAW_STEP_MS + 90));
+    void Promise.all(draws).then(() => setDealing(false));
+  }, [openingOn, opening, mulliganOpen]);
+  // 引き直しで新しい手札を出したとき、引いてくるまでその位置を隠す（描画の直後・見える前に）
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 盤面を描き直すたびに確かめる
+  useLayoutEffect(() => {
+    if (veil.current.length === 0) return;
+    const cards = document.querySelectorAll<HTMLElement>(`[data-hand="${ME}"] [data-hand-card]`);
+    for (const i of veil.current) if (cards[i]) cards[i].style.opacity = "0";
+  }, [game]);
   // オンライン対戦の引き直しの締め切り（サーバーの時計から。CPU 戦は null で、窓を開いてから 30 秒）
   const liveClock = useLive((s) => s.clock);
   const liveAt = useLive((s) => s.at);
@@ -1810,6 +1864,24 @@ export function Board({
         new Promise<void>((resolve) => {
           setCut({ id: Date.now(), cardId, mine: player === ME, done: resolve });
         }),
+      mulligan: async ({ player, count, indexes }, show) => {
+        // 戻すカードを1枚ずつ山札へ飛ばし、引き直したあとの手札を出して、同じ枚数を山札から引く
+        setSwapping(true);
+        const picks: (number | null)[] = indexes ?? Array.from({ length: count }, () => null);
+        try {
+          await Promise.all(picks.map((i, k) => animateReturn(player, i, k * DRAW_STEP_MS)));
+          if (player === ME) veil.current = picks.filter((i): i is number => i !== null);
+          show();
+          await nextFrame();
+          await Promise.all(picks.map((i, k) => animateDraw(player, k * DRAW_STEP_MS, i ?? undefined)));
+        } finally {
+          // 途中で止まっても、隠した手札は必ず見せる
+          veil.current = [];
+          if (player === ME)
+            for (const el of document.querySelectorAll<HTMLElement>(`[data-hand="${ME}"] [data-hand-card]`))
+              el.style.opacity = "";
+        }
+      },
       revealFoe: (g, cardId, a) =>
         new Promise<void>((resolve) => {
           setReveal({ id: Date.now(), cardId, kind: a.type });
@@ -1859,8 +1931,8 @@ export function Board({
 
   // 新しい出来事に合わせて演出を出す（ターン開始のバナー・ドロー・効果の数字・闇堕ち）
   useLayoutEffect(() => {
-    // オープニング・手札の引き直しの間は、ターン開始のバナーなどを出さずに待つ（終わったら続きから出す）
-    if (openingOn || mulliganOpen) return;
+    // オープニング・始めの手札を配る・手札の引き直しの間は、ターン開始のバナーなどを出さずに待つ（終わったら続きから出す）
+    if (openingOn || mulliganOpen || dealing || swapping) return;
     const last = log.at(-1)?.id ?? 0;
     if (last < seen.current) seen.current = 0; // 新しい対戦
     const fresh = log.filter((l) => l.id > seen.current);
@@ -1940,7 +2012,7 @@ export function Board({
       }
     }
     if (until > 0) fxUntil.current = Math.max(fxUntil.current, performance.now() + until);
-  }, [log, openingOn, mulliganOpen]);
+  }, [log, openingOn, mulliganOpen, dealing, swapping]);
 
   // 決着：最後の一撃（ダメージの数字・ライフが 0 になるところ）やターン開始のバナーを見せ終えてから、
   // 負けた側のプレイヤーの帯が砕け、破片がこちらへ飛んできてぶつかり、暗転（負け）・白転（勝ち）して、明けたら結果（fx/lifeBreak.ts）。
@@ -2295,11 +2367,17 @@ export function Board({
       </span>
     </button>
   );
+  /** このターンにまだできることがあるか（場と手札。game-core の turnOptions） */
+  const hasTurnOptions = (o: TurnOptions) => o.attackers + o.playable + o.darkFall > 0 || o.buzz;
   const endTurnBtn = (
     <button
       type="button"
       className={`btn end-turn ${myTurn ? "now" : ""}`}
-      onClick={() => setConfirmEnd(true)}
+      onClick={() => {
+        // 場と手札でまだできること（攻撃・出す・バズ・闇堕ち）が無ければ、確かめずにターンを終える
+        if (hasTurnOptions(turnOptions(game, ME, CATALOG))) setConfirmEnd(true);
+        else endTurn();
+      }}
       disabled={!myTurn}
     >
       ターン終了
@@ -2568,8 +2646,7 @@ export function Board({
 
       {confirmEnd && myTurn && (
         <EndTurnConfirm
-          attackers={me.field.filter((u) => u && canUnitAttack(game, u)).length}
-          mana={me.mana}
+          options={turnOptions(game, ME, CATALOG)}
           onYes={() => {
             setConfirmEnd(false);
             endTurn();
@@ -2588,10 +2665,23 @@ export function Board({
           onNo={() => setQuitAsk(false)}
         />
       )}
-      {mulliganOpen && !openingOn && game.mulligan?.waiting.includes(ME) && (
-        <MulliganSheet key={opening} hand={me.hand} deadline={mulliganDeadline} onDone={mulligan} />
-      )}
-      {mulliganOpen && !openingOn && !game.mulligan?.waiting.includes(ME) && (
+      {mulliganOpen &&
+        !openingOn &&
+        !dealing &&
+        !animating &&
+        mullSent !== opening &&
+        game.mulligan?.waiting.includes(ME) && (
+          <MulliganSheet
+            key={opening}
+            hand={me.hand}
+            deadline={mulliganDeadline}
+            onDone={(indexes) => {
+              setMullSent(opening);
+              mulligan(indexes);
+            }}
+          />
+        )}
+      {mulliganOpen && !openingOn && !dealing && !animating && !game.mulligan?.waiting.includes(ME) && (
         <div className="mulligan-wait" role="status">
           相手が手札を引き直しています
         </div>

@@ -18,7 +18,9 @@ import {
   isShielded,
   legalTargets,
   openSlots,
+  playableCards,
   previewAttack,
+  turnOptions,
   viewUnit,
   withRushBoost,
 } from "./engine";
@@ -323,6 +325,45 @@ describe("場に出す・呪文を使う", () => {
     const r = cast(s, 0, { side: "enemy", slot: 0 });
     expect(r.players.p2.field[0]?.damage).toBe(3);
     expect(r.players.p1.trash).toContain("fire");
+  });
+  it("いま出せる・使える手札：コストが足りない・出す枠が無い・呪文の対象が無いものは入らない", () => {
+    // 手札は big・fire・f・f（コスト 3 では big は出せない。相手の場が空なので fire も使えない）
+    const s = game(["big", "fire"], undefined, 3);
+    expect(playableCards(s, "p1", catalog)).toEqual([2, 3]);
+    expect(playableCards(game(["big", "fire"], undefined, 0), "p1", catalog)).toEqual([]);
+    // 場が埋まっていればキャラクターは出せない
+    const full = game(["f", "f", "f", "f"]);
+    full.players.p1.field = full.players.p1.field.map((_, i) => ({
+      ...(play(game(["f"]), 0, 0).players.p1.field[0] as Unit),
+      uid: 100 + i,
+    }));
+    expect(playableCards(full, "p1", catalog)).toEqual([]);
+    // 相手のキャラクターがいれば、対象を取る呪文は使える
+    expect(playableCards(withFoe(["fire"], ["wall"]), "p1", catalog)).toContain(0);
+    // 自分のターンでなければ空
+    expect(playableCards(s, "p2", catalog)).toEqual([]);
+  });
+  it("このターンにまだできること：手札が出せなくても、場のキャラクターの攻撃・バズが残っていれば知らせる", () => {
+    // コスト 0：手札は出せない。場も空なので、何もできない
+    const none = game(["big"], undefined, 0);
+    expect(turnOptions(none, "p1", catalog)).toEqual({ attackers: 0, playable: 0, buzz: false, darkFall: 0 });
+    // 出したばかりのキャラクターは攻撃できないが、バズが使える時期ならバズが残る
+    const placed = play(game(["f"], undefined, 1), 0, 0);
+    placed.players.p1.turnsTaken = 4;
+    expect(turnOptions(placed, "p1", catalog)).toMatchObject({ attackers: 0, playable: 0, buzz: true });
+    // 攻撃できるキャラクターがいれば数える（相手のプレイヤーを攻撃できる）
+    const ready = structuredClone(placed);
+    const u = ready.players.p1.field[0] as Unit;
+    u.canAttack = true;
+    u.attacksLeft = 1;
+    expect(turnOptions(ready, "p1", catalog).attackers).toBe(1);
+    // 相手のターンには何も無い
+    expect(turnOptions(ready, "p2", catalog)).toEqual({
+      attackers: 0,
+      playable: 0,
+      buzz: false,
+      darkFall: 0,
+    });
   });
 });
 
