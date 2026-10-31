@@ -7,8 +7,8 @@ import { InstallGuide, useCanInstall } from "../InstallButton";
 import { InviteFriends } from "../InviteFriends";
 import { api, useSession } from "../online/session";
 import { dismissGuide, refreshApp, useReloadWhenNewer } from "../pwa";
-import { MusicToggle } from "../sound/MusicToggle";
 import { usePageMusic } from "../sound/music";
+import { SoundMenu } from "../sound/SoundMenu";
 import { useTutorial } from "../tutorial/progress";
 import { HomeTour } from "../tutorial/TourGuides";
 import "../styles/home.css";
@@ -220,8 +220,14 @@ export function Home() {
           </span>
         </Link>
         <span className="hm-top-actions">
-          <MusicToggle className="hm-icon-btn hm-glass" />
-          <button type="button" className="hm-icon-btn hm-glass" aria-label="お知らせ" onClick={openNews}>
+          <SoundMenu className="hm-icon-btn hm-glass" />
+          <button
+            type="button"
+            className="hm-icon-btn hm-glass"
+            aria-label="お知らせ"
+            data-tap-se
+            onClick={openNews}
+          >
             <Icon d={I.bell} />
             {unseen > 0 && <span className="hm-badge">{unseen}</span>}
           </button>
@@ -229,6 +235,7 @@ export function Home() {
             type="button"
             className="hm-icon-btn hm-glass"
             aria-label="メニュー"
+            data-tap-se
             onClick={() => setSheet("menu")}
           >
             <Icon d={I.menu} />
@@ -301,7 +308,7 @@ export function Home() {
             {chara.name}
           </span>
         </div>
-        <button type="button" className="hm-swap hm-glass" onClick={nextChara}>
+        <button type="button" className="hm-swap hm-glass" data-tap-se onClick={nextChara}>
           <Icon d={I.swap} />
           キャラを変える
         </button>
@@ -309,14 +316,14 @@ export function Home() {
 
       <nav className="hm-dock" aria-label="メニュー">
         <div className="hm-battle">
-          <Link to="/play" className="hm-bb cpu">
+          <Link to="/play" className="hm-bb cpu" data-tap-se>
             <span className="hm-bb-ic">
               <Icon d={I.cpu} />
             </span>
             <span className="hm-bb-sub">ひとりで練習</span>
             <span className="hm-bb-label">CPUと対戦</span>
           </Link>
-          <Link to="/online" className="hm-bb online">
+          <Link to="/online" className="hm-bb online" data-tap-se>
             <span className="hm-sheen" aria-hidden="true" />
             <span className="hm-bb-ic">
               <Icon d={I.swords} />
@@ -326,19 +333,19 @@ export function Home() {
           </Link>
         </div>
         <div className="hm-tiles">
-          <Link to="/decks" className="hm-tile">
+          <Link to="/decks" className="hm-tile" data-tap-se>
             <span className="hm-tile-ic pri">
               <Icon d={I.deck} />
             </span>
             デッキを組む
           </Link>
-          <Link to="/cards" className="hm-tile">
+          <Link to="/cards" className="hm-tile" data-tap-se>
             <span className="hm-tile-ic sub">
               <Icon d={I.cards} />
             </span>
             カード一覧
           </Link>
-          <Link to="/gacha" className="hm-tile gacha">
+          <Link to="/gacha" className="hm-tile gacha" data-tap-se>
             <span className="hm-tile-ic acc">
               <Icon d={I.sparkle} />
             </span>
@@ -358,6 +365,7 @@ export function Home() {
                 type="button"
                 className="hm-icon-btn hm-glass"
                 aria-label="閉じる"
+                data-tap-se
                 onClick={() => setSheet(null)}
               >
                 <Icon d={I.close} />

@@ -1,5 +1,6 @@
 import { gsap } from "gsap";
 import type { Container, Filter, Texture } from "pixi.js";
+import { playSe } from "../sound/se";
 import { SHELL_FILTER } from "./deathSoul";
 import { type FxStage, fxEnabled, fxStage, type Pixi } from "./stage";
 
@@ -15,6 +16,7 @@ type Rect = { left: number; top: number; width: number; height: number };
  * 属性で色は変えない。元のカードは React がすぐ消すので、呼ぶ側が抜け殻（ghost）を作って渡す。
  */
 export async function dissolve(ghost: HTMLElement): Promise<void> {
+  playSe("vanish");
   const r = ghost.getBoundingClientRect();
   // 【破壊されたとき】の抜け殻（fx/deathSoul.ts）は、白く薄い姿から黒く沈める
   const s = ghost.dataset.shell ? SHELL_FILTER : { grayscale: 0, contrast: 1, brightness: 1 };

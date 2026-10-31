@@ -27,6 +27,7 @@ import { hideBootWhenReady } from "./boot";
 import { FRAME_ID, watchFrame } from "./frame";
 import { stripInviteFromUrl } from "./invite";
 import { isStandalone, registerPwa } from "./pwa";
+import { watchSoundEffects } from "./sound/se";
 import { watchTaps } from "./tapMark";
 import { lockZoom } from "./viewport";
 
@@ -72,4 +73,5 @@ watchFrame();
 hideBootWhenReady();
 // 押した所に、やわらかい光を一瞬出す（どの画面でも）
 watchTaps();
+watchSoundEffects();
 requestAnimationFrame(() => watchFrame());

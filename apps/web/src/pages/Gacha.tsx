@@ -124,10 +124,16 @@ export function Gacha() {
         <p className="gx-demo-note">カードは増えず、ジェムも減りません。</p>
         <div className="gx-demo-btns">
           {/* data-tut：チュートリアルで押してもらうボタン（デモを消すときは、本物の 1 パックに付け替える） */}
-          <button type="button" className="btn ghost" data-tut="gacha-pack" onClick={() => demo(1)}>
+          <button
+            type="button"
+            className="btn ghost"
+            data-tut="gacha-pack"
+            data-decide-se
+            onClick={() => demo(1)}
+          >
             1パック
           </button>
-          <button type="button" className="btn ghost" onClick={() => demo(10)}>
+          <button type="button" className="btn ghost" data-decide-se onClick={() => demo(10)}>
             10パック
           </button>
         </div>
@@ -190,7 +196,13 @@ export function Gacha() {
                   <button type="button" className="btn ghost" onClick={() => setSheet(null)}>
                     やめる
                   </button>
-                  <button type="button" className="btn" disabled={busy} onClick={() => open(sheet.packs)}>
+                  <button
+                    type="button"
+                    className="btn"
+                    data-decide-se
+                    disabled={busy}
+                    onClick={() => open(sheet.packs)}
+                  >
                     {busy ? "開けています…" : "開ける"}
                   </button>
                 </div>

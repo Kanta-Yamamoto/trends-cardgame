@@ -137,7 +137,18 @@ button { font: inherit; color: inherit; }
 .topbar-back { flex: none; width: 44px; height: 44px; border-radius: 15px; display: grid; place-items: center; color: var(--ink); text-decoration: none; }
 .topbar-back svg { width: 22px; height: 22px; }
 .topbar-back:active { transform: scale(0.94); }
-/* 音楽を止める・流すボタン（曲の流れる画面だけ。sound/MusicToggle.tsx） */
+/* 音の大きさのボタン（曲の流れる画面だけ）と、その下に開く小さな窓（sound/SoundMenu.tsx） */
+.snd-pop { position: fixed; z-index: 300; display: grid; gap: 4px; padding: 10px 12px; border-radius: var(--r-m); color: var(--ink); transform-origin: var(--tail) 0; animation: snd-pop 0.14s ease-out; }
+.snd-pop::before { content: ""; position: absolute; left: var(--tail); top: -6px; width: 11px; height: 11px; margin-left: -6px; background: #fff; border-radius: 2px 0 0 0; transform: rotate(45deg); }
+@keyframes snd-pop { from { opacity: 0; transform: scale(0.92); } }
+.snd-row { position: relative; display: flex; align-items: center; gap: 2px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.snd-label { flex: 1; font-size: 13px; font-weight: 800; }
+.snd-step { flex: none; width: 36px; height: 36px; padding: 0; border: 0; background: none; color: var(--ink); font-size: 19px; font-weight: 800; cursor: pointer; }
+.snd-step:disabled { color: var(--ink-3); opacity: 0.5; cursor: default; }
+.snd-pips { flex: none; display: flex; }
+.snd-pip { width: 24px; height: 36px; padding: 0; border: 0; background: none; cursor: pointer; }
+.snd-pip::before { content: ""; display: block; width: 16px; height: 8px; margin: auto; border-radius: 4px; background: var(--line-2); }
+.snd-pip.on::before { background: var(--pri-2); }
 .topbar-music { flex: none; width: 44px; height: 44px; padding: 0; border-radius: 15px; display: grid; place-items: center; color: var(--ink); cursor: pointer; }
 .topbar-music svg { width: 22px; height: 22px; }
 .topbar-music:active { transform: scale(0.94); }

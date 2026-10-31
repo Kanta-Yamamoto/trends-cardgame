@@ -1,5 +1,6 @@
 import type { Attribute } from "@trends/cards";
 import { gsap } from "gsap";
+import { entrySound, playSe } from "../sound/se";
 import { paletteOf } from "./palette";
 import { fxEnabled, fxStage } from "./stage";
 import { summonWave } from "./summonWave";
@@ -18,10 +19,16 @@ type Rect = { left: number; top: number; width: number; height: number };
  */
 export function fieldEntry(
   el: HTMLElement | null,
-  card: { attributes: readonly Attribute[]; rarity: number },
+  card: { attributes: readonly Attribute[]; rarity: number; token?: boolean },
   delayMs = 0,
 ) {
-  if (!el || !fxEnabled()) return;
+  if (!el) return;
+  const sound = entrySound(card);
+  if (!fxEnabled()) {
+    // 動きを減らす設定でも、出たことは音で分かるように
+    playSe(sound.name);
+    return;
+  }
   const r = Math.max(1, Math.min(5, card.rarity));
   const big = r >= 4;
   const lift = 30 + r * 4;
@@ -29,10 +36,11 @@ export function fieldEntry(
 
   const tl = gsap.timeline({ delay: delayMs / 1000 });
   const charge = 0.12 + r * 0.02;
+  const fall = 0.1;
   // 1. 溜め：浮かんで、少しふくらむ
   tl.to(el, { opacity: 1, y: -lift - 8, scale: 1.28, duration: charge, ease: "power1.out" })
     // 2. 解放：叩きつける
-    .to(el, { y: 0, scale: 1, duration: 0.1, ease: "power4.in" })
+    .to(el, { y: 0, scale: 1, duration: fall, ease: "power4.in" })
     // 3. 衝撃：つぶれて一瞬止まる（ヒットストップ）
     .add(() => {
       // 着地した瞬間を知らせる（登場時の演出を、着地に合わせて始めるため。landed() が待つ）
@@ -47,6 +55,8 @@ export function fieldEntry(
     .to(el, { scaleX: 1, scaleY: 1, duration: 0.35, ease: "back.out(3)" })
     .to(el, { filter: "brightness(1)", duration: 0.4, ease: "sine.out" }, "<")
     .set(el, { clearProps: "opacity,transform,filter" });
+  // 音の山が着地に重なるよう、★で変わる溜めの長さに合わせて鳴らし始める（動きを組んだあとに差し込む。先に入れると動きが後ろへずれる）
+  tl.call(() => playSe(sound.name), undefined, charge + fall - sound.hit);
 }
 
 /** 盤面を小刻みに揺らす（★4・★5 の着地） */

@@ -494,7 +494,7 @@ export function Opening({
               <button type="button" className="btn ghost gx-dk" onClick={onClose}>
                 ガチャへ
               </button>
-              <button type="button" className="btn" onClick={onAgain ?? onClose}>
+              <button type="button" className="btn" data-decide-se onClick={onAgain ?? onClose}>
                 {demo ? "もう1パック（デモ）" : "もう1パック開ける"}
               </button>
             </>
