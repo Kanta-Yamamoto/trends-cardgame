@@ -41,6 +41,7 @@ export {
   legalTargets,
   openSlots,
   opponent,
+  playableCards,
   previewAttack,
   sacrificeCandidates,
   slotOpen,

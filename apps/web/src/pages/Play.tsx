@@ -24,6 +24,7 @@ import {
   isShielded,
   openSlots,
   type PlayerId,
+  playableCards,
   previewAttack,
   SLOTS,
   sacrificeCandidates,
@@ -969,12 +970,16 @@ function DeckConfirm({
 /** ターン終了の確認。まだ攻撃できるキャラクターや、残っているコストがあれば添える */
 function EndTurnConfirm({
   attackers,
-  mana,
+  playable,
+  falls,
   onYes,
   onNo,
 }: {
   attackers: number;
-  mana: number;
+  /** いま出せる・使える手札の枚数 */
+  playable: number;
+  /** いま闇堕ちさせられる裏向きのカードの数 */
+  falls: number;
   onYes: () => void;
   onNo: () => void;
 }) {
@@ -985,7 +990,8 @@ function EndTurnConfirm({
   }, [onNo]);
   const notes = [
     attackers > 0 && `まだ攻撃できるキャラクターが ${attackers} 体います`,
-    mana > 0 && `コストが ${mana} 残っています`,
+    playable > 0 && `出せる手札が ${playable} 枚あります`,
+    falls > 0 && "闇堕ちできる裏向きのカードがあります",
   ].filter((x): x is string => !!x);
   return (
     <div
@@ -2295,11 +2301,21 @@ export function Board({
       </span>
     </button>
   );
+  /** ターンを終える前にまだできること：[攻撃できるキャラクター, 出せる手札, 闇堕ちできる裏向きのカード] */
+  const endTurnTodo = () => [
+    me.field.filter((u) => u && canUnitAttack(game, u)).length,
+    playableCards(game, ME, CATALOG).length,
+    darkFallSlots(game, ME).length,
+  ];
   const endTurnBtn = (
     <button
       type="button"
       className={`btn end-turn ${myTurn ? "now" : ""}`}
-      onClick={() => setConfirmEnd(true)}
+      onClick={() => {
+        // 出せる手札も、攻撃できるキャラクターも、闇堕ちできる裏向きのカードも無ければ、確かめずにターンを終える
+        if (endTurnTodo().some((n) => n > 0)) setConfirmEnd(true);
+        else endTurn();
+      }}
       disabled={!myTurn}
     >
       ターン終了
@@ -2566,17 +2582,23 @@ export function Board({
         </div>
       )}
 
-      {confirmEnd && myTurn && (
-        <EndTurnConfirm
-          attackers={me.field.filter((u) => u && canUnitAttack(game, u)).length}
-          mana={me.mana}
-          onYes={() => {
-            setConfirmEnd(false);
-            endTurn();
-          }}
-          onNo={() => setConfirmEnd(false)}
-        />
-      )}
+      {confirmEnd &&
+        myTurn &&
+        (() => {
+          const [attackers = 0, playable = 0, falls = 0] = endTurnTodo();
+          return (
+            <EndTurnConfirm
+              attackers={attackers}
+              playable={playable}
+              falls={falls}
+              onYes={() => {
+                setConfirmEnd(false);
+                endTurn();
+              }}
+              onNo={() => setConfirmEnd(false)}
+            />
+          );
+        })()}
       {quitAsk && !game.winner && (
         <QuitConfirm
           question={online ? "ロビーに戻りますか？" : "デッキ選びに戻りますか？"}
