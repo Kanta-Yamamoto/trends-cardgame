@@ -1,5 +1,6 @@
 import { gsap } from "gsap";
 import { frameRect } from "../frame";
+import { playSe } from "../sound/se";
 import "./kusahamiAmbush.css";
 
 /**
@@ -443,6 +444,7 @@ export async function kusahamiAmbush(o: KusahamiAmbushOpts): Promise<void> {
     S.dispose();
     return;
   }
+  setTimeout(() => playSe("aceEntry"), L);
   const { cu, co, veil, card, flash, meadow, FW, FH, kf, gx, gy, f, k, CX, CY } = S;
   const bush = buildBush(k);
   const rb = rng(37);

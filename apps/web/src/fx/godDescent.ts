@@ -1,5 +1,6 @@
 import { gsap } from "gsap";
 import { frameRect } from "../frame";
+import { playSe } from "../sound/se";
 import "./godDescent.css";
 
 /**
@@ -118,6 +119,7 @@ function canvasIn(parent: HTMLElement, w: number, h: number, dpr: number) {
 
 export async function godDescent(o: GodDescentOpts): Promise<void> {
   const { unit, field, over, gifts, mine } = o;
+  setTimeout(() => playSe("godEntry"), IMPACT);
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const board = document.querySelector<HTMLElement>(".board");
 

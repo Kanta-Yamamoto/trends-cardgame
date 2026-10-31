@@ -1,5 +1,6 @@
 import { gsap } from "gsap";
 import { frameRect } from "../frame";
+import { playSe } from "../sound/se";
 
 /**
  * ★5のアイドルが場に出たときのライブ演出。ふつうの着地の代わりに見せる（10月25日、オーナーがモックで選んだ案A・叩きつけ）。
@@ -160,6 +161,7 @@ export async function idolLive(o: IdolLiveOpts): Promise<void> {
   const { unit, layer, cardId } = o;
   const look = IDOL_LIVE[cardId];
   if (!look) return;
+  setTimeout(() => playSe("aceEntry"), 940); // 枠へ叩きつける瞬間
   const col = look.color;
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const f = frameRect();

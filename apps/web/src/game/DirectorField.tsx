@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { MID, type Pt, scenes, shapeAt, slash, toClip } from "../cards/directorMotion";
-import { CROWN_MS, crownCard, paintCrown } from "../fx/bloodCrown";
+import { CROWN_MS, crownCard, paintCrown, RISE_AT } from "../fx/bloodCrown";
+import { playSe } from "../sound/se";
 
 /**
  * 『演出家』が場に出たとき、バトル場全体の背景を真紅と黒の二色が支配する演出（見た目だけ。ルールは game-core）。
@@ -80,6 +81,8 @@ export function DirectorField({ aces = [], onDone }: { aces?: StagedAce[]; onDon
       over: false,
     }));
     const crownEnd = list.reduce((m, s) => Math.max(m, s.at + CROWN_MS), 0);
+    // エースが血の中から上がり始める瞬間
+    for (const s of list) setTimeout(() => playSe("aceEntry"), s.at + RISE_AT);
     const maskU = document.createElement("canvas");
     const maskO = document.createElement("canvas");
     const cardOf = (uid: number) => board.querySelector<HTMLElement>(`[data-uid="${uid}"]`);

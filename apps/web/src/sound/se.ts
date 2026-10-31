@@ -1,11 +1,17 @@
 import { seGain, soundDone, soundOutput } from "./music";
+import ACE_ENTRY from "./se/ace_entry.wav";
 import ARBITER from "./se/arbiter.wav";
 import ATTACK from "./se/attack.wav";
 import ATTACK_LIGHT from "./se/attack_light.wav";
+import DARK_FALL from "./se/dark_fall.wav";
+import DARK_OMEN from "./se/dark_omen.wav";
+import DARK_SUMMON from "./se/dark_summon.wav";
 import FINISH from "./se/finish.wav";
 import FIXER_CHARGE from "./se/fixer_charge.wav";
 import FIXER_STRIKE from "./se/fixer_hit.wav";
+import GOD_ENTRY from "./se/god_entry.wav";
 import LANDING from "./se/landing.wav";
+import OMEN_UNLOCK from "./se/omen_unlock.wav";
 import SPELL from "./se/spell.wav";
 import SPELL_HIT from "./se/spell_hit.wav";
 import STAT_UP from "./se/stat_up.wav";
@@ -42,6 +48,18 @@ const SOUNDS = {
   fixerCharge: { url: FIXER_CHARGE, volume: 0.6 },
   /** 『フィクサー』の黒い閃光が撃ち抜く瞬間 */
   fixerHit: { url: FIXER_STRIKE, volume: 0.8 },
+  /** 闇堕ちを持つキャラクターが破壊されて、裏向きのカードと砂時計が残るとき（オーナー：「破壊されたのにカードが消えないで砂時計が残る場面のやつ」） */
+  darkOmen: { url: DARK_OMEN, volume: 0.7 },
+  /** 砂時計が回って炎に変わり、闇堕ちできるようになるとき（オーナー：「砂時計の回転と解除のやつ」） */
+  omenUnlock: { url: OMEN_UNLOCK, volume: 0.7 },
+  /** 闇堕ちの文字とモーダルが出るとき（オーナー：「これが実際に闇落ちモーダルのところで鳴らすやつ」） */
+  darkFall: { url: DARK_FALL, volume: 0.8 },
+  /** 闇堕ちの姿が盤面に戻るとき（オーナー：「これ闇落ちから登場の」） */
+  darkSummon: { url: DARK_SUMMON, volume: 0.85 },
+  /** 神以外の★5 の特殊な登場の演出で、キャラクターが現れる瞬間（オーナー：「前のやつが、神以外の星5」） */
+  aceEntry: { url: ACE_ENTRY, volume: 0.85 },
+  /** 神の降臨の衝撃の瞬間（オーナー：「後者が、神」） */
+  godEntry: { url: GOD_ENTRY, volume: 0.85 },
   /** 攻撃力・体力が上がるとき（オーナー：「これとりあえずスタッツ上昇時の音」） */
   statUp: { url: STAT_UP, volume: 0.5 },
   /** ターンが入れ替わって、ターンの帯が出るとき。自分も相手も同じ音（オーナー：「相手の時もこっちの時も両方ともこの音にまず変えておいてください」） */
@@ -62,6 +80,9 @@ export const FINISH_HIT = 1.055;
 
 /** fixerHit の音の頭から衝撃までの秒数。撃ち抜くこの秒数前に鳴らし始める */
 export const FIXER_HIT = 0.05;
+
+/** darkFall の音の頭から山までの秒数。「闇堕ち」の字を叩きつけるこの秒数前に鳴らし始める */
+export const DARK_FALL_HIT = 0.56;
 
 /** 攻撃の音と、音の頭から山までの秒数。当たるこの秒数前に鳴らし始める */
 export function attackSound(attack: number): { name: SeName; hit: number } {

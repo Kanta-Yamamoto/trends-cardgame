@@ -2,6 +2,7 @@ import type { CardDef } from "@trends/cards";
 import { gsap } from "gsap";
 import { type CSSProperties, useLayoutEffect, useRef } from "react";
 import { disintegrate, embers } from "../fx/shatter";
+import { DARK_FALL_HIT, playSe } from "../sound/se";
 
 export interface DarkCut {
   id: number;
@@ -53,6 +54,7 @@ export function DarkCutscene({
     if (reduce) {
       gsap.set($(".dc-to"), { opacity: 1 });
       gsap.set($(".dc-from"), { opacity: 0 });
+      playSe("darkFall");
       const t = gsap.timeline({ onComplete: finish });
       t.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.2 }).to(el, { opacity: 0, duration: 0.2 }, 0.9);
       tl.current = t;
@@ -116,6 +118,8 @@ export function DarkCutscene({
 
     // 3. 衝撃：斜めの帯がはしり、「闇堕ち」の字を 1 字ずつ叩きつける（大きく速く → 止まる）
     const SLAM = 0.98;
+    // 音の山が、字を叩きつける瞬間に重なるように鳴らし始める
+    t.call(() => playSe("darkFall"), [], SLAM - DARK_FALL_HIT);
     t.to($(".dc-band"), { scaleX: 1, duration: 0.22, ease: "expo.out" }, SLAM - 0.08)
       .to(chars, { opacity: 1, scale: 1, y: 0, duration: 0.11, ease: "power4.in", stagger: 0.07 }, SLAM)
       .to($(".dc-sub"), { opacity: 1, x: 0, duration: 0.35, ease: "expo.out" }, SLAM + 0.28);
