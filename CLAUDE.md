@@ -17,7 +17,7 @@ AIで描いたイラストを立体感のあるキラカードにして遊ぶ、
 - `assets/original` — 生成した元イラスト（印刷用）
 - `tools/cutout.py` — 元イラストから人物を切り抜く
 - `tools/app-icon.py` — アプリのアイコン（『演出家』）を `apps/web/public/icons/` に作る。Android（maskable）だけ引いた絵
-- `tools/promo-video.mjs` — SNS に出す、カード 1 枚を傾けて見せる短い動画を `sns/` に作る（撮影用のページは `apps/web/promo.html`。`docs/promo-video.md`）
+- `tools/promo-video.mjs` — SNS に出す短い動画を `sns/` に作る。カード 1 枚を傾けて見せる動画と、本物の盤面・開封の画面で撮る演出の場面（撮影用のページは `apps/web/promo.html`・`src/promo/`。`docs/promo-video.md`）
 
 ## コマンド
 
@@ -32,6 +32,7 @@ pnpm build
 pnpm verify     # CI と同じ確かめ（先に pnpm db:up）。dev に取り込む前に通す
 TRENDS_INVITE=合言葉 pnpm logs:cpu fetch   # 本番から CPU 対戦の記録を取り出す（pnpm logs:cpu summary で一覧）
 pnpm promo:video c17 8.1   # SNS 用のカードの動画を sns/c17.mp4 に作る（先に pnpm dev）
+pnpm promo:video scene god # 本物の盤面で演出の場面を sns/scene-god.mp4 に撮る（先に pnpm dev）
 ```
 
 環境変数は `.env.example` を参照（`apps/api/.env` に `DATABASE_URL`。手元でオンライン対戦を試すときは `AUTH_DEV_LOGIN=true` で名前だけのログインが使える）。
