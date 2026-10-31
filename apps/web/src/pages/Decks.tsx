@@ -345,7 +345,13 @@ function DeckEditor({
     <section className="page deck-builder db-editor">
       <div className="db-head">
         <div className="db-head-row">
-          <button type="button" className="topbar-back g1" aria-label="デッキの一覧に戻る" onClick={onBack}>
+          <button
+            type="button"
+            className="topbar-back g1"
+            aria-label="デッキの一覧に戻る"
+            data-tap-se
+            onClick={onBack}
+          >
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -368,6 +374,7 @@ function DeckEditor({
           <button
             type="button"
             className="btn db-save"
+            data-decide-se
             disabled={errors.length > 0}
             onClick={() =>
               onSave({ ...deck, name: name.trim() || "自分のデッキ", cards, updated: Date.now() })

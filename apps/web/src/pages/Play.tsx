@@ -96,8 +96,9 @@ import { CATALOG, CPU, DECK_INFO, ME, openingMs, setPresenter, useGame } from ".
 import { useDragPlay } from "../game/useDragPlay";
 import { type ClockLeft, formatClock, useClockLeft, useLive } from "../online/live";
 import { useSession } from "../online/session";
-import { MusicToggle } from "../sound/MusicToggle";
 import { usePageMusic } from "../sound/music";
+import { SoundMenu } from "../sound/SoundMenu";
+import { playSe } from "../sound/se";
 import { lockZoom, resetZoom } from "../viewport";
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -854,7 +855,13 @@ export function DeckGrid({
               </b>
               {chosen && <span>{chosen.text}</span>}
             </div>
-            <button type="button" className="btn" disabled={!chosen} onClick={() => chosen && onPick(chosen)}>
+            <button
+              type="button"
+              className="btn"
+              data-decide-se
+              disabled={!chosen}
+              onClick={() => chosen && onPick(chosen)}
+            >
               {cta}
             </button>
           </div>
@@ -936,7 +943,7 @@ function DeckConfirm({
           <button type="button" className="btn ghost lg" onClick={onCancel}>
             選び直す
           </button>
-          <button type="button" className="btn lg" onClick={onConfirm}>
+          <button type="button" className="btn lg" data-decide-se onClick={onConfirm}>
             {label}
           </button>
         </div>
@@ -1773,6 +1780,8 @@ export function Board({
         // 『フィクサー』の黒い場は、出したターンが終わったら滲んで戻る
         fixerApi.current?.close();
         setBanner({ id, mine: e.player === ME, turn: e.turn });
+        // 対戦の最初と、つなぎ直したときの帯（出来事の 1 番目）は、入れ替わりではないので鳴らさない
+        if (id > 1) playSe("turnChange");
         t += 950;
         hold(t);
       } else if (e.type === "drew") {
@@ -2215,6 +2224,7 @@ export function Board({
     <button
       type="button"
       className="btn ghost quit"
+      data-tap-se
       onClick={() => (game.winner ? quit() : setQuitAsk(true))}
     >
       {online ? "ロビーへ" : "戻る"}
@@ -2263,7 +2273,7 @@ export function Board({
             {/* 音楽のボタンは左（右はオンライン対戦で「降参」まで並び、空きがない） */}
             <span className="ptop-left">
               {quitBtn}
-              <MusicToggle className="btn ghost small pmusic" />
+              <SoundMenu className="btn ghost small pmusic" />
             </span>
             {turnPill}
             <span className="ptop-right">
@@ -2717,7 +2727,7 @@ function Result({
       </section>
       <div className="result-actions">
         {onAgain && (
-          <button type="button" className="btn lg" onClick={onAgain}>
+          <button type="button" className="btn lg" data-decide-se onClick={onAgain}>
             もう一度
           </button>
         )}

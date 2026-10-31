@@ -26,6 +26,7 @@ import "./styles/app.css";
 import { FRAME_ID, watchFrame } from "./frame";
 import { stripInviteFromUrl } from "./invite";
 import { isStandalone, registerPwa } from "./pwa";
+import { watchSoundEffects } from "./sound/se";
 import { watchTaps } from "./tapMark";
 import { lockZoom } from "./viewport";
 
@@ -69,4 +70,5 @@ createRoot(root).render(
 watchFrame();
 // 押した所に、やわらかい光を一瞬出す（どの画面でも）
 watchTaps();
+watchSoundEffects();
 requestAnimationFrame(() => watchFrame());

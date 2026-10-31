@@ -2,8 +2,8 @@ import { Link, useLocation } from "react-router";
 import { GemPill } from "./gacha/Pack";
 import { useWallet } from "./gacha/wallet";
 import { useSession } from "./online/session";
-import { MusicToggle } from "./sound/MusicToggle";
 import { useMusicPage } from "./sound/music";
+import { SoundMenu } from "./sound/SoundMenu";
 
 /** 画面ごとの題名（上の帯に出す）。小さい字は題名の下の説明 */
 const TITLES: Record<string, { title: string; sub?: string }> = {
@@ -36,7 +36,12 @@ export function TopBar() {
     titleOf(pathname);
   return (
     <div className="topbar">
-      <Link to={back} className="topbar-back g1" aria-label={back === "/" ? "ホームへ戻る" : "戻る"}>
+      <Link
+        to={back}
+        className="topbar-back g1"
+        aria-label={back === "/" ? "ホームへ戻る" : "戻る"}
+        data-tap-se
+      >
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -53,7 +58,7 @@ export function TopBar() {
         {title}
         {sub && <small>{sub}</small>}
       </h1>
-      {music && <MusicToggle className="topbar-music g1" />}
+      {music && <SoundMenu className="topbar-music g1" />}
       {pathname === "/gacha" && <GemPill wallet={wallet} />}
     </div>
   );

@@ -4,6 +4,7 @@ import COLLECTION from "./collection.mp3";
 import DECK_SELECT from "./deck.mp3";
 import GACHA from "./gacha.mp3";
 import HOME from "./home.mp3";
+import { LEVELS_KEY, levelGain, readLevels, type SoundKind, type SoundLevels } from "./levels";
 import PULL from "./pull.mp3";
 
 /**
@@ -16,7 +17,7 @@ import PULL from "./pull.mp3";
  *   （オーナー：「ガチャを引くところは静かにね。最後のリザルトのところからゆっくりフェードインする」「これ、ガチャのカードを引く時に小さめの音で流しておいて」。useMusicScene）
  * - デッキを選ぶ画面（CPU 戦・オンライン対戦。DeckGrid）：「Deck Selection」（オーナー：「デッキを選択する画面でこの音楽を流して」）
  * - カード一覧（/cards）・デッキを組む（/decks）：「Harmonic Lift」（オーナー：「これ、カード一覧とデッキ選択画面で。ホームよりも９割くらいの大きさで」）
- * 止めるボタン（MusicToggle）の設定は 1 つで、どの曲にも効く。
+ * 音の大きさの窓（SoundMenu）の設定は 1 つで、どの曲にも効く。音楽を 0 にすると曲を止める。
  * <audio> ではなく Web Audio で鳴らす：
  * - 音量とフェードが iPhone でも効く（iPhone では <audio> の volume を変えられない）
  * - Android の通知に「再生中」が出ない
@@ -43,8 +44,8 @@ const FADE_IN = 1.2;
 const FADE_OUT = 0.4;
 /** 場面の曲から画面の曲へ戻すとき（ガチャの結果の画面）のフェード（秒） */
 const FADE_SLOW = 3;
-/** 止めたかどうかを端末に覚える（"off" で止めている。名前はホームだけだった頃のまま） */
-const KEY = "trends.homeMusic";
+/** 音楽の大きさを変えたときのフェード（秒） */
+const FADE_QUICK = 0.15;
 /** ブラウザが音を出してよいと認める操作 */
 const GESTURES = ["pointerup", "touchend", "click", "keydown"] as const;
 
@@ -69,21 +70,19 @@ let current: MusicName | null = null;
 let scene: MusicName | null = null;
 /** 次に鳴らすときは、ゆっくり上げる（場面の曲から画面の曲へ戻すとき） */
 let slowNext = false;
-let enabled = loadEnabled();
+/** 次に鳴らすときは、すぐ今の大きさにする（音楽の大きさを変えたとき） */
+let quickNext = false;
+let levels = loadLevels();
 let stopTimer = 0;
 const subscribers = new Set<() => void>();
 
-function loadEnabled(): boolean {
-  try {
-    return localStorage.getItem(KEY) !== "off";
-  } catch {
-    return true;
-  }
+function loadLevels(): SoundLevels {
+  return readLevels((key) => localStorage.getItem(key));
 }
 
 /** 今流す曲（無ければ null） */
 function wanted(): MusicName | null {
-  return enabled && document.visibilityState === "visible" ? (scene ?? current) : null;
+  return levels.bgm > 0 && document.visibilityState === "visible" ? (scene ?? current) : null;
 }
 
 /** 初めて要るときに一度だけ用意する（Web Audio のないブラウザ・テストでは何もしない） */
@@ -145,7 +144,7 @@ function play(c: AudioContext, name: MusicName, fadeIn: number) {
       }
       // 押す前で音を出させてもらえないときは、押したときに鳴る（unlock）
       c.resume().catch(() => {});
-      fadeTo(c, d.gain, TRACKS[name].volume, fadeIn);
+      fadeTo(c, d.gain, TRACKS[name].volume * levelGain(levels.bgm), fadeIn);
     })
     .catch(() => {
       // 読めなければ鳴らさない（画面はそのまま使える）
@@ -185,8 +184,9 @@ function sync() {
     const g = decks[name].gain;
     if (name !== want && g) fadeTo(c, g, 0, FADE_OUT);
   }
-  if (want) play(c, want, slowNext ? FADE_SLOW : FADE_IN);
+  if (want) play(c, want, quickNext ? FADE_QUICK : slowNext ? FADE_SLOW : FADE_IN);
   slowNext = false;
+  quickNext = false;
   // 消え終わったら、流していない曲を止めて手放す。何も流さないなら Web Audio ごと止める（電池を使わない）
   stopTimer = window.setTimeout(
     () => {
@@ -233,26 +233,46 @@ export function useMusicScene(name: MusicName | null) {
   }, [name]);
 }
 
-export function setMusicOn(on: boolean) {
-  enabled = on;
+/** 音楽か効果音の大きさを変える（端末に覚える） */
+export function setSoundLevel(kind: SoundKind, level: number) {
+  levels = { ...levels, [kind]: level };
   try {
-    localStorage.setItem(KEY, on ? "on" : "off");
+    localStorage.setItem(LEVELS_KEY, JSON.stringify(levels));
   } catch {
     // 覚えられなくても、開いている間は選んだとおり
   }
   notify();
-  sync();
+  if (kind === "bgm") {
+    quickNext = true;
+    sync();
+  }
 }
 
-/** 音楽を流す設定か（止めるボタンの表示に使う） */
-export function useMusicOn(): boolean {
+/** 音楽と効果音の大きさ（音の大きさの窓に使う） */
+export function useSoundLevels(): SoundLevels {
   return useSyncExternalStore(
     (f) => {
       subscribers.add(f);
       return () => subscribers.delete(f);
     },
-    () => enabled,
+    () => levels,
   );
+}
+
+/** 効果音を鳴らす先（効果音が 0 の間・裏に回っている間は null） */
+export function soundOutput(): AudioContext | null {
+  if (levels.se === 0 || document.visibilityState !== "visible") return null;
+  return setup();
+}
+
+/** 効果音の大きさの倍率 */
+export function seGain(): number {
+  return levelGain(levels.se);
+}
+
+/** 効果音が鳴り終わったら呼ぶ。曲を流していない画面なら Web Audio を止める（電池を使わない） */
+export function soundDone() {
+  if (ctx?.state === "running" && !wanted()) ctx.suspend().catch(() => {});
 }
 
 /** 開いている画面に曲があるか（上の帯に音楽のボタンを出すかに使う） */

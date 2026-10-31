@@ -9,6 +9,7 @@ import { dissolve } from "../fx/dissolve";
 import { healMist } from "../fx/healMist";
 import { impact } from "../fx/impact";
 import { thrust } from "../fx/thrust";
+import { playSe } from "../sound/se";
 
 /**
  * 対戦画面の演出（DOM を直接アニメーションさせる）。
@@ -461,6 +462,7 @@ async function showRushBoost(
   if (a === 0 && h === 0) return;
   glow(atk, "#ffd76a");
   popLabel(atk, `突進 ${a >= 0 ? "+" : ""}${a}/${h >= 0 ? "+" : ""}${h}`, "#ffd76a");
+  if (a >= 0 && h >= 0) playSe("statUp");
   atk
     .animate(
       [
@@ -803,6 +805,7 @@ export async function animateEffects(
           land: (el) => {
             glow(el, up ? "#ffd76a" : "#b06bff");
             popLabel(el, text, up ? "#ffd76a" : "#c08bff");
+            if (up) playSe("statUp");
           },
         });
         break;
