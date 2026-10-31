@@ -1,4 +1,5 @@
 import { gsap } from "gsap";
+import { ARBITER_HIT, playSe } from "../sound/se";
 
 /**
  * 『調停者』の突き（見た目だけ。ルールは game-core）。オーナーと詰めたモック「『調停者』の突き」（Artifact）と同じ動きと秒数。
@@ -248,6 +249,9 @@ export function thrust(
   return new Promise((resolve) => {
     const t0 = performance.now();
     let finished = false;
+    // 音の山が当たる瞬間に重なるよう、当たる少し前に鳴らし始める（2 体目からは、止まっていた時間の分だけ遅れる）
+    for (let i = 0; i < n; i++)
+      setTimeout(() => playSe("arbiter"), hitAt(i) + i * FREEZE - ARBITER_HIT * 1000);
     /** 後片付け（途中で失敗しても必ず呼ぶ。GSAP の時計を止めたままにしない） */
     const finish = () => {
       if (finished) return;

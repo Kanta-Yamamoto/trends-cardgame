@@ -1,5 +1,6 @@
 import { gsap } from "gsap";
 import { frameRect } from "../frame";
+import { playSe } from "../sound/se";
 
 /**
  * バズの演出（10月23日に決定。モック：claude.ai の Artifact「バズの演出 案」）。
@@ -218,6 +219,7 @@ function rays(layer: HTMLElement, card: DOMRect): Promise<void> {
 
 /** 4. 攻撃力・体力の上に「+N」を浮かべる。返り値は、数字が変わったあとに消す関数 */
 function showPlus(layer: HTMLElement, el: HTMLElement, attack: number, hp: number) {
+  playSe("statUp");
   const tags: HTMLElement[] = [];
   for (const [sel, n, kind] of [
     [".mini-atk", attack, "atk"],

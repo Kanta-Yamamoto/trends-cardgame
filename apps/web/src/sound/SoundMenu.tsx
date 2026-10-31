@@ -29,7 +29,7 @@ function LevelRow({ kind, label, value }: { kind: SoundKind; label: string; valu
   const change = (level: number) => {
     setSoundLevel(kind, level);
     // 効果音は、変えた大きさをその場で聞かせる（音楽は流れているので聞こえる）
-    if (kind === "se") playSe("summon");
+    if (kind === "se") playSe("landing");
   };
   return (
     <fieldset className="snd-row" aria-label={`${label}の大きさ`}>

@@ -1,7 +1,11 @@
 import { seGain, soundDone, soundOutput } from "./music";
+import ARBITER from "./se/arbiter.wav";
+import ATTACK from "./se/attack.wav";
+import ATTACK_LIGHT from "./se/attack_light.wav";
+import LANDING from "./se/landing.wav";
+import SPELL from "./se/spell.wav";
+import SPELL_HIT from "./se/spell_hit.wav";
 import STAT_UP from "./se/stat_up.wav";
-import SUMMON from "./se/summon.wav";
-import TOKEN from "./se/token.wav";
 import TURN_CHANGE from "./se/turn_change.wav";
 import UI_DECIDE from "./se/ui_decide.wav";
 import UI_TAP from "./se/ui_tap.wav";
@@ -15,15 +19,23 @@ import VANISH from "./se/vanish.wav";
 
 /** 音と音量（ファイルそのままの大きさを 1）。ファイルは短いので、WAV のまま持つ（MP3 は頭に無音が入り、着地とずれる） */
 const SOUNDS = {
-  /** ふつうのキャラクターが場に着地するとき（オーナー：「これが普通のやつが出た時の音にしましょうか」）。音の頭が着地の衝撃 */
-  summon: { url: SUMMON, volume: 0.9 },
-  /** トークン（草など、効果で生まれるカード）が場に出るとき（オーナー：「草とかのトークンが出た時の音はこれです」） */
-  token: { url: TOKEN, volume: 0.6 },
+  /** キャラクター・トークンが場に着地するとき。暫定で全員同じ音（オーナー：「クリーチャーの着地の時の音は暫定でこれにしておいて」） */
+  landing: { url: LANDING, volume: 0.6 },
   /** 破壊されたキャラクターが、黒く溶けて消えるとき（オーナー：「破壊ではなく、破壊した後の消えるモーションにしましょう」） */
   vanish: { url: VANISH, volume: 0.6 },
+  /** 攻撃がキャラクター・プレイヤーに当たるとき（オーナー：「相手のキャラクターへの攻撃、相手のプレイヤーへの攻撃はこれで」）。溜めのあとに「ドン」が来る */
+  attack: { url: ATTACK, volume: 0.8 },
+  /** 攻撃力 2 以下のキャラクターの攻撃（オーナー：「攻撃力が2以下のやつの攻撃は、この音にして、すべて」）。高い音なので、攻撃の音より小さく */
+  attackLight: { url: ATTACK_LIGHT, volume: 0.5 },
+  /** 呪文を使ったとき。自分も相手も同じ音（オーナー：「呪文で相手にダメージを与えるとか何かしら呪文を使った時にこの音にしてみて」） */
+  spell: { url: SPELL, volume: 0.6 },
+  /** 『調停者』の剣の突き。刀を抜く音と一撃の音を重ねた（オーナー：「調停者の剣の音は、これの合わせ技にして」「高音も低音もあっていい感じになる」） */
+  arbiter: { url: ARBITER, volume: 0.8 },
+  /** 呪文のダメージがキャラクター・プレイヤーに当たるとき（オーナー：「これ呪文で相手にダメージ与える時の基本の音」） */
+  spellHit: { url: SPELL_HIT, volume: 0.7 },
   /** 攻撃力・体力が上がるとき（オーナー：「これとりあえずスタッツ上昇時の音」） */
   statUp: { url: STAT_UP, volume: 0.5 },
-  /** ターンが入れ替わって、ターンの帯が出るとき（オーナー：「ターン終了のボタンを押した後のターンが入れ替わる時の音にしよう」） */
+  /** ターンが入れ替わって、ターンの帯が出るとき。自分も相手も同じ音（オーナー：「相手の時もこっちの時も両方ともこの音にまず変えておいてください」） */
   turnChange: { url: TURN_CHANGE, volume: 0.6 },
   /** 主のボタンと、音の付いたボタン（ホーム・戻るボタン）を押したとき */
   uiTap: { url: UI_TAP, volume: 0.6 },
@@ -33,10 +45,16 @@ const SOUNDS = {
 export type SeName = keyof typeof SOUNDS;
 const NAMES = Object.keys(SOUNDS) as SeName[];
 
-/** 場に出るときの音と、音の頭から山までの秒数。着地のこの秒数前に鳴らし始める */
-export function entrySound(card: { token?: boolean }): { name: SeName; hit: number } {
-  return card.token ? { name: "token", hit: 0.03 } : { name: "summon", hit: 0.035 };
+/** arbiter の音の頭から山までの秒数。突きが当たるこの秒数前に鳴らし始める */
+export const ARBITER_HIT = 0.15;
+
+/** 攻撃の音と、音の頭から山までの秒数。当たるこの秒数前に鳴らし始める */
+export function attackSound(attack: number): { name: SeName; hit: number } {
+  return attack <= 2 ? { name: "attackLight", hit: 0.175 } : { name: "attack", hit: 0.16 };
 }
+
+/** landing の音の頭から山までの秒数。着地のこの秒数前に鳴らし始める */
+export const LANDING_HIT = 0.03;
 
 /** 同じ音を続けて鳴らす間隔（秒）。トークンが同時に並ぶときに重なって大きくならないように */
 const MIN_GAP = 0.045;

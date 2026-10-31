@@ -9,7 +9,7 @@ import { dissolve } from "../fx/dissolve";
 import { healMist } from "../fx/healMist";
 import { impact } from "../fx/impact";
 import { thrust } from "../fx/thrust";
-import { playSe } from "../sound/se";
+import { attackSound, playSe } from "../sound/se";
 
 /**
  * 対戦画面の演出（DOM を直接アニメーションさせる）。
@@ -286,6 +286,8 @@ export async function animateAttack(
 ): Promise<void> {
   if (!canAnimate() || reduced()) {
     opts.onImpact?.();
+    const unit = before.players[player].field[from];
+    if (unit) playSe(attackSound(viewUnit(before, player, unit, catalog).attack).name);
     return;
   }
   const foeId: PlayerId = player === "p1" ? "p2" : "p1";
@@ -350,8 +352,12 @@ export async function animateAttack(
     { duration: 820 },
   );
 
-  // 突進が当たる瞬間
-  await wait(820 * 0.58);
+  // 突進が当たる瞬間。音の「ドン」が重なるよう、当たる少し前に鳴らし始める
+  const hitAt = 820 * 0.58;
+  const sound = attackSound(dmg);
+  await wait(hitAt - sound.hit * 1000);
+  playSe(sound.name);
+  await wait(sound.hit * 1000);
   // ぶつかった点：受けた側のカードの、攻撃してきた側のふち寄り
   const src = center(a);
   const dst = center(d);
@@ -430,6 +436,7 @@ export function showRiding(
       await fly(center(src.getBoundingClientRect()), center(target.getBoundingClientRect()), "#ffd76a");
     glow(target, "#ffd76a");
     popLabel(target, `便乗 +${add.attack}/+${add.hp}`, "#ffd76a");
+    playSe("statUp");
     shift(atk, add.attack);
     shift(hp, add.hp);
     for (const el of [atk, hp])
@@ -722,6 +729,8 @@ export async function animateEffects(
     from: Point | HTMLElement | null;
     tint?: string;
     skip?: ReadonlySet<number>;
+    /** 呪文の効果（ダメージが当たったら呪文のダメージの音を鳴らす） */
+    spell?: boolean;
     /** いなくなるキャラクターが消え終わるまで待つ（このあとに、効果で出るキャラクターを置くとき） */
     untilGone?: boolean;
     /** このすぐあとに【破壊されたとき】の魂が抜け出る：消えるのを見せ切るまで待たない */
@@ -753,6 +762,7 @@ export async function animateEffects(
           land: (el) => {
             burst(center(el.getBoundingClientRect()), opts.tint ?? "#ff5a4a");
             popNumber(el, `-${e.amount}`);
+            if (opts.spell) playSe("spellHit");
             shake(el, 0.8);
           },
         });
@@ -768,6 +778,7 @@ export async function animateEffects(
             if (guarded) shieldRipple(el, 0.6);
             burst(center(el.getBoundingClientRect()), "#ff5a4a");
             popNumber(el, `-${e.amount}`);
+            if (opts.spell) playSe("spellHit");
             shake(el, 0.6);
             quake(Math.min(1.6, 0.4 + e.amount / 4));
           },

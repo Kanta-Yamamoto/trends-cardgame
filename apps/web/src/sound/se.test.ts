@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { entrySound, tapSoundOf } from "./se";
+import { attackSound, tapSoundOf } from "./se";
 
-describe("場に出るときの効果音", () => {
-  it("トークンはトークンの音、ほかのキャラクターは召喚の音", () => {
-    expect(entrySound({ token: true }).name).toBe("token");
-    expect(entrySound({}).name).toBe("summon");
+describe("攻撃の効果音", () => {
+  it("攻撃力 2 以下は軽い音、3 以上はふつうの音", () => {
+    expect(attackSound(1).name).toBe("attackLight");
+    expect(attackSound(2).name).toBe("attackLight");
+    expect(attackSound(3).name).toBe("attack");
   });
 });
 

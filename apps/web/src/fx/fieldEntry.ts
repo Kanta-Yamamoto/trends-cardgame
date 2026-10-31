@@ -1,6 +1,6 @@
 import type { Attribute } from "@trends/cards";
 import { gsap } from "gsap";
-import { entrySound, playSe } from "../sound/se";
+import { LANDING_HIT, playSe } from "../sound/se";
 import { paletteOf } from "./palette";
 import { fxEnabled, fxStage } from "./stage";
 import { summonWave } from "./summonWave";
@@ -19,14 +19,13 @@ type Rect = { left: number; top: number; width: number; height: number };
  */
 export function fieldEntry(
   el: HTMLElement | null,
-  card: { attributes: readonly Attribute[]; rarity: number; token?: boolean },
+  card: { attributes: readonly Attribute[]; rarity: number },
   delayMs = 0,
 ) {
   if (!el) return;
-  const sound = entrySound(card);
   if (!fxEnabled()) {
     // 動きを減らす設定でも、出たことは音で分かるように
-    playSe(sound.name);
+    playSe("landing");
     return;
   }
   const r = Math.max(1, Math.min(5, card.rarity));
@@ -56,7 +55,7 @@ export function fieldEntry(
     .to(el, { filter: "brightness(1)", duration: 0.4, ease: "sine.out" }, "<")
     .set(el, { clearProps: "opacity,transform,filter" });
   // 音の山が着地に重なるよう、★で変わる溜めの長さに合わせて鳴らし始める（動きを組んだあとに差し込む。先に入れると動きが後ろへずれる）
-  tl.call(() => playSe(sound.name), undefined, charge + fall - sound.hit);
+  tl.call(() => playSe("landing"), undefined, charge + fall - LANDING_HIT);
 }
 
 /** 盤面を小刻みに揺らす（★4・★5 の着地） */
