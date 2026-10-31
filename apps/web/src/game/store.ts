@@ -14,6 +14,7 @@ import {
   RuleError,
 } from "@trends/game-core";
 import { create } from "zustand";
+import { beforeBuffs } from "./beforeBuffs";
 import { abandonCpuLog, beginCpuLog, logMove, logThought, watchPageHide } from "./cpuLog";
 import type { DeckSel } from "./decks";
 
@@ -203,8 +204,9 @@ let link: RemoteLink | null = null;
 /** サーバーから届いた手を、順番に1つずつ反映する */
 let inbox: RemoteUpdate[] = [];
 /**
- * 届いた手の演出1つを待つ上限（ms）。演出が止まったり（途中で消えた・画面が裏に回った）失敗したりしても、
- * 盤面は必ず進める（10月28日：相手の画面だけ、決着の手が出ないまま止まった）
+ * 演出1つを待つ上限（ms。オンライン対戦の届いた手も、CPU 対戦の手も）。演出が止まったり（途中で消えた・画面が裏に回った）
+ * 失敗したりしても、盤面は必ず進める（10月28日：相手の画面だけ、決着の手が出ないまま止まった。
+ * 10月30日：CPU 対戦で、選んだ手札が持ち上がったまま、ターン終了とバズが押せなくなった）
  */
 export const STEP_LIMIT_MS = 12_000;
 /** 演出を待つ。失敗しても上限を過ぎても、そこで切り上げる（盤面を進めるのは呼んだ側） */
@@ -235,10 +237,14 @@ let drainingRun: number | null = null;
 
 type PlaceAction = Extract<Action, { type: "play" }>;
 
-/** 出したキャラクターだけを場に置いた、効果の前の姿（演出のあいだ画面に出す） */
-function placedOnly(prev: GameState, a: PlaceAction, next: GameState): GameState {
-  const unit = next.players[a.player].field[a.slot];
-  if (!unit) return prev;
+/**
+ * 出したキャラクターだけを場に置いた、効果の前の姿（演出のあいだ画面に出す）。
+ * 【場に出たとき】の自分への強化（クサハミなど）は、まだ足さない（「+N」を見せてから数字を上げる）
+ */
+function placedOnly(prev: GameState, a: PlaceAction, events: GameEvent[], next: GameState): GameState {
+  const placed = next.players[a.player].field[a.slot];
+  if (!placed) return prev;
+  const unit = beforeBuffs(placed, a.player, a.slot, events);
   const me = prev.players[a.player];
   const after = next.players[a.player];
   return {
@@ -293,7 +299,7 @@ export const useGame = create<GameStore>((set, get) => {
     next: GameState,
     alive: () => boolean = () => true,
   ) => {
-    const shown = isPlace(a) ? placedOnly(game, a, next) : game;
+    const shown = isPlace(a) ? placedOnly(game, a, events, next) : game;
     if (shown !== game) set({ game: shown });
     await presenter?.resolveEffects?.(shown, a, events, next, (g) => {
       if (alive()) set({ game: g });
@@ -411,9 +417,12 @@ export const useGame = create<GameStore>((set, get) => {
     if (!hasEffects(a, events)) return dispatch(a);
     const my = runId;
     set({ animating: true, selection: null, error: null });
-    return showDarkFalls(events)
-      .then(() => present(game, a, events, state))
+    // 演出が失敗したり止まったりしても、盤面は必ず進める（STEP_LIMIT_MS）
+    let alive = true;
+    return settle(showDarkFalls(events))
+      .then(() => settle(present(game, a, events, state, () => alive && my === runId)))
       .then(() => {
+        alive = false;
         if (my !== runId) return false;
         set({ game: state, log: appendLog(events, true), animating: false, error: null });
         logMove(a, game, state);
@@ -477,11 +486,11 @@ export const useGame = create<GameStore>((set, get) => {
       // 相手（ME）の差し出しを待っている間は止まる（選んだら settleCpu から続きを考え直す）
       if (g.pending && !g.pending.waiting.includes(CPU)) return finish();
       foeMoved();
-      if (a.type === "attack" && presenter) await presenter.beforeAttack(g, a);
-      if (a.type === "buzz" && presenter?.buzz) await presenter.buzz(g, a);
+      if (a.type === "attack" && presenter) await settle(presenter.beforeAttack(g, a));
+      if (a.type === "buzz" && presenter?.buzz) await settle(presenter.buzz(g, a));
       if ((a.type === "play" || a.type === "cast") && presenter?.revealFoe) {
         const id = g.players[CPU].hand[a.handIndex];
-        if (id) await presenter.revealFoe(g, id, a);
+        if (id) await settle(presenter.revealFoe(g, id, a));
       }
       if (my !== runId) return;
       if (!(await commit(a))) return finish();
@@ -636,7 +645,7 @@ export const useGame = create<GameStore>((set, get) => {
       }
       const my = runId;
       set({ animating: true, selection: null });
-      presenter.beforeAttack(game, a).then(() => {
+      settle(presenter.beforeAttack(game, a)).then(() => {
         if (my !== runId) return;
         then(commit(a), () => {
           if (my === runId) set({ animating: false });
@@ -661,7 +670,7 @@ export const useGame = create<GameStore>((set, get) => {
       }
       const my = runId;
       set({ animating: true, selection: null });
-      presenter.buzz(game, a).then(() => {
+      settle(presenter.buzz(game, a)).then(() => {
         if (my !== runId) return;
         dispatch(a);
         set({ animating: false });

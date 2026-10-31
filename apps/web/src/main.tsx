@@ -23,6 +23,7 @@ import "./cards/rare.css";
 import "./cards/rare5.css";
 import "./cards/stats.css";
 import "./styles/app.css";
+import { hideBootWhenReady } from "./boot";
 import { FRAME_ID, watchFrame } from "./frame";
 import { stripInviteFromUrl } from "./invite";
 import { isStandalone, registerPwa } from "./pwa";
@@ -68,6 +69,8 @@ createRoot(root).render(
 );
 
 watchFrame();
+// 起きるまでのローディング（index.html）を、サーバーが返事をしたら消す
+hideBootWhenReady();
 // 押した所に、やわらかい光を一瞬出す（どの画面でも）
 watchTaps();
 watchSoundEffects();

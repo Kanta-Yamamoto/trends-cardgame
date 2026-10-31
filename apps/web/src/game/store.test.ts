@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { cpuLogForTest } from "./cpuLog";
 import { builtinDeck } from "./decks";
-import { CATALOG, CPU, ME, setPresenter, useGame } from "./store";
+import { CATALOG, CPU, ME, STEP_LIMIT_MS, setPresenter, useGame } from "./store";
 
 describe("対戦ストア", () => {
   beforeEach(() => {
@@ -165,6 +165,66 @@ describe("対戦ストア", () => {
       setPresenter(null);
     }
   });
+
+  it("【場に出たとき】に自分が強化されるキャラクター（クサハミ）は、効果を見せる間は強化前の数字で置く", async () => {
+    const placed: (number | undefined)[] = [];
+    setPresenter({
+      beforeAttack: async () => {},
+      turnIntro: 0,
+      resolveEffects: async (shown, a) => {
+        if (a.type === "play") placed.push(shown.players[ME].field[a.slot]?.atkBuff);
+      },
+    });
+    try {
+      const g = structuredClone(useGame.getState().game);
+      if (!g) throw new Error("no game");
+      g.players[ME].mana = 10;
+      g.players[ME].hand = ["c14"];
+      g.players[ME].field = g.players[ME].field.map(() => null);
+      g.players[ME].tokensLost = { "t-kusa": 2 };
+      useGame.setState({ game: g });
+      useGame.getState().select({ kind: "hand", index: 0 });
+      useGame.getState().play(0);
+      for (let i = 0; i < 400 && useGame.getState().animating; i++)
+        await new Promise((r) => setTimeout(r, 5));
+      // 効果を見せる間は +0、見せ終えたら破壊された草 2 体ぶんの +2
+      expect(placed).toEqual([0]);
+      expect(useGame.getState().game?.players[ME].field[0]?.atkBuff).toBe(2);
+    } finally {
+      setPresenter(null);
+    }
+  });
+
+  // 10月30日：演出が失敗・停止すると animating が戻らず、選んだ手札が持ち上がったまま、ターン終了とバズが押せなかった
+  for (const [kind, resolveEffects] of [
+    ["失敗", () => Promise.reject(new Error("演出の失敗"))],
+    ["停止", () => new Promise<void>(() => {})],
+  ] as const) {
+    it(`演出が${kind}しても、上限で切り上げて盤面を進め、操作できる状態に戻す`, async () => {
+      vi.useFakeTimers();
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      setPresenter({ beforeAttack: async () => {}, turnIntro: 0, resolveEffects });
+      try {
+        const g = structuredClone(useGame.getState().game);
+        if (!g) throw new Error("no game");
+        g.players[ME].mana = 10;
+        g.players[ME].hand = ["c14"];
+        g.players[ME].field = g.players[ME].field.map(() => null);
+        useGame.setState({ game: g });
+        useGame.getState().select({ kind: "hand", index: 0 });
+        useGame.getState().play(0);
+        expect(useGame.getState().animating).toBe(true);
+        await vi.advanceTimersByTimeAsync(STEP_LIMIT_MS);
+        expect(useGame.getState().animating).toBe(false);
+        expect(useGame.getState().selection).toBeNull();
+        expect(useGame.getState().game?.players[ME].field[0]?.cardId).toBe("c14");
+      } finally {
+        setPresenter(null);
+        warn.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+  }
 
   for (const delay of [0, 5]) {
     it(`『フィクサー』：CPU が出したら自分が選び、そのあと CPU がターンを続けて終える（待ち時間 ${delay}）`, async () => {
