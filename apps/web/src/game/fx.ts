@@ -490,12 +490,24 @@ async function showRushBoost(
   await wait(700);
 }
 
-/** 山札から1枚引く：裏向きのカードが山札から手札へ飛ぶ */
-export async function animateDraw(player: PlayerId, delay = 0): Promise<void> {
+/** 1枚を引く演出の長さ（ms。飛ぶ 560 と、表に返る 280） */
+export const DRAW_MS = 840;
+/** 続けて引くときの、1枚ごとのずれ（ms） */
+export const DRAW_STEP_MS = 180;
+/** 演出を出せるか（出せないときは、配る・引き直すの待ちも 0 にする） */
+export const canShowDraw = () => canAnimate() && !reduced();
+
+/**
+ * 山札から1枚引く：裏向きのカードが山札から手札へ飛ぶ。
+ * index を渡すと、自分の手札のその位置へ飛ぶ（対戦の始めに配る・引き直す。そのカードは飛んでくるまで隠す）
+ */
+export async function animateDraw(player: PlayerId, delay = 0, index?: number): Promise<void> {
   if (!canAnimate() || reduced()) return;
   const deck = q(`[data-pile="deck-${player}"] .cardback`) ?? q(`[data-pile="deck-${player}"]`);
   const handCards = document.querySelectorAll<HTMLElement>(`[data-hand="${player}"] [data-hand-card]`);
-  const landing = handCards[handCards.length - 1] ?? q(`[data-hand="${player}"]`);
+  const landing =
+    (index !== undefined ? handCards[index] : handCards[handCards.length - 1]) ??
+    q(`[data-hand="${player}"]`);
   if (!deck || !landing) return;
   const isMine = player === "p1" && handCards.length > 0;
   // 引いたカードは飛んでくるまで隠しておく
@@ -540,6 +552,55 @@ export async function animateDraw(player: PlayerId, delay = 0): Promise<void> {
     );
   }
 }
+
+/**
+ * 手札の1枚を山札に戻す（引き直し）：手札のカードが裏返り、裏向きのカードが山札へ飛んで消える。
+ * index が null（相手の手札）は、手札の枚数の所から飛ばす
+ */
+export async function animateReturn(player: PlayerId, index: number | null, delay = 0): Promise<void> {
+  if (!canAnimate() || reduced()) return;
+  const deck = q(`[data-pile="deck-${player}"] .cardback`) ?? q(`[data-pile="deck-${player}"]`);
+  const handCards = document.querySelectorAll<HTMLElement>(`[data-hand="${player}"] [data-hand-card]`);
+  const from = (index !== null ? handCards[index] : null) ?? q(`[data-hand="${player}"]`);
+  if (!deck || !from) return;
+  const isCard = index !== null && from === handCards[index];
+  await wait(delay);
+  // 手札のカードは横に縮めて裏返す（扇の傾きはそのまま）
+  if (isCard) {
+    await from
+      .animate([{ scale: "1 1" }, { scale: "0 1" }], { duration: 150, easing: "ease-in" })
+      .finished.catch(() => {});
+    from.style.opacity = "0";
+  }
+  const f = from.getBoundingClientRect();
+  const t = deck.getBoundingClientRect();
+  const card = document.createElement("div");
+  card.className = "fx-cardback";
+  // 相手の手札（文字）からは、山札と同じ大きさの裏向きのカードを出す
+  const w = isCard ? f.width : t.width;
+  const h = isCard ? f.height : t.height;
+  const x = f.left + f.width / 2 - w / 2;
+  const y = f.top + f.height / 2 - h / 2;
+  Object.assign(card.style, { left: `${x}px`, top: `${y}px`, width: `${w}px`, height: `${h}px` });
+  layer().appendChild(card);
+  const dx = t.left + t.width / 2 - (x + w / 2);
+  const dy = t.top + t.height / 2 - (y + h / 2);
+  const s = Math.min(1, t.width / w);
+  await card
+    .animate(
+      [
+        { transform: `scale(${isCard ? "0, 1" : "0.6"})`, opacity: isCard ? 1 : 0.3, offset: 0 },
+        { transform: "none", opacity: 1, offset: 0.22 },
+        { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - 60}px) rotate(10deg)`, offset: 0.6 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${s}) rotate(0deg)`, opacity: 0.9 },
+      ],
+      { duration: 620, easing: "cubic-bezier(.3,.7,.3,1)" },
+    )
+    .finished.catch(() => {});
+  card.remove();
+}
+/** 1枚を戻す演出の長さ（ms。裏返す 150 と、飛ぶ 620） */
+export const RETURN_MS = 770;
 
 /** プレイヤーのライフが増減したときの数字（攻撃以外：炎上・祝福） */
 export function popMaster(player: PlayerId, text: string, kind: "dmg" | "heal") {
