@@ -7,6 +7,8 @@ describe("対戦ストア", () => {
   beforeEach(() => {
     useGame.setState({ cpuDelay: 0 });
     useGame.getState().start(builtinDeck("solo_idol"), { seed: 8, first: ME });
+    // 始めの引き直しは、引き直さずに進める（CPU は始めにすぐ選ぶ）
+    useGame.getState().mulligan([]);
   });
 
   it("デッキを選ぶと先攻・後攻が決まり、手札が配られる", () => {
@@ -14,6 +16,21 @@ describe("対戦ストア", () => {
     expect(g?.active).toBe(ME);
     expect(g?.players[ME].hand).toHaveLength(3);
     expect(g?.players[CPU].hand).toHaveLength(4);
+  });
+
+  it("始めに手札を引き直す。CPU はすぐ選び、自分が選ぶまでほかの操作はできない", () => {
+    useGame.getState().start(builtinDeck("solo_idol"), { seed: 8, first: ME });
+    const g = useGame.getState().game;
+    expect(g?.mulligan).toEqual({ waiting: [ME] });
+    expect(useGame.getState().log.some((l) => l.e.type === "mulliganed" && l.e.player === CPU)).toBe(true);
+    useGame.getState().endTurn();
+    expect(useGame.getState().game?.turn).toBe(1);
+    const before = g?.players[ME].hand ?? [];
+    useGame.getState().mulligan([0, 1]);
+    const after = useGame.getState().game;
+    expect(after?.mulligan).toBeNull();
+    expect(after?.players[ME].hand[2]).toBe(before[2]);
+    expect(after?.players[ME].hand).toHaveLength(3);
   });
 
   it("反則の操作はエラー文を出して状態を変えない", () => {
@@ -43,11 +60,14 @@ describe("対戦ストア", () => {
     expect(cur?.human).toBe(ME);
     expect(cur?.cpu).toBe(CPU);
     expect(cur?.humanDeck.ref).toBe("solo_idol");
-    expect(cur?.moves[0]?.action).toEqual({ type: "endTurn", player: ME });
+    // 始めの引き直し（CPU・自分）のあとに、自分のターン終了
+    expect(cur?.moves[0]?.action.type).toBe("mulligan");
+    expect(cur?.moves[1]?.action).toEqual({ type: "mulligan", player: ME, handIndexes: [] });
+    expect(cur?.moves[2]?.action).toEqual({ type: "endTurn", player: ME });
     // CPU の手も入る（CPU のターンの最後はターン終了）
     expect(cur?.moves.some((m) => m.action.type === "endTurn" && m.action.player === CPU)).toBe(true);
     expect(cur?.thoughts.length).toBeGreaterThan(0);
-    expect(cur?.thoughts[0]?.move).toBe(1);
+    expect(cur?.thoughts[0]?.move).toBe(3);
     // CPU が出したカードには ID が付き、デッキのカードのそのときのデータも残る（出すまで何ターンか進める）
     for (let i = 0; i < 6 && !cur?.moves.some((m) => m.action.type === "play"); i++)
       useGame.getState().endTurn();
@@ -64,6 +84,9 @@ describe("対戦ストア", () => {
 
   it("CPU が先攻ならすぐ CPU が1ターン動く", () => {
     useGame.getState().start(builtinDeck("solo_flame"), { seed: 3, first: CPU });
+    // CPU は自分が引き直しを選ぶのを待ってから動く
+    expect(useGame.getState().game?.turn).toBe(1);
+    useGame.getState().mulligan([]);
     expect(useGame.getState().game?.active).toBe(ME);
     expect(useGame.getState().game?.turn).toBe(2);
   });
@@ -248,6 +271,8 @@ describe("対戦ストア", () => {
         token: false,
       };
       g.players[CPU].hand = ["c15"];
+      // 引くカードも『フィクサー』にする（コストが足りず出せない。引いたカードで場が変わり、CPU も差し出す番にならないように）
+      g.players[CPU].deck.unshift("c15");
       g.players[CPU].maxMana = 3;
       g.players[CPU].field = g.players[CPU].field.map(() => null);
       useGame.setState({ game: g });

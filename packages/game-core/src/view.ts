@@ -45,6 +45,11 @@ export function stateFor(state: GameState, viewer: PlayerId): GameState {
     active: viewer === "p1" ? state.active : swapId(state.active),
     winner: state.winner && (viewer === "p1" ? state.winner : swapId(state.winner)),
     pending: pendingFor(state.pending, viewer),
+    ...(state.mulligan !== undefined && {
+      mulligan: state.mulligan && {
+        waiting: viewer === "p1" ? state.mulligan.waiting : state.mulligan.waiting.map(swapId),
+      },
+    }),
     players: {
       p1: { ...mine, deck: hide(mine.deck) },
       p2: { ...theirs, deck: hide(theirs.deck), hand: hide(theirs.hand) },

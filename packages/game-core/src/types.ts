@@ -151,6 +151,11 @@ export interface GameState {
     waiting: PlayerId[];
     picks: Partial<Record<PlayerId, number>>;
   } | null;
+  /**
+   * 手札の引き直し（対戦の始め）：waiting のプレイヤーが引き直すカードを選ぶまで、ほかの操作はできない。
+   * 両者が同時に選ぶ。全員が選び終えたら null になり、先攻のターンが始まる。引き直しの無い対戦では持たない
+   */
+  mulligan?: { waiting: PlayerId[] } | null;
 }
 
 export type AttackTarget = { kind: "leader" } | { kind: "unit"; slot: number };
@@ -168,6 +173,11 @@ export type Action =
   | { type: "sacrifice"; player: PlayerId; slot: number }
   /** 闇堕ち：自分の裏向きのカードを、その枠に闇堕ちの姿で出す（自分のターン。裏向きのカードが残ったターンはできない） */
   | { type: "darkFall"; player: PlayerId; slot: number }
+  /**
+   * 引き直し（対戦の始め）：手札から選んだカード（handIndexes。空なら引き直さない）を山札に戻し、同じ枚数を引き直す。
+   * 両者とも 1 回だけ。手番でなくても行う
+   */
+  | { type: "mulligan"; player: PlayerId; handIndexes: number[] }
   /** 降参（相手の勝ちになる。自分のターンでなくてもできる） */
   | { type: "resign"; player: PlayerId }
   /** 時間切れ（オンライン対戦で、持ち時間を使い切った。サーバーだけが行う。相手の勝ちになる） */
@@ -233,6 +243,8 @@ export type GameEvent =
   | { type: "leaderHealed"; player: PlayerId; amount: number; lp: number }
   | { type: "drew"; player: PlayerId; cardId: string }
   | { type: "deckOut"; player: PlayerId }
+  /** 引き直した（count は山札に戻して引き直した枚数。0 なら引き直さなかった） */
+  | { type: "mulliganed"; player: PlayerId; count: number }
   /** 差し出し待ちが始まった（waiting の人が自分のキャラクターを1体選ぶ） */
   | { type: "sacrificeAsk"; player: PlayerId; waiting: PlayerId[] }
   /** 差し出し：選ばれたキャラクターが破壊された（player はそのキャラクターの持ち主） */

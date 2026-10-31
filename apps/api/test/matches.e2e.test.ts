@@ -3,7 +3,14 @@ import { randomUUID } from "node:crypto";
 import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { DECKS } from "@trends/cards";
-import { type Action, type ClockView, type GameState, HIDDEN_CARD } from "@trends/game-core";
+import {
+  type Action,
+  CLOCK,
+  type ClockView,
+  type GameEvent,
+  type GameState,
+  HIDDEN_CARD,
+} from "@trends/game-core";
 import { io, type Socket } from "socket.io-client";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -22,6 +29,7 @@ interface MatchMsg {
 }
 interface UpdateMsg {
   action: Action;
+  events: GameEvent[];
   state: GameState;
 }
 
@@ -56,6 +64,16 @@ describe("ログインとオンライン対戦", () => {
   const next = <T>(s: Socket, ev: string) => new Promise<T>((resolve) => s.once(ev, resolve));
   const emit = (s: Socket, ev: string, body: unknown) =>
     new Promise<{ ok: boolean; error?: string }>((resolve) => s.emit(ev, body, resolve));
+  /** 条件に合う update が届くまで待つ */
+  const until = (s: Socket, ok: (u: UpdateMsg) => boolean) =>
+    new Promise<UpdateMsg>((resolve) => {
+      const on = (u: UpdateMsg) => {
+        if (!ok(u)) return;
+        s.off("update", on);
+        resolve(u);
+      };
+      s.on("update", on);
+    });
 
   it("ログインの設定と、トークンでの本人確認", async () => {
     const cfg = await request(app.getHttpServer()).get("/auth/config").expect(200);
@@ -131,8 +149,30 @@ describe("ログインとオンライン対戦", () => {
     expect(sb.state?.players.p1.hand.some((c) => c !== HIDDEN_CARD)).toBe(true);
     expect(sa.state?.active).not.toBe(sb.state?.active);
 
-    // 番の人がターンを終えると、両者に届く。番でない人の操作は反則
+    // 始めは両者が手札を引き直す。選び終えるまで、ターンを終えることはできない
     const [first, second] = sa.state?.active === "p1" ? [a, b] : [b, a];
+    expect(sa.state?.mulligan?.waiting).toHaveLength(2);
+    expect((sa as MatchMsg & { clock: ClockView }).clock.mulliganLeft).toBe(CLOCK.mulliganMs);
+    expect(await emit(first, "action", { code, action: { type: "endTurn", player: "p1" } })).toMatchObject({
+      ok: false,
+      error: "引き直すカードを選んでください",
+    });
+    const handB = sb.state?.players.p1.hand ?? [];
+    const mulled = until(b, (u) => u.action.type === "mulligan" && u.action.player === "p1");
+    expect(
+      await emit(b, "action", { code, action: { type: "mulligan", player: "p1", handIndexes: [0, 1] } }),
+    ).toEqual({ ok: true });
+    const mb1 = await mulled;
+    expect(mb1.events).toEqual([{ type: "mulliganed", player: "p1", count: 2 }]);
+    expect(mb1.state.players.p1.hand[2]).toBe(handB[2]);
+    const opened = [until(a, (u) => !u.state.mulligan), until(b, (u) => !u.state.mulligan)];
+    expect(
+      await emit(a, "action", { code, action: { type: "mulligan", player: "p1", handIndexes: [] } }),
+    ).toEqual({ ok: true });
+    for (const u of await Promise.all(opened))
+      expect((u as UpdateMsg & { clock: ClockView }).clock).toMatchObject({ holdMs: 0, mulliganLeft: null });
+
+    // 番の人がターンを終えると、両者に届く。番でない人の操作は反則
     expect((await emit(second, "action", { code, action: { type: "endTurn", player: "p1" } })).ok).toBe(
       false,
     );

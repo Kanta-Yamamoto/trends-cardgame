@@ -1,4 +1,4 @@
-export { autoSacrifice, planTurn } from "./ai";
+export { autoSacrifice, planMulligan, planTurn } from "./ai";
 export {
   CLOCK,
   type Clock,

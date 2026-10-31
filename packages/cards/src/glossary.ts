@@ -159,6 +159,7 @@ export const BANNED_TERMS: readonly { word: string | RegExp; use: string }[] = [
   { word: "晒し者", use: "晒し状態" },
   { word: "眠らせ", use: "眠り状態にする" },
   { word: "ドロー", use: "カードを引く" },
+  { word: "マリガン", use: "引き直す" },
   { word: "召喚", use: "出す" },
   { word: "闇の気配", use: "裏向きのカード" },
   { word: "登場時", use: "場に出たとき" },
