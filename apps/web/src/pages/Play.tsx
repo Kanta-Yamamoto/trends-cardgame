@@ -24,11 +24,12 @@ import {
   isShielded,
   openSlots,
   type PlayerId,
-  playableCards,
   previewAttack,
   SLOTS,
   sacrificeCandidates,
   slotOpen,
+  type TurnOptions,
+  turnOptions,
   type Unit,
   type UnitView,
   viewUnit,
@@ -968,18 +969,16 @@ function DeckConfirm({
 }
 
 /** ターン終了の確認。まだ攻撃できるキャラクターや、残っているコストがあれば添える */
+/**
+ * ターン終了の確認。場と手札でまだできること（攻撃・出す・バズ・闇堕ち）があるときだけ出す。
+ * 何もできなければ、確かめずにターンを終える（Board の endTurnBtn）
+ */
 function EndTurnConfirm({
-  attackers,
-  playable,
-  falls,
+  options,
   onYes,
   onNo,
 }: {
-  attackers: number;
-  /** いま出せる・使える手札の枚数 */
-  playable: number;
-  /** いま闇堕ちさせられる裏向きのカードの数 */
-  falls: number;
+  options: TurnOptions;
   onYes: () => void;
   onNo: () => void;
 }) {
@@ -989,9 +988,10 @@ function EndTurnConfirm({
     return () => window.removeEventListener("keydown", onKey);
   }, [onNo]);
   const notes = [
-    attackers > 0 && `まだ攻撃できるキャラクターが ${attackers} 体います`,
-    playable > 0 && `出せる手札が ${playable} 枚あります`,
-    falls > 0 && "闇堕ちできる裏向きのカードがあります",
+    options.attackers > 0 && `攻撃できるキャラクターが ${options.attackers} 体います`,
+    options.playable > 0 && `出せる手札が ${options.playable} 枚あります`,
+    options.buzz && "バズが使えます",
+    options.darkFall > 0 && "闇堕ちできる裏向きのカードがあります",
   ].filter((x): x is string => !!x);
   return (
     <div
@@ -1002,18 +1002,18 @@ function EndTurnConfirm({
     >
       <button type="button" className="zoom-sheet-bg" aria-label="やめる" onClick={onNo} />
       <div className="end-confirm-body">
-        <p className="end-confirm-q">ターンを終了しますか？</p>
-        {notes.map((n) => (
-          <p key={n} className="end-confirm-note">
-            {n}
-          </p>
-        ))}
+        <p className="end-confirm-q">まだできることがあります</p>
+        <ul className="end-confirm-list">
+          {notes.map((n) => (
+            <li key={n}>{n}</li>
+          ))}
+        </ul>
         <div className="end-confirm-actions">
           <button type="button" className="btn ghost" onClick={onNo}>
-            いいえ
+            ターンを続ける
           </button>
           <button type="button" className="btn" onClick={onYes}>
-            はい、終了する
+            ターンを終了する
           </button>
         </div>
       </div>
@@ -2301,19 +2301,15 @@ export function Board({
       </span>
     </button>
   );
-  /** ターンを終える前にまだできること：[攻撃できるキャラクター, 出せる手札, 闇堕ちできる裏向きのカード] */
-  const endTurnTodo = () => [
-    me.field.filter((u) => u && canUnitAttack(game, u)).length,
-    playableCards(game, ME, CATALOG).length,
-    darkFallSlots(game, ME).length,
-  ];
+  /** このターンにまだできることがあるか（場と手札。game-core の turnOptions） */
+  const hasTurnOptions = (o: TurnOptions) => o.attackers + o.playable + o.darkFall > 0 || o.buzz;
   const endTurnBtn = (
     <button
       type="button"
       className={`btn end-turn ${myTurn ? "now" : ""}`}
       onClick={() => {
-        // 出せる手札も、攻撃できるキャラクターも、闇堕ちできる裏向きのカードも無ければ、確かめずにターンを終える
-        if (endTurnTodo().some((n) => n > 0)) setConfirmEnd(true);
+        // 場と手札でまだできること（攻撃・出す・バズ・闇堕ち）が無ければ、確かめずにターンを終える
+        if (hasTurnOptions(turnOptions(game, ME, CATALOG))) setConfirmEnd(true);
         else endTurn();
       }}
       disabled={!myTurn}
@@ -2582,23 +2578,16 @@ export function Board({
         </div>
       )}
 
-      {confirmEnd &&
-        myTurn &&
-        (() => {
-          const [attackers = 0, playable = 0, falls = 0] = endTurnTodo();
-          return (
-            <EndTurnConfirm
-              attackers={attackers}
-              playable={playable}
-              falls={falls}
-              onYes={() => {
-                setConfirmEnd(false);
-                endTurn();
-              }}
-              onNo={() => setConfirmEnd(false)}
-            />
-          );
-        })()}
+      {confirmEnd && myTurn && (
+        <EndTurnConfirm
+          options={turnOptions(game, ME, CATALOG)}
+          onYes={() => {
+            setConfirmEnd(false);
+            endTurn();
+          }}
+          onNo={() => setConfirmEnd(false)}
+        />
+      )}
       {quitAsk && !game.winner && (
         <QuitConfirm
           question={online ? "ロビーに戻りますか？" : "デッキ選びに戻りますか？"}

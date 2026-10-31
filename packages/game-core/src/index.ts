@@ -45,6 +45,8 @@ export {
   previewAttack,
   sacrificeCandidates,
   slotOpen,
+  type TurnOptions,
+  turnOptions,
   viewUnit,
   withRushBoost,
 } from "./engine";

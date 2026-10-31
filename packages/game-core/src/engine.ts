@@ -440,6 +440,33 @@ export function playableCards(state: GameState, player: PlayerId, catalog: Catal
   });
 }
 
+/** このターンにまだできること（ターン終了の前に知らせる。何も無ければ確かめずに終えてよい） */
+export interface TurnOptions {
+  /** 攻撃できる自分のキャラクターの数（攻撃できる相手がいるもの） */
+  attackers: number;
+  /** 出せる・使える手札の枚数（playableCards） */
+  playable: number;
+  /** バズを使えるか */
+  buzz: boolean;
+  /** 闇堕ちさせられる裏向きのカードの数 */
+  darkFall: number;
+}
+
+/** このターンにまだできること。自分のターンでない・差し出しや引き直しの途中なら、すべて 0 */
+export function turnOptions(state: GameState, player: PlayerId, catalog: Catalog): TurnOptions {
+  if (state.winner || state.pending || state.mulligan || state.active !== player)
+    return { attackers: 0, playable: 0, buzz: false, darkFall: 0 };
+  const me = state.players[player];
+  return {
+    attackers: me.field.filter(
+      (u, from) => !!u && canUnitAttack(state, u) && attackTargets(state, player, from, catalog).length > 0,
+    ).length,
+    playable: playableCards(state, player, catalog).length,
+    buzz: buzzBlock(state, player) === null,
+    darkFall: darkFallSlots(state, player).length,
+  };
+}
+
 /** そのキャラクターが今攻撃できるか */
 export function canUnitAttack(state: GameState, u: Unit): boolean {
   return u.canAttack && u.attacksLeft > 0 && state.turn > u.boundUntil;

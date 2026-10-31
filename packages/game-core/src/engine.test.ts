@@ -20,6 +20,7 @@ import {
   openSlots,
   playableCards,
   previewAttack,
+  turnOptions,
   viewUnit,
   withRushBoost,
 } from "./engine";
@@ -341,6 +342,28 @@ describe("場に出す・呪文を使う", () => {
     expect(playableCards(withFoe(["fire"], ["wall"]), "p1", catalog)).toContain(0);
     // 自分のターンでなければ空
     expect(playableCards(s, "p2", catalog)).toEqual([]);
+  });
+  it("このターンにまだできること：手札が出せなくても、場のキャラクターの攻撃・バズが残っていれば知らせる", () => {
+    // コスト 0：手札は出せない。場も空なので、何もできない
+    const none = game(["big"], undefined, 0);
+    expect(turnOptions(none, "p1", catalog)).toEqual({ attackers: 0, playable: 0, buzz: false, darkFall: 0 });
+    // 出したばかりのキャラクターは攻撃できないが、バズが使える時期ならバズが残る
+    const placed = play(game(["f"], undefined, 1), 0, 0);
+    placed.players.p1.turnsTaken = 4;
+    expect(turnOptions(placed, "p1", catalog)).toMatchObject({ attackers: 0, playable: 0, buzz: true });
+    // 攻撃できるキャラクターがいれば数える（相手のプレイヤーを攻撃できる）
+    const ready = structuredClone(placed);
+    const u = ready.players.p1.field[0] as Unit;
+    u.canAttack = true;
+    u.attacksLeft = 1;
+    expect(turnOptions(ready, "p1", catalog).attackers).toBe(1);
+    // 相手のターンには何も無い
+    expect(turnOptions(ready, "p2", catalog)).toEqual({
+      attackers: 0,
+      playable: 0,
+      buzz: false,
+      darkFall: 0,
+    });
   });
 });
 
