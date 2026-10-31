@@ -27,6 +27,8 @@ export interface NewGameInput {
   config?: Partial<Config>;
   /** false にすると山札を並び替えない（テスト用） */
   shuffle?: boolean;
+  /** true にすると、対戦の始めに手札の引き直しを行う（両者が選び終えるまで、ほかの操作はできない） */
+  mulligan?: boolean;
 }
 
 type Emit = (e: GameEvent) => void;
@@ -90,7 +92,29 @@ export function createGame(input: NewGameInput): GameState {
   };
   const p1 = mk(input.decks.p1, first === "p1");
   const p2 = mk(input.decks.p2, first === "p2");
-  return { turn: 1, active: first, players: { p1, p2 }, winner: null, seed, nextUid: 1 };
+  const state: GameState = { turn: 1, active: first, players: { p1, p2 }, winner: null, seed, nextUid: 1 };
+  if (input.mulligan) state.mulligan = { waiting: [first, opponent(first)] };
+  return state;
+}
+
+/**
+ * 引き直し：選んだ手札の枚数だけ山札の上から引いて同じ位置に入れ、そのあと選んだカードを山札に戻して並び替える
+ * （戻したカードをすぐ引き直さないように、引いてから戻す）
+ */
+function mulliganHand(state: GameState, player: PlayerId, handIndexes: readonly number[]): number {
+  const me = state.players[player];
+  if (!Array.isArray(handIndexes)) throw new RuleError("bad_action", "引き直すカードを選んでください");
+  for (const i of handIndexes)
+    if (!Number.isInteger(i) || i < 0 || i >= me.hand.length)
+      throw new RuleError("no_card", "そのカードは手札にありません");
+  const picks = [...new Set(handIndexes)].slice(0, me.deck.length);
+  const back: string[] = [];
+  for (const i of picks) {
+    back.push(me.hand[i] as string);
+    me.hand[i] = me.deck.shift() as string;
+  }
+  if (back.length > 0) [me.deck, state.seed] = shuffled([...me.deck, ...back], state.seed);
+  return back.length;
 }
 
 /* ---------- キャラクターの今の姿 ---------- */
@@ -1378,6 +1402,24 @@ export function applyAction(
     emit({ type: "won", player: state.winner });
     return { state, events };
   }
+  // 引き直し：選ぶ番の人の「引き直し」だけを受け付ける（両者が同時に選ぶ）
+  if (state.mulligan) {
+    if (action.type !== "mulligan")
+      throw new RuleError(
+        "mulligan",
+        state.mulligan.waiting.includes(action.player)
+          ? "引き直すカードを選んでください"
+          : "相手が引き直すカードを選ぶまで待ってください",
+      );
+    if (!state.mulligan.waiting.includes(action.player))
+      throw new RuleError("not_waiting", "あなたはもう引き直しました");
+    const count = mulliganHand(state, action.player, action.handIndexes);
+    emit({ type: "mulliganed", player: action.player, count });
+    state.mulligan.waiting = state.mulligan.waiting.filter((p) => p !== action.player);
+    if (state.mulligan.waiting.length === 0) state.mulligan = null;
+    return { state, events };
+  }
+  if (action.type === "mulligan") throw new RuleError("no_mulligan", "今は手札を引き直す場面ではありません");
   // 差し出し待ち：選ぶ番の人の「差し出し」だけを受け付ける
   if (state.pending) {
     if (action.type !== "sacrifice")

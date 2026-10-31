@@ -19,6 +19,7 @@ import {
   type GameEvent,
   type GameState,
   type PlayerId,
+  planMulligan,
   planTurnSearch,
   type RuleCard,
   RuleError,
@@ -55,12 +56,13 @@ export interface Pairing {
   deck: string;
 }
 
-/** 新しい対戦の状態と時計（先攻は乱数で決める） */
+/** 新しい対戦の状態と時計（先攻は乱数で決める。始めに両者が手札を引き直す） */
 function newGame(p1Deck: string, p2Deck: string) {
   const state = createGame({
     decks: { p1: deckCards(p1Deck), p2: deckCards(p2Deck) },
     seed: randomInt(1, 2 ** 31 - 1),
     first: randomInt(2) === 0 ? "p1" : "p2",
+    mulligan: true,
   });
   return { state, clock: startClock(state, Date.now()) };
 }
@@ -156,7 +158,7 @@ export class MatchesService {
 
   /**
    * CPU の番なら 1 手進める（先読みする CPU の planTurnSearch で、今の盤面からいちばん良い手順の最初の 1 手）。
-   * 差し出しを選ぶ番なら自動で選ぶ。CPU の番でなければ何もしない
+   * 差し出しを選ぶ番なら自動で選ぶ。引き直しを選ぶ番なら planMulligan で選ぶ。CPU の番でなければ何もしない
    */
   cpuStep(code: string) {
     return this.serial(code, async (): Promise<Step[]> => {
@@ -169,7 +171,10 @@ export class MatchesService {
       const state = cur.state as GameState;
       if (state.winner) return steps;
       let action: Action | null = null;
-      if (state.pending?.waiting.includes(seat))
+      if (state.mulligan) {
+        if (state.mulligan.waiting.includes(seat))
+          action = { type: "mulligan", player: seat, handIndexes: planMulligan(state, seat, CATALOG) };
+      } else if (state.pending?.waiting.includes(seat))
         action = { type: "sacrifice", player: seat, slot: autoSacrifice(state, seat, CATALOG) };
       else if (state.active === seat && !state.pending)
         action = planTurnSearch(state, seat, CATALOG)[0] ?? { type: "endTurn", player: seat };

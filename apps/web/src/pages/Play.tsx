@@ -6,6 +6,7 @@ import {
   attackTargets,
   buzzBlock,
   type CastTarget,
+  CLOCK,
   canUnitAttack,
   castTargets,
   type DarkOmen,
@@ -331,6 +332,10 @@ function describe(e: GameEvent): string {
       return `${who(e.player)}の山札が切れた。陰謀論者「これは世界のせいだ」──特殊勝利`;
     case "turnStarted":
       return `―― ${e.turn}ターン目：${who(e.player)}（コスト ${e.mana}）――`;
+    case "mulliganed":
+      return e.count > 0
+        ? `${who(e.player)}が手札を${e.count}枚引き直した`
+        : `${who(e.player)}は手札を引き直さなかった`;
     case "stolen":
       return `${who(e.player)}が ${nameOf(e.cardId)} を奪った（推し変）`;
     case "bounced":
@@ -1010,6 +1015,83 @@ function EndTurnConfirm({
   );
 }
 
+/**
+ * 手札の引き直し（対戦の始め）。戻すカードを押して選び、決定で送る。
+ * 30 秒たったら、そのとき選んでいるカードで送る（deadline はオンライン対戦ならサーバーの時計から。CPU 戦は開いてから 30 秒）
+ */
+function MulliganSheet({
+  hand,
+  deadline,
+  onDone,
+}: {
+  hand: string[];
+  deadline: number | null;
+  onDone: (handIndexes: number[]) => void;
+}) {
+  const [picked, setPicked] = useState<number[]>([]);
+  const [local] = useState(() => Date.now() + CLOCK.mulliganMs);
+  const [now, setNow] = useState(() => Date.now());
+  const sent = useRef(false);
+  const end = deadline ?? local;
+  const left = Math.max(0, Math.min(CLOCK.mulliganMs, end - now));
+  const send = (indexes: number[]) => {
+    if (sent.current) return;
+    sent.current = true;
+    onDone([...indexes].sort((a, b) => a - b));
+  };
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(t);
+  }, []);
+  // 時間が切れたら、選んでいるカードで送る
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 残りが 0 になったときだけ送る
+  useEffect(() => {
+    if (left <= 0) send(picked);
+  }, [left <= 0]);
+  const toggle = (i: number) => {
+    setPicked((p) => (p.includes(i) ? p.filter((x) => x !== i) : [...p, i]));
+  };
+  return (
+    <div className="zoom-sheet mulligan" role="dialog" aria-modal="true" aria-label="手札の引き直し">
+      <div className="zoom-sheet-bg" aria-hidden="true" />
+      <div className="mulligan-body">
+        <p className="mulligan-q">手札を引き直しますか？</p>
+        <p className="mulligan-note">戻すカードを選ぶと、同じ枚数を山札から引き直します</p>
+        <div className={`mulligan-hand n${hand.length}`}>
+          {hand.map((id, i) => {
+            const card = CATALOG[id];
+            const on = picked.includes(i);
+            return card ? (
+              <button
+                // biome-ignore lint/suspicious/noArrayIndexKey: 手札の位置で選ぶ
+                key={i}
+                type="button"
+                className={`mulligan-card ${on ? "on" : ""}`}
+                data-tap-se
+                aria-pressed={on}
+                aria-label={`${card.name}${on ? "（戻す）" : ""}`}
+                onClick={() => toggle(i)}
+              >
+                <HoloCard card={card} idle={false} />
+                {on && <span className="mulligan-mark">戻す</span>}
+              </button>
+            ) : null;
+          })}
+        </div>
+        <div className="mulligan-foot">
+          <span className={`mulligan-left ${left <= 10_000 ? "hurry" : ""}`}>
+            {Math.ceil(left / 1000)}
+            <small>秒</small>
+          </span>
+          <button type="button" className="btn" data-tap-se onClick={() => send(picked)}>
+            {picked.length > 0 ? `${picked.length}枚を引き直す` : "このまま始める"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** 対戦の途中で「戻る」「ロビーへ」を押したときの確認（押し間違いで対戦から抜けないように） */
 function QuitConfirm({
   question,
@@ -1248,6 +1330,7 @@ export function Board({
     sacrifice,
     buzz,
     darkFall,
+    mulligan,
     start,
     quit: quitGame,
     mode,
@@ -1417,6 +1500,14 @@ export function Board({
     },
     onCancel: () => select(null),
   });
+
+  /** 手札の引き直しの間（両者が選び終えるまで） */
+  const mulliganOpen = !!game?.mulligan && !game.winner;
+  // オンライン対戦の引き直しの締め切り（サーバーの時計から。CPU 戦は null で、窓を開いてから 30 秒）
+  const liveClock = useLive((s) => s.clock);
+  const liveAt = useLive((s) => s.at);
+  const mulliganDeadline =
+    online && liveClock?.mulliganLeft != null ? liveAt + liveClock.holdMs + liveClock.mulliganLeft : null;
 
   // 演出の舞台（PixiJS）を先に用意して温めておく（最初の演出で読み込み待ち・一瞬の停止にならないように）。
   // 用意する間は画面が少し止まるので、対戦開始の VS の演出が終わってから、手が空いたときに行う（fx/warm.ts）
@@ -1768,8 +1859,8 @@ export function Board({
 
   // 新しい出来事に合わせて演出を出す（ターン開始のバナー・ドロー・効果の数字・闇堕ち）
   useLayoutEffect(() => {
-    // オープニングの間は、ターン開始のバナーなどを出さずに待つ（終わったら続きから出す）
-    if (openingOn) return;
+    // オープニング・手札の引き直しの間は、ターン開始のバナーなどを出さずに待つ（終わったら続きから出す）
+    if (openingOn || mulliganOpen) return;
     const last = log.at(-1)?.id ?? 0;
     if (last < seen.current) seen.current = 0; // 新しい対戦
     const fresh = log.filter((l) => l.id > seen.current);
@@ -1849,7 +1940,7 @@ export function Board({
       }
     }
     if (until > 0) fxUntil.current = Math.max(fxUntil.current, performance.now() + until);
-  }, [log, openingOn]);
+  }, [log, openingOn, mulliganOpen]);
 
   // 決着：最後の一撃（ダメージの数字・ライフが 0 になるところ）やターン開始のバナーを見せ終えてから、
   // 負けた側のプレイヤーの帯が砕け、破片がこちらへ飛んできてぶつかり、暗転（負け）・白転（勝ち）して、明けたら結果（fx/lifeBreak.ts）。
@@ -1914,7 +2005,8 @@ export function Board({
   const me = game.players[ME];
   const foe = game.players[CPU];
   // 差し出し待ち（『フィクサー』）の間は、ほかの操作はできない
-  const myTurn = game.active === ME && !game.winner && !cpuBusy && !animating && !game.pending;
+  const myTurn =
+    game.active === ME && !game.winner && !cpuBusy && !animating && !game.pending && !game.mulligan;
   const sacSlots = game.pending?.waiting.includes(ME) && !animating ? sacrificeCandidates(game, ME) : [];
   // 差し出しの案内：何の効果で、いま何をすればいいか。選べる自分のキャラクター以外は暗くして押せなくする。
   // 選び終えて破壊の演出をしている間（animating）は、案内も暗さも消す（案内を消してから貫く）
@@ -2495,6 +2587,14 @@ export function Board({
           }}
           onNo={() => setQuitAsk(false)}
         />
+      )}
+      {mulliganOpen && !openingOn && game.mulligan?.waiting.includes(ME) && (
+        <MulliganSheet key={opening} hand={me.hand} deadline={mulliganDeadline} onDone={mulligan} />
+      )}
+      {mulliganOpen && !openingOn && !game.mulligan?.waiting.includes(ME) && (
+        <div className="mulligan-wait" role="status">
+          相手が手札を引き直しています
+        </div>
       )}
       {openingOn && deck && (
         <Opening

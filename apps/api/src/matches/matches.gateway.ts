@@ -323,20 +323,23 @@ export class MatchesGateway
     const state = row.state;
     const seat = await this.matches.cpuSeat(row);
     if (!seat || !state || state.winner || row.status !== "playing") return;
-    const mine = state.pending ? state.pending.waiting.includes(seat) : state.active === seat;
+    const waiting = state.mulligan ?? state.pending;
+    const mine = waiting ? waiting.waiting.includes(seat) : state.active === seat;
     if (!mine) return;
-    // 対戦の始めは、時計が動き出す（オープニングが終わる）まで待つ
-    const hold = row.clock?.since ? Math.max(0, row.clock.since - Date.now()) : 0;
+    // 対戦の始めは、時計が動き出す（オープニングが終わる・引き直しの時間が始まる）まで待つ
+    const start = state.mulligan ? row.clock?.mulliganSince : row.clock?.since;
+    const hold = start ? Math.max(0, start - Date.now()) : 0;
     const first = this.cpuTurn.get(row.code) !== state.turn;
     const t = setTimeout(
       () => {
         this.cpuTimers.delete(row.code);
-        this.cpuTurn.set(row.code, state.turn);
+        // 引き直しは数えない（そのあとの最初の手も、ターンの始めの間を置く）
+        if (!state.mulligan) this.cpuTurn.set(row.code, state.turn);
         this.inRoom(row.code, async () => this.broadcast(await this.matches.cpuStep(row.code))).catch((e) =>
           console.error(e),
         );
       },
-      hold + (first && !state.pending ? CPU_TURN_START_MS : CPU_STEP_MS),
+      hold + (first && !waiting ? CPU_TURN_START_MS : CPU_STEP_MS),
     );
     t.unref();
     this.cpuTimers.set(row.code, t);

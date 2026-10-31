@@ -778,6 +778,24 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .cost-strip-v b { font: 400 17px/1 var(--f-mark); color: var(--ink); }
 .cost-strip-v.zero b { color: #c3cad5; }
 
+/* 手札の引き直し（対戦の始め。Play.tsx の MulliganSheet） */
+.mulligan .zoom-sheet-bg { cursor: default; }
+.mulligan-body { position: relative; width: min(380px, 100%); max-height: 100%; overflow: auto; display: grid; gap: 10px; padding: 18px 16px 16px; border-radius: 22px; color: var(--ink); background: #fffffff2; border: 1px solid #fff; box-shadow: 0 20px 50px #0b1a3055; text-align: center; }
+.mulligan-q { margin: 0; font-size: 18px; font-weight: 800; }
+.mulligan-note { margin: 0; font-size: 12.5px; color: var(--muted); }
+.mulligan-hand { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 4px 0; }
+.mulligan-card { position: relative; width: min(150px, calc((100dvh - 250px) / 2 * 0.716), 42%); padding: 0; border: 0; border-radius: 10px; background: none; cursor: pointer; transition: transform 0.15s ease-out, filter 0.15s ease-out; }
+.mulligan-hand.n3 .mulligan-card { width: min(110px, calc((100dvh - 250px) * 0.716), 30%); }
+.mulligan-card .holo { width: 100%; }
+.mulligan-card.on { transform: translateY(6px) scale(0.94); filter: grayscale(0.7) brightness(0.8); }
+.mulligan-mark { position: absolute; left: 50%; top: 50%; translate: -50% -50%; padding: 6px 14px; white-space: nowrap; border-radius: 999px; font-size: 14px; font-weight: 800; color: #fff; background: var(--pri-2); box-shadow: 0 6px 16px #0b1a3055; pointer-events: none; }
+.mulligan-foot { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; margin-top: 4px; }
+.mulligan-left { min-width: 48px; font: 400 26px/1 var(--f-mark); color: var(--ink); }
+.mulligan-left small { margin-left: 2px; font: 800 12px/1 var(--f-ui); color: var(--muted); }
+.mulligan-left.hurry { color: #e2475b; }
+.mulligan-foot .btn { padding: 13px 10px; font-size: 15px; }
+.mulligan-wait { position: fixed; left: 50%; top: 50%; z-index: 60; translate: -50% -50%; padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 800; color: var(--ink); background: #fffffff2; box-shadow: 0 12px 30px #0b1a3044; white-space: nowrap; animation: fade 0.15s ease-out; }
+
 /* ターン終了の確認 */
 .end-confirm-body { position: relative; width: min(360px, 100%); display: grid; gap: 10px; padding: 20px 22px; border-radius: 22px; color: var(--ink); background: #fffffff2; border: 1px solid #fff; box-shadow: 0 20px 50px #0b1a3055; text-align: center; }
 .end-confirm-q { margin: 0 0 4px; font-size: 18px; font-weight: 800; }

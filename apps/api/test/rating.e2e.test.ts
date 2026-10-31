@@ -114,7 +114,10 @@ describe("ランダムマッチ・持ち時間・レーティング・ランキ�
   });
 
   it("持ち時間を使い切ると、サーバーが時間切れの負けにして、レーティングも動く", async () => {
-    const { code, ta, tb, a, sa } = await pair("じかん", "ぎれ");
+    const { code, ta, tb, a, b, sa } = await pair("じかん", "ぎれ");
+    // 先に両者が引き直す（引き直しのあいだは持ち時間が減らない）
+    for (const s of [a, b])
+      await emit(s, "action", { code, action: { type: "mulligan", player: "p1", handIndexes: [] } });
     // 手番の人が、ターンの 30 秒と持ち時間 5 分を使い切ったことにする
     const db = app.get<Db>(DB);
     const [row] = await db.select().from(matches).where(eq(matches.code, code));

@@ -21,6 +21,7 @@ interface MatchMsg {
 }
 interface UpdateMsg {
   action: { type: string; player: string };
+  events: { type: string; player?: string }[];
   state: GameState;
 }
 
@@ -85,6 +86,13 @@ describe("ランダムマッチで待機している CPU", () => {
     expect(m.kind).toBe("cpu");
     expect(m.opponent?.name).toBe("CPU");
     expect(CPU_DECKS).toContain(m.opponent?.deck);
+
+    // 始めは両者が手札を引き直す（CPU も自分で選ぶ）
+    const opened = until(a, (u) => u.action.type === "mulligan" && !u.state.mulligan);
+    const cpuMulligan = until(a, (u) => u.action.type === "mulligan" && u.action.player === "p2");
+    await emit(a, "action", { code, action: { type: "mulligan", player: "p1", handIndexes: [0] } });
+    expect((await cpuMulligan).events[0]).toMatchObject({ type: "mulliganed", player: "p2" });
+    await opened;
 
     // CPU の番なら CPU がターンを終えるまで、自分の番ならターンを終えて CPU に回す
     const back = until(a, (u) => u.action.player === "p2" && u.action.type === "endTurn");

@@ -200,6 +200,18 @@ export function planTurn(start: GameState, player: PlayerId, catalog: Catalog): 
 const WAIT_FOE = Symbol("wait-foe");
 
 /**
+ * 引き直す手札（対戦の始め）。序盤に出せないコスト 5 以上は戻す。コスト 2 以下が 1 枚も無ければ、コスト 4 も戻す
+ */
+export function planMulligan(state: GameState, player: PlayerId, catalog: Catalog): number[] {
+  const hand = state.players[player].hand;
+  const cost = (i: number) => catalog[hand[i] as string]?.cost ?? 0;
+  const all = hand.map((_, i) => i);
+  const back = all.filter((i) => cost(i) >= 5);
+  const cheap = all.some((i) => !back.includes(i) && cost(i) <= 2);
+  return cheap ? back : all.filter((i) => cost(i) >= 4);
+}
+
+/**
  * 差し出し（フィクサー）で差し出すキャラクター。闇堕ちを持つカード（破壊されたら次のターンに闇堕ちして戻る）があればそれを、
  * なければいちばん価値の低いキャラクター（トークンを先に）
  */

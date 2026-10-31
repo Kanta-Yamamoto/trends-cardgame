@@ -10,6 +10,7 @@ import {
   type GameEvent,
   type GameState,
   type PlayerId,
+  planMulligan,
   planTurnSearch,
   RuleError,
 } from "@trends/game-core";
@@ -148,6 +149,8 @@ interface GameStore {
   sacrifice: (slot: number) => void;
   /** 闇堕ち：自分の裏向きのカードを、その枠に闇堕ちの姿で出す（闇堕ちの演出を見せてから） */
   darkFall: (slot: number) => void;
+  /** 手札の引き直し（対戦の始め）：選んだ手札（空なら引き直さない）を山札に戻し、同じ枚数を引き直す */
+  mulligan: (handIndexes: number[]) => void;
   /** オンライン対戦を始める（再接続のときも、届いた状態で呼び直す） */
   startOnline: (o: {
     deck: DeckSel;
@@ -439,7 +442,7 @@ export const useGame = create<GameStore>((set, get) => {
   const settleCpu = () => {
     if (get().mode !== "cpu") return;
     const g = get().game;
-    if (!g || g.winner) return;
+    if (!g || g.winner || g.mulligan) return;
     // 自分の選択で差し出し待ちが終わった直後もここに来る。そのときは待ちが無くても CPU の手番を再開する
     if (g.pending?.waiting.includes(CPU)) {
       // CPU が最後に選ぶときは引き抜きの演出があるので、見せ終わってから続ける
@@ -455,7 +458,8 @@ export const useGame = create<GameStore>((set, get) => {
   /** CPU のターンを planTurnSearch（先読みする CPU）の通りに1手ずつ進める */
   const runCpu = () => {
     const game = get().game;
-    if (!game || game.winner || game.active !== CPU) return;
+    // 引き直しのあいだは動かない（自分が選び終えたら settleCpu から動く）
+    if (!game || game.winner || game.active !== CPU || game.mulligan) return;
     // 差し出し待ち：CPU が選ぶ番なら選ぶ。自分（ME）が選ぶ番なら、選んでもらうまで待つ
     if (game.pending) {
       if (game.pending.waiting.includes(CPU)) settleCpu();
@@ -527,6 +531,7 @@ export const useGame = create<GameStore>((set, get) => {
         decks: { [ME]: deck.cards, [CPU]: DECKS[cpuDeck] } as never,
         seed,
         first,
+        mulligan: true,
       });
       // CPU を強くするための記録（一手ずつ。終わったらサーバーへ送る）
       abandonCpuLog(get().game);
@@ -554,6 +559,8 @@ export const useGame = create<GameStore>((set, get) => {
         cpuBusy: false,
         animating: false,
       });
+      // CPU は始めにすぐ引き直す（自分が選び終えたら、先攻のターンが始まる）
+      dispatch({ type: "mulligan", player: CPU, handIndexes: planMulligan(game, CPU, CATALOG) });
       const my = runId;
       const wait = openingLeft();
       if (wait > 0) setTimeout(() => my === runId && runCpu(), wait);
@@ -623,6 +630,15 @@ export const useGame = create<GameStore>((set, get) => {
     darkFall: (slot) => {
       if (!get().game || get().cpuBusy || get().animating) return;
       then(commit({ type: "darkFall", player: ME, slot }), (ok) => ok && set({ selection: null }));
+    },
+    mulligan: (handIndexes) => {
+      if (!get().game?.mulligan?.waiting.includes(ME) || get().cpuBusy) return;
+      const a: Action = { type: "mulligan", player: ME, handIndexes };
+      if (get().mode === "online") {
+        void sendRemote(a);
+        return;
+      }
+      if (dispatch(a)) settleCpu();
     },
     cast: (target) => {
       const sel = get().selection;

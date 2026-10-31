@@ -11,6 +11,8 @@ import type { Action, GameState, PlayerId, RuleCard } from "./types";
  *   過ぎたら自動で選ぶ（相手が選ばないせいで手番の人が時間切れにならないように）
  * - ターンが変わったら、新しい手番の人の時計は、その人の画面が相手の手を見せ終える（ready）まで待つ。
  *   待つのは 10 秒まで（画面が知らせてこなくても、そこで動き出す）
+ * - 対戦の始めの手札の引き直しは、両者が同時に 30 秒で選ぶ（持ち時間は減らない）。過ぎたら、選んでいない人は引き直さない。
+ *   画面は 30 秒で、選んでいるカードを自分で送る。サーバーはその少しあと（mulliganGraceMs）まで待ってから代わりに進める
  * 時刻はミリ秒（Date.now()）。サーバーが持ち、画面には clockFor で残りの時間だけ渡す。
  */
 export const CLOCK = {
@@ -21,6 +23,10 @@ export const CLOCK = {
   startGraceMs: 5_000,
   /** ターンが変わったとき、新しい手番の人の画面が相手の手の演出を見せ終えるのを待つ上限 */
   turnGraceMs: 10_000,
+  /** 手札の引き直しを選ぶ時間 */
+  mulliganMs: 30_000,
+  /** 引き直しの時間が切れてから、画面が選んだカードを送ってくるのを待つ分（通信の遅れ） */
+  mulliganGraceMs: 2_000,
 } as const;
 
 export interface Clock {
@@ -32,10 +38,13 @@ export interface Clock {
   spent: number;
   /** 相手の差し出しを待ち始めた時刻（手番でない人が選ぶ番のときだけ） */
   pickSince: number | null;
+  /** 手札の引き直しを選び始めた時刻（引き直しの間だけ。前の版の時計は持たない） */
+  mulliganSince?: number | null;
 }
 
-/** 手番の人の時計を止めるか（手番でない人だけが差し出しを選ぶ番） */
-const paused = (state: GameState) => !!state.pending && !state.pending.waiting.includes(state.active);
+/** 手番の人の時計を止めるか（引き直しの間と、手番でない人だけが差し出しを選ぶ番） */
+const paused = (state: GameState) =>
+  !!state.mulligan || (!!state.pending && !state.pending.waiting.includes(state.active));
 /** 手番でない人が差し出しを選ぶ番か */
 const foePicking = (state: GameState) => !!state.pending?.waiting.includes(opponent(state.active));
 
@@ -43,14 +52,16 @@ const foePicking = (state: GameState) => !!state.pending?.waiting.includes(oppon
 const used = (clock: Clock, now: number) =>
   clock.spent + (clock.since === null ? 0 : Math.max(0, now - clock.since));
 
-/** 対戦の始めの時計 */
+/** 対戦の始めの時計（引き直しがあれば、オープニングのあと引き直しの時間から） */
 export function startClock(state: GameState, now: number): Clock {
+  const start = now + CLOCK.startGraceMs;
   return settle(
     {
       bank: { p1: CLOCK.bankMs, p2: CLOCK.bankMs },
-      since: now + CLOCK.startGraceMs,
+      since: state.mulligan ? null : start,
       spent: 0,
       pickSince: null,
+      mulliganSince: state.mulligan ? start : null,
     },
     state,
     now,
@@ -72,8 +83,15 @@ function settle(clock: Clock, state: GameState, now: number): Clock {
   } else if (!paused(state) && c.since === null) c.since = now;
   if (foePicking(state)) c.pickSince ??= now;
   else c.pickSince = null;
+  if (!state.mulligan) c.mulliganSince = null;
   return c;
 }
+
+/** 引き直しの時間が切れる時刻（画面が送ってくるのを待つ分も含む）。引き直しの間でなければ null */
+const mulliganEnds = (clock: Clock, state: GameState) =>
+  state.mulligan && clock.mulliganSince != null
+    ? clock.mulliganSince + CLOCK.mulliganMs + CLOCK.mulliganGraceMs
+    : null;
 
 /**
  * 操作のあとの時計。ターンが変わったら（もう一度ターンを行うときも）、そのターンで使った時間を
@@ -110,6 +128,8 @@ export function clockDeadline(clock: Clock, state: GameState): number | null {
   const times: number[] = [];
   if (clock.since !== null) times.push(clock.since + turnLimit(clock, state) - clock.spent);
   if (clock.pickSince !== null) times.push(clock.pickSince + CLOCK.pickMs);
+  const mulligan = mulliganEnds(clock, state);
+  if (mulligan !== null) times.push(mulligan);
   return times.length ? Math.min(...times) : null;
 }
 
@@ -125,6 +145,13 @@ export function clockAction(
   catalog: Record<string, RuleCard>,
 ): Action | null {
   if (state.winner) return null;
+  const mulligan = mulliganEnds(clock, state);
+  if (state.mulligan) {
+    const player = state.mulligan.waiting[0];
+    return mulligan !== null && now >= mulligan && player
+      ? { type: "mulligan", player, handIndexes: [] }
+      : null;
+  }
   if (clock.pickSince !== null && now >= clock.pickSince + CLOCK.pickMs) {
     const player = opponent(state.active);
     return { type: "sacrifice", player, slot: autoSacrifice(state, player, catalog) };
@@ -149,8 +176,10 @@ export interface ClockView {
   bank: Record<PlayerId, number>;
   /** 差し出しを選ぶ残り（手番でない人が選ぶ番のときだけ） */
   pickLeft: number | null;
-  /** 時計が動き出すまでの待ち（対戦の始めだけ） */
+  /** 時計が動き出すまでの待ち（対戦の始めだけ。引き直しがあれば、引き直しの時間が始まるまで） */
   holdMs: number;
+  /** 引き直しを選ぶ残り（引き直しの間だけ。前の版のサーバーは送らない） */
+  mulliganLeft?: number | null;
 }
 
 export function clockFor(clock: Clock, state: GameState, now: number, viewer: PlayerId): ClockView {
@@ -163,6 +192,10 @@ export function clockFor(clock: Clock, state: GameState, now: number, viewer: Pl
     turnLeft: Math.max(0, turnLimit(clock, state) - u),
     bank: { p1: bank[flip("p1")], p2: bank[flip("p2")] },
     pickLeft: clock.pickSince === null ? null : Math.max(0, clock.pickSince + CLOCK.pickMs - now),
-    holdMs: clock.since === null ? 0 : Math.max(0, clock.since - now),
+    holdMs: Math.max(0, (clock.since ?? (state.mulligan ? clock.mulliganSince : null) ?? now) - now),
+    mulliganLeft:
+      state.mulligan && clock.mulliganSince != null
+        ? Math.max(0, Math.min(CLOCK.mulliganMs, clock.mulliganSince + CLOCK.mulliganMs - now))
+        : null,
   };
 }
