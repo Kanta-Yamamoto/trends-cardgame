@@ -12,7 +12,7 @@ const TITLES: Record<string, { title: string; sub?: string }> = {
   "/online": { title: "オンライン対戦" },
   "/ranking": { title: "ランキング", sub: "ランダムマッチのレート" },
   "/gacha": { title: "ガチャ" },
-  "/gacha/rates": { title: "提供割合", sub: "第1弾パック" },
+  "/gacha/rates": { title: "提供割合", sub: "第1弾 DIRECTOR'S CUT" },
   "/me": { title: "マイページ" },
 };
 /** 戻るボタンの行き先（無ければホーム） */
