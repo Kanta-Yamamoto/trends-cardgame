@@ -23,8 +23,8 @@ process.env.AUTH_DEV_LOGIN = "true";
 interface MatchMsg {
   code: string;
   status: string;
-  me: { name: string } | null;
-  opponent: { name: string } | null;
+  me: { name: string; deck: string | null } | null;
+  opponent: { name: string; deck: string | null } | null;
   state: GameState | null;
 }
 interface UpdateMsg {
@@ -212,6 +212,63 @@ describe("ログインとオンライン対戦", () => {
     expect((await end).state.winner).toBe("p1");
     const done = await request(app.getHttpServer()).get("/health").expect(200);
     expect(done.body.liveMatches).toBe(0);
+  });
+
+  it("友だちの部屋は、入ってからデッキを選び、2 人とも準備OKで始まる。抜けた人の席は空く", async () => {
+    const tag = randomUUID().slice(0, 6);
+    const [ta, tb, tc] = [await login(`へや${tag}`), await login(`ゆう${tag}`), await login(`つぎ${tag}`)];
+    const created = await request(app.getHttpServer())
+      .post("/matches")
+      .set("Authorization", `Bearer ${ta}`)
+      .send({})
+      .expect(201);
+    const code = created.body.code as string;
+    const a = await connect(ta);
+    const alone = next<MatchMsg>(a, "match");
+    await emit(a, "join", { code });
+    expect((await alone).me?.deck).toBeNull();
+
+    // 1 人だけ準備OKでは始まらない。取り消せる
+    const picked = next<MatchMsg>(a, "match");
+    expect(await emit(a, "deck", { code, deck: "solo_flame" })).toEqual({ ok: true });
+    expect(await picked).toMatchObject({ status: "waiting", me: { deck: "solo_flame" } });
+    const undone = next<MatchMsg>(a, "match");
+    await emit(a, "deck", { code });
+    expect((await undone).me?.deck).toBeNull();
+    expect((await emit(a, "deck", { code, deck: "nope" })).ok).toBe(false);
+
+    // 友だちが入っただけでは始まらない
+    const b = await connect(tb);
+    const seen = next<MatchMsg>(a, "match");
+    await emit(b, "join", { code });
+    expect(await seen).toMatchObject({ status: "waiting", opponent: { deck: null } });
+
+    // 抜けると席が空き、ほかの人が入れる
+    const left = next<MatchMsg>(a, "match");
+    b.disconnect();
+    expect((await left).opponent).toBeNull();
+    const c = await connect(tc);
+    const again = next<MatchMsg>(a, "match");
+    expect(await emit(c, "join", { code })).toEqual({ ok: true });
+    expect((await again).opponent?.name).toBe(`つぎ${tag}`);
+
+    // 作った人が抜けると、残った人に部屋をゆずる
+    const handed = next<MatchMsg>(c, "match");
+    a.disconnect();
+    expect((await handed).opponent).toBeNull();
+    const a2 = await connect(ta);
+    const back = next<MatchMsg>(c, "match");
+    await emit(a2, "join", { code });
+    expect((await back).opponent?.name).toBe(`へや${tag}`);
+
+    // 2 人とも準備OKで始まる。時計はカウントダウンのあとから動く
+    await emit(a2, "deck", { code, deck: "solo_flame" });
+    const [sa, sc] = [next<MatchMsg>(a2, "match"), next<MatchMsg>(c, "match")];
+    await emit(c, "deck", { code, deck: "solo_idol" });
+    expect(await sa).toMatchObject({ status: "playing", opponent: { deck: "solo_idol" } });
+    expect((await sc).state?.mulligan).toBeTruthy();
+    expect((await emit(c, "deck", { code })).ok).toBe(false);
+    await emit(c, "resign", { code });
   });
 
   it("通信が切れても、決着していない対戦は続き、その部屋に戻れる。戻るまではほかの部屋に入れない", async () => {

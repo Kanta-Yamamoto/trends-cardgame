@@ -13,6 +13,7 @@ import {
   actionFrom,
   applyAction,
   autoSacrifice,
+  CLOCK,
   type Clock,
   clockAction,
   createGame,
@@ -59,15 +60,18 @@ export interface Pairing {
   deck: string;
 }
 
-/** 新しい対戦の状態と時計（先攻は乱数で決める。始めに両者が手札を引き直す） */
-function newGame(p1Deck: string, p2Deck: string) {
+/**
+ * 新しい対戦の状態と時計（先攻は乱数で決める。始めに両者が手札を引き直す）。
+ * delayMs は、画面が対戦に入るまでの間（時計はそのあとから動く）
+ */
+function newGame(p1Deck: string, p2Deck: string, delayMs = 0) {
   const state = createGame({
     decks: { p1: deckCards(p1Deck), p2: deckCards(p2Deck) },
     seed: randomInt(1, 2 ** 31 - 1),
     first: randomInt(2) === 0 ? "p1" : "p2",
     mulligan: true,
   });
-  return { state, clock: startClock(state, Date.now()) };
+  return { state, clock: startClock(state, Date.now() + delayMs) };
 }
 
 /**
@@ -88,8 +92,8 @@ export interface MatchInfo {
   status: string;
   /** friend（合言葉の部屋）/ random（ランダムマッチ）/ cpu（ランダムマッチで待機している CPU と） */
   kind: string;
-  /** deck は、構築済みデッキの ID か "custom:…"（自分で組んだデッキ） */
-  players: Record<PlayerId, { id: string; name: string; deck: string } | null>;
+  /** deck は、構築済みデッキの ID か "custom:…"（自分で組んだデッキ）。友だちの部屋で、まだ準備OKでなければ null */
+  players: Record<PlayerId, { id: string; name: string; deck: string | null } | null>;
 }
 
 @Injectable()
@@ -121,11 +125,11 @@ export class MatchesService {
       throw new BadRequestException("持っていないカードが入っています");
   }
 
-  /** 部屋を作る（作った人が p1） */
-  async create(userId: string, deck: unknown) {
-    await this.assertDeck(userId, deck);
+  /** 部屋を作る（作った人が p1）。デッキは部屋の中で選ぶ（deck を渡すのは、古いアプリだけ） */
+  async create(userId: string, deck?: unknown) {
+    if (deck !== undefined) await this.assertDeck(userId, deck);
     await this.assertFree(userId);
-    return this.info(await this.insert({ p1Id: userId, p1Deck: deck as string }));
+    return this.info(await this.insert({ p1Id: userId, p1Deck: (deck as string | undefined) ?? null }));
   }
 
   /** ランダムマッチで組まれた 2 人の対戦を始める（レーティングが動く） */
@@ -270,22 +274,72 @@ export class MatchesService {
     return row;
   }
 
-  /** 部屋に入る。2人目ならデッキを受け取って対戦を始める。すでに入っている人は再接続 */
-  join(code: string, userId: string, deck: unknown) {
+  /** 部屋に入る。すでに入っている人は再接続。デッキは入ったあとに選ぶ（deck を渡すのは、古いアプリだけ） */
+  join(code: string, userId: string, deck?: unknown) {
     return this.serial(code, async () => {
       const row = await this.find(code);
       if (row.p1Id === userId || row.p2Id === userId) return row;
       if (row.p2Id) throw new ForbiddenException("この部屋はもう2人そろっています");
-      await this.assertDeck(userId, deck);
+      if (deck !== undefined) await this.assertDeck(userId, deck);
       await this.assertFree(userId);
-      const { state, clock } = newGame(row.p1Deck, deck as string);
-      const [next] = await this.db
-        .update(matches)
-        .set({ p2Id: userId, p2Deck: deck as string, status: "playing", state, clock })
-        .where(eq(matches.id, row.id))
-        .returning();
-      return next as MatchRow;
+      return this.seatRoom(row, {
+        p1Id: row.p1Id,
+        p1Deck: row.p1Deck,
+        p2Id: userId,
+        p2Deck: (deck as string | undefined) ?? null,
+      });
     });
+  }
+
+  /** 友だちの部屋で使うデッキを決める（準備OK）。null で取り消す */
+  chooseDeck(code: string, userId: string, deck: unknown) {
+    return this.serial(code, async () => {
+      const row = await this.find(code);
+      const pid = this.seat(row, userId);
+      if (row.status !== "waiting") throw new BadRequestException("もう対戦が始まっています");
+      if (deck !== null) await this.assertDeck(userId, deck);
+      return this.seatRoom(row, {
+        p1Id: row.p1Id,
+        p2Id: row.p2Id,
+        p1Deck: pid === "p1" ? (deck as string | null) : row.p1Deck,
+        p2Deck: pid === "p2" ? (deck as string | null) : row.p2Deck,
+      });
+    });
+  }
+
+  /**
+   * 始まる前の部屋から抜ける（戻るボタン・通信が切れた）。席と準備OKを空けるので、抜けた人を待たずに済む。
+   * 相手がいれば部屋をゆずる。1 人なら席は残す（合言葉を送るあいだに切れても、戻れるように）。
+   * 始まったあとの部屋では何もせず null
+   */
+  leave(code: string, userId: string) {
+    return this.serial(code, async () => {
+      const row = await this.find(code);
+      if (row.status !== "waiting") return null;
+      const empty = { p2Id: null, p2Deck: null };
+      if (row.p2Id === userId) return this.seatRoom(row, { p1Id: row.p1Id, p1Deck: row.p1Deck, ...empty });
+      if (row.p1Id !== userId) return null;
+      if (!row.p2Id) return this.seatRoom(row, { p1Id: row.p1Id, p1Deck: null, ...empty });
+      return this.seatRoom(row, { p1Id: row.p2Id, p1Deck: row.p2Deck, ...empty });
+    });
+  }
+
+  /** 部屋の席とデッキを書き換える。2 人ともデッキを決めていれば、ここで対戦を始める */
+  private async seatRoom(
+    row: MatchRow,
+    seats: Pick<MatchRow, "p1Id" | "p1Deck" | "p2Id" | "p2Deck">,
+  ): Promise<MatchRow> {
+    const { p1Id, p1Deck, p2Id, p2Deck } = seats;
+    const start =
+      p2Id && p1Deck && p2Deck
+        ? { status: "playing", ...newGame(p1Deck, p2Deck, CLOCK.roomCountdownMs) }
+        : {};
+    const [next] = await this.db
+      .update(matches)
+      .set({ p1Id, p1Deck, p2Id, p2Deck, ...start })
+      .where(eq(matches.id, row.id))
+      .returning();
+    return next as MatchRow;
   }
 
   /**
@@ -428,7 +482,7 @@ export class MatchesService {
     const who = (id: string | null, deck: string | null) => {
       const u = people.find((p) => p.id === id);
       // 前に作られた部屋は、もう無い構築済みデッキの ID を持っていることがある。表示と再接続のために、文字列ならそのまま返す
-      return u && typeof deck === "string" ? { id: u.id, name: u.name, deck } : null;
+      return u ? { id: u.id, name: u.name, deck: typeof deck === "string" ? deck : null } : null;
     };
     return {
       code: row.code,

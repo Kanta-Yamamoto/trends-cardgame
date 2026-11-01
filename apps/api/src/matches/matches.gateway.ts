@@ -136,8 +136,21 @@ export class MatchesGateway
 
   handleDisconnect(client: Client) {
     this.queue.removeSocket(client.id);
+    const { room, user } = client.data;
+    if (!room || !user) return;
     // 部屋から最後の 1 人がいなくなったら、閉じるまでの時間を数え始める
-    if (client.data.room) this.watchEmpty(client.data.room);
+    this.watchEmpty(room);
+    void this.leaveRoom(room, user).catch((e) => console.error(e));
+  }
+
+  /** 始まる前の部屋から抜けたことを、残った人に見せる（つなぎ直して戻っていれば、そのまま） */
+  private leaveRoom(code: string, user: PublicUser) {
+    return this.inRoom(code, async () => {
+      const sockets = await this.server.in(code).fetchSockets();
+      if (sockets.some((s) => (s.data.user as PublicUser | undefined)?.id === user.id)) return;
+      const row = await this.matches.leave(code, user.id);
+      if (row) await this.sendMatch(row);
+    });
   }
 
   /** 部屋にだれかつないでいるか */
@@ -216,6 +229,22 @@ export class MatchesGateway
         // 入り直したときに時間が過ぎていれば、ここで進める
         this.schedule(row);
         void this.driveCpu(row);
+      }),
+    );
+  }
+
+  /** 友だちの部屋で、使うデッキを決める（準備OK）。deck が無ければ取り消す。2 人とも決めたら対戦が始まる */
+  @SubscribeMessage("deck")
+  async deck(
+    @ConnectedSocket() client: Client,
+    @MessageBody() body: { code?: string; deck?: string | null },
+  ): Promise<Ack> {
+    const code = String(body?.code ?? "");
+    return this.guard(client, (user) =>
+      this.inRoom(code, async () => {
+        const row = await this.matches.chooseDeck(code, user.id, body?.deck ?? null);
+        await this.sendMatch(row);
+        this.schedule(row);
       }),
     );
   }

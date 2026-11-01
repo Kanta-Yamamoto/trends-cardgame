@@ -1,0 +1,1 @@
+ALTER TABLE "matches" ALTER COLUMN "p1_deck" DROP NOT NULL;
