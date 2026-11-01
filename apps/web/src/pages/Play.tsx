@@ -398,8 +398,12 @@ const PORTRAIT_H_MAX = 860;
 const PORTRAIT_PAD = 8;
 const PORTRAIT_GAP = 6;
 const fitPortraitSlot = (width: number) => Math.floor((width - PORTRAIT_PAD * 2 - PORTRAIT_GAP * 4) / 5);
-/** 場と手札のカードの高さ：舞台が高いほど縦に長く見せる（低い舞台でも、まわりの隙間を残す） */
-const fitCard = (height: number) => Math.max(122, Math.min(146, Math.floor(122 + (height - 740) * 0.2)));
+/** 場と手札の列の高さ：舞台が高いほど広くとる（低い舞台でも、まわりの隙間を残す） */
+const fitLane = (height: number) => Math.max(122, Math.min(146, Math.floor(122 + (height - 740) * 0.2)));
+/** 場と手札のカードの高さ：カードの形（63:88）。11月2日、縦長のカードをやめて元の形に戻した
+ *（オーナー：「山札の高さぐらいのがカードとしては自然」「カードの高さは基本元の高さに戻しといて」）。
+ * 列の高さとの差は、使い方が決まるまで余白にしておく（オーナー：「出てきちゃった余白については、これから使い方を考えよう」） */
+const fitCard = (slot: number) => Math.round((slot * 88) / 63);
 
 export interface Stage {
   width: number;
@@ -408,8 +412,10 @@ export interface Stage {
   slot: number;
   cx: number;
   cy: number;
-  /** 場と手札のカードの高さ */
+  /** 場と手札のカードの高さ（カードの形） */
   card: number;
+  /** 場と手札の列の高さ（カードより高い分は余白） */
+  lane: number;
 }
 
 function safeArea(probe: HTMLElement | null) {
@@ -432,7 +438,8 @@ export function measureStage(vw: number, vh: number, safe = { t: 0, r: 0, b: 0, 
     slot: fitPortraitSlot(PORTRAIT_W),
     cx: safe.l + w / 2,
     cy: safe.t + h / 2,
-    card: fitCard(height),
+    card: fitCard(fitPortraitSlot(PORTRAIT_W)),
+    lane: fitLane(height),
   };
 }
 
@@ -2455,6 +2462,7 @@ export function Board({
             transform: `translate(-50%, -50%) scale(${stage.scale})`,
             "--slot": `${stage.slot}px`,
             "--card-h": `${stage.card}px`,
+            "--lane-h": `${stage.lane}px`,
           } as CSSProperties
         }
       >
