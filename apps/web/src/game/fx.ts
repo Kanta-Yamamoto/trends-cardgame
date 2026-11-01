@@ -9,7 +9,6 @@ import { dissolve } from "../fx/dissolve";
 import { healMist } from "../fx/healMist";
 import { impact } from "../fx/impact";
 import { thrust } from "../fx/thrust";
-import { playMusicOnce } from "../sound/music";
 import { attackSound, playSe } from "../sound/se";
 
 /**
@@ -612,10 +611,7 @@ export function popMaster(player: PlayerId, text: string, kind: "dmg" | "heal") 
 
 /** 闇堕ち：紫の閃光とともに裏返る（restore なら白く光って表に戻る） */
 export function flipCard(uid: number, kind: "dark" | "restore") {
-  if (kind === "dark") {
-    playSe("darkSummon");
-    playMusicOnce("dark");
-  }
+  if (kind === "dark") playSe("darkSummon");
   const el = q(`[data-uid="${uid}"]`);
   if (!el || !canAnimate() || reduced()) return;
   const glow = kind === "dark" ? "#b06bff" : "#ffffff";
