@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isApp } from "./native";
 
 /**
  * PWA（ホーム画面に追加して、アプリのように全画面で遊ぶ）
@@ -66,8 +67,7 @@ export function registerPwa() {
     });
   }
 
-  const native = "Capacitor" in window;
-  if (!import.meta.env.PROD || import.meta.env.BASE_URL !== "/" || native || !("serviceWorker" in navigator))
+  if (!import.meta.env.PROD || import.meta.env.BASE_URL !== "/" || isApp || !("serviceWorker" in navigator))
     return;
   window.addEventListener("load", () => {
     navigator.serviceWorker
@@ -104,7 +104,7 @@ const RELOADED_KEY = "trends.reloadedFor";
 
 /** 自動の更新を使うか（本番の Web だけ。試遊ページ・スマホアプリ版は使わない） */
 function autoUpdate() {
-  return import.meta.env.PROD && import.meta.env.BASE_URL === "/" && !("Capacitor" in window);
+  return import.meta.env.PROD && import.meta.env.BASE_URL === "/" && !isApp;
 }
 
 /** サーバーに出ている版の印（取れなければ null） */
@@ -172,8 +172,7 @@ export async function refreshApp() {
 /** 初めての人に案内を自動で出すか（閉じてから7日は出さない・「もう表示しない」なら出さない） */
 const GUIDE_KEY = "trends.installGuide";
 export function shouldAutoGuide() {
-  if (isStandalone() || !isTouchDevice() || import.meta.env.BASE_URL !== "/" || "Capacitor" in window)
-    return false;
+  if (isStandalone() || !isTouchDevice() || import.meta.env.BASE_URL !== "/" || isApp) return false;
   try {
     const v = localStorage.getItem(GUIDE_KEY);
     if (v === "never") return false;

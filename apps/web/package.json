@@ -9,10 +9,12 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "cap:sync": "pnpm build && cap sync"
+    "cap:sync": "VITE_API_URL=https://trends-api-523738975867.asia-northeast1.run.app pnpm build && cap sync ios"
   },
   "dependencies": {
     "@capacitor/core": "^7.6.9",
+    "@capacitor/ios": "^7.6.10",
+    "@capacitor/preferences": "^7.0.4",
     "@fontsource/dela-gothic-one": "5.3.0",
     "@fontsource/lilita-one": "5.3.0",
     "@fontsource/m-plus-1": "5.3.1",

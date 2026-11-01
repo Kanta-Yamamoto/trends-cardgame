@@ -14,6 +14,7 @@ import { OGP_IMAGE } from "./ogp";
  *    クッキーの無い人には「準備中」の画面だけを出し、API・オンライン対戦も断る。
  *    合言葉を変えると、前のリンクと前のクッキーはまとめて使えなくなる。
  * 2. 回数の制限：同じ IP からの呼び出しを1台のメモリで数える（Cloud Run は1台なので、これで足りる）
+ *    アプリ（APP_ORIGIN）と、審査に要る公開のページ（プライバシーポリシー・サポート）は通す。
  * 3. 安全のための応答ヘッダーと、検索エンジンに載せない指示（noindex・robots.txt）
  */
 
@@ -24,7 +25,10 @@ const YEAR_S = 365 * 24 * 60 * 60;
  * 招待なしでも通す道（死活の確認・robots.txt・ログインの設定は、デプロイの確認に使う。
  * プレビューの絵は、リンクのプレビューを作るロボットが招待なしで取りに来る）
  */
-const OPEN_PATHS = ["/health", "/robots.txt", "/auth/config", OGP_IMAGE];
+const OPEN_PATHS = ["/health", "/robots.txt", "/auth/config", "/privacy.html", "/support.html", OGP_IMAGE];
+
+/** iOS アプリの画面の出どころ（Capacitor）。招待リンクを開けないので、アプリからの呼び出しは招待済みとして通す */
+const APP_ORIGIN = "capacitor://localhost";
 
 const inviteCode = () => process.env.INVITE_CODE?.trim() ?? "";
 /** 招待リンクの守りが効いているか */
@@ -54,7 +58,7 @@ function readCookie(header: string | undefined, name: string) {
 /** この接続が招待済みか（守りが効いていないときは、いつも招待済み）。Socket.IO の接続でも使う */
 export function isInvited(req: IncomingMessage): boolean {
   const code = inviteCode();
-  if (!code) return true;
+  if (!code || req.headers.origin === APP_ORIGIN) return true;
   const got = readCookie(req.headers.cookie, INVITE_COOKIE);
   return !!got && sameText(got, digest(code));
 }

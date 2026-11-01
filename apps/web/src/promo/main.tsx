@@ -22,6 +22,7 @@ import "../styles/app.css";
 import "./promo.css";
 import { HoloCard } from "../cards/HoloCard";
 import { watchFrame } from "../frame";
+import { watchSoundEffects } from "../sound/se";
 import { mountScene, promoActions } from "./scenes";
 
 const q = new URLSearchParams(location.search);
@@ -30,6 +31,7 @@ const scene = q.get("scene");
 
 const show = scene
   ? () => {
+      watchSoundEffects();
       mountScene(root, scene);
       watchFrame();
     }

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { useAccess } from "../gacha/access";
 import { Guide, preloadFaces } from "./Guide";
 import { useTutorial } from "./progress";
 import "../styles/tutorial.css";
 
-/** ガチャの画面で押してもらうボタン（いまはデモの 1 パック。デモを消すときは、本物の 1 パックのボタンに付け替える） */
+/** ガチャの画面で押してもらうボタン */
 export const GACHA_PACK = '[data-tut="gacha-pack"]';
 
 /**
@@ -24,11 +25,15 @@ export function HomeTour() {
   );
 }
 
-/** ガチャの画面：パックの中身を見せてから、ためしに 1 パック開けてもらって、チュートリアルを終える */
+/**
+ * ガチャの画面：パックの中身を見せてから、1 パック開けてもらって、チュートリアルを終える。
+ * チュートリアルの 1 パックは本物で、出たカードは残る。もう一度見ている人は、開けるパックが無ければ説明だけで終える
+ */
 export function GachaTour() {
   const stage = useTutorial((s) => s.stage);
   const setStage = useTutorial((s) => s.setStage);
   const [step, setStep] = useState(0);
+  const packs = useAccess((s) => s.access?.packs ?? 0);
   if (stage !== "gacha") return null;
   const end = () => setStage("done");
   if (step === 0) {
@@ -42,10 +47,20 @@ export function GachaTour() {
       />
     );
   }
+  if (packs === 0) {
+    return (
+      <Guide
+        face="cheer"
+        text="案内はこれでおしまい。いっぱい遊んでね！"
+        next={{ label: "おわる", onClick: end }}
+        onSkip={end}
+      />
+    );
+  }
   return (
     <Guide
       face="cheer"
-      text="いまは準備中だから、ためしに引けるデモで遊べるよ。『1パック』を押して、開けてみて！ 案内はこれでおしまい。いっぱい遊んでね！"
+      text="1 パックプレゼント！ 『1パック開ける』を押して、開けてみて！ 案内はこれでおしまい。いっぱい遊んでね！"
       targets={[GACHA_PACK]}
       onTarget={end}
       onSkip={end}

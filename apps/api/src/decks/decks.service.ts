@@ -1,8 +1,15 @@
-import { BadRequestException, Inject, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { eq } from "drizzle-orm";
+import { isUnlocked } from "../auth/access";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
-import { type SavedDeck, userDecks } from "../db/schema";
+import { type SavedDeck, userDecks, users } from "../db/schema";
 
 /** 1人が保存できるデッキの数と、1つのデッキのカードの数・名前の長さの上限（決まりの検査は対戦のときに行う） */
 export const MAX_DECKS = 50;
@@ -55,6 +62,9 @@ export class DecksService {
   /** デッキの一覧をまるごと置き換える */
   async replace(userId: string, body: unknown) {
     const decks = parseDecks(body);
+    const [u] = await this.db.select().from(users).where(eq(users.id, userId));
+    if (!u) throw new UnauthorizedException("ログインしてください");
+    if (decks.length > 0 && !isUnlocked(u)) throw new ForbiddenException("デッキは買い切りのあとに組めます");
     const [row] = await this.db
       .insert(userDecks)
       .values({ userId, decks })

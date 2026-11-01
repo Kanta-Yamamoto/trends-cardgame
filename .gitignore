@@ -7,8 +7,7 @@ coverage/
 .env
 .env.local
 __pycache__/
-# Capacitor が生成するネイティブ側（Mac で npx cap add ios / android したもの）
-apps/web/ios/
+# Capacitor の Android（まだ作らない）。iOS はプロジェクトをコミットする（Xcode Cloud が使う。生成物は ios/.gitignore）
 apps/web/android/
 *.tsbuildinfo
 # Claude Code の作業机と個人の設定（.claude/settings.json は共有する）

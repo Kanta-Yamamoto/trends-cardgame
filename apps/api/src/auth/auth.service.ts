@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   BadRequestException,
   ForbiddenException,
@@ -11,8 +12,7 @@ import { eq } from "drizzle-orm";
 import { OAuth2Client } from "google-auth-library";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
-import { gemLogs, type UserRow, users } from "../db/schema";
-import { WELCOME_GEMS } from "../gacha/gems";
+import { cpuGames, gachaPulls, purchases, type UserRow, userCards, userDecks, users } from "../db/schema";
 
 /** クライアントに渡すユーザー情報 */
 export interface PublicUser {
@@ -76,6 +76,23 @@ export class AuthService {
     return this.session(row);
   }
 
+  /**
+   * アプリの端末で入る（11月1日。アプリにログインは無い）。端末が作った秘密の文字列のハッシュをアカウントの ID にする。
+   * 秘密の文字列をなくしても、買い切りを買っていれば「購入を復元」で元のアカウントに戻る
+   */
+  async loginWithDevice(secret: unknown) {
+    if (typeof secret !== "string" || secret.length < 32 || secret.length > 128)
+      throw new BadRequestException("端末の情報がおかしいです");
+    const sub = `device:${createHash("sha256").update(secret).digest("hex")}`;
+    const [row] = await this.db
+      .insert(users)
+      .values({ sub, name: FIRST_NAME })
+      .onConflictDoUpdate({ target: users.sub, set: { sub } })
+      .returning();
+    if (!row) throw new Error("ユーザーを保存できませんでした");
+    return this.session(row);
+  }
+
   /** 開発用：名前だけでログインする */
   async loginForDev(name: string) {
     if (!authConfig().devLogin) throw new ForbiddenException("開発用ログインは使えません");
@@ -97,36 +114,47 @@ export class AuthService {
     return row ? toPublic(row) : null;
   }
 
-  /**
-   * プレイヤー名を決める・変える。初めて決めたときは、無償のジェムを配る（welcomeGems で返す）。
-   * 名前はトークンにも入っているので、新しいトークンを返す
-   */
+  /** プレイヤー名を決める・変える。名前はトークンにも入っているので、新しいトークンを返す */
   async rename(userId: string, raw: string) {
     const check = checkPlayerName(raw);
     if (!check.ok) throw new BadRequestException(check.reason);
-    let welcomeGems = 0;
-    const row = await this.db.transaction(async (tx) => {
-      const [before] = await tx.select().from(users).where(eq(users.id, userId)).for("update");
-      if (!before) throw new UnauthorizedException("ログインしてください");
-      const first = !before.nameSet;
-      const [after] = await tx
+    const [row] = await this.db
+      .update(users)
+      .set({ name: check.name, nameSet: true })
+      .where(eq(users.id, userId))
+      .returning();
+    if (!row) throw new UnauthorizedException("ログインしてください");
+    return this.session(row);
+  }
+
+  /**
+   * データを消す（審査の決まり 5.1.1(v)）。対戦の記録が相手の分として users を指しているので、行は残して誰のものか分からなくする。
+   * 買い切りの記録も消すので、同じ Apple アカウントで「購入を復元」すれば、新しいアカウントで買ったときの状態から始められる
+   */
+  async deleteAccount(userId: string) {
+    await this.db.transaction(async (tx) => {
+      await tx.delete(userCards).where(eq(userCards.userId, userId));
+      await tx.delete(userDecks).where(eq(userDecks.userId, userId));
+      await tx.delete(gachaPulls).where(eq(gachaPulls.userId, userId));
+      await tx.delete(purchases).where(eq(purchases.userId, userId));
+      await tx.update(cpuGames).set({ userId: null }).where(eq(cpuGames.userId, userId));
+      await tx
         .update(users)
         .set({
-          name: check.name,
-          nameSet: true,
-          ...(first ? { gemsFree: before.gemsFree + WELCOME_GEMS } : {}),
+          sub: `deleted:${userId}`,
+          name: FIRST_NAME,
+          nameSet: false,
+          picture: null,
+          rating: 1500,
+          ratedGames: 0,
+          wins: 0,
+          unlocked: false,
+          packs: 0,
+          packsDay: null,
+          tutorialPack: false,
         })
-        .where(eq(users.id, userId))
-        .returning();
-      if (first) {
-        await tx.insert(gemLogs).values({ userId, free: WELCOME_GEMS, reason: "welcome" });
-        welcomeGems = WELCOME_GEMS;
-      }
-      return after;
+        .where(eq(users.id, userId));
     });
-    if (!row) throw new Error("名前を保存できませんでした");
-    // welcomeGems：初めて決めたときに配ったジェム（画面の「ようこそ」で知らせる）
-    return { ...(await this.session(row)), welcomeGems };
   }
 
   /** トークンからユーザーを取り出す。無効なら null */
@@ -140,7 +168,8 @@ export class AuthService {
     }
   }
 
-  private async session(user: UserRow) {
+  /** ログインのトークンとユーザー情報を作る */
+  async session(user: UserRow) {
     const token = await this.jwt.signAsync({ sub: user.id, name: user.name } satisfies SessionPayload);
     return { token, user: toPublic(user) };
   }

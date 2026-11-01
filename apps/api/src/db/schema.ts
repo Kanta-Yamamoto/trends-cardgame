@@ -44,10 +44,10 @@ export const cards = pgTable("cards", {
 
 export type CardRow = typeof cards.$inferSelect;
 
-/** ログインしたユーザー（Google のアカウント。開発用ログインは sub が dev: で始まる） */
+/** ユーザー。sub は google:（Web の Google ログイン）・device:（アプリの端末）・dev:（開発用）で始まる */
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
-  /** Google の sub（アカウントごとに変わらない ID） */
+  /** アカウントごとに変わらない ID */
   sub: text("sub").notNull().unique(),
   /** プレイヤー名（ランキング・対戦の相手の画面に出る）。Google の名前は使わず、本人が決める */
   name: text("name").notNull(),
@@ -59,9 +59,13 @@ export const users = pgTable("users", {
   /** レーティングが動いた対戦の数と、そのうちの勝ち数 */
   ratedGames: integer("rated_games").notNull().default(0),
   wins: integer("wins").notNull().default(0),
-  /** ジェム（ガチャに使う）。有償（お金で買った分）と無償（配った分）を分けて持つ。使うときは無償から */
-  gemsPaid: integer("gems_paid").notNull().default(0),
-  gemsFree: integer("gems_free").notNull().default(0),
+  /** 買い切りを買ったか（11月1日。Web の友だちは買わなくても使える。auth/access.ts） */
+  unlocked: boolean("unlocked").notNull().default(false),
+  /** 開けられるパックの残りと、それを数えた日（日本の日付。game-core の packsToday） */
+  packs: integer("packs").notNull().default(0),
+  packsDay: text("packs_day"),
+  /** チュートリアルの 1 パックがまだ残っているか */
+  tutorialPack: boolean("tutorial_pack").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 export type UserRow = typeof users.$inferSelect;
@@ -146,7 +150,7 @@ export const cpuGames = pgTable("cpu_games", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** 持っているカード（ガチャで出た枚数）。デッキを組むときの決まりにはまだ使わない（10月27日） */
+/** 持っているカード。アプリでは、自分のデッキに入れられるのは持っているカードだけ（11月1日） */
 export const userCards = pgTable(
   "user_cards",
   {
@@ -160,16 +164,15 @@ export const userCards = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.cardId] })],
 );
 
-/** ジェムの出入りの記録（配った・使った・買った）。paid・free は増えた分（使ったら負） */
-export const gemLogs = pgTable("gem_logs", {
-  id: uuid("id").primaryKey().defaultRandom(),
+/** 買い切りの購入。App Store の originalTransactionId ごとに 1 行。入れ直したあとの「購入を復元」で元のアカウントに戻す */
+export const purchases = pgTable("purchases", {
+  originalTransactionId: text("original_transaction_id").primaryKey(),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  paid: integer("paid").notNull().default(0),
-  free: integer("free").notNull().default(0),
-  /** welcome（初めて名前を決めたときに配った）/ gacha（ガチャに使った）/ purchase（買った） */
-  reason: text("reason").notNull(),
+  productId: text("product_id").notNull(),
+  /** Production か Sandbox */
+  environment: text("environment").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

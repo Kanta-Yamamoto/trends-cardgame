@@ -144,7 +144,7 @@ export function mountScene(root: Root, scene: string) {
       root.render(
         frame(
           <section className="page gacha">
-            <Opening packs={[PACK]} demo onClose={() => {}} onAgain={() => {}} />
+            <Opening packs={[PACK]} onClose={() => {}} onAgain={() => {}} />
           </section>,
         ),
       ),

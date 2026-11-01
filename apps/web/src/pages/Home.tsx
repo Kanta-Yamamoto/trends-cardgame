@@ -2,10 +2,13 @@ import { CARDS, type CardDef } from "@trends/cards";
 import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
 import { ATTR_META } from "../cards/meta";
+import { useAccess } from "../gacha/access";
 import { markNewsSeen, NEWS, unseenCount } from "../home/news";
 import { InstallGuide, useCanInstall } from "../InstallButton";
 import { InviteFriends } from "../InviteFriends";
+import { isApp } from "../native";
 import { api, useSession } from "../online/session";
+import { useUnlock } from "../purchase/Unlock";
 import { dismissGuide, refreshApp, useReloadWhenNewer } from "../pwa";
 import { usePageMusic } from "../sound/music";
 import { SoundMenu } from "../sound/SoundMenu";
@@ -129,6 +132,8 @@ export function Home() {
   const user = useSession((s) => s.user);
   const token = useSession((s) => s.token);
   const logout = useSession((s) => s.logout);
+  const locked = useAccess((s) => s.access?.unlocked === false);
+  const showUnlock = useUnlock((s) => s.show);
   const navigate = useNavigate();
   const canInstall = useCanInstall();
   usePageMusic("home");
@@ -391,10 +396,24 @@ export function Home() {
                   <Icon d={I.trophy} />
                   ランキング
                 </button>
-                <button type="button" onClick={() => setSheet("invite")}>
-                  <Icon d={I.invite} />
-                  友だちを招待
-                </button>
+                {locked && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSheet(null);
+                      showUnlock();
+                    }}
+                  >
+                    <Icon d={I.guide} />
+                    全部解放する
+                  </button>
+                )}
+                {!isApp && (
+                  <button type="button" onClick={() => setSheet("invite")}>
+                    <Icon d={I.invite} />
+                    友だちを招待
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -417,18 +436,22 @@ export function Home() {
                     アプリとして入れる
                   </button>
                 )}
-                <button
-                  type="button"
-                  title="保存しているアプリのファイルを消して、最新の版を読み直します（デッキやログインは消えません）"
-                  onClick={() => void refreshApp()}
-                >
-                  <Icon d={I.refresh} />
-                  最新にする
-                </button>
-                <button type="button" className="dim" onClick={logout}>
-                  <Icon d={I.logout} />
-                  ログアウト
-                </button>
+                {!isApp && (
+                  <>
+                    <button
+                      type="button"
+                      title="保存しているアプリのファイルを消して、最新の版を読み直します（デッキやログインは消えません）"
+                      onClick={() => void refreshApp()}
+                    >
+                      <Icon d={I.refresh} />
+                      最新にする
+                    </button>
+                    <button type="button" className="dim" onClick={logout}>
+                      <Icon d={I.logout} />
+                      ログアウト
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </section>
