@@ -7,7 +7,16 @@ import type { NestExpressApplication } from "@nestjs/platform-express";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientIp, INVITE_COOKIE, inviteForClient, type Limits, protect, RateLimiter } from "../src/security";
+import {
+  APP_ORIGIN,
+  clientIp,
+  corsOrigins,
+  INVITE_COOKIE,
+  inviteForClient,
+  type Limits,
+  protect,
+  RateLimiter,
+} from "../src/security";
 import { serveWeb } from "../src/web";
 
 @Controller()
@@ -186,6 +195,21 @@ describe("protect", () => {
     } finally {
       process.env.INVITE_CODE = "open-sesame";
     }
+  });
+});
+
+describe("corsOrigins", () => {
+  it("出どころを絞っていても、iOS アプリは許す", () => {
+    expect(corsOrigins("https://a.example,https://b.example")).toEqual([
+      "https://a.example",
+      "https://b.example",
+      APP_ORIGIN,
+    ]);
+  });
+
+  it("空のとき（本番）はアプリだけを許し、入っていなければ全部許す（手元の開発）", () => {
+    expect(corsOrigins("")).toEqual([APP_ORIGIN]);
+    expect(corsOrigins(undefined)).toBe(true);
   });
 });
 

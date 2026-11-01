@@ -22,14 +22,13 @@ import type { Server, Socket } from "socket.io";
 import { AuthService, type PublicUser } from "../auth/auth.service";
 import type { MatchRow } from "../db/schema";
 import { RankingService } from "../ranking/ranking.service";
-import { isInvited } from "../security";
+import { corsOrigins, isInvited } from "../security";
 import { MatchesService, type Step } from "./matches.service";
 import { MatchQueue } from "./matchmaking";
 
 type Ack = { ok: true } | { ok: false; error: string };
 type Client = Socket & { data: { user?: PublicUser; room?: string } };
 
-const corsOrigin = () => process.env.CORS_ORIGIN?.split(",") ?? true;
 /** ランダムマッチの待ち行列を見直す間隔（待つほど組める幅が広がるので、定期的に見る） */
 const QUEUE_SWEEP_MS = 2000;
 /** CPU が 1 手ごとに置く間（画面が相手の手の演出を見せる分）。ターンの最初の 1 手は長めに */
@@ -48,7 +47,7 @@ export const EMPTY_CLOSE_MS = 60_000;
  * 2 人とも抜けたまま（部屋にだれもつないでいない）EMPTY_CLOSE_MS たったら、決着なしで対戦を閉じる（CPU は人の数に入れない）。
  * どちらの人にも、その人から見た形（自分が p1、相手の手札は隠す）で送る。
  */
-@WebSocketGateway({ cors: { origin: corsOrigin() } })
+@WebSocketGateway({ cors: { origin: corsOrigins() } })
 export class MatchesGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy
 {
