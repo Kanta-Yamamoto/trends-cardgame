@@ -1,10 +1,16 @@
 import { type FormEvent, useEffect, useState } from "react";
-import { Link } from "react-router";
+import { API_URL } from "../api/client";
 import { NameField, nameStatus } from "../auth/NameField";
-import { fmt, totalGems, useWallet } from "../gacha/wallet";
+import { useAccess } from "../gacha/access";
 import { InviteFriends } from "../InviteFriends";
+import { forgetDevice, isApp } from "../native";
 import { api, type User, useSession } from "../online/session";
+import { Store } from "../purchase/store";
+import { applyPurchase, useUnlock } from "../purchase/Unlock";
 import "../styles/account.css";
+
+/** プライバシーポリシーのページのある場所（アプリの中の画面にはサーバーの道が無いので、サーバーの URL で開く） */
+const POLICY_ORIGIN = API_URL || window.location.origin;
 
 /** ランキングの自分の分（/rankings の me） */
 interface MyRank {
@@ -45,7 +51,10 @@ const I = {
     "M12 7a3 3 0 1 1 0 6 3 3 0 0 1 0-6z",
     "M8 17a4 4 0 0 1 8 0",
   ],
-  gem: ["M7 4h10l4 5-9 11L3 9z", "M3 9h18M12 20L8.5 9 12 4l3.5 5z"],
+  key: ["M14.5 3.5a6 6 0 1 1-5.2 9L3 18.8V21h2.2v-2h2v-2h2l1.3-1.3a6 6 0 1 0 4-12.2z", "M16 7.5h.01"],
+  restore: ["M4 12a8 8 0 1 0 2.6-5.9", "M4 4v4.5h4.5"],
+  trash: ["M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"],
+  doc: ["M7 3h7l5 5v13H7z", "M14 3v5h5M10 13h6M10 17h6"],
   logout: ["M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3", "M10 8l-4 4 4 4M6 12h10"],
   chevron: ["M9 6l6 6-6 6"],
   invite: ["M9 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7z", "M2.5 20a6.5 6.5 0 0 1 13 0", "M19 8v6M16 11h6"],
@@ -60,8 +69,9 @@ export function MyPage() {
   const token = useSession((s) => s.token);
   const setSession = useSession((s) => s.setSession);
   const logout = useSession((s) => s.logout);
-  const wallet = useWallet((s) => s.wallet);
-  const loadWallet = useWallet((s) => s.load);
+  const access = useAccess((s) => s.access);
+  const loadAccess = useAccess((s) => s.load);
+  const showUnlock = useUnlock((s) => s.show);
   const [mine, setMine] = useState<MyRank | null>(null);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -69,14 +79,15 @@ export function MyPage() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState(0);
   const [inviting, setInviting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
-    void loadWallet(token);
+    void loadAccess(token);
     api<{ me: MyRank }>("/rankings", {}, token)
       .then((b) => setMine(b.me))
       .catch(() => {});
-  }, [token, loadWallet]);
+  }, [token, loadAccess]);
 
   if (!user) return null;
   const open = () => {
@@ -102,7 +113,28 @@ export function MyPage() {
       .catch((err: Error) => setError(err.message))
       .finally(() => setBusy(false));
   };
-  const gems = totalGems(wallet);
+  const restore = () => {
+    setBusy(true);
+    setNotice(null);
+    applyPurchase(() => Store.restore())
+      .then((ok) => setNotice(ok ? "購入を復元しました" : "復元できる購入が見つかりませんでした"))
+      .catch((err: Error) => setNotice(err.message))
+      .finally(() => setBusy(false));
+  };
+  /** データを消す（審査の決まり）。サーバーの分を消し、この端末の分も消して、最初の画面から始める */
+  const wipe = async () => {
+    if (!window.confirm("カード・デッキ・戦績をすべて消します。元に戻せません。消しますか？")) return;
+    setBusy(true);
+    try {
+      await api("/me", { method: "DELETE" }, token);
+      await forgetDevice();
+      localStorage.clear();
+      window.location.replace("/");
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : "消せませんでした");
+      setBusy(false);
+    }
+  };
 
   return (
     <section className="page ac-me">
@@ -118,7 +150,7 @@ export function MyPage() {
                 <Icon d={I.pen} />
               </button>
             </div>
-            <p className="ac-login">Google でログイン中</p>
+            {!isApp && <p className="ac-login">Google でログイン中</p>}
           </div>
         </div>
         <div className="ac-stats">
@@ -145,16 +177,20 @@ export function MyPage() {
         </div>
       </section>
 
-      <div className="sec">
-        <h2>友だち</h2>
-      </div>
-      <div className="ac-rows">
-        <button type="button" className="ac-row g2" onClick={() => setInviting(true)}>
-          <Icon d={I.invite} />
-          <span className="grow">友だちを招待</span>
-          <Icon d={I.chevron} className="ac-chev" />
-        </button>
-      </div>
+      {!isApp && (
+        <>
+          <div className="sec">
+            <h2>友だち</h2>
+          </div>
+          <div className="ac-rows">
+            <button type="button" className="ac-row g2" onClick={() => setInviting(true)}>
+              <Icon d={I.invite} />
+              <span className="grow">友だちを招待</span>
+              <Icon d={I.chevron} className="ac-chev" />
+            </button>
+          </div>
+        </>
+      )}
 
       <div className="sec">
         <h2>これから増えるもの</h2>
@@ -181,20 +217,42 @@ export function MyPage() {
           <span className="grow">名前を変える</span>
           <Icon d={I.chevron} className="ac-chev" />
         </button>
-        <Link to="/shop" className="ac-row g2">
-          <Icon d={I.gem} />
-          <span className="grow">ジェム</span>
-          <span className="note">
-            持っている<b>{gems === null ? "—" : fmt(gems)}</b>
-          </span>
+        {isApp && access && !access.unlocked && (
+          <button type="button" className="ac-row g2" onClick={showUnlock}>
+            <Icon d={I.key} />
+            <span className="grow">全部解放する</span>
+            <Icon d={I.chevron} className="ac-chev" />
+          </button>
+        )}
+        {isApp && (
+          <button type="button" className="ac-row g2" disabled={busy} onClick={restore}>
+            <Icon d={I.restore} />
+            <span className="grow">購入を復元</span>
+          </button>
+        )}
+        <a className="ac-row g2" href={`${POLICY_ORIGIN}/privacy.html`} target="_blank" rel="noreferrer">
+          <Icon d={I.doc} />
+          <span className="grow">プライバシーポリシー</span>
           <Icon d={I.chevron} className="ac-chev" />
-        </Link>
-        <button type="button" className="ac-row dim g2" onClick={logout}>
-          <Icon d={I.logout} />
-          <span className="grow">ログアウト</span>
-        </button>
+        </a>
+        {isApp ? (
+          <button type="button" className="ac-row dim g2" disabled={busy} onClick={() => void wipe()}>
+            <Icon d={I.trash} />
+            <span className="grow">データを消す</span>
+          </button>
+        ) : (
+          <button type="button" className="ac-row dim g2" onClick={logout}>
+            <Icon d={I.logout} />
+            <span className="grow">ログアウト</span>
+          </button>
+        )}
       </div>
 
+      {notice && (
+        <p className="ac-notice g2" role="status">
+          {notice}
+        </p>
+      )}
       {toast > 0 && (
         <div key={toast} className="ac-toast g3" role="status">
           名前を「{user.name}」に変えました

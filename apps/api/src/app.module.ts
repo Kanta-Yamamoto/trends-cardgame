@@ -7,6 +7,7 @@ import { GachaModule } from "./gacha/gacha.module";
 import { HealthController } from "./health.controller";
 import { LogsModule } from "./logs/logs.module";
 import { MatchesModule } from "./matches/matches.module";
+import { PurchaseModule } from "./purchase/purchase.module";
 import { RankingModule } from "./ranking/ranking.module";
 
 @Module({
@@ -19,6 +20,7 @@ import { RankingModule } from "./ranking/ranking.module";
     RankingModule,
     LogsModule,
     GachaModule,
+    PurchaseModule,
   ],
   controllers: [HealthController],
 })

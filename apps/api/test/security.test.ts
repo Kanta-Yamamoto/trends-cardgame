@@ -49,6 +49,8 @@ describe("protect", () => {
     writeFileSync(join(dir, "index.html"), "<head><title>TRENDS</title></head><div id=root>");
     writeFileSync(join(dir, "app.js"), "//");
     writeFileSync(join(dir, "ogp.jpg"), "jpg");
+    writeFileSync(join(dir, "privacy.html"), "<title>プライバシーポリシー</title>");
+    writeFileSync(join(dir, "support.html"), "<title>サポート</title>");
     const mod = await Test.createTestingModule({ imports: [FakeModule] }).compile();
     app = mod.createNestApplication<NestExpressApplication>();
     protect(app, limits);
@@ -136,6 +138,16 @@ describe("protect", () => {
     await http().get("/?invite=nope3").set("X-Forwarded-For", ip);
     // 3回間違えたあとは、正しい合言葉でもしばらく断る（総当たりを止める）
     await http().get("/?invite=open-sesame").set("X-Forwarded-For", ip).expect(429);
+  });
+
+  it("iOS アプリからの呼び出しは、招待なしで通す", async () => {
+    await http().get("/cards").set("Origin", "capacitor://localhost").expect(200);
+    await http().get("/cards").set("Origin", "https://example.com").expect(403);
+  });
+
+  it("審査に要る公開のページは、招待なしでも見られる", async () => {
+    await http().get("/privacy.html").expect(200);
+    await http().get("/support.html").expect(200);
   });
 
   it("合言葉を変えると、前のクッキーは使えなくなる", async () => {

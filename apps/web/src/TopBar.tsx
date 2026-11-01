@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router";
-import { GemPill } from "./gacha/Pack";
-import { useWallet } from "./gacha/wallet";
+import { isApp } from "./native";
 import { useSession } from "./online/session";
 import { useMusicPage } from "./sound/music";
 import { SoundMenu } from "./sound/SoundMenu";
@@ -14,11 +13,10 @@ const TITLES: Record<string, { title: string; sub?: string }> = {
   "/ranking": { title: "ランキング", sub: "ランダムマッチのレート" },
   "/gacha": { title: "ガチャ" },
   "/gacha/rates": { title: "提供割合", sub: "第1弾パック" },
-  "/shop": { title: "ジェムを買う" },
   "/me": { title: "マイページ" },
 };
 /** 戻るボタンの行き先（無ければホーム） */
-const BACK: Record<string, string> = { "/gacha/rates": "/gacha", "/shop": "/gacha" };
+const BACK: Record<string, string> = { "/gacha/rates": "/gacha" };
 
 function titleOf(pathname: string) {
   if (pathname.startsWith("/online/")) return { title: "オンライン対戦", sub: "友だちとの部屋" };
@@ -29,10 +27,9 @@ function titleOf(pathname: string) {
 export function TopBar() {
   const { pathname } = useLocation();
   const name = useSession((st) => st.user?.name);
-  const wallet = useWallet((st) => st.wallet);
   const music = useMusicPage();
   const back = BACK[pathname] ?? "/";
-  const { title, sub = pathname === "/online" && name ? `${name} でログイン中` : undefined } =
+  const { title, sub = pathname === "/online" && name && !isApp ? `${name} でログイン中` : undefined } =
     titleOf(pathname);
   return (
     <div className="topbar">
@@ -59,7 +56,6 @@ export function TopBar() {
         {sub && <small>{sub}</small>}
       </h1>
       {music && <SoundMenu className="topbar-music g1" />}
-      {pathname === "/gacha" && <GemPill wallet={wallet} />}
     </div>
   );
 }

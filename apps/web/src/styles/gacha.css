@@ -1,12 +1,6 @@
 /* ガチャ・パックを開ける演出・提供割合・ジェムを買う（10月27日。モックで決めた形）。名前は gx- を頭に付けて、ほかの画面とぶつけない */
 
 /* ジェムの形（水色の宝石） */
-.gx-gem { position: relative; display: inline-block; flex: none; width: 16px; height: 16px; background: linear-gradient(155deg, #e6f9ff 0%, #7fd6f7 35%, #2fa8e4 62%, #1272b0 100%); clip-path: polygon(22% 8%, 78% 8%, 100% 38%, 50% 96%, 0 38%); }
-.gx-gem::after { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, transparent 30%, #ffffffd9 42%, transparent 54%); }
-.gx-gem-pill { flex: none; display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 4px 0 12px; border-radius: 20px; text-decoration: none; color: var(--ink); }
-.gx-gem-pill b { font: 400 18px/1 var(--f-mark); letter-spacing: 0.02em; }
-.gx-gem-pill .gx-plus { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: var(--pri-grad); box-shadow: 0 3px 8px #1780c447; }
-.gx-gem-pill .gx-plus svg { width: 16px; height: 16px; }
 
 /* パック（第1弾）。上の方をなぞって切ると、切り取り線より上が飛んでいく */
 .gx-pack { position: relative; width: 200px; height: 330px; filter: drop-shadow(0 22px 30px #1f487847); }
@@ -50,22 +44,14 @@
 .gx-rate3 b { font-size: 13px; font-weight: 800; }
 .gx-stars { color: #e0a100; letter-spacing: -0.06em; font-size: 13px; }
 .gx-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9; max-width: 480px; margin: 0 auto; display: grid; gap: 6px; padding: 12px 16px max(18px, env(safe-area-inset-bottom, 0px)); border-radius: var(--r-xl) var(--r-xl) 0 0; background: var(--g3); -webkit-backdrop-filter: blur(24px) saturate(1.6); backdrop-filter: blur(24px) saturate(1.6); border-top: 1px solid #fff; box-shadow: var(--sh-3); }
-.gx-pulls { display: grid; grid-template-columns: 1fr 1.25fr; gap: 10px; }
-.gx-pull { display: grid; place-content: center; justify-items: center; gap: 5px; height: 68px; border-radius: 34px; }
-.gx-pull .l1 { font-size: 16px; font-weight: 800; }
-.gx-pull .l2 { display: flex; align-items: center; gap: 5px; font: 400 16px/1 var(--f-mark); letter-spacing: 0.02em; }
-.gx-pull .gx-gem { width: 14px; height: 14px; }
+.gx-pulls { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; }
+.gx-left { margin: 0; text-align: center; font-size: 13px; font-weight: 800; color: var(--ink-2); }
+.gx-left b { margin-left: 4px; font: 400 18px/1 var(--f-mark); color: var(--pri-3); }
+.gx-pull { display: grid; place-content: center; justify-items: center; gap: 5px; height: 60px; border-radius: 30px; font-size: 16px; font-weight: 800; }
 .gx-dock .btn.text { justify-self: center; height: 30px; }
 
 .gx-closed { margin: 0; text-align: center; font-size: 12px; font-weight: 800; color: var(--ink-2); }
 /* デモ（後で消す）：画面の中だけで引く。カードもジェムも変わらない */
-.gx-demo { display: grid; gap: 8px; margin-top: 12px; padding: 12px 16px 14px; border-radius: var(--r-l); }
-.gx-demo-h { display: flex; align-items: center; gap: 8px; }
-.gx-demo-h b { font-size: 15px; font-weight: 800; }
-.gx-demo-note { margin: 0; font-size: 12px; font-weight: 700; color: var(--ink-2); }
-.gx-demo-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.gx-demo-btns .btn { display: flex; align-items: center; justify-content: center; height: 44px; font-size: 14px; }
-.gx-demo-mark { display: block; margin-top: 2px; font-size: 11px; font-weight: 700; color: #ffffffb3; }
 
 /* 下から出る小窓（開ける確認・ジェムが足りない・提供割合・買う確認） */
 .gx-sheet { position: relative; width: 100%; max-width: 480px; max-height: 86dvh; overflow: auto; padding: 8px 18px max(26px, env(safe-area-inset-bottom, 0px)); border-radius: var(--r-xl) var(--r-xl) 0 0; background: var(--g3); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); border-top: 1px solid #fff; box-shadow: var(--sh-3); animation: sheet-up 0.32s cubic-bezier(0.2, 0.9, 0.3, 1); }
@@ -107,22 +93,9 @@
 .gx-foot p { margin: 0; font-size: 11.5px; line-height: 1.7; color: var(--ink-2); }
 
 /* ジェムを買う（決済の準備ができるまでは、買えない状態で画面だけ） */
-.gx-shop { padding-bottom: 30px; }
-.gx-bal { margin-top: 6px; padding: 16px; border-radius: var(--r-l); display: grid; gap: 12px; }
-.gx-bal-top { display: flex; align-items: center; justify-content: space-between; }
-.gx-bal-top small { font-size: 12px; font-weight: 800; color: var(--ink-2); }
-.gx-bal-num { display: flex; align-items: center; gap: 8px; }
-.gx-bal-num .gx-gem { width: 24px; height: 24px; }
-.gx-bal-num b { font: 400 32px/1 var(--f-mark); letter-spacing: 0.02em; }
-.gx-bal-split { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); padding-top: 10px; }
-.gx-bal-split span { display: flex; justify-content: center; align-items: baseline; gap: 8px; font-size: 12px; font-weight: 800; color: var(--ink-2); }
-.gx-bal-split span + span { border-left: 1px solid var(--line); }
-.gx-bal-split b { font: 400 17px/1 var(--f-mark); color: var(--ink); }
 .gx-items { display: grid; gap: 8px; }
 .gx-item { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; height: 70px; padding: 0 12px 0 10px; border-radius: var(--r-m); cursor: pointer; text-align: left; color: var(--ink); }
 .gx-item:active { transform: scale(0.98); }
-.gx-pile { position: relative; width: 52px; height: 46px; }
-.gx-pile .gx-gem { position: absolute; }
 .gx-amt { display: grid; gap: 3px; }
 .gx-amt b { font: 400 22px/1 var(--f-mark); letter-spacing: 0.02em; }
 .gx-amt small { font-size: 11px; font-weight: 700; color: var(--ink-2); }
@@ -137,12 +110,6 @@
 .gx-opt.on .dot { border-color: var(--pri-2); }
 .gx-opt.on .dot::after { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--pri-2); }
 .gx-opt > svg { flex: none; width: 26px; height: 26px; color: var(--pri-3); }
-.gx-buy { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: var(--r-m); background: var(--pri-soft); }
-.gx-buy .gx-gem { width: 28px; height: 28px; }
-.gx-buy .grow { flex: 1; display: grid; gap: 2px; }
-.gx-buy b { font: 400 24px/1 var(--f-mark); }
-.gx-buy small { font-size: 11px; font-weight: 700; color: var(--ink-2); }
-.gx-buy .yen { font: 400 24px/1 var(--f-mark); color: var(--pri-3); }
 .gx-sub-h { margin: 16px 0 0 !important; font-size: 12px !important; font-weight: 800; letter-spacing: 0.08em; color: var(--ink-2); }
 .gx-terms { display: grid; gap: 4px; margin-top: 12px; padding: 10px 12px; border-radius: var(--r-s); background: #1f2d440a; }
 .gx-terms div { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; }
@@ -302,7 +269,7 @@
 .gx-lux-motes i:nth-child(4n + 1) { --m: 8px; }
 /* 白い地に合わせて、文字・ボタン・カードの影を明るい画面の色に */
 .gx-open.lux { color: var(--ink); }
-.gx-open.lux .gx-demo-mark, .gx-open.lux .gx-open-head .gx-count, .gx-open.lux .gx-open-hint { color: var(--ink-2); }
+.gx-open.lux .gx-open-head .gx-count, .gx-open.lux .gx-open-hint { color: var(--ink-2); }
 .gx-open.lux .gx-open-hint b { color: var(--ink); }
 .gx-open.lux .btn.ghost.gx-dk { color: var(--ink); background: var(--g3); border: 1px solid #fff; box-shadow: var(--sh-1); }
 .gx-open.lux .gx-face, .gx-open.lux .gx-card.hit .gx-face { box-shadow: 0 12px 22px #1f487833; }
@@ -369,3 +336,12 @@
 @keyframes gx-emerge { from { transform: scale(1.06); } to { transform: none; } }
 @keyframes gx-pr-in { from { transform: translate(-50%, -50%) scale(1.14); filter: brightness(1.8) blur(6px); } to { transform: translate(-50%, -50%) scale(1); filter: none; } }
 @keyframes gx-rise { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-110dvh) scale(1); opacity: 0; } }
+
+/* 買い切りの小窓（purchase/Unlock.tsx） */
+.unlock-sheet { position: relative; display: grid; gap: 12px; width: 100%; max-width: 480px; max-height: 86dvh; overflow: auto; padding: 8px 18px max(22px, env(safe-area-inset-bottom, 0px)); border-radius: var(--r-xl) var(--r-xl) 0 0; background: var(--g3); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); border-top: 1px solid #fff; box-shadow: var(--sh-3); animation: sheet-up 0.32s cubic-bezier(0.2, 0.9, 0.3, 1); }
+.unlock-grip { justify-self: center; width: 40px; height: 4px; border-radius: 2px; background: #1428462e; }
+.unlock-sheet h2 { margin: 0; font-size: 20px; font-weight: 800; }
+.unlock-lead { margin: 0; font-size: 13.5px; font-weight: 700; color: var(--ink-2); }
+.unlock-list { display: grid; gap: 8px; margin: 0; padding: 14px 14px 14px 32px; border-radius: var(--r-m); font-size: 14px; font-weight: 700; line-height: 1.5; }
+.unlock-error { margin: 0; font-size: 12.5px; font-weight: 800; color: var(--ng); }
+.unlock-sub { display: flex; justify-content: center; gap: 18px; }

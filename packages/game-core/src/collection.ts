@@ -19,11 +19,20 @@ export function missingCards(deck: readonly string[], owned: Collection): Record
 }
 
 /**
- * レンタルデッキか（持っていないカードが入っているデッキ）。
- * 10月27日、オーナー：CPU 戦とオンライン対戦では、いったんレンタルデッキとして使える。いずれレーティングだけ使えなくするなど
+ * 買い切りを買った時点で持っているカード（11月1日）。構築済みデッキのカードを、いちばん多く入っているデッキの枚数ずつ。
+ * 構築済みデッキを崩して、そのまま自分のデッキを組み始められるように
  */
-export const isRentalDeck = (deck: readonly string[], owned: Collection) =>
-  Object.keys(missingCards(deck, owned)).length > 0;
+export function starterCollection(
+  decks: Readonly<Record<string, readonly string[]>>,
+): Record<string, number> {
+  const owned: Record<string, number> = {};
+  for (const deck of Object.values(decks)) {
+    const counts = new Map<string, number>();
+    for (const id of deck) counts.set(id, (counts.get(id) ?? 0) + 1);
+    for (const [id, n] of counts) owned[id] = Math.max(owned[id] ?? 0, n);
+  }
+  return owned;
+}
 
 /** ダブりの枚数（デッキに入れられる MAX_COPIES 枚を超えた分） */
 export const extraCopies = (count: number) => Math.max(0, count - MAX_COPIES);

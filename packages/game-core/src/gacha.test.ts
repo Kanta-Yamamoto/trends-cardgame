@@ -1,6 +1,16 @@
 import { CARDS } from "@trends/cards";
 import { describe, expect, it } from "vitest";
-import { openPack, PACK_SIZE, PACK_SLOTS, packChance, packPool, slotOdds } from "./gacha";
+import {
+  DAILY_PACKS,
+  openPack,
+  PACK_SIZE,
+  PACK_SLOTS,
+  packChance,
+  packDay,
+  packPool,
+  packsToday,
+  slotOdds,
+} from "./gacha";
 import { nextRandom } from "./rng";
 
 const pool = packPool(CARDS);
@@ -92,5 +102,19 @@ describe("ガチャ（1 パック 5 枚）", () => {
     expect(odds[0]?.p).toBeCloseTo(0.75, 10);
     const pack = openPack(small, seeded(1));
     expect(pack.slice(0, 3)).toEqual(["a", "a", "a"]);
+  });
+});
+
+describe("毎日のパック", () => {
+  it("パックの日は日本の日付で数える", () => {
+    expect(packDay(new Date("2026-11-01T14:59:59Z"))).toBe("2026-11-01");
+    expect(packDay(new Date("2026-11-01T15:00:00Z"))).toBe("2026-11-02");
+  });
+
+  it("同じ日は残りのまま。日が変わると 3 パックに戻り、ためられない", () => {
+    expect(packsToday(1, "2026-11-01", "2026-11-01")).toBe(1);
+    expect(packsToday(0, "2026-11-01", "2026-11-02")).toBe(DAILY_PACKS);
+    expect(packsToday(2, null, "2026-11-02")).toBe(DAILY_PACKS);
+    expect(packsToday(7, "2026-11-01", "2026-11-02")).toBe(7);
   });
 });

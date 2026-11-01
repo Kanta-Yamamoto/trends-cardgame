@@ -18,6 +18,8 @@ import {
   createGame,
   type GameEvent,
   type GameState,
+  isCustomDeckRef,
+  missingCards,
   type PlayerId,
   planMulligan,
   planTurnSearch,
@@ -31,9 +33,10 @@ import {
   validateDeck,
 } from "@trends/game-core";
 import { and, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
+import { isOpenAccount } from "../auth/access";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
-import { type MatchRatings, type MatchRow, matches, users } from "../db/schema";
+import { type MatchRatings, type MatchRow, matches, userCards, users } from "../db/schema";
 
 const CATALOG = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string, RuleCard>;
 /** 読み間違えやすい文字（0/O・1/I など）を除いた合言葉の文字 */
@@ -98,9 +101,29 @@ export class MatchesService {
 
   constructor(@Inject(DB) private readonly db: Db) {}
 
+  /**
+   * そのユーザーが対戦で使えるデッキか確かめる。自分で組んだデッキは、買い切りのあとに、持っているカードだけで使える
+   * （Web の友だちは全部のカードを使える）
+   */
+  async assertDeck(userId: string, ref: unknown) {
+    const cards = deckCards(ref);
+    if (!isCustomDeckRef(ref)) return;
+    const [u] = await this.db.select().from(users).where(eq(users.id, userId));
+    if (!u) throw new BadRequestException("ログインしてください");
+    if (isOpenAccount(u.sub)) return;
+    if (!u.unlocked) throw new BadRequestException("自分のデッキは買い切りのあとに使えます");
+    const rows = await this.db
+      .select({ id: userCards.cardId, count: userCards.count })
+      .from(userCards)
+      .where(eq(userCards.userId, userId));
+    const owned = Object.fromEntries(rows.map((r) => [r.id, r.count]));
+    if (Object.keys(missingCards(cards, owned)).length > 0)
+      throw new BadRequestException("持っていないカードが入っています");
+  }
+
   /** 部屋を作る（作った人が p1） */
   async create(userId: string, deck: unknown) {
-    deckCards(deck);
+    await this.assertDeck(userId, deck);
     await this.assertFree(userId);
     return this.info(await this.insert({ p1Id: userId, p1Deck: deck as string }));
   }
@@ -253,7 +276,7 @@ export class MatchesService {
       const row = await this.find(code);
       if (row.p1Id === userId || row.p2Id === userId) return row;
       if (row.p2Id) throw new ForbiddenException("この部屋はもう2人そろっています");
-      deckCards(deck);
+      await this.assertDeck(userId, deck);
       await this.assertFree(userId);
       const { state, clock } = newGame(row.p1Deck, deck as string);
       const [next] = await this.db

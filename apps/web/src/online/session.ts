@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { API_URL } from "../api/client";
+import { deviceSecret, isApp } from "../native";
 
 export interface User {
   id: string;
@@ -53,6 +54,8 @@ interface Session {
   user: User | null;
   loginWithGoogle: (credential: string) => Promise<void>;
   loginForDev: (name: string) => Promise<void>;
+  /** アプリの端末で入る（アプリにログインは無い） */
+  loginWithDevice: () => Promise<void>;
   /** 名前を決めた・変えたあとの、新しいトークンとユーザーに入れ替える */
   setSession: (r: { token: string; user: User }) => void;
   logout: () => void;
@@ -66,13 +69,20 @@ export const useSession = create<Session>((set) => {
     save(r);
     set(r);
   };
-  return {
+  const session: Session = {
     token: saved?.token ?? null,
     user: saved?.user ?? null,
     loginWithGoogle: async (credential) =>
       done(await api("/auth/google", { method: "POST", body: JSON.stringify({ credential }) })),
     loginForDev: async (name) =>
       done(await api("/auth/dev", { method: "POST", body: JSON.stringify({ name }) })),
+    loginWithDevice: async () =>
+      done(
+        await api("/auth/device", {
+          method: "POST",
+          body: JSON.stringify({ secret: await deviceSecret() }),
+        }),
+      ),
     setSession: done,
     logout: () => {
       save(null);
@@ -87,6 +97,8 @@ export const useSession = create<Session>((set) => {
         if (res.status === 401) {
           save(null);
           set({ token: null, user: null });
+          // アプリは入り直す（期限は 30 日）。画面の入口でも入り直すので、失敗はそのまま
+          if (isApp) await session.loginWithDevice();
           return;
         }
         // 名前を決めたか・今の名前を、サーバーの値にそろえる（別の端末で名前を変えたときも）
@@ -99,6 +111,7 @@ export const useSession = create<Session>((set) => {
       }
     },
   };
+  return session;
 });
 
 /* ---------- Google のログインボタン（Google Identity Services） ---------- */

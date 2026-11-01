@@ -2,8 +2,10 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Header,
+  HttpCode,
   Post,
   Put,
   Req,
@@ -37,6 +39,12 @@ export class AuthController {
     return this.auth.loginWithGoogle(body.credential);
   }
 
+  /** アプリの端末で入る（アプリにログインは無い） */
+  @Post("device")
+  device(@Body() body: { secret?: unknown }) {
+    return this.auth.loginWithDevice(body?.secret);
+  }
+
   @Post("dev")
   dev(@Body() body: { name?: string }) {
     return this.auth.loginForDev(body?.name ?? "");
@@ -63,5 +71,12 @@ export class ProfileController {
   rename(@Req() req: { user: PublicUser }, @Body() body: { name?: unknown }) {
     if (typeof body?.name !== "string") throw new BadRequestException("名前を入れてください");
     return this.auth.rename(req.user.id, body.name);
+  }
+
+  /** データを消す（マイページの「データを消す」） */
+  @Delete()
+  @HttpCode(204)
+  remove(@Req() req: { user: PublicUser }) {
+    return this.auth.deleteAccount(req.user.id);
   }
 }

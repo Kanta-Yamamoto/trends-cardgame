@@ -23,7 +23,7 @@ import { AuthService, type PublicUser } from "../auth/auth.service";
 import type { MatchRow } from "../db/schema";
 import { RankingService } from "../ranking/ranking.service";
 import { isInvited } from "../security";
-import { deckCards, MatchesService, type Step } from "./matches.service";
+import { MatchesService, type Step } from "./matches.service";
 import { MatchQueue } from "./matchmaking";
 
 type Ack = { ok: true } | { ok: false; error: string };
@@ -266,7 +266,7 @@ export class MatchesGateway
   @SubscribeMessage("queue")
   async enqueue(@ConnectedSocket() client: Client, @MessageBody() body: { deck?: string }): Promise<Ack> {
     return this.guard(client, async (user) => {
-      deckCards(body?.deck);
+      await this.matches.assertDeck(user.id, body?.deck);
       await this.matches.assertFree(user.id);
       const { rating } = await this.ranking.ratingOf(user.id);
       this.queue.add({

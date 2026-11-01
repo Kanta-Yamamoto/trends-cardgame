@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import { Login } from "./auth/Login";
 import { RegisterScreen } from "./auth/Register";
+import { useAccess } from "./gacha/access";
 import { useDeckSync } from "./game/deckSync";
 import { HelpSheet } from "./help/HelpSheet";
 import { InstallAutoGuide } from "./InstallButton";
+import { isApp } from "./native";
 import { useSession } from "./online/session";
 import { Decks } from "./pages/Decks";
 import { Gacha } from "./pages/Gacha";
@@ -15,7 +17,7 @@ import { MyPage } from "./pages/MyPage";
 import { OnlineLobby, OnlineRoom } from "./pages/Online";
 import { Play } from "./pages/Play";
 import { Ranking } from "./pages/Ranking";
-import { Shop } from "./pages/Shop";
+import { UnlockSheet } from "./purchase/Unlock";
 import { TopBar } from "./TopBar";
 import { Tutorial } from "./tutorial/Tutorial";
 
@@ -24,13 +26,20 @@ export function App() {
   useDeckSync();
   const user = useSession((st) => st.user);
   const check = useSession((st) => st.check);
+  const token = useSession((st) => st.token);
+  const loadAccess = useAccess((st) => st.load);
   const { pathname } = useLocation();
   // 開いたときに一度、保存してあるログインがまだ使えるか確かめる（期限は 30 日）
   useEffect(() => {
     void check();
   }, [check]);
-  // サービス全体でログインが要る（10月26日）。ログインしていなければ、どのページを開いてもログインの画面だけ
-  if (!user) return <LoginScreen />;
+  // 買い切りを買ったか・パックの残りは、ホームのメニューやデッキの画面でも見る
+  useEffect(() => {
+    void loadAccess(token);
+  }, [token, loadAccess]);
+  // Web はサービス全体でログインが要る（10月26日）。ログインしていなければ、どのページを開いてもログインの画面だけ。
+  // アプリにログインは無く、端末で自動で入る（11月1日）
+  if (!user) return isApp ? <AppStart /> : <LoginScreen />;
   // プレイヤー名を決めるまでは、初期登録の画面だけ（10月27日。前の版で保存したログインは、確かめ終わるまでそのまま使う）
   if (user.nameSet === false) return <RegisterScreen />;
   // 最初に開く場所はホーム画面（10月26日）。ほかの画面は上の帯の「ホーム」で戻る
@@ -51,7 +60,6 @@ export function App() {
           <Route path="/ranking" element={<Ranking />} />
           <Route path="/gacha" element={<Gacha />} />
           <Route path="/gacha/rates" element={<GachaRates />} />
-          <Route path="/shop" element={<Shop />} />
           <Route path="/me" element={<MyPage />} />
           <Route path="/tutorial" element={<Tutorial />} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -59,6 +67,38 @@ export function App() {
       </main>
       <InstallAutoGuide />
       <HelpSheet />
+      <UnlockSheet />
+    </div>
+  );
+}
+
+/** アプリを開いたとき：端末で入るまでの画面。サーバーに繋がらなければ、やり直せる */
+function AppStart() {
+  const login = useSession((st) => st.loginWithDevice);
+  const [failed, setFailed] = useState(false);
+  const start = useCallback(() => {
+    setFailed(false);
+    login().catch(() => setFailed(true));
+  }, [login]);
+  useEffect(start, [start]);
+  return (
+    <div className="login-screen">
+      <div className="login-bg" aria-hidden="true">
+        <span style={{ backgroundImage: "url(/assets/cards/c13-art.jpg)" }} />
+      </div>
+      <span className="login-rays" aria-hidden="true" />
+      <img className="login-chara" src="/assets/cards/c13-subject.webp" alt="" draggable={false} />
+      <h1 className="login-brand">TRENDS</h1>
+      {failed && (
+        <main className="login-box g3">
+          <div className="online-card">
+            <p className="notice">サーバーに繋がりません。電波のよいところで、もう一度試してください。</p>
+            <button type="button" className="btn" onClick={start}>
+              もう一度
+            </button>
+          </div>
+        </main>
+      )}
     </div>
   );
 }

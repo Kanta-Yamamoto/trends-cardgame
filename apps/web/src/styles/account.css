@@ -24,8 +24,6 @@
 .ac-welcome { display: grid; justify-items: center; gap: 12px; text-align: center; animation: pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1); }
 .ac-welcome h1 { margin: 0; font-size: 24px; font-weight: 800; word-break: break-all; }
 .ac-big-av { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; background: var(--pri-grad); color: #fff; font-size: 36px; font-weight: 900; box-shadow: 0 0 0 4px #fff, 0 10px 24px #1f487833; }
-.ac-gift { margin: 0; padding: 10px 14px; border-radius: var(--r-m); background: var(--pri-soft); color: var(--pri-3); font-size: 13px; font-weight: 800; line-height: 1.6; }
-.ac-gift b { margin: 0 3px; font: 400 18px/1 var(--f-mark); }
 
 /* マイページ */
 .ac-me { padding-top: 6px; padding-bottom: 30px; }
@@ -66,3 +64,4 @@
 .ac-toast { position: fixed; left: 50%; top: max(76px, calc(env(safe-area-inset-top, 0px) + 70px)); z-index: 40; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 20px; font-size: 13px; font-weight: 800; white-space: nowrap; animation: ac-toast 2.4s ease both; pointer-events: none; }
 .ac-toast::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
 @keyframes ac-toast { 0% { opacity: 0; transform: translate(-50%, -8px); } 10%, 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
+.ac-notice { margin: 10px 0 0; padding: 10px 14px; border-radius: var(--r-m); font-size: 13px; font-weight: 700; }

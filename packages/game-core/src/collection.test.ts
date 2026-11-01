@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { extraCopies, isRentalDeck, missingCards } from "./collection";
+import { extraCopies, missingCards, starterCollection } from "./collection";
 
-describe("持っているカードとレンタルデッキ", () => {
+describe("持っているカード", () => {
   const deck = ["a", "a", "b", "c"];
 
   it("足りないカードを、ID ごとの足りない枚数で返す", () => {
@@ -10,10 +10,8 @@ describe("持っているカードとレンタルデッキ", () => {
     expect(missingCards(deck, { a: 2, b: 1, c: 1 })).toEqual({});
   });
 
-  it("1 枚でも足りなければレンタルデッキ", () => {
-    expect(isRentalDeck(deck, { a: 2, b: 1, c: 1 })).toBe(false);
-    expect(isRentalDeck(deck, { a: 1, b: 1, c: 1 })).toBe(true);
-    expect(isRentalDeck(deck, {})).toBe(true);
+  it("買ったときに持つカードは、いちばん多く入っているデッキの枚数ずつ", () => {
+    expect(starterCollection({ x: ["a", "a", "b"], y: ["a", "b", "b", "c"] })).toEqual({ a: 2, b: 2, c: 1 });
   });
 
   it("デッキに入れられる 2 枚を超えた分がダブり", () => {

@@ -142,13 +142,10 @@ function doneGrid(k: number, s: number) {
  */
 export function Opening({
   packs,
-  demo = false,
   onClose,
   onAgain,
 }: {
   packs: PulledCard[][];
-  /** デモ（画面の中だけで開けた。カードは増えず、ジェムも減らない）。そうと分かるように印を出し続ける */
-  demo?: boolean;
   onClose: () => void;
   /** 1 パックのとき「もう1パック」 */
   onAgain?: () => void;
@@ -348,7 +345,7 @@ export function Opening({
     setS({ ...FIRST, at: ref.current.at + 1 });
   };
 
-  if (s.summary) return <TenResult packs={packs} demo={demo} onClose={onClose} />;
+  if (s.summary) return <TenResult packs={packs} onClose={onClose} />;
 
   const { phase, hit } = s;
   const lifting = hit === "lift" || hit === "sq" || hit === "white" || hit === "hold";
@@ -399,10 +396,7 @@ export function Opening({
       </div>
       <div className={`gx-dim ${hit === "lift" || squeezing ? "on" : ""}`} />
       <header className="gx-open-head">
-        <h1>
-          {PACK_NAME}
-          {demo && <small className="gx-demo-mark">デモ・カードもジェムも変わりません</small>}
-        </h1>
+        <h1>{PACK_NAME}</h1>
         {many && (
           <span className="gx-count">
             {s.at + 1} / {packs.length}
@@ -522,9 +516,11 @@ export function Opening({
               <button type="button" className="btn ghost gx-dk" onClick={onClose}>
                 ガチャへ
               </button>
-              <button type="button" className="btn" data-decide-se onClick={onAgain ?? onClose}>
-                {demo ? "もう1パック（デモ）" : "もう1パック開ける"}
-              </button>
+              {onAgain && (
+                <button type="button" className="btn" data-decide-se onClick={onAgain}>
+                  もう1パック開ける
+                </button>
+              )}
             </>
           ) : (
             <>
@@ -602,7 +598,7 @@ function Thumb({ c, delay }: { c: PulledCard & { card: CardDef }; delay?: number
 }
 
 /** 10 パックの結果：★5・★4 を大きく、その下にパックごとの 5 枚 */
-function TenResult({ packs, demo, onClose }: { packs: PulledCard[][]; demo: boolean; onClose: () => void }) {
+function TenResult({ packs, onClose }: { packs: PulledCard[][]; onClose: () => void }) {
   const rows = packs.map((p) =>
     p
       .map((x) => ({ ...x, card: BY_ID.get(x.id) }))
@@ -619,11 +615,7 @@ function TenResult({ packs, demo, onClose }: { packs: PulledCard[][]; demo: bool
         <header className="gx-sum-head">
           <h1>
             {packs.length}パックの結果
-            <small>
-              {demo
-                ? `${all.length}枚・デモ（カードもジェムも変わりません）`
-                : `${all.length}枚・NEW ${news}枚`}
-            </small>
+            <small>{`${all.length}枚・NEW ${news}枚`}</small>
           </h1>
         </header>
         <div className="gx-sum-count">

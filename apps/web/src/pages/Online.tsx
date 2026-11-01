@@ -7,6 +7,7 @@ import { Login } from "../auth/Login";
 import { type DeckSel, deckFromRef } from "../game/decks";
 import { type RemoteLink, type RemoteUpdate, useGame } from "../game/store";
 import { useInviteLink } from "../invite";
+import { isApp } from "../native";
 import { formatClock, type RatingChange, useLive } from "../online/live";
 import { api, useSession } from "../online/session";
 import { Board, DeckGrid } from "./Play";
@@ -18,6 +19,29 @@ import { Board, DeckGrid } from "./Play";
 function useRoomLink() {
   const { link } = useInviteLink(window.location.pathname);
   return link ?? window.location.href;
+}
+
+/** 部屋に誘う（合言葉と招待リンク）。アプリは Web のリンクを使わないので、合言葉をコピーする */
+function RoomInvite({ code }: { code: string }) {
+  const link = useRoomLink();
+  const invite = isApp ? code : link;
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(invite);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+  return (
+    <>
+      <button type="button" className="btn lg" onClick={copy}>
+        {copied ? "コピーしました" : isApp ? "合言葉をコピー" : "招待リンクをコピー"}
+      </button>
+      {!isApp && <p className="room-link">{invite}</p>}
+    </>
+  );
 }
 
 interface Seat {
@@ -385,7 +409,6 @@ export function OnlineRoom() {
   /** 参加するときに使うデッキ（すでに参加している人は null のまま入れる） */
   const [deck, setDeck] = useState<DeckSel | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   const member = !!user && !!info && (info.players.p1?.id === user.id || info.players.p2?.id === user.id);
   const ready = member || !!deck;
@@ -462,16 +485,6 @@ export function OnlineRoom() {
       useLive.getState().reset();
     };
   }, [ready, token, code, deck, logout]);
-
-  const invite = useRoomLink();
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(invite);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  };
 
   /** 2 人とも抜けたので、決着なしで閉じた対戦 */
   const closed = match?.status === "closed";
@@ -560,13 +573,11 @@ export function OnlineRoom() {
                 </span>
               ))}
             </p>
-            <button type="button" className="btn lg" onClick={copy}>
-              {copied ? "コピーしました" : "招待リンクをコピー"}
-            </button>
-            <p className="room-link">{invite}</p>
+            <RoomInvite code={match?.code ?? code.toUpperCase()} />
           </section>
           <p className="room-hint g2">
-            この合言葉か招待リンクを、対戦したい友だちに送ってください。友だちが入ると、すぐに対戦が始まります。友だちとの対戦では、レートは動きません。
+            {isApp ? "この合言葉" : "この合言葉か招待リンク"}
+            を、対戦したい友だちに送ってください。友だちが入ると、すぐに対戦が始まります。友だちとの対戦では、レートは動きません。
           </p>
         </>
       )}

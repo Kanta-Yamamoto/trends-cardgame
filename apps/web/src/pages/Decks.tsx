@@ -9,10 +9,13 @@ import {
   MAX_DARK_CARDS,
   MAX_DECK_ATTRIBUTES,
 } from "@trends/cards";
-import { useCallback, useMemo, useState } from "react";
+import type { Collection } from "@trends/game-core";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { EffectText } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
+import { useAccess } from "../gacha/access";
+import { useCollection } from "../gacha/collection";
 import { CardPopup } from "../game/CardPopup";
 import { CostStrip } from "../game/CostStrip";
 import { AttrDots, DeckAce, deckGradient } from "../game/DeckArt";
@@ -29,6 +32,7 @@ import {
 } from "../game/decks";
 import { CATALOG as CARD_BY_ID, DECK_INFO } from "../game/store";
 import { useSession } from "../online/session";
+import { useUnlock } from "../purchase/Unlock";
 import { usePageMusic } from "../sound/music";
 
 type Filter = Attribute | "ニュートラル" | "全部";
@@ -100,6 +104,14 @@ export function Decks() {
   const [picking, setPicking] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const user = useSession((s) => s.user);
+  const token = useSession((s) => s.token);
+  const access = useAccess((s) => s.access);
+  const cards = useCollection((s) => s.cards);
+  const loadCards = useCollection((s) => s.load);
+  const showUnlock = useUnlock((s) => s.show);
+  useEffect(() => {
+    void loadCards(token);
+  }, [token, loadCards]);
   // アカウントとそろえ終わったら、一覧を読み直す
   useDecksChanged(useCallback(() => setList(loadCustomDecks()), []));
 
@@ -117,10 +129,28 @@ export function Decks() {
   const create = (cards: string[], name: string) =>
     setEditing({ id: newDeckId(), name, cards, updated: Date.now() });
 
+  // デッキを組むのは買い切りのあと（11月1日）。構築済みデッキは買わなくても使える
+  if (access && !access.unlocked) {
+    return (
+      <section className="page deck-builder">
+        <div className="db-locked g2">
+          <h2>自分のデッキを組む</h2>
+          <p>
+            全部解放すると、持っているカードで自分のデッキを組めます。構築済みデッキは、今のまま対戦で使えます。
+          </p>
+          <button type="button" className="btn" data-decide-se onClick={showUnlock}>
+            全部解放する
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   if (editing) {
     return (
       <DeckEditor
         deck={editing}
+        owned={access?.allCards === false ? (cards ?? {}) : null}
         onBack={() => setEditing(null)}
         onSave={(d) => {
           const next = list.some((x) => x.id === d.id)
@@ -289,10 +319,13 @@ export function Decks() {
 
 function DeckEditor({
   deck,
+  owned,
   onSave,
   onBack,
 }: {
   deck: CustomDeck;
+  /** 入れられるカード（ID ごとの枚数）。null なら全部のカードを入れられる（Web の友だち） */
+  owned: Collection | null;
   onSave: (d: CustomDeck) => void;
   onBack: () => void;
 }) {
@@ -313,7 +346,8 @@ function DeckEditor({
     return !!a && !attrs.includes(a) && attrs.length >= MAX_DECK_ATTRIBUTES;
   };
   const canAdd = (c: CardDef) => {
-    if ((counts.get(c.id) ?? 0) >= MAX_COPIES) return false;
+    if ((counts.get(c.id) ?? 0) >= Math.min(MAX_COPIES, owned ? (owned[c.id] ?? 0) : MAX_COPIES))
+      return false;
     if (total >= DECK_SIZE) return false;
     if (attrBlocked(c)) return false;
     // 闇堕ちを持つカードは、種類を問わず2枚まで
@@ -332,6 +366,7 @@ function DeckEditor({
 
   const shown = POOL.filter((c) => {
     if (onlyIn && !counts.has(c.id)) return false;
+    if (owned && !owned[c.id] && !counts.has(c.id)) return false;
     if (filter === "全部") return true;
     if (filter === "ニュートラル") return c.attributes.length === 0;
     return c.attributes[0] === filter;

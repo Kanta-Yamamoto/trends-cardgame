@@ -1,5 +1,5 @@
 /**
- * ガチャ（10月27日）。1 パック 5 枚。単発は 1 パック、10 連は 10 パック。
+ * ガチャ（10月27日）。1 パック 5 枚。11月1日からジェムをやめ、買い切りのあとに配るパックを開ける形にした（docs/product.md）。
  * オーナーの決めた封入率：★5 が 3 パックに 1 枚・★4 が 2 パックに 1 枚・★3 が 1 パックに 1 枚。
  * それを満たすパックの中身（Claude の案）：1〜3 枚目は★1・★2、4 枚目は★3、5 枚目は★5 1/3・★4 1/2・★3 1/6。
  * 同じ枠で出られるカードは、どれも同じ確率（★1・★2 の枠は、★1 と★2 をまとめた中から選ぶ）
@@ -7,11 +7,19 @@
 
 /** 1 パックの枚数 */
 export const PACK_SIZE = 5;
-/** 1 パックの値段（ジェム） */
-export const PACK_PRICE = 150;
-/** 一度に開けられるパックの数（単発・10 連） */
-export const PACK_COUNTS = [1, 10] as const;
-export type PackCount = (typeof PACK_COUNTS)[number];
+/** 買い切りのあと、毎日開けられるパックの数（日が変わるとこの数に戻り、ためられない） */
+export const DAILY_PACKS = 3;
+/** 買い切りを買った日に開けられるパックの数 */
+export const WELCOME_PACKS = 10;
+/** 一度に開けられるパックの数 */
+export const MAX_OPEN_PACKS = 10;
+
+/** パックを数える日（日本の日付。例 "2026-11-01"） */
+export const packDay = (now: Date) => new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+/** 今日開けられるパックの数。日が変わっていれば DAILY_PACKS まで戻す（買った日の残りが多ければ、そのまま使える） */
+export const packsToday = (packs: number, day: string | null, today: string) =>
+  day === today ? packs : Math.max(packs, DAILY_PACKS);
 
 /**
  * 1 枚分の枠。even は、並べた★のカードをまとめて同じ確率で選ぶ。odds は、先に★を割合で決めてから、その★のカードを同じ確率で選ぶ

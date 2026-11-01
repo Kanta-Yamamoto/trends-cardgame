@@ -1,0 +1,72 @@
+# iOS アプリを審査に出す手順
+
+買い切りの形は [product.md](product.md)「買い切りの形」。ここは出すまでの手順。支払い・本人確認・銀行の情報は本人しか入れられないので、★はオーナーの作業。
+
+## 全体の形
+
+- アプリは `apps/web/ios`（Capacitor。依存は Swift Package Manager）。Bundle ID は `com.kantayamamoto.trends`
+- iPhone だけ・縦だけ（iPad のスクリーンショットが要らない）。iOS 15 以上
+- ビルドと TestFlight への配信は Xcode Cloud（年会費に月 25 時間込み）。`ios/App/ci_scripts/ci_post_clone.sh` が画面を組み立てる
+- 手元の Mac は Xcode 26.3 まで。Xcode 27 が必須になっても、Xcode Cloud で出し続けられる
+- 買い切りの商品 ID は `com.kantayamamoto.trends.unlock`（`apps/api/src/purchase/apple.ts` と `TrendsStorePlugin.swift`）
+
+## 1. Apple の登録 ★
+
+1. [Apple Developer Program](https://developer.apple.com/programs/enroll/) に登録する（年 99 ドル。個人の登録だと、App Store の販売者に本名が出る）。有効になるまで最大 48 時間ほど
+2. [App Store Connect](https://appstoreconnect.apple.com) の「ビジネス」で、有料アプリの契約・銀行口座・税金の情報を入れる。これが終わるまで、買い切りのテストも販売もできない
+
+## 2. Xcode ★
+
+1. [Apple のダウンロードページ](https://developer.apple.com/download/all/) から Xcode 26.3 の `.xip` を取り、開いて `/Applications` に入れる（App Store の版は新しすぎて入らない）
+2. `sudo xcode-select -s /Applications/Xcode.app` のあと、`pnpm install` と `pnpm --filter @trends/web cap:sync` を通す
+3. `apps/web/ios/App/App.xcodeproj` を開き、Signing & Capabilities の Team を自分にする。シミュレーターで動くことを確かめる（Swift のファイルは、ここで初めてコンパイルされる）
+
+## 3. App Store Connect の準備 ★（文面は Claude が用意する）
+
+1. 新しいアプリを作る：名前 TRENDS（取られていたら別名）、言語 日本語、Bundle ID `com.kantayamamoto.trends`、SKU `trends-ios`
+2. アプリ内課金を作る：種類「非消耗型」、製品 ID `com.kantayamamoto.trends.unlock`、参照名「全部解放」、価格 480 円、審査用のスクリーンショットを付ける
+3. アプリの「一般情報」にある Apple ID（数字）を Claude に伝える。サーバーの `APPLE_APP_ID` に入れないと、本番の購入を確かめられない（審査の購入は Sandbox なので、無くても審査は進む）
+4. App 情報：プライバシーポリシーの URL は `https://trends-api-523738975867.asia-northeast1.run.app/privacy.html`、サポートの URL は同じサーバーの `/support.html`
+5. App のプライバシー：下の「App のプライバシーの答え」
+6. 年齢の区分：アンケートでは「ランダムな要素のあるアイテム（ルートボックス）」に「はい」と答える
+
+## 4. Xcode Cloud ★
+
+1. Xcode の Integrate メニュー → Create Workflow。GitHub のリポジトリへのアクセスを許す
+2. ワークフローは、`main` への push で Archive して TestFlight（内部テスト）へ配る形にする
+3. 最初のビルドが通ったら、TestFlight で iPhone 17e に入れて、下の「確かめること」を順に試す
+
+## 5. 確かめること（実機）
+
+- 初めて開くと、名前を決めるだけで始まる。チュートリアルの 1 パックを開ける
+- 買う前：構築済みデッキで CPU 戦・オンライン対戦ができる。デッキを組む画面とガチャの続きは「全部解放する」に案内される
+- Sandbox のアカウントで買う：デッキを組める、10 パック開けられる、値段が「¥480」と出る
+- アプリを消して入れ直し、最初の画面の「購入を復元」で元のデータに戻る
+- マイページの「データを消す」で最初の画面に戻る
+- 音楽・効果音、演出の重さ、画面の上下の切り欠き
+
+## 6. 審査に出す ★
+
+スクリーンショット（6.9 インチ。1320×2868）を付け、アプリ内課金を一緒に選んで「審査へ提出」。
+
+## App のプライバシーの答え
+
+トラッキング：しない。集めるデータはすべて「ユーザーに関連付けられる」「トラッキングには使わない」。
+
+| 種類 | 目的 |
+|---|---|
+| ユーザー ID（端末の識別子） | アプリの機能 |
+| 購入 | アプリの機能 |
+| ゲームプレイの内容 | アプリの機能・製品のパーソナライズはしない（分析は CPU とカードの調整） |
+| 名前（プレイヤー名。本名でなくてよい） | アプリの機能 |
+
+## 審査のメモに書くこと
+
+- ログインは無い。名前を決めると始まる
+- 買い切りは「全部解放する」（ホームのメニュー・ガチャ・デッキを組む）から
+- オンライン対戦で相手が見つからないときは、少し待つと CPU が相手になる
+
+## 審査で気をつけること
+
+- ガチャの提供割合は `/gacha/rates` にある（決まり 3.1.1）
+- カードの題材がネットのミームなので、実在の人物・他社の作品に見えるカードがあると 5.2 で止まることがある。指摘されたら、そのカードを外す

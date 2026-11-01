@@ -1,7 +1,9 @@
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router";
-import { fmt } from "../gacha/wallet";
+import { isApp } from "../native";
 import { api, type User, useSession } from "../online/session";
+import { Store } from "../purchase/store";
+import { applyPurchase } from "../purchase/Unlock";
 import { useTutorial } from "../tutorial/progress";
 import { NameField, nameStatus } from "./NameField";
 import "../styles/account.css";
@@ -9,13 +11,12 @@ import "../styles/account.css";
 interface Renamed {
   token: string;
   user: User;
-  /** 初めて決めたときに配られたジェム */
-  welcomeGems: number;
 }
 
 /**
  * 初期登録（10月27日。モックの A 案）：初めてログインした人は、プレイヤー名を決めるまでこの画面だけ。
- * 地はログインの画面と同じ。名前を決めると「ようこそ」を出し、ホームへ
+ * 地はログインの画面と同じ。名前を決めると「ようこそ」を出し、ホームへ。
+ * アプリでは、入れ直した人のために「購入を復元」を置く（元のアカウントに戻るので、名前は決め直さない）
  */
 export function RegisterScreen() {
   const token = useSession((s) => s.token);
@@ -28,6 +29,15 @@ export function RegisterScreen() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Renamed | null>(null);
   const ok = nameStatus(name).ok;
+
+  const restore = () => {
+    setBusy(true);
+    setError(null);
+    applyPurchase(() => Store.restore())
+      .then((ok) => ok || setError("復元できる購入が見つかりませんでした"))
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setBusy(false));
+  };
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -65,11 +75,6 @@ export function RegisterScreen() {
             </span>
             <h1>ようこそ、{done.user.name}</h1>
             <p className="ac-lead">ホームの左上の札を押すと、いつでもマイページを開けます。</p>
-            {done.welcomeGems > 0 && (
-              <p className="ac-gift">
-                はじめてのお礼に、ジェムを<b>{fmt(done.welcomeGems)}</b>贈りました
-              </p>
-            )}
             <button type="button" className="btn lg" onClick={begin}>
               はじめる
             </button>
@@ -85,9 +90,15 @@ export function RegisterScreen() {
             <button type="submit" className="btn lg" disabled={!ok || busy}>
               {busy ? "決めています…" : "この名前ではじめる"}
             </button>
-            <button type="button" className="btn text" onClick={logout}>
-              ほかのアカウントで入り直す
-            </button>
+            {isApp ? (
+              <button type="button" className="btn text" disabled={busy} onClick={restore}>
+                購入を復元
+              </button>
+            ) : (
+              <button type="button" className="btn text" onClick={logout}>
+                ほかのアカウントで入り直す
+              </button>
+            )}
           </form>
         )}
       </main>

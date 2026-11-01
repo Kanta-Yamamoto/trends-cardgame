@@ -10,7 +10,7 @@ export {
   startClock,
   tickClock,
 } from "./clock";
-export { type Collection, extraCopies, isRentalDeck, missingCards } from "./collection";
+export { type Collection, extraCopies, missingCards, starterCollection } from "./collection";
 export {
   CUSTOM_DECK_PREFIX,
   deckAttributes,
@@ -51,18 +51,20 @@ export {
   withRushBoost,
 } from "./engine";
 export {
+  DAILY_PACKS,
   type GachaCard,
+  MAX_OPEN_PACKS,
   openPack,
-  PACK_COUNTS,
-  PACK_PRICE,
   PACK_SIZE,
   PACK_SLOTS,
-  type PackCount,
   type PackPool,
   type PackSlot,
   packChance,
+  packDay,
   packPool,
+  packsToday,
   slotOdds,
+  WELCOME_PACKS,
 } from "./gacha";
 export {
   checkPlayerName,
