@@ -121,10 +121,13 @@ export function Gallery() {
   const [zoomId, setZoomId] = useState<string | null>(null);
   const token = useSession((s) => s.token);
   const owned = useCollection((s) => s.cards);
+  const ownedChecked = useCollection((s) => s.checked);
   const loadOwned = useCollection((s) => s.load);
   useEffect(() => {
     void loadOwned(token);
   }, [token, loadOwned]);
+  // 持っているカードが分かるまでは、カードを出さない（持っていないカードに一瞬色が付くため）
+  const waiting = isLoading || (!owned && !ownedChecked);
   const countOf = (id: string) => (owned ? (owned[id] ?? 0) : null);
 
   // 同じ★の中は、属性ごと（ニュートラルは最後）に、コストの低い順
@@ -172,7 +175,7 @@ export function Gallery() {
           </button>
         ))}
       </div>
-      {isLoading ? (
+      {waiting ? (
         <GallerySkeleton />
       ) : (
         rows.map((row) => (

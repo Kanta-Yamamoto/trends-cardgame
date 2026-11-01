@@ -148,7 +148,7 @@
   height: 42px; padding: 0 16px 0 8px; border-radius: 21px; pointer-events: none;
 }
 .hm-star { flex: none; padding: 2px 7px; border-radius: 8px; background: #ffe9a8; color: #7a5200; font: 400 13px/1.2 var(--f-mark); letter-spacing: 0.06em; }
-.hm-name-text { min-width: 0; font: 400 18px/1 var(--f-head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: hm-up-in 0.5s ease-out; }
+.hm-name-text { min-width: 0; font: 900 18px/1 var(--f-head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: hm-up-in 0.5s ease-out; }
 .hm-swap {
   position: absolute; right: 14px; bottom: 14px; z-index: 2; display: flex; align-items: center; gap: 6px;
   height: 42px; padding: 0 14px 0 10px; border-radius: 21px; color: var(--ink); font-size: 12px; font-weight: 800; cursor: pointer;
