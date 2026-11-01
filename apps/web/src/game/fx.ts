@@ -489,6 +489,12 @@ async function showRushBoost(
   await wait(700);
 }
 
+/** 裏向きのカードを描く大きさ：盤面の枠（カードの形）に k を掛けたもの。枠が無ければ 63:88 */
+function cardBox(k: number): { w: number; h: number } {
+  const r = q(".pstage .slot, .pstage .mini")?.getBoundingClientRect();
+  return r && r.width > 0 ? { w: r.width * k, h: r.height * k } : { w: 63 * k, h: 88 * k };
+}
+
 /** 1枚を引く演出の長さ（ms。飛ぶ 560 と、表に返る 280） */
 export const DRAW_MS = 840;
 /** 続けて引くときの、1枚ごとのずれ（ms） */
@@ -514,27 +520,27 @@ export async function animateDraw(player: PlayerId, delay = 0, index?: number): 
   await wait(delay);
   const f = deck.getBoundingClientRect();
   const t = landing.getBoundingClientRect();
+  // 裏向きのカードは、いつもカードの形（手札・場のカードの大きさ）で描く。
+  // 山札や相手の手札が文字の札のときに、その札の形（横長）で描くと、縦につぶれて見えた（11月2日）
+  const box = isMine ? { w: t.width, h: t.height } : cardBox(0.6);
   const card = document.createElement("div");
   card.className = "fx-cardback";
-  Object.assign(card.style, {
-    left: `${f.left}px`,
-    top: `${f.top}px`,
-    width: `${f.width}px`,
-    height: `${f.height}px`,
-  });
+  const fx = f.left + f.width / 2 - box.w / 2;
+  const fy = f.top + f.height / 2 - box.h / 2;
+  Object.assign(card.style, { left: `${fx}px`, top: `${fy}px`, width: `${box.w}px`, height: `${box.h}px` });
   layer().appendChild(card);
-  const dx = t.left - f.left;
-  const dy = t.top - f.top;
-  const s = Math.max(t.width / f.width, 0.5);
+  const dx = t.left + t.width / 2 - (fx + box.w / 2);
+  const dy = t.top + t.height / 2 - (fy + box.h / 2);
+  const s0 = Math.min(1, Math.max(f.height / box.h, 0.35));
   await card
     .animate(
       [
-        { transform: "none", opacity: 1 },
+        { transform: `scale(${s0})`, opacity: 1 },
         {
-          transform: `translate(${dx * 0.35}px, ${dy * 0.35 - 70}px) scale(${1 + (s - 1) * 0.5}) rotate(-12deg)`,
+          transform: `translate(${dx * 0.35}px, ${dy * 0.35 - 70}px) scale(${(s0 + 1) / 2}) rotate(-12deg)`,
           offset: 0.45,
         },
-        { transform: `translate(${dx}px, ${dy}px) scale(${s}) rotate(0deg)`, opacity: isMine ? 1 : 0.3 },
+        { transform: `translate(${dx}px, ${dy}px) scale(1) rotate(0deg)`, opacity: isMine ? 1 : 0.3 },
       ],
       { duration: 560, easing: "cubic-bezier(.3,.7,.3,1)" },
     )
@@ -575,16 +581,17 @@ export async function animateReturn(player: PlayerId, index: number | null, dela
   const t = deck.getBoundingClientRect();
   const card = document.createElement("div");
   card.className = "fx-cardback";
-  // 相手の手札（文字）からは、山札と同じ大きさの裏向きのカードを出す
-  const w = isCard ? f.width : t.width;
-  const h = isCard ? f.height : t.height;
+  // 相手の手札（文字）からは、場のカードの 6 割の大きさの裏向きのカードを出す（いつもカードの形で）
+  const box = isCard ? { w: f.width, h: f.height } : cardBox(0.6);
+  const w = box.w;
+  const h = box.h;
   const x = f.left + f.width / 2 - w / 2;
   const y = f.top + f.height / 2 - h / 2;
   Object.assign(card.style, { left: `${x}px`, top: `${y}px`, width: `${w}px`, height: `${h}px` });
   layer().appendChild(card);
   const dx = t.left + t.width / 2 - (x + w / 2);
   const dy = t.top + t.height / 2 - (y + h / 2);
-  const s = Math.min(1, t.width / w);
+  const s = Math.min(1, Math.max(t.height / h, 0.35));
   await card
     .animate(
       [

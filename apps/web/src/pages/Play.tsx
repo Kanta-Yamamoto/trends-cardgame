@@ -2404,9 +2404,13 @@ export function Board({
   const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}${director !== null ? " field-director" : ""}${arbiter ? " field-arbiter" : ""}${fixer ? " field-fixer" : ""}${god ? " field-god" : ""}${sacGuide ? " sac-mode" : ""}`;
   const fieldLayer = field ? <FieldLayer kind={field.kind} mine={field.owner === ME} /> : null;
 
-  // 相手が出したカードは、相手の陣地の上に重ねて見せる
+  // 相手が出した・使ったカード（と自分の呪文）は、画面の真ん中に大きく見せる（11月2日。旧 UI と同じ形に戻した。
+  // 相手の陣地の中に収める形では、カードの大きさが 0 になり、暗い幕だけが出ていた）
   const revealEl = reveal && CATALOG[reveal.cardId] && (
     <div key={reveal.id} className={`foe-reveal ${reveal.mine ? "mine" : ""}`} aria-live="polite">
+      <span className="fr-label">
+        {reveal.mine ? "あなたの呪文" : `${foeName}が${reveal.kind === "play" ? "出した" : "使った"}`}
+      </span>
       <div className="fr-card">
         <HoloCard card={CATALOG[reveal.cardId] as CardDef} idle={false} />
       </div>
@@ -2446,6 +2450,7 @@ export function Board({
         {/* 縦の舞台：奥が相手、手前が自分。真ん中の VS の線で陣地を分ける */}
         <div className={`pstage ${boardClass}`} data-drop="board">
           {fieldLayer}
+          {revealEl}
           {director !== null && (
             <DirectorField key={director.id} aces={director.aces} onDone={() => setDirector(null)} />
           )}
@@ -2503,7 +2508,6 @@ export function Board({
             </div>
             {foeRow}
             <BoardText line={foeText} className={`foe ${game.active === CPU && dealt ? "ask" : ""}`} />
-            {revealEl}
           </div>
           <div className="pmid">
             {turnOn && (
