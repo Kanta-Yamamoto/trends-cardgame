@@ -36,6 +36,12 @@ variable "monthly_budget_jpy" {
   default = 3000
 }
 
+variable "apple_app_id" {
+  type        = string
+  description = "App Store Connect のアプリの Apple ID（数字。公開してよい値）。買い切りの本番の購入を確かめるのに使う"
+  default     = ""
+}
+
 variable "google_client_id" {
   type        = string
   description = "Google ログインの OAuth クライアント ID（Google Cloud コンソールの「認証情報」で作る。公開してよい値）"
