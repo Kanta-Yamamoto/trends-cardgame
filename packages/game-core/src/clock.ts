@@ -3,10 +3,11 @@ import { opponent } from "./engine";
 import type { Action, GameState, PlayerId, RuleCard } from "./types";
 
 /**
- * オンライン対戦の持ち時間。
- * - 個人の持ち時間は 1 試合で 10 分。自分のターンのあいだ、最初の 1 秒から減る
+ * オンライン対戦の時計。
  * - 1 ターンは 60 秒まで。過ぎたら自動でターンを終える（差し出しを選ぶ番なら、先に自動で選ぶ）
- * - 持ち時間を使い切ったら、時間切れで負け
+ * - 1 試合の持ち時間は無い（11月2日。オーナー：「1ターン60秒の制限のみで、トータルの制限時間は不要」）。
+ *   それまでは 10 分の持ち時間があり、使い切ると時間切れで負けだった。bank は、前の版の画面（iOS のアプリ）が
+ *   表示に使うので数え続けるが、ルールには使わない
  * - 相手の手番の途中で差し出し（フィクサー）を選ぶ番になったら、手番の人の時計は止め、選ぶ人は 15 秒以内に選ぶ。
  *   過ぎたら自動で選ぶ（相手が選ばないせいで手番の人が時間切れにならないように）
  * - ターンが変わったら、新しい手番の人の時計は、その人の画面が相手の手を見せ終える（ready）まで待つ。
@@ -121,10 +122,10 @@ export function readyClock(
   return { ...clock, since: now };
 }
 
-/** このターンで使える時間（ターンの 60 秒か、残りの持ち時間の短いほう） */
-const turnLimit = (clock: Clock, state: GameState) => Math.min(CLOCK.turnMs, clock.bank[state.active]);
+/** このターンで使える時間（いつも 60 秒。持ち時間は無い） */
+const turnLimit = (_clock: Clock, _state: GameState) => CLOCK.turnMs;
 
-/** 次に時間が切れる時刻（ターンの終わり・持ち時間の切れ・差し出しの待ちの早いほう。決着していれば null） */
+/** 次に時間が切れる時刻（ターンの終わり・差し出しの待ちの早いほう。決着していれば null） */
 export function clockDeadline(clock: Clock, state: GameState): number | null {
   if (state.winner) return null;
   const times: number[] = [];
@@ -137,7 +138,7 @@ export function clockDeadline(clock: Clock, state: GameState): number | null {
 
 /**
  * 時間が過ぎていたら、サーバーが代わりに行う操作。差し出しの待ちの切れは自動で選ぶ。
- * 持ち時間を使い切ったら負け（timeout）。ターンの 60 秒を過ぎたらターンを終える（差し出しを選ぶ番なら、先に自動で選ぶ）。
+ * ターンの 60 秒を過ぎたらターンを終える（差し出しを選ぶ番なら、先に自動で選ぶ）。時間切れの負けは無い。
  * 何も過ぎていなければ null
  */
 export function clockAction(
@@ -161,7 +162,6 @@ export function clockAction(
   if (clock.since === null) return null;
   const u = used(clock, now);
   const player = state.active;
-  if (u >= clock.bank[player]) return { type: "timeout", player };
   if (u < CLOCK.turnMs) return null;
   if (state.pending?.waiting.includes(player))
     return { type: "sacrifice", player, slot: autoSacrifice(state, player, catalog) };
@@ -174,7 +174,7 @@ export interface ClockView {
   running: PlayerId | null;
   /** 手番の人のターンの時間の残り */
   turnLeft: number;
-  /** 両者の残りの持ち時間（手番の人は、このターンで使っている分も引いた値） */
+  /** 両者の残りの持ち時間（ルールには使わない。前の版の画面のために送る） */
   bank: Record<PlayerId, number>;
   /** 差し出しを選ぶ残り（手番でない人が選ぶ番のときだけ） */
   pickLeft: number | null;

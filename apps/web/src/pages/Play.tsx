@@ -44,7 +44,6 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router";
-import { EffectText, HelpTerm } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
 import { ATTR_META } from "../cards/meta";
 import { frameRect, frameSize } from "../frame";
@@ -60,7 +59,7 @@ import { fxEnabled } from "../fx/stage";
 import { warmFx } from "../fx/warm";
 import { ArbiterField } from "../game/ArbiterField";
 import { beforeBuffs } from "../game/beforeBuffs";
-import { CardZoom } from "../game/CardZoom";
+import { CardPopup } from "../game/CardPopup";
 import { CostStrip } from "../game/CostStrip";
 import { type DarkCut, DarkCutscene } from "../game/DarkCutscene";
 import { AttrDots, aceSubject, DeckAce, deckGradient } from "../game/DeckArt";
@@ -282,9 +281,6 @@ async function presentPhased(
 /** 自分のアイコン（アイコンの登録が入るまでは、案内役のちびミナモ） */
 const MY_ICON = "/assets/tutorial/minamo-cheer.webp";
 const DEFAULT_FOE_ICON = "/assets/cards/c17-art.jpg";
-const COST_SLOTS = Array.from({ length: 10 }, (_, i) => i);
-/** シートでカードをめくる、指の動きの幅 */
-const SWIPE_PX = 50;
 /** 自分の手の結果を、手前の文字欄に見せておく時間 */
 const BOARD_LINE_MS = 3000;
 /** 真ん中の文字欄に出す出来事（引く・ターンの始めなどの細かい動きは出さない） */
@@ -1288,12 +1284,9 @@ export function Board({
   /** 画面いっぱいに大きく見ているカード（スマホで効果を読むため） */
   const [zoom, setZoom] = useState<Peek | null>(null);
   /** 手札を下半分のシートで見ている位置（「出す」を押すと場を選ぶ手順に進む） */
-  const [handOpen, setHandOpen] = useState<number | null>(null);
   /** 場のカードを下半分のシートで見ている */
-  const [look, setLook] = useState<Peek | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   /** 真ん中の文字欄：奥は相手の手、手前は自分の手の結果（少し見せて案内に戻す） */
-  const [foeLine, setFoeLine] = useState<BoardLine | null>(null);
   const [myLine, setMyLine] = useState<BoardLine | null>(null);
   const lineSeen = useRef(-1);
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
@@ -1363,8 +1356,6 @@ export function Board({
     setBuzzAsk(null);
     setResignAsk(false);
     setQuitAsk(false);
-    setHandOpen(null);
-    setLook(null);
     setMenuOpen(false);
   }, [foeMove]);
 
@@ -1373,7 +1364,6 @@ export function Board({
     const last = [...log].reverse().find((l) => BOARD_LINE_EVENTS.has(l.e.type));
     if (!last) {
       lineSeen.current = -1;
-      setFoeLine(null);
       setMyLine(null);
       return;
     }
@@ -1381,7 +1371,8 @@ export function Board({
     lineSeen.current = last.id;
     const cardId = "cardId" in last.e ? last.e.cardId : undefined;
     const line = { text: describe(last.e), art: cardId ? CATALOG[cardId]?.art : undefined };
-    if (useGame.getState().game?.active === CPU) return setFoeLine(line);
+    // 相手の文字欄はやめた（11月2日）。相手のターンの出来事は、文字欄には出さない
+    if (useGame.getState().game?.active === CPU) return;
     setMyLine(line);
     const t = setTimeout(() => setMyLine(null), BOARD_LINE_MS);
     return () => clearTimeout(t);
@@ -1455,6 +1446,22 @@ export function Board({
   const mulliganOpen = !!game?.mulligan && !game.winner;
   /** 始めの手札を配っている間（配り終えてから引き直しの窓を出す） */
   const [dealing, setDealing] = useState(false);
+  // CPU 戦の 1 ターン 60 秒（11月2日。オーナー：「オンライン対戦も想定してCPUでも同様のUIを表示する」「1ターン60秒の制限のみ」）。
+  // 自分のターンは操作できるようになってから、相手のターンは始まってから数える。チュートリアルには付けない
+  const cpuClockOn =
+    mode === "cpu" && !!game && !game.winner && !game.mulligan && opening <= openSeen && !dealing;
+  const cpuTurnReady = !!game && (game.active !== ME || (!cpuBusy && !animating && !game.pending));
+  const cpuTurnLeft = useCpuTurnClock(cpuClockOn, game?.turn ?? 0, cpuTurnReady);
+  // 0 になったら、自分のターンを終える（演出の途中なら、終わってから確かめ直す）
+  const cpuTimeUp = cpuTurnLeft === 0 && !animating;
+  useEffect(() => {
+    if (!cpuTimeUp) return;
+    const g = useGame.getState();
+    if (!g.game || g.game.active !== ME || g.game.winner || g.cpuBusy || g.animating || g.game.pending)
+      return;
+    g.select(null);
+    g.endTurn();
+  }, [cpuTimeUp]);
   /** 引き直しの戻す・引く演出を見せている間（store の演出が終わるまで。ターン開始の帯はそのあと） */
   const [swapping, setSwapping] = useState(false);
   useEffect(() => {
@@ -2020,6 +2027,17 @@ export function Board({
   const myTurn =
     game.active === ME && !game.winner && !cpuBusy && !animating && !game.pending && !game.mulligan;
   const sacSlots = game.pending?.waiting.includes(ME) && !animating ? sacrificeCandidates(game, ME) : [];
+  // 手番の人のターンの残り（オンラインはサーバーの時計、CPU 戦は画面で数える。チュートリアルは出さない）
+  const activeClock = game.active === ME ? myClock : foeClock;
+  const turnLeft = game.winner
+    ? null
+    : online
+      ? activeClock?.running
+        ? activeClock.turn
+        : activeClock
+          ? CLOCK.turnMs
+          : null
+      : cpuTurnLeft;
   // 差し出しの案内：何の効果で、いま何をすればいいか。選べる自分のキャラクター以外は暗くして押せなくする。
   // 選び終えて破壊の演出をしている間（animating）は、案内も暗さも消す（案内を消してから貫く）
   const sacGuide = (() => {
@@ -2094,7 +2112,7 @@ export function Board({
             if (castable) return cast({ side: "enemy", slot });
             if (hit) return attack({ kind: "unit", slot });
             setPeek(p);
-            setLook(p);
+            setZoom(p);
           }}
           onPeek={() => setPeek(p)}
           onLongPress={() => setZoom(p)}
@@ -2128,7 +2146,7 @@ export function Board({
           if (selected) return select(null);
           setPeek(p);
           if (ready) select({ kind: "attacker", slot });
-          else setLook(p);
+          else setZoom(p);
         }}
         onPeek={() => setPeek(p)}
         onLongPress={() => setZoom(p)}
@@ -2173,12 +2191,16 @@ export function Board({
         onClick={() => {
           if (justDragged()) return;
           setPeek(p);
-          // ふだんは下半分のシートで見る。チュートリアルは案内どおり、押して場を選ぶ
+          // 出せるカードは、押すとそのまま出す場所・対象を選ぶ（「戻る」で引き返せる）。出せないカードは小窓で詳しく見る
+          //（11月2日。下半分の手札のシートはやめた。オーナー：「現在の手札の詳細機能は無しにして」）
           if (!direct) {
-            select(null);
-            setHandOpen(i);
-            return;
+            if (!usable) {
+              select(null);
+              return setZoom(p);
+            }
+            return select(selected ? null : { kind: "hand", index: i });
           }
+          // チュートリアルは案内どおり、押して場を選ぶ
           if (!myTurn) return;
           if (selected && card.type === "post" && !card.target) return cast();
           select(selected ? null : { kind: "hand", index: i });
@@ -2214,9 +2236,7 @@ export function Board({
       lp={lifeOf(ME)}
       active={game.active === ME}
       cut={damageCutOn(game, ME)}
-    >
-      <CostGems mana={me.mana} max={me.maxMana} />
-    </PlayerFace>
+    />
   );
   /** プレイヤーに付いている状態（無敵・ダメージ軽減・ターンの終わりのダメージ） */
   const statusChips = (p: PlayerId) => {
@@ -2348,36 +2368,12 @@ export function Board({
         ))}
     </ol>
   );
-  /** シートの「出す」「使う」のボタンの文と、押せるか */
-  const handAction = (i: number) => {
-    const id = me.hand[i];
-    const card = id ? CATALOG[id] : undefined;
-    if (!id || !card) return { label: "", ok: false };
-    const verb = card.type === "icon" ? "出す" : "使う";
-    if (game.active !== ME) return { label: "相手のターンです", ok: false };
-    if (effectiveCost(game, ME, id, CATALOG) > me.mana) return { label: "コストが足りません", ok: false };
-    if (card.type === "icon" && freeSlot < 0) return { label: "場に空きがありません", ok: false };
-    if (card.type === "post" && card.target && castTargets(game, ME, id, CATALOG).length === 0)
-      return { label: "使える相手がいません", ok: false };
-    return { label: verb, ok: myTurn };
-  };
-  /** 手札の枚数が減っても、シートは残っているカードを指す */
-  const sheetIndex = handOpen === null ? null : Math.min(handOpen, me.hand.length - 1);
   const closeMenu = (after: () => void) => {
     setMenuOpen(false);
     after();
   };
-  const lookCard = look ? CATALOG[look.id] : undefined;
   const options = turnOptions(game, ME, CATALOG);
   const dealt = !mulliganOpen && !openingOn && !dealing;
-  // 奥の文字欄：相手の手と状態
-  const foeText: BoardLine | null = sacGuide?.source
-    ? { text: `${sacGuide.source}の効果` }
-    : mulliganOpen && game.mulligan?.waiting.includes(CPU)
-      ? { text: "相手が手札を選んでいます" }
-      : !dealt
-        ? { text: game.active === CPU ? "相手が先攻です" : "相手は後攻です" }
-        : (foeLine ?? { text: "相手の手がここに出ます" });
   // 手前の文字欄：次に何をするか。指示のときは光らせる
   const askText = sacGuide
     ? sacGuide.mine
@@ -2526,15 +2522,22 @@ export function Board({
               <div className="pstates">{statusChips(CPU)}</div>
             </div>
             {foeRow}
-            <BoardText line={foeText} className={`foe ${game.active === CPU && dealt ? "ask" : ""}`} />
+            {/* 相手の文字欄はやめた（11月2日。オーナー：「相手のフィールドのやつは潔く消しましょう」）。
+                VS の線とアイコンの位置を変えないよう、同じ高さを空けておく（空いた場所の使い方はこれから決める） */}
+            <div className="pmsg-space" aria-hidden="true" />
           </div>
           <div className="pmid">
             {turnOn && (
               <>
                 <span className="pturn">TURN {game.turn}</span>
                 <span className="pvs">VS</span>
-                <span className={`pturn side ${game.active === ME ? "mine" : "foe"}`}>
+                <span
+                  className={`pturn side ${game.active === ME ? "mine" : "foe"} ${turnLeft !== null && turnLeft <= 10_000 ? "hurry" : ""}`}
+                  role="timer"
+                  aria-label={`${game.active === ME ? "あなた" : "相手"}のターン${turnLeft !== null ? `、残り ${formatClock(turnLeft)}` : ""}`}
+                >
                   {game.active === ME ? "あなたのターン" : "相手のターン"}
+                  {turnLeft !== null && <b className="pturn-left">{formatClock(turnLeft)}</b>}
                 </span>
               </>
             )}
@@ -2554,20 +2557,7 @@ export function Board({
                   {buzzBtn}
                 </div>
                 {meFace}
-                <div className="pme-right">
-                  <button
-                    type="button"
-                    className="btn ghost phand-open"
-                    disabled={me.hand.length === 0}
-                    onClick={() => {
-                      select(null);
-                      setHandOpen(0);
-                    }}
-                  >
-                    手札を見る
-                  </button>
-                  {endTurnBtn}
-                </div>
+                <div className="pme-right">{endTurnBtn}</div>
                 <div className="pme-foot">
                   <span className="pchips row-chips">
                     {online && myClock && !game.winner && <ClockChip left={myClock} mine />}
@@ -2592,11 +2582,8 @@ export function Board({
                 <AskBar
                   art={selectedCard.art}
                   title={selectedCard.name}
-                  onBack={() => {
-                    const i = selection.index;
-                    select(null);
-                    setHandOpen(i);
-                  }}
+                  onArt={() => setZoom({ id: selectedCard.id, where: "hand", index: selection.index })}
+                  onBack={() => select(null)}
                   go={
                     postSelected && !selectedCard.target
                       ? { label: "使う", onClick: () => cast() }
@@ -2637,28 +2624,6 @@ export function Board({
                 />
               )}
 
-              {sheetIndex !== null && sheetIndex >= 0 && (
-                <HandSheet
-                  cards={me.hand}
-                  index={sheetIndex}
-                  action={handAction(sheetIndex)}
-                  onIndex={setHandOpen}
-                  onZoom={(i) => setZoom({ id: me.hand[i] as string, where: "hand", index: i })}
-                  onClose={() => setHandOpen(null)}
-                  onGo={() => {
-                    setHandOpen(null);
-                    select({ kind: "hand", index: sheetIndex });
-                  }}
-                />
-              )}
-              {look && lookCard && (
-                <LookSheet
-                  card={lookCard}
-                  view={look.view}
-                  onZoom={() => setZoom(look)}
-                  onClose={() => setLook(null)}
-                />
-              )}
               {omenAsk && askedOmen && CATALOG[askedOmen.cardId] && (
                 <OmenSheet
                   card={CATALOG[askedOmen.cardId] as CardDef}
@@ -2849,12 +2814,13 @@ export function Board({
           }}
         />
       )}
+      {/* カードを詳しく見る：手札・自分の場・相手の場・墓地のどのカードも、画面の真ん中に重ねる小窓（11月2日。
+          オーナー：「全てのカードが画面中央で単純にモーダル表示するような一番簡単な表示」） */}
       {zoom && CATALOG[zoom.id] && (
-        <CardZoom
+        <CardPopup
           card={CATALOG[zoom.id] as CardDef}
-          view={zoom.view}
-          darkPreview
-          initialDark={zoom.dark}
+          initialDark={zoom.dark ?? zoom.view?.unit.dark}
+          bigText
           onClose={() => setZoom(null)}
         />
       )}
@@ -2918,18 +2884,32 @@ function AskBar({
   art,
   title,
   note,
+  onArt,
   onBack,
   go,
 }: {
   art?: string;
   title: string;
   note?: string;
+  /** 絵を押したとき（カードを小窓で詳しく見る） */
+  onArt?: () => void;
   onBack: () => void;
   go?: { label: string; onClick: () => void };
 }) {
   return (
     <section className="pask" role="dialog" aria-label={title}>
-      {art && <span className="pask-art" style={{ backgroundImage: `url(${art})` }} />}
+      {art &&
+        (onArt ? (
+          <button
+            type="button"
+            className="pask-art"
+            style={{ backgroundImage: `url(${art})` }}
+            aria-label={`${title} を大きく見る`}
+            onClick={onArt}
+          />
+        ) : (
+          <span className="pask-art" style={{ backgroundImage: `url(${art})` }} />
+        ))}
       <div className="pask-body">
         <b>{title}</b>
         {note && <span>{note}</span>}
@@ -2943,133 +2923,6 @@ function AskBar({
             </button>
           )}
         </div>
-      </div>
-    </section>
-  );
-}
-
-/** 手札を下半分で見るシート。左右のスワイプでカードをめくり、「出す」「使う」で場を選ぶ手順へ進む */
-function HandSheet({
-  cards,
-  index,
-  action,
-  onIndex,
-  onZoom,
-  onClose,
-  onGo,
-}: {
-  cards: string[];
-  index: number;
-  action: { label: string; ok: boolean };
-  onIndex: (i: number) => void;
-  onZoom: (i: number) => void;
-  onClose: () => void;
-  onGo: () => void;
-}) {
-  const [dx, setDx] = useState(0);
-  const start = useRef<number | null>(null);
-  const moved = useRef(false);
-  const last = cards.length - 1;
-  const pull = (index === 0 && dx > 0) || (index === last && dx < 0) ? dx * 0.3 : dx;
-  const up = (x: number) => {
-    if (start.current === null) return;
-    const d = x - start.current;
-    start.current = null;
-    setDx(0);
-    if (!moved.current || Math.abs(d) < SWIPE_PX) return;
-    onIndex(Math.max(0, Math.min(last, index + (d < 0 ? 1 : -1))));
-  };
-  return (
-    <section className="psheet hand-sheet" role="dialog" aria-label="手札">
-      <div
-        className="hs-reel"
-        onPointerDown={(e) => {
-          start.current = e.clientX;
-          moved.current = false;
-        }}
-        onPointerMove={(e) => {
-          if (start.current === null) return;
-          const d = e.clientX - start.current;
-          if (Math.abs(d) < 8 && !moved.current) return;
-          moved.current = true;
-          setDx(d);
-        }}
-        onPointerUp={(e) => up(e.clientX)}
-        onPointerCancel={(e) => up(e.clientX)}
-        onPointerLeave={(e) => up(e.clientX)}
-      >
-        {cards.map((id, i) => {
-          const card = CATALOG[id];
-          // 重い絵を増やさないよう、見ているカードと両隣だけ置く
-          if (!card || Math.abs(i - index) > 1) return null;
-          return (
-            <button
-              // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが並ぶので手札の位置で見分ける
-              key={i}
-              type="button"
-              className={`hs-card ${i === index ? "" : "far"}`}
-              aria-label={card.name}
-              style={{
-                transform: `translateX(calc(-50% + ${(i - index) * 108}% + ${pull}px))`,
-                transition: dx ? "none" : undefined,
-              }}
-              onClick={() => {
-                if (moved.current) return;
-                if (i === index) onZoom(i);
-                else onIndex(i);
-              }}
-            >
-              <HoloCard card={card} idle={false} />
-            </button>
-          );
-        })}
-      </div>
-      <div className="hs-dots" aria-hidden="true">
-        {cards.map((id, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: 手札の位置そのものを点で見せる
-          <i key={`${id}-${i}`} className={i === index ? "on" : ""} />
-        ))}
-      </div>
-      <div className="ps-foot">
-        <button type="button" className="btn ghost ps-back" onClick={onClose}>
-          閉じる
-        </button>
-        <button type="button" className="btn lg" data-decide-se disabled={!action.ok} onClick={onGo}>
-          {action.label}
-        </button>
-      </div>
-    </section>
-  );
-}
-
-/** 場のカードを下半分で見るシート。カードを押すと画面いっぱいに拡大する */
-function LookSheet({
-  card,
-  view,
-  onZoom,
-  onClose,
-}: {
-  card: CardDef;
-  view?: UnitView;
-  onZoom: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <section className="psheet look-sheet" role="dialog" aria-label={card.name}>
-      <div className="hs-reel">
-        <button
-          type="button"
-          className="hs-card"
-          aria-label={`${view?.name ?? card.name}を拡大`}
-          onClick={onZoom}
-        >
-          <HoloCard card={card} darkForm={view?.unit.dark} idle={false} />
-        </button>
-      </div>
-      <div className="ps-foot">
-        <button type="button" className="btn lg" onClick={onClose}>
-          閉じる
-        </button>
       </div>
     </section>
   );
@@ -3207,6 +3060,28 @@ function DeckPile({
   );
 }
 
+/**
+ * CPU 戦の 1 ターンの時計（オンライン対戦と同じ 60 秒。持ち時間は無い）。ready になった時刻から数え、
+ * 残り（ms）を返す。動いていなければ null。ターンが変わったら数え直す
+ */
+function useCpuTurnClock(enabled: boolean, turn: number, ready: boolean): number | null {
+  const [since, setSince] = useState<{ turn: number; at: number } | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const running = enabled && since?.turn === turn;
+  useEffect(() => {
+    if (!enabled) return setSince(null);
+    if (ready && since?.turn !== turn) setSince({ turn, at: Date.now() });
+  }, [enabled, ready, turn, since]);
+  useEffect(() => {
+    if (!running) return;
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(t);
+  }, [running]);
+  if (!running || !since) return enabled ? CLOCK.turnMs : null;
+  return Math.max(0, CLOCK.turnMs - (now - since.at));
+}
+
 /** 真ん中の文字欄の 1 行（文と、添えるカードの絵） */
 interface BoardLine {
   text: string;
@@ -3217,30 +3092,20 @@ interface BoardLine {
  * 持ち時間の表示。手番の人は、ターンの残り（30 秒まで）と持ち時間（1 試合 5 分）が一緒に減る。
  * ターンの残り 10 秒・持ち時間 30 秒を切ると赤くなる。手番でない人は、持ち時間の残りだけ。差し出しを選ぶ番なら、その残り
  */
+/**
+ * 相手の手番の途中で差し出し（『フィクサー』）を選ぶ番の残り時間（オンライン対戦）。
+ * ターンの残りは VS の線の手番の札に出す。持ち時間は無くした（11月2日）
+ */
 function ClockChip({ left, mine }: { left: ClockLeft; mine?: boolean }) {
+  if (left.pick === null) return null;
   const who = mine ? "あなた" : "相手";
-  if (left.pick !== null)
-    return (
-      <span
-        className="pb-clock pick"
-        role="timer"
-        aria-label={`${who}が差し出しを選ぶ残り ${formatClock(left.pick)}`}
-      >
-        選ぶ <b>{formatClock(left.pick)}</b>
-      </span>
-    );
-  const low = left.bank <= 30_000;
-  const hurry = left.running && (left.turn <= 10_000 || low);
   return (
     <span
-      className={`pb-clock ${left.running ? "run" : ""} ${low ? "bank" : ""} ${hurry ? "hurry" : ""}`}
+      className="pb-clock pick"
       role="timer"
-      aria-label={`${who}の${left.running ? `ターンの残り ${formatClock(left.turn)}、` : ""}持ち時間 ${formatClock(left.bank)}`}
+      aria-label={`${who}が差し出しを選ぶ残り ${formatClock(left.pick)}`}
     >
-      {left.running && <b>{formatClock(left.turn)}</b>}
-      <small>
-        持ち時間 <i>{formatClock(left.bank)}</i>
-      </small>
+      選ぶ <b>{formatClock(left.pick)}</b>
     </span>
   );
 }
@@ -3314,20 +3179,5 @@ function PlayerFace({
       {preview && <AttackBadge pv={preview} leader />}
       {locked && <span className="atk-pv leader lock">ガードで守られています</span>}
     </div>
-  );
-}
-
-/** 自分の顔のまわりのコスト。上から時計回りに 10 個並べ、使える分が光る。増えた 1 個は key が変わって飛び出す */
-function CostGems({ mana, max }: { mana: number; max: number }) {
-  return (
-    <span className="pgems" aria-label={`コスト ${mana} / ${max}`} role="img">
-      {COST_SLOTS.map((i) => (
-        <i
-          key={i === max - 1 ? `new-${max}` : i}
-          className={`${i < mana ? "on" : i < max ? "left" : ""} ${i === max - 1 ? "fresh" : ""}`}
-          style={{ "--a": `${i * 36}deg` } as CSSProperties}
-        />
-      ))}
-    </span>
   );
 }

@@ -1,6 +1,7 @@
 // SNS に出す動画の撮影用のページ（手元だけ。本番のビルドには入らない）。撮るのは tools/promo-video.mjs（docs/promo-video.md）
 //   ?card=c3      … カードを 1 枚、画面の真ん中に出す
 //   ?scene=god    … 本物の盤面・開封の画面で、演出の場面を出す（scenes.tsx）
+//   ?pop=c3       … 対戦の画面でカードを詳しく見る小窓（効果文を大きくした形）を出す。&dark で闇堕ちの姿
 import { CARDS } from "@trends/cards";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
@@ -23,32 +24,43 @@ import "../styles/battle.css";
 import "./promo.css";
 import { HoloCard } from "../cards/HoloCard";
 import { watchFrame } from "../frame";
+import { CardPopup } from "../game/CardPopup";
 import { watchSoundEffects } from "../sound/se";
 import { mountScene, promoActions } from "./scenes";
 
 const q = new URLSearchParams(location.search);
 const root = createRoot(document.getElementById("root") as HTMLElement);
 const scene = q.get("scene");
+const pop = q.get("pop");
 
-const show = scene
+const show = pop
   ? () => {
-      watchSoundEffects();
-      mountScene(root, scene);
-      watchFrame();
-    }
-  : () => {
-      const card = CARDS.find((c) => c.id === (q.get("card") ?? "c3"));
+      const card = CARDS.find((c) => c.id === pop);
       if (!card) throw new Error("カードがありません");
       flushSync(() =>
-        root.render(
-          <div className="promo">
-            <div className="promo-card">
-              <HoloCard card={card} interactive idle={false} darkForm={q.has("dark")} />
-            </div>
-          </div>,
-        ),
+        root.render(<CardPopup card={card} initialDark={q.has("dark")} bigText onClose={() => {}} />),
       );
-    };
+      watchFrame();
+    }
+  : scene
+    ? () => {
+        watchSoundEffects();
+        mountScene(root, scene);
+        watchFrame();
+      }
+    : () => {
+        const card = CARDS.find((c) => c.id === (q.get("card") ?? "c3"));
+        if (!card) throw new Error("カードがありません");
+        flushSync(() =>
+          root.render(
+            <div className="promo">
+              <div className="promo-card">
+                <HoloCard card={card} interactive idle={false} darkForm={q.has("dark")} />
+              </div>
+            </div>,
+          ),
+        );
+      };
 Object.assign(window, { promo: promoActions });
 // 録画では、時計を止めてからカードを出す（出た瞬間からの動きを撮るため）。?wait のときは呼ばれるまで出さない
 if (q.has("wait")) Object.assign(window, { showCard: show });
