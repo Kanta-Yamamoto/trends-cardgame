@@ -135,11 +135,9 @@ export function Decks() {
       <section className="page deck-builder">
         <div className="db-locked g2">
           <h2>自分のデッキを組む</h2>
-          <p>
-            全部解放すると、持っているカードで自分のデッキを組めます。構築済みデッキは、今のまま対戦で使えます。
-          </p>
+          <p>解放すると、自分のカードでデッキを組めます。レンタルデッキの対戦は、今のまま遊べます。</p>
           <button type="button" className="btn" data-decide-se onClick={showUnlock}>
-            全部解放する
+            すべての機能を解放
           </button>
         </div>
       </section>
@@ -181,7 +179,7 @@ export function Decks() {
             {ICON_COPY}
           </span>
           <b>
-            構築済みを
+            レンタルデッキを
             <br />
             コピーして作る
           </b>

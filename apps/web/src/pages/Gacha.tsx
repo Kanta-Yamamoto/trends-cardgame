@@ -125,9 +125,9 @@ export function Gacha() {
         ) : (
           access && (
             <>
-              <p className="gx-closed">パックの続きは、全部解放すると開けられます</p>
+              <p className="gx-closed">パックの続きは、解放すると開けられます</p>
               <button type="button" className="btn" data-decide-se onClick={showUnlock}>
-                全部解放する
+                すべての機能を解放
               </button>
             </>
           )

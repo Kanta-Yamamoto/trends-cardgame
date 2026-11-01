@@ -405,7 +405,7 @@ export function Home() {
                     }}
                   >
                     <Icon d={I.guide} />
-                    全部解放する
+                    すべての機能を解放
                   </button>
                 )}
                 {!isApp && (

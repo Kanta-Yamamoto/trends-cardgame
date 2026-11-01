@@ -1,4 +1,4 @@
-import { DAILY_PACKS, WELCOME_PACKS } from "@trends/game-core";
+import { DAILY_PACKS } from "@trends/game-core";
 import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { useAccess } from "../gacha/access";
@@ -69,19 +69,16 @@ export function UnlockSheet() {
   };
 
   return (
-    <div className="sheet" role="dialog" aria-modal="true" aria-label="全部解放する">
+    <div className="sheet" role="dialog" aria-modal="true" aria-label="すべての機能を解放">
       <button type="button" className="sheet-bg" aria-label="閉じる" onClick={hide} />
       <section className="unlock-sheet">
         <div className="unlock-grip" aria-hidden="true" />
-        <h2>全部解放する</h2>
-        <p className="unlock-lead">1 回買うだけで、追加の支払いはありません。</p>
+        <h2>すべての機能を解放</h2>
+        <p className="unlock-lead">TRENDS のすべての機能が使えるようになります</p>
         <ul className="unlock-list g2">
-          <li>自分のデッキを組める</li>
-          <li>
-            パックを開けてカードを解放できる（買った日に {WELCOME_PACKS} パック、次の日からは毎日{" "}
-            {DAILY_PACKS} パック）
-          </li>
-          <li>構築済みデッキのカードがすべて手に入る</li>
+          <li>デッキを組む</li>
+          <li>パックを開ける（毎日 {DAILY_PACKS} パック）</li>
+          <li>カードを集める</li>
         </ul>
         {error && <p className="unlock-error">{error}</p>}
         <button
