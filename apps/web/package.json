@@ -12,6 +12,7 @@
     "cap:sync": "VITE_API_URL=https://trends-api-523738975867.asia-northeast1.run.app pnpm build && cap sync ios"
   },
   "dependencies": {
+    "@capacitor/app": "^7.1.2",
     "@capacitor/core": "^7.6.9",
     "@capacitor/ios": "^7.6.10",
     "@capacitor/preferences": "^7.0.4",

@@ -2,6 +2,7 @@ import { MINAMO_EPITHET } from "@trends/cards";
 import { type CSSProperties, useEffect, useState } from "react";
 import { MINAMO_LIVE } from "../fx/minamoLive";
 import { CATALOG } from "../game/store";
+import { usePageMusic } from "../sound/music";
 import { type Face, faceUrl } from "./Guide";
 
 /** 導入で映すカード（ミナモ） */
@@ -55,6 +56,8 @@ export function MinamoIntro({
   onBattle: () => void;
   onSkip: () => void;
 }) {
+  // 導入の間は、ホームの曲を流す（オーナー：「ホームの画面の音が鳴っていてほしい」）
+  usePageMusic("home");
   const card = CATALOG[MINAMO];
   const [phase, setPhase] = useState<Phase>("card");
   const [line, setLine] = useState(0);
