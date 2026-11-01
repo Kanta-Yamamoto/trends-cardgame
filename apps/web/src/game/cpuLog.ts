@@ -14,7 +14,9 @@ import { useSession } from "../online/session";
 /**
  * CPU 対戦の記録を取って、終わったらサーバーに送る（docs/cpu-logs.md）。
  * 人と CPU の対戦を一手ずつ・CPU が考えた中身つきで残し、あとで見返して CPU を強くする（最終の目的はカードのバランス調整）。
- * 決着したとき・途中でやめたとき（戻る・新しい対戦・画面を閉じる）に1回だけ送る。送れなくても対戦には響かない
+ * 決着したとき・途中でやめたとき（戻る・新しい対戦・画面を閉じる）に1回だけ送る。送れなくても対戦には響かない。
+ * iPhone で画面が落ちると何も送れないので、一手ごとに下書きを端末に残し、次に開いたときに送る（11月2日。
+ * client の頭が crash- の記録が、落ちた対戦。最後の手を見れば、どの場面で落ちたか分かる）
  */
 
 let rec: CpuGameRecord | null = null;
@@ -23,6 +25,26 @@ let sent = false;
 let last: CpuGameRecord | null = null;
 
 const CLIENT_KEY = "trends-client";
+/** 対戦中の記録の下書き */
+const DRAFT_KEY = "trends.cpuLogDraft";
+
+function saveDraft() {
+  if (!rec) return;
+  try {
+    // 考えた中身は大きいので残さない
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...rec, thoughts: [] }));
+  } catch {
+    // 残せなくても対戦には響かない
+  }
+}
+
+function clearDraft() {
+  try {
+    localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // 残っていても、次に開いたときに送って消える
+  }
+}
 
 /** 端末ごとの印（同じ人がどの端末で遊んだかを見るため。人はアカウントで見分ける） */
 function clientId(): string {
@@ -72,6 +94,7 @@ export function logMove(action: Action, before: GameState, after: GameState) {
   if (!rec || sent) return;
   rec.moves.push({ action, at: Date.now() - rec.startedAt, ...moveCards(before, action) });
   if (after.winner) finish(after, false);
+  else saveDraft();
 }
 
 /** CPU が1ターン分を考えた中身を残す（そのあとに続く手の番号と一緒に） */
@@ -84,6 +107,7 @@ export function logThought(t: CpuThought) {
 export function abandonCpuLog(state?: GameState | null, beacon = false) {
   if (!rec || sent || rec.moves.length === 0) {
     rec = null;
+    clearDraft();
     return;
   }
   finish(state ?? null, beacon);
@@ -91,6 +115,7 @@ export function abandonCpuLog(state?: GameState | null, beacon = false) {
 
 function finish(state: GameState | null, beacon: boolean) {
   if (!rec) return;
+  clearDraft();
   rec.end = {
     winner: state?.winner ?? null,
     turn: state?.turn ?? rec.end.turn,
@@ -105,15 +130,15 @@ function finish(state: GameState | null, beacon: boolean) {
 /** 画面を閉じたあとも届くように送れる大きさ（keepalive の上限 64KB より少し小さく） */
 const KEEPALIVE_MAX = 60_000;
 
-async function send(record: CpuGameRecord, beacon: boolean) {
+async function send(record: CpuGameRecord, beacon: boolean, client = clientId()) {
   if (import.meta.env.MODE === "test") return;
   // 記録はアカウントにひも付ける（ログインしていなければ送らない。サービス全体でログインが要る）
   const token = useSession.getState().token;
   if (!token) return;
-  let body = JSON.stringify({ client: clientId(), record });
+  let body = JSON.stringify({ client, record });
   // 画面を閉じるときは、閉じたあとも届くように送る（大きすぎれば、考えた中身を外して小さくする）
   if (beacon && body.length > KEEPALIVE_MAX)
-    body = JSON.stringify({ client: clientId(), record: { ...record, thoughts: [] } });
+    body = JSON.stringify({ client, record: { ...record, thoughts: [] } });
   try {
     await fetch(`${API_URL}/logs/cpu-games`, {
       method: "POST",
@@ -123,6 +148,18 @@ async function send(record: CpuGameRecord, beacon: boolean) {
     });
   } catch {
     // 送れなくても対戦には響かない
+  }
+}
+
+/** 前に開いたときに落ちた対戦の下書きがあれば送る（ログインのあとに呼ぶ） */
+export function sendCrashedCpuLog() {
+  try {
+    const draft = localStorage.getItem(DRAFT_KEY);
+    if (!draft || !useSession.getState().token) return;
+    clearDraft();
+    void send(JSON.parse(draft) as CpuGameRecord, false, `crash-${clientId()}`.slice(0, 64));
+  } catch {
+    clearDraft();
   }
 }
 

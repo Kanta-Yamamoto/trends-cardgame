@@ -4,6 +4,7 @@ import { API_URL } from "./api/client";
 import { Login } from "./auth/Login";
 import { RegisterScreen } from "./auth/Register";
 import { useAccess } from "./gacha/access";
+import { sendCrashedCpuLog } from "./game/cpuLog";
 import { useDeckSync } from "./game/deckSync";
 import { HelpSheet } from "./help/HelpSheet";
 import { InstallAutoGuide } from "./InstallButton";
@@ -38,6 +39,7 @@ export function App() {
   // 買い切りを買ったか・パックの残りは、ホームのメニューやデッキの画面でも見る
   useEffect(() => {
     void loadAccess(token);
+    sendCrashedCpuLog();
   }, [token, loadAccess]);
   if (update) return <UpdateRequired url={update.url} />;
   // Web はサービス全体でログインが要る（10月26日）。ログインしていなければ、どのページを開いてもログインの画面だけ。
