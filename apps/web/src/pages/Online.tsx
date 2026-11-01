@@ -73,6 +73,9 @@ export interface MyRating {
   rating: number;
   games: number;
   wins: number;
+  /** 集計の中の順位と、載っている人数（まだ載っていなければ順位は null） */
+  rank?: number | null;
+  ranked?: number;
 }
 
 /** ソケットにつなぐ（API_URL が空なら、画面と同じサーバーにつなぐ） */
@@ -185,11 +188,17 @@ function useElapsed(since: number | null) {
 }
 
 /** 自分のレーティング（レート・戦績）とランダムマッチの決まり */
+/** レートが何を意味するか分かるように、順位と上位の割合を添える（順位は 10 分ごとの集計） */
+function rankText(m: MyRating | null) {
+  if (!m?.rank || !m.ranked) return "";
+  return `${m.rank}位・上位${Math.max(1, Math.round((m.rank / m.ranked) * 100))}%　`;
+}
+
 function RateCard({ token }: { token: string | null }) {
   const [mine, setMine] = useState<MyRating | null>(null);
   useEffect(() => {
-    api<MyRating>("/me/rating", {}, token)
-      .then(setMine)
+    api<{ me: MyRating }>("/rankings", {}, token)
+      .then((b) => setMine(b.me))
       .catch(() => {});
   }, [token]);
   return (
@@ -199,6 +208,7 @@ function RateCard({ token }: { token: string | null }) {
           <span className="rate-label">あなたのレート</span>
           <span className="rate-num">{mine?.rating ?? "—"}</span>
           <span className="rate-rec">
+            {rankText(mine)}
             {mine?.games ?? 0}戦 {mine?.wins ?? 0}勝
           </span>
         </div>
@@ -264,9 +274,6 @@ function RandomMatch() {
   return (
     <>
       <RateCard token={token} />
-      <p className="muted online-note">
-        レートの近い人と対戦します。勝つとレートが上がり、負けると下がります（はじめは 1500）。
-      </p>
       {error && <p className="notice">{error}</p>}
       <DeckGrid
         onPick={(sel) => {
@@ -380,10 +387,6 @@ export function OnlineLobby() {
                   </button>
                 </div>
               </form>
-              <p className="muted online-note">
-                部屋を作るときは、使うデッキを選びます。1 ターンは 60 秒まで、持ち時間は 1 試合で 10
-                分（使い切ると負け）。友だちとの対戦では、レートは動きません。
-              </p>
               {error && <p className="notice">{error}</p>}
               <fieldset disabled={busy} className="plain">
                 <DeckGrid onPick={create} confirmLabel="このデッキで部屋を作る" />
