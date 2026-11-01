@@ -2152,7 +2152,7 @@ export function Board({
       "--i": i,
       "--n": n,
       "--rot": `${off * ang}deg`,
-      "--dy": `${n > 1 ? (off * off * Math.min(1.6, 6 / (((n - 1) / 2) ** 2))).toFixed(2) : 0}px`,
+      "--dy": `${n > 1 ? (off * off * Math.min(1.6, 6 / ((n - 1) / 2) ** 2)).toFixed(2) : 0}px`,
     } as CSSProperties;
     return (
       <MiniCard
@@ -2571,7 +2571,12 @@ export function Board({
               <div className="phand-zone">
                 <div className="phand">
                   {handEl}
-                  <DeckPile owner={ME} deck={me.deck.length} trash={me.trash} onTrash={() => setTrashView(ME)} />
+                  <DeckPile
+                    owner={ME}
+                    deck={me.deck.length}
+                    trash={me.trash}
+                    onTrash={() => setTrashView(ME)}
+                  />
                 </div>
               </div>
 
