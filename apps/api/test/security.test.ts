@@ -207,9 +207,9 @@ describe("corsOrigins", () => {
     ]);
   });
 
-  it("絞っていなければ、全部許す", () => {
+  it("空のとき（本番）はアプリだけを許し、入っていなければ全部許す（手元の開発）", () => {
+    expect(corsOrigins("")).toEqual([APP_ORIGIN]);
     expect(corsOrigins(undefined)).toBe(true);
-    expect(corsOrigins("")).toBe(true);
   });
 });
 

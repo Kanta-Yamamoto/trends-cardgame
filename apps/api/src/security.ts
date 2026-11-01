@@ -30,14 +30,19 @@ const OPEN_PATHS = ["/health", "/robots.txt", "/auth/config", "/privacy.html", "
 /** iOS アプリの画面の出どころ（Capacitor）。招待リンクを開けないので、アプリからの呼び出しは招待済みとして通す */
 export const APP_ORIGIN = "capacitor://localhost";
 
-/** ブラウザからの呼び出しを許す出どころ。CORS_ORIGIN で絞っていても、アプリは必ず許す（空なら全部許す） */
+/**
+ * ブラウザからの呼び出しを許す出どころ。CORS_ORIGIN が入っていれば（本番は空文字）それだけに絞り、iOS アプリは必ず許す。
+ * 入っていなければ全部許す（手元の開発）
+ */
 export function corsOrigins(env = process.env.CORS_ORIGIN) {
-  const list =
-    env
-      ?.split(",")
+  if (env === undefined) return true;
+  return [
+    ...env
+      .split(",")
       .map((s) => s.trim())
-      .filter(Boolean) ?? [];
-  return list.length > 0 ? [...list, APP_ORIGIN] : true;
+      .filter(Boolean),
+    APP_ORIGIN,
+  ];
 }
 
 const inviteCode = () => process.env.INVITE_CODE?.trim() ?? "";
