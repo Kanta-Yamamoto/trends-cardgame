@@ -764,10 +764,13 @@ const CHECK = (
  */
 export function DeckGrid({
   onPick,
+  onChoose,
   confirmLabel,
   cta = "対戦する",
 }: {
   onPick: (deck: DeckSel) => void;
+  /** 押して選んだとき（まだ決めていない。confirmLabel が無いときだけ） */
+  onChoose?: (deck: DeckSel) => void;
   confirmLabel?: string;
   cta?: string;
 }) {
@@ -787,7 +790,11 @@ export function DeckGrid({
   const [{ mine, broken }, setMine] = useState(readMine);
   // アカウントとそろえ終わったら、自分のデッキを読み直す
   useDecksChanged(useCallback(() => setMine(readMine()), [readMine]));
-  const pick = (sel: DeckSel) => (confirmLabel ? setPending(sel) : setChosen(sel));
+  const pick = (sel: DeckSel) => {
+    if (confirmLabel) return setPending(sel);
+    setChosen(sel);
+    onChoose?.(sel);
+  };
   const builtins = (Object.keys(DECK_INFO) as DeckId[]).map((id) => builtinDeck(id));
   const tile = (sel: DeckSel, i: number) => {
     const on = chosen?.ref === sel.ref;

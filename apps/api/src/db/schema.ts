@@ -81,7 +81,7 @@ export const matches = pgTable("matches", {
   p1Id: uuid("p1_id")
     .notNull()
     .references(() => users.id),
-  p1Deck: text("p1_deck").notNull(),
+  p1Deck: text("p1_deck"),
   p2Id: uuid("p2_id").references(() => users.id),
   p2Deck: text("p2_deck"),
   /** game-core の GameState（隠す情報も含む本当の状態。クライアントには stateFor で変えて渡す） */

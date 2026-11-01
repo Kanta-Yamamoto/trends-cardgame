@@ -1,9 +1,10 @@
-import type { Action, ClockView, GameState } from "@trends/game-core";
-import { type FormEvent, useEffect, useState } from "react";
+import { type Action, CLOCK, type ClockView, type GameState } from "@trends/game-core";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { io, type Socket } from "socket.io-client";
 import { API_URL } from "../api/client";
 import { Login } from "../auth/Login";
+import { DeckAce, deckGradient } from "../game/DeckArt";
 import { type DeckSel, deckFromRef } from "../game/decks";
 import { type RemoteLink, type RemoteUpdate, useGame } from "../game/store";
 import { useInviteLink } from "../invite";
@@ -21,34 +22,34 @@ function useRoomLink() {
   return link ?? window.location.href;
 }
 
-/** 部屋に誘う（合言葉と招待リンク）。アプリは Web のリンクを使わないので、合言葉をコピーする */
-function RoomInvite({ code }: { code: string }) {
+/** 部屋の合言葉とコピーのボタン（Web は招待リンクをコピーする。アプリは Web のリンクを使わないので合言葉） */
+function RoomCode({ code }: { code: string }) {
   const link = useRoomLink();
-  const invite = isApp ? code : link;
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(invite);
+      await navigator.clipboard.writeText(isApp ? code : link);
       setCopied(true);
     } catch {
       setCopied(false);
     }
   };
   return (
-    <>
-      <button type="button" className="btn lg" onClick={copy}>
-        {copied ? "コピーしました" : isApp ? "合言葉をコピー" : "招待リンクをコピー"}
+    <div className="room-top">
+      <span>合言葉</span>
+      <b>{code}</b>
+      <button type="button" className="btn ghost small" onClick={copy}>
+        {copied ? "コピーしました" : isApp ? "コピー" : "リンクをコピー"}
       </button>
-      {!isApp && <p className="room-link">{invite}</p>}
-    </>
+    </div>
   );
 }
 
 interface Seat {
   id: string;
   name: string;
-  /** 構築済みデッキの ID か "custom:…"（自分で組んだデッキ） */
-  deck: string;
+  /** 構築済みデッキの ID か "custom:…"（自分で組んだデッキ）。友だちの部屋で、まだ準備OKでなければ null */
+  deck: string | null;
 }
 interface MatchInfo {
   code: string;
@@ -316,15 +317,11 @@ export function OnlineLobby() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const create = async (sel: DeckSel) => {
+  const create = async () => {
     setBusy(true);
     setError(null);
     try {
-      const m = await api<MatchInfo>(
-        "/matches",
-        { method: "POST", body: JSON.stringify({ deck: sel.ref }) },
-        token,
-      );
+      const m = await api<MatchInfo>("/matches", { method: "POST", body: "{}" }, token);
       navigate(`/online/${m.code}`);
     } catch (e) {
       setError((e as Error).message);
@@ -369,6 +366,9 @@ export function OnlineLobby() {
             <RandomMatch />
           ) : (
             <>
+              <button type="button" className="btn lg room-new" disabled={busy} onClick={create}>
+                部屋を作る
+              </button>
               <form className="online-card join-card" onSubmit={join}>
                 <h2>合言葉で入る</h2>
                 <p className="muted">友だちから届いた 6 文字の合言葉を入れます。</p>
@@ -388,9 +388,6 @@ export function OnlineLobby() {
                 </div>
               </form>
               {error && <p className="notice">{error}</p>}
-              <fieldset disabled={busy} className="plain">
-                <DeckGrid onPick={create} confirmLabel="このデッキで部屋を作る" />
-              </fieldset>
             </>
           )}
         </>
@@ -399,7 +396,110 @@ export function OnlineLobby() {
   );
 }
 
-/* ---------- 部屋（相手待ち → 対戦） ---------- */
+/* ---------- 部屋（デッキを選ぶ → お互いに準備OK → 対戦） ---------- */
+
+/** 部屋の 1 人分の席。デッキが見えるようになったら、エースの絵を出す */
+function RoomSeat({
+  name,
+  deck,
+  note,
+  ok,
+  empty,
+}: {
+  name: string;
+  deck?: DeckSel | null;
+  note?: string;
+  ok?: boolean;
+  empty?: boolean;
+}) {
+  return (
+    <div className={`room-seat ${ok ? "ok" : ""} ${empty ? "empty" : ""}`}>
+      <span className="room-av" style={deck ? { background: deckGradient(deck.attrs, deck.ace) } : undefined}>
+        {deck ? <DeckAce id={deck.ace} /> : empty ? "？" : (Array.from(name)[0] ?? "？")}
+      </span>
+      <b>{name}</b>
+      {(deck || note) && <span className={deck ? "room-deck" : "room-note"}>{deck?.name ?? note}</span>}
+      {ok && <span className="room-ok">準備OK</span>}
+    </div>
+  );
+}
+
+/**
+ * 友だちの部屋：2 人の席とデッキ選び。自分の準備OKを押すとデッキを送る（押し直せば取り消す）。
+ * 相手のデッキは、2 人とも準備OKになってから見せる
+ */
+function FriendRoom({
+  match,
+  count,
+  joined,
+  error,
+  onDeck,
+}: {
+  match: MatchMsg;
+  /** 対戦に入るまでの残り（カウントダウンの間だけ） */
+  count: number | null;
+  /** すでに相手がいる部屋に、自分があとから入った */
+  joined: boolean;
+  error: string | null;
+  onDeck: (ref: string | null) => void;
+}) {
+  const { me, opponent: foe } = match;
+  const [chosen, setChosen] = useState<DeckSel | null>(null);
+  const ready = !!me?.deck;
+  const counting = count !== null;
+  return (
+    <>
+      {counting ? (
+        <p className="room-pill">お互いの準備ができました</p>
+      ) : foe ? (
+        <p className="room-pill">{joined ? `${foe.name} さんの部屋です` : `${foe.name} さんが入りました`}</p>
+      ) : (
+        <RoomCode code={match.code} />
+      )}
+      <section className="room-seats">
+        <RoomSeat
+          name={me?.name ?? ""}
+          deck={me?.deck ? deckFromRef(me.deck) : chosen}
+          note="デッキを選んでいます"
+          ok={ready}
+        />
+        <span className="room-vs">VS</span>
+        {foe ? (
+          <RoomSeat
+            name={foe.name}
+            deck={counting && foe.deck ? deckFromRef(foe.deck) : null}
+            note={foe.deck ? undefined : "デッキを選んでいます"}
+            ok={!!foe.deck}
+          />
+        ) : (
+          <RoomSeat name="友だち" note="入るのを待っています" empty />
+        )}
+      </section>
+      {error && <p className="notice">{error}</p>}
+      {counting && (
+        <div className="room-count" role="status">
+          <span>対戦が始まります</span>
+          <b key={count}>{count}</b>
+        </div>
+      )}
+      {/* 準備OKのあいだも残しておく（選び直すときに、選んだデッキが残るように。デッキ選びの曲も続く） */}
+      <div hidden={ready || counting}>
+        <DeckGrid onPick={(sel) => onDeck(sel.ref)} onChoose={setChosen} cta="準備OK" />
+      </div>
+      {ready && !counting && (
+        <div className="deck-dock g3">
+          <div className="deck-dock-text">
+            <b>準備OK</b>
+            <span>{foe ? `${foe.name} さんを待っています` : "友だちを待っています"}</span>
+          </div>
+          <button type="button" className="btn ghost" onClick={() => onDeck(null)}>
+            選び直す
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
 
 export function OnlineRoom() {
   const { code = "" } = useParams();
@@ -409,15 +509,22 @@ export function OnlineRoom() {
   const hasGame = useGame((s) => !!s.game);
   const [info, setInfo] = useState<MatchInfo | null>(null);
   const [match, setMatch] = useState<MatchMsg | null>(null);
-  /** 参加するときに使うデッキ（すでに参加している人は null のまま入れる） */
-  const [deck, setDeck] = useState<DeckSel | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** デッキを決められなかったわけ（部屋には残るので、error とは分ける） */
+  const [deckError, setDeckError] = useState<string | null>(null);
+  /** 2 人とも準備OKになってから対戦に入るまでの残り（秒） */
+  const [count, setCount] = useState<number | null>(null);
+  /** すでに相手がいる部屋に、自分があとから入った */
+  const [joined, setJoined] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
 
   const member = !!user && !!info && (info.players.p1?.id === user.id || info.players.p2?.id === user.id);
-  const ready = member || !!deck;
+  const full = !!info && !member && !!info.players.p2;
   const current = useCurrentMatch(token);
   /** ほかの部屋で続いている対戦（あれば、この部屋には入らずそちらに戻ってもらう） */
   const elsewhere = info && !member && current && current.match.code !== info.code ? current : null;
+  /** 部屋に入れる（ほかの対戦が続いていないか、確かめ終えてから） */
+  const canEnter = !!info && current !== undefined && !full && !elsewhere;
 
   // 部屋の様子を取る（参加者か、空きがあるか）
   useEffect(() => {
@@ -429,8 +536,25 @@ export function OnlineRoom() {
 
   // 接続して部屋に入る。切れても自動でつなぎ直し、入り直す
   useEffect(() => {
-    if (!ready || !token) return;
+    if (!canEnter || !token) return;
     const socket = connect(token);
+    socketRef.current = socket;
+    /** この部屋で待っていた（対戦が始まったらカウントダウンする。戻ってきた人はすぐ対戦に入る） */
+    let inRoom = false;
+    /** カウントダウンのあいだ待たせている、対戦の開始 */
+    let hold: (() => void) | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const release = () => {
+      clearTimeout(timer);
+      hold?.();
+      hold = null;
+      inRoom = false;
+      setCount(null);
+    };
+    const tick = (n: number) => {
+      setCount(n);
+      timer = setTimeout(() => (n > 1 ? tick(n - 1) : release()), 1000);
+    };
     const link: RemoteLink = {
       send: (action: Action) =>
         new Promise((resolve) => {
@@ -450,7 +574,7 @@ export function OnlineRoom() {
       ready: (turn: number) => socket.emit("ready", { code, turn }),
     };
     socket.on("connect", () => {
-      socket.emit("join", { code, deck: deck?.ref }, (ack: { ok: boolean; error?: string }) => {
+      socket.emit("join", { code }, (ack: { ok: boolean; error?: string }) => {
         if (!ack.ok) setError(ack.error ?? "部屋に入れませんでした");
       });
     });
@@ -462,19 +586,31 @@ export function OnlineRoom() {
       setError(null);
       useLive.getState().setClock(m.clock);
       useLive.getState().setRating(m.rating);
-      if (m.state && m.me && m.opponent && m.status !== "closed") {
-        const sel = deckFromRef(m.me.deck);
-        if (sel)
-          useGame.getState().startOnline({
-            deck: sel,
-            foeName: m.opponent.name,
-            foeDeckRef: m.opponent.deck,
-            state: m.state,
-            link,
-          });
+      if (m.status === "waiting") {
+        const first = !inRoom;
+        setJoined((j) => !!m.opponent && (j || first));
+        inRoom = true;
+        return;
       }
+      const { state, me, opponent } = m;
+      if (!state || !me?.deck || !opponent?.deck || m.status === "closed") return;
+      const sel = deckFromRef(me.deck);
+      if (!sel) return;
+      const start = () =>
+        useGame.getState().startOnline({
+          deck: sel,
+          foeName: opponent.name,
+          foeDeckRef: opponent.deck ?? undefined,
+          state,
+          link,
+        });
+      if (!inRoom) return start();
+      if (!hold) tick(CLOCK.roomCountdownMs / 1000);
+      hold = start;
     });
     socket.on("update", (u: RemoteUpdate & { clock?: ClockView | null }) => {
+      // 相手が先に動いたら、カウントダウンを待たない
+      if (hold) release();
       // 時計は届いたらすぐ（盤面は演出のあとで進む）
       if (u.clock !== undefined) useLive.getState().setClock(u.clock);
       useGame.getState().receive(u);
@@ -483,11 +619,21 @@ export function OnlineRoom() {
     socket.on("clock", (c: ClockView | null) => useLive.getState().setClock(c));
     socket.on("rated", (r: RatingChange) => useLive.getState().setRating(r));
     return () => {
+      clearTimeout(timer);
+      socketRef.current = null;
       socket.disconnect();
       useGame.getState().quit();
       useLive.getState().reset();
     };
-  }, [ready, token, code, deck, logout]);
+  }, [canEnter, token, code, logout]);
+
+  /** 使うデッキを送る（準備OK）。null で取り消す */
+  const chooseDeck = (ref: string | null) => {
+    setDeckError(null);
+    socketRef.current?.emit("deck", { code, deck: ref }, (ack: { ok: boolean; error?: string }) => {
+      if (!ack.ok) setDeckError(ack.error ?? "デッキを決められませんでした");
+    });
+  };
 
   /** 2 人とも抜けたので、決着なしで閉じた対戦 */
   const closed = match?.status === "closed";
@@ -512,7 +658,6 @@ export function OnlineRoom() {
     );
   }
 
-  const full = !!info && !member && !!info.players.p2;
   return (
     <section className="page online">
       {!user ? (
@@ -537,53 +682,9 @@ export function OnlineRoom() {
         <div className="online-card">
           <p className="notice">この部屋はもう2人そろっています。</p>
         </div>
-      ) : info && !ready ? (
-        <>
-          <p className="muted online-note">
-            {info.players.p1?.name} さんの部屋に入ります。使うデッキを選ぶと対戦が始まります。
-          </p>
-          <DeckGrid onPick={setDeck} confirmLabel="このデッキで対戦する" />
-        </>
-      ) : (
-        <>
-          <section className="room-seats online-card">
-            <div className="room-seat">
-              <span className="room-av">{Array.from(user.name)[0] ?? "？"}</span>
-              <b>{user.name}</b>
-              {match?.me && (
-                <span className="room-deck">{deckFromRef(match.me.deck)?.name ?? "自分のデッキ"}</span>
-              )}
-            </div>
-            <span className="room-vs">VS</span>
-            <div className="room-seat">
-              <span className="room-av wait">?</span>
-              <b>友だち</b>
-              <span className="room-wait">
-                待っています
-                <i />
-                <i />
-                <i />
-              </span>
-            </div>
-          </section>
-          <section className="online-card code-card">
-            <h2>合言葉</h2>
-            <p className="room-code">
-              {Array.from(match?.code ?? code.toUpperCase()).map((ch, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: 合言葉の文字は同じ字が並ぶことがあるので、場所で見分ける
-                <span key={i} style={{ animationDelay: `${i * 0.05}s` }}>
-                  {ch}
-                </span>
-              ))}
-            </p>
-            <RoomInvite code={match?.code ?? code.toUpperCase()} />
-          </section>
-          <p className="room-hint g2">
-            {isApp ? "この合言葉" : "この合言葉か招待リンク"}
-            を、対戦したい友だちに送ってください。友だちが入ると、すぐに対戦が始まります。友だちとの対戦では、レートは動きません。
-          </p>
-        </>
-      )}
+      ) : match && (match.status === "waiting" || count !== null) ? (
+        <FriendRoom match={match} count={count} joined={joined} error={deckError} onDeck={chooseDeck} />
+      ) : null}
     </section>
   );
 }
