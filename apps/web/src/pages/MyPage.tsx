@@ -220,7 +220,7 @@ export function MyPage() {
         {isApp && access && !access.unlocked && (
           <button type="button" className="ac-row g2" onClick={showUnlock}>
             <Icon d={I.key} />
-            <span className="grow">全部解放する</span>
+            <span className="grow">すべての機能を解放</span>
             <Icon d={I.chevron} className="ac-chev" />
           </button>
         )}

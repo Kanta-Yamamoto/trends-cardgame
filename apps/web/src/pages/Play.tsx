@@ -847,7 +847,7 @@ export function DeckGrid({
         </Link>
       )}
       <div className="sec">
-        <h2>構築済みデッキ</h2>
+        <h2>レンタルデッキ</h2>
         <small>{builtins.length}個</small>
       </div>
       <div className="decks">{builtins.map(tile)}</div>
