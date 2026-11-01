@@ -28,7 +28,17 @@ const YEAR_S = 365 * 24 * 60 * 60;
 const OPEN_PATHS = ["/health", "/robots.txt", "/auth/config", "/privacy.html", "/support.html", OGP_IMAGE];
 
 /** iOS アプリの画面の出どころ（Capacitor）。招待リンクを開けないので、アプリからの呼び出しは招待済みとして通す */
-const APP_ORIGIN = "capacitor://localhost";
+export const APP_ORIGIN = "capacitor://localhost";
+
+/** ブラウザからの呼び出しを許す出どころ。CORS_ORIGIN で絞っていても、アプリは必ず許す（空なら全部許す） */
+export function corsOrigins(env = process.env.CORS_ORIGIN) {
+  const list =
+    env
+      ?.split(",")
+      .map((s) => s.trim())
+      .filter(Boolean) ?? [];
+  return list.length > 0 ? [...list, APP_ORIGIN] : true;
+}
 
 const inviteCode = () => process.env.INVITE_CODE?.trim() ?? "";
 /** 招待リンクの守りが効いているか */

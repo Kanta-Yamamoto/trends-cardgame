@@ -5,7 +5,7 @@ import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { NextFunction, Request, Response } from "express";
 import { AppModule } from "./app.module";
 import { prepareDb } from "./db/prepare";
-import { protect } from "./security";
+import { corsOrigins, protect } from "./security";
 import { isApiPath, serveWeb } from "./web";
 
 async function bootstrap() {
@@ -26,7 +26,7 @@ async function bootstrap() {
   });
   // CPU 対戦の記録（一手ずつ・CPU が考えた中身つき）は 100KB を超えることがあるので、受け取れる大きさを広げる
   app.useBodyParser("json", { limit: "2mb" });
-  app.enableCors({ origin: process.env.CORS_ORIGIN?.split(",") ?? true });
+  app.enableCors({ origin: corsOrigins() });
   // 本番ではビルドした Web も同じサーバーで配る
   serveWeb(app);
   // Cloud Run は PORT を渡してくる
