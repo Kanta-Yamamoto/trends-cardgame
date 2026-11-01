@@ -3,7 +3,8 @@
    隙間の決まり：画面の左右 8px、カードの間 6px、場と文字欄の間 12px 以上、文字欄と VS の間 8px。
    光る枠や札も、隣に被らないこと（オーナー：「隙間がないようなデザインはあんまり良くない」） */
 
-.stage .pstage { --art-field: calc(var(--card-h) - 60px); --pn: #0d2848; --g: calc(6px + (var(--card-h) - 122px) * 0.4); position: relative; height: 100%; display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
+/* カードはカードの形（--card-h）。場・手札の列はそれより高く（--lane-h）、差は余白（使い方はこれから決める） */
+.stage .pstage { --art-field: calc(var(--card-h) - 50px); --pn: #0d2848; --g: calc(6px + (var(--lane-h) - 122px) * 0.4); position: relative; height: 100%; display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
 
 /* 奥：相手の陣地 */
 .pfoe { position: relative; z-index: 1; flex: none; display: grid; gap: var(--g); padding: 6px 8px 8px; --pn: #4a1636; background: linear-gradient(180deg, #3d1231e6, #6d1f45d9); }
@@ -43,7 +44,8 @@
 .pface .atk-pv.leader.lock { background: #5b6b80; }
 
 /* 場：5 枠が横いっぱい。カードは上が絵、下が札と数字の 2 段 */
-.pstage .row { display: grid; grid-template-columns: repeat(5, var(--slot)); gap: 6px; justify-content: center; }
+.pstage .row { display: grid; grid-template-columns: repeat(5, var(--slot)); gap: 6px; justify-content: center; height: var(--lane-h); align-items: start; }
+.pstage .row.foe-row { align-items: end; }
 .pstage .slot { aspect-ratio: auto; width: var(--slot); height: var(--card-h); box-sizing: border-box; border-radius: 12px; padding: 0; }
 .pstage .slot.droppable { border: 2px solid #7ad6ff; background: #7ad6ff33; box-shadow: 0 0 10px #7ad6ff; }
 .pstage .slot.droppable::after { content: "ここに出す"; color: #fff; font-size: 10px; font-weight: 800; }
@@ -52,8 +54,8 @@
 .pstage .mini::before, .pstage .mini::after { display: none; }
 /* 絵は引き伸ばさない：カード全体に元の比率（2:3）で敷き、下の段（札と数字）にかかる所だけ暗くする（11月2日。オーナー：縦横の縮尺がおかしい） */
 .pstage .mini.has-art { background-size: cover; background-position: 50% 18%; background-repeat: no-repeat; }
-.pstage .mini.has-art::before { display: block; content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(180deg, transparent 48%, #0a1020a6 70%, #0a1020eb 100%); }
-.pstage .mini.has-art.is-dark::before { background: linear-gradient(180deg, #2a0d3a22 40%, #12051ab3 70%, #07020bee 100%); }
+.pstage .mini.has-art::before { display: block; content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(180deg, transparent 38%, #0a1020a6 58%, #0a1020eb 100%); }
+.pstage .mini.has-art.is-dark::before { background: linear-gradient(180deg, #2a0d3a22 32%, #12051ab3 58%, #07020bee 100%); }
 .pstage .mini.on-field { box-shadow: 0 3px 8px #0007; transition: transform 0.15s ease; }
 .pstage .mini.unit.ready { border-color: #f2c14e; box-shadow: 0 0 0 1px #f2c14e, 0 3px 8px #0007; }
 .pstage .mini.unit.tired { filter: saturate(0.6) brightness(0.78); }
@@ -122,18 +124,27 @@
 .pgems i.fresh { animation: pgem 0.7s ease-out; }
 @keyframes pgem { from { scale: 2.6; background: #fff; } }
 
-/* 手札：場と同じ 5 列。6 枚からは同じ大きさのまま横に送る */
+/* 手札：少し重ねた扇形で、持っている手札を全部見せる（11月2日。オーナー：「手札はちょっと重ねて手札で持ってる感」「持っている手札が全部写った上で、重なりがあって扇状」）。
+   間隔は 52px まで。枚数が多いほど詰める（9 枚で約 26px）。傾けた角がはみ出さないよう、両端に 16px ずつ空ける。右に山札の束と墓地 */
 .phand-zone { flex: none; }
-.phand { position: relative; }
-.pstage .hand { position: relative; display: grid; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: var(--slot); gap: 6px; padding: 0; justify-content: start; height: var(--card-h); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
-.pstage .hand::-webkit-scrollbar { display: none; }
-.pstage .hand.many { margin-right: -8px; padding-right: 8px; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
-.pstage .hand .mini { width: var(--slot); margin: 0; transform: none; touch-action: pan-x; }
+.phand { position: relative; display: flex; flex-direction: row; justify-content: flex-start; gap: 8px; align-items: stretch; }
+.pstage .hand { position: relative; flex: 1; min-width: 0; display: block; height: var(--lane-h); padding: 0; overflow: visible; container-type: inline-size; }
+.pstage .hand .mini { --step: min(52px, (100cqw - 32px - var(--slot)) / max(var(--n) - 1, 1)); position: absolute; top: calc(var(--lane-h) - var(--card-h)); left: calc((100cqw - var(--slot) - var(--step) * (var(--n) - 1)) / 2 + var(--step) * var(--i)); z-index: var(--i); width: var(--slot); margin: 0; transform: none; rotate: var(--rot); translate: 0 var(--dy); transform-origin: 50% 100%; transition: left 0.25s ease, rotate 0.25s ease, translate 0.25s ease; touch-action: none; }
 .pstage .hand .mini + .mini { margin: 0; }
+.pstage .hand .mini.in-hand.playable, .pstage .hand .mini.in-hand.short { box-shadow: -3px 2px 8px #0008; }
+.pdeck { flex: none; width: 56px; display: grid; align-content: end; justify-items: center; gap: 6px; }
+.pdeck-stack { position: relative; width: 46px; height: 64px; }
+.pdeck-stack .cardback, .pdeck-layer { position: absolute; left: 0; top: 0; width: 46px; height: 64px; box-sizing: border-box; border-radius: 6px; }
+.pdeck-layer { background: #2a0f3a; border: 1px solid #d6a8ff66; transform: translate(calc(var(--k) * 2px), calc(var(--k) * 2px)); }
+.pdeck-stack .cardback { box-shadow: 0 3px 8px #0008; }
+.pdeck-stack.empty { border: 2px dashed #ffffff40; border-radius: 6px; box-sizing: border-box; }
+.pdeck-stack b { position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); min-width: 24px; padding: 2px 6px; box-sizing: border-box; border-radius: 9px; background: #ffffffeb; color: #1f2d44; font: 400 13px/1 var(--f-mark); text-align: center; }
+.pstage .pdeck-trash { height: 22px; margin-top: 8px; padding: 0 7px; border: 0; cursor: pointer; }
+.ppiles .pp-back { display: inline-block; width: 10px; height: 14px; margin-right: 4px; vertical-align: -2px; border-radius: 2px; }
 .pstage .hand .mini.in-hand.playable { border-color: #79e0c4; box-shadow: 0 3px 8px #0007; }
 .pstage .hand .mini.in-hand.short { filter: none; border-color: #ffffff66; }
 .pstage .hand .mini.in-hand.short.has-art { background-blend-mode: multiply; background-color: #4a5a70; }
-.pstage .hand .mini.in-hand.selected { z-index: 1; transform: none; border-color: #fff; box-shadow: 0 0 0 2px #7ad6ff; }
+.pstage .hand .mini.in-hand.selected { z-index: 20; transform: none; translate: 0 calc(var(--dy) - 6px); border-color: #fff; box-shadow: 0 0 0 2px #7ad6ff; }
 .pstage .hand .mini-cost { left: 4px; top: 4px; width: 26px; height: 26px; }
 .pstage .hand .mini-top, .pstage .hand .mini-stars, .pstage .hand .mini-name, .pstage .hand .mini-darkmark, .pstage .hand .mini-kws { display: none; }
 .pstage .hand .mini.is-post { border-radius: 12px; }
@@ -141,7 +152,7 @@
 .pstage .hand .mini-postmark::before, .pstage .hand .mini-postmark::after { display: none; }
 
 /* 手札の場所に重ねる確認の帯 */
-.pask { position: absolute; left: -8px; right: -8px; bottom: -8px; z-index: 10; display: flex; gap: 12px; height: calc(var(--card-h) + 16px); box-sizing: border-box; padding: 12px 14px; border-radius: 22px 22px 0 0; color: #fff; background: #0b2544; box-shadow: 0 -8px 24px #0008; }
+.pask { position: absolute; left: -8px; right: -8px; bottom: -8px; z-index: 10; display: flex; gap: 12px; height: calc(var(--lane-h) + 16px); box-sizing: border-box; padding: 12px 14px; border-radius: 22px 22px 0 0; color: #fff; background: #0b2544; box-shadow: 0 -8px 24px #0008; }
 .pask-art { flex: none; width: 72px; height: 100px; border-radius: 10px; background-size: cover; background-position: 50% 20%; }
 .pask-body { min-width: 0; flex: 1; display: grid; align-content: start; gap: 6px; }
 .pask-body b { font: 900 16px/1.25 var(--f-head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

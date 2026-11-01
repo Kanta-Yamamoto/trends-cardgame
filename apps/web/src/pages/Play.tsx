@@ -398,8 +398,12 @@ const PORTRAIT_H_MAX = 860;
 const PORTRAIT_PAD = 8;
 const PORTRAIT_GAP = 6;
 const fitPortraitSlot = (width: number) => Math.floor((width - PORTRAIT_PAD * 2 - PORTRAIT_GAP * 4) / 5);
-/** 場と手札のカードの高さ：舞台が高いほど縦に長く見せる（低い舞台でも、まわりの隙間を残す） */
-const fitCard = (height: number) => Math.max(122, Math.min(146, Math.floor(122 + (height - 740) * 0.2)));
+/** 場と手札の列の高さ：舞台が高いほど広くとる（低い舞台でも、まわりの隙間を残す） */
+const fitLane = (height: number) => Math.max(122, Math.min(146, Math.floor(122 + (height - 740) * 0.2)));
+/** 場と手札のカードの高さ：カードの形（63:88）。11月2日、縦長のカードをやめて元の形に戻した
+ *（オーナー：「山札の高さぐらいのがカードとしては自然」「カードの高さは基本元の高さに戻しといて」）。
+ * 列の高さとの差は、使い方が決まるまで余白にしておく（オーナー：「出てきちゃった余白については、これから使い方を考えよう」） */
+const fitCard = (slot: number) => Math.round((slot * 88) / 63);
 
 export interface Stage {
   width: number;
@@ -408,8 +412,10 @@ export interface Stage {
   slot: number;
   cx: number;
   cy: number;
-  /** 場と手札のカードの高さ */
+  /** 場と手札のカードの高さ（カードの形） */
   card: number;
+  /** 場と手札の列の高さ（カードより高い分は余白） */
+  lane: number;
 }
 
 function safeArea(probe: HTMLElement | null) {
@@ -432,7 +438,8 @@ export function measureStage(vw: number, vh: number, safe = { t: 0, r: 0, b: 0, 
     slot: fitPortraitSlot(PORTRAIT_W),
     cx: safe.l + w / 2,
     cy: safe.t + h / 2,
-    card: fitCard(height),
+    card: fitCard(fitPortraitSlot(PORTRAIT_W)),
+    lane: fitLane(height),
   };
 }
 
@@ -2144,12 +2151,23 @@ export function Board({
       (card.type === "icon" ? freeSlot >= 0 : !card.target || castTargets(game, ME, id, CATALOG).length > 0);
     const selected = selection?.kind === "hand" && selection.index === i;
     const p: Peek = { id, where: "hand", index: i };
+    // 扇形：真ん中からの位置で傾け、外ほど少し下げる。間隔は CSS（.hand の幅）で決める
+    const n = me.hand.length;
+    const off = i - (n - 1) / 2;
+    const ang = n > 1 ? Math.min(3, 12 / (n - 1)) : 0;
+    const fan = {
+      "--i": i,
+      "--n": n,
+      "--rot": `${off * ang}deg`,
+      "--dy": `${n > 1 ? (off * off * Math.min(1.6, 6 / ((n - 1) / 2) ** 2)).toFixed(2) : 0}px`,
+    } as CSSProperties;
     return (
       <MiniCard
         key={`${id}-${i}`}
         inHand
         card={card}
         cost={cost}
+        style={fan}
         className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""} ${drag?.src.kind === "hand" && drag.src.index === i ? (card.type === "post" && card.target ? "selected" : "drag-src") : ""}`}
         onPress={!usable ? undefined : (e) => begin(e, { kind: "hand", index: i })}
         onClick={() => {
@@ -2276,7 +2294,7 @@ export function Board({
     </div>
   );
   const handEl = (
-    <div className={`hand ${me.hand.length > 5 ? "many" : ""}`} data-hand={ME} data-drop="hand">
+    <div className="hand fan" data-hand={ME} data-drop="hand">
       {me.hand.map((id, i) => handCard(id, i))}
     </div>
   );
@@ -2444,6 +2462,7 @@ export function Board({
             transform: `translate(-50%, -50%) scale(${stage.scale})`,
             "--slot": `${stage.slot}px`,
             "--card-h": `${stage.card}px`,
+            "--lane-h": `${stage.lane}px`,
           } as CSSProperties
         }
       >
@@ -2555,11 +2574,18 @@ export function Board({
                     {statusChips(ME)}
                     {me.hand.length > 5 && <span className="pchip">手札 {me.hand.length}</span>}
                   </span>
-                  <Piles owner={ME} deck={me.deck.length} trash={me.trash} onTrash={() => setTrashView(ME)} />
                 </div>
               </div>
               <div className="phand-zone">
-                <div className="phand">{handEl}</div>
+                <div className="phand">
+                  {handEl}
+                  <DeckPile
+                    owner={ME}
+                    deck={me.deck.length}
+                    trash={me.trash}
+                    onTrash={() => setTrashView(ME)}
+                  />
+                </div>
               </div>
 
               {selection?.kind === "hand" && selectedCard && !direct && !drag && (
@@ -3139,11 +3165,45 @@ function Piles({
 }) {
   return (
     <span className="pchip ppiles">
-      <span data-pile={`deck-${owner}`}>山札 {deck}</span>・
+      <span data-pile={`deck-${owner}`}>
+        <i className="cardback pp-back" aria-hidden="true" />
+        山札 {deck}
+      </span>
+      ・
       <button type="button" data-pile={`trash-${owner}`} onClick={onTrash}>
         墓地 {trash.length}
       </button>
     </span>
+  );
+}
+
+/** 自分の山札：手札の右に、裏向きのカードの束（枚数で厚みが変わる）と枚数。下に墓地 */
+function DeckPile({
+  owner,
+  deck,
+  trash,
+  onTrash,
+}: {
+  owner: PlayerId;
+  deck: number;
+  trash: string[];
+  onTrash: () => void;
+}) {
+  const layers = deck >= 10 ? 3 : deck >= 4 ? 2 : deck >= 1 ? 1 : 0;
+  return (
+    <div className="pdeck">
+      <span className={`pdeck-stack ${deck === 0 ? "empty" : ""}`} data-pile={`deck-${owner}`}>
+        {Array.from({ length: Math.max(layers - 1, 0) }, (_, k) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: 厚みの層は並びが変わらない
+          <i key={k} className="pdeck-layer" style={{ "--k": layers - 1 - k } as CSSProperties} />
+        ))}
+        {deck > 0 && <i className="cardback" />}
+        <b>{deck}</b>
+      </span>
+      <button type="button" className="pchip pdeck-trash" data-pile={`trash-${owner}`} onClick={onTrash}>
+        墓地 {trash.length}
+      </button>
+    </div>
   );
 }
 
