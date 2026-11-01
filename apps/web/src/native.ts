@@ -4,6 +4,12 @@ import { Preferences } from "@capacitor/preferences";
 /** iOS アプリの中で動いているか（Capacitor）。アプリにログインは無く、売るのもアプリだけ */
 export const isApp = Capacitor.isNativePlatform();
 
+/**
+ * このアプリの版。古いアプリを更新してもらいたいときに、サーバーの MIN_APP_VERSION（health.controller.ts）を上げる。
+ * App Store に出すたびに 1 つ上げる
+ */
+export const APP_VERSION = 1;
+
 const KEY = "trends.device";
 
 /** この端末の秘密の文字列（アカウントの鍵）。初めてなら作る。消えたときは「購入を復元」で元のアカウントに戻る */

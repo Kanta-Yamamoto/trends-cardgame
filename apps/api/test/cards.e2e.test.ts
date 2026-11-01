@@ -28,7 +28,8 @@ describe("cards API", () => {
   });
 
   it("GET /health", async () => {
-    await request(app.getHttpServer()).get("/health").expect(200, { status: "ok", liveMatches: 0 });
+    const health = await request(app.getHttpServer()).get("/health").expect(200);
+    expect(health.body).toMatchObject({ status: "ok", liveMatches: 0, minAppVersion: 1 });
   });
 
   it("GET /cards は全カードを ID 順で返す", async () => {

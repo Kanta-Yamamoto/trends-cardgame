@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
+import { API_URL } from "./api/client";
 import { Login } from "./auth/Login";
 import { RegisterScreen } from "./auth/Register";
 import { useAccess } from "./gacha/access";
 import { useDeckSync } from "./game/deckSync";
 import { HelpSheet } from "./help/HelpSheet";
 import { InstallAutoGuide } from "./InstallButton";
-import { isApp } from "./native";
+import { APP_VERSION, isApp } from "./native";
 import { useSession } from "./online/session";
 import { Decks } from "./pages/Decks";
 import { Gacha } from "./pages/Gacha";
@@ -29,6 +30,7 @@ export function App() {
   const token = useSession((st) => st.token);
   const loadAccess = useAccess((st) => st.load);
   const { pathname } = useLocation();
+  const update = useUpdateRequired();
   // 開いたときに一度、保存してあるログインがまだ使えるか確かめる（期限は 30 日）
   useEffect(() => {
     void check();
@@ -37,6 +39,7 @@ export function App() {
   useEffect(() => {
     void loadAccess(token);
   }, [token, loadAccess]);
+  if (update) return <UpdateRequired url={update.url} />;
   // Web はサービス全体でログインが要る（10月26日）。ログインしていなければ、どのページを開いてもログインの画面だけ。
   // アプリにログインは無く、端末で自動で入る（11月1日）
   if (!user) return isApp ? <AppStart /> : <LoginScreen />;
@@ -68,6 +71,42 @@ export function App() {
       <InstallAutoGuide />
       <HelpSheet />
       <UnlockSheet />
+    </div>
+  );
+}
+
+/** アプリが古くて更新が要るか（サーバーの minAppVersion と比べる。確かめられなければ、そのまま使う） */
+function useUpdateRequired() {
+  const [update, setUpdate] = useState<{ url: string | null } | null>(null);
+  useEffect(() => {
+    if (!isApp) return;
+    fetch(`${API_URL}/health`, { cache: "no-store" })
+      .then((r) => r.json() as Promise<{ minAppVersion?: number; appStoreId?: string | null }>)
+      .then((b) => {
+        if ((b.minAppVersion ?? 0) > APP_VERSION)
+          setUpdate({ url: b.appStoreId ? `https://apps.apple.com/jp/app/id${b.appStoreId}` : null });
+      })
+      .catch(() => {});
+  }, []);
+  return update;
+}
+
+/** 更新のお願い：古いアプリのまま遊ぶと、オンライン対戦などが動かないときだけ出す */
+function UpdateRequired({ url }: { url: string | null }) {
+  return (
+    <div className="login-screen">
+      <h1 className="login-brand">TRENDS</h1>
+      <main className="login-box g3">
+        <div className="online-card">
+          <h2>新しい版があります</h2>
+          <p className="muted">App Store でアプリを更新してください。</p>
+          {url && (
+            <a className="btn" href={url} target="_blank" rel="noreferrer">
+              App Store を開く
+            </a>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
