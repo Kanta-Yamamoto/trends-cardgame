@@ -14,7 +14,7 @@ public class TrendsStorePlugin: CAPPlugin, CAPBridgedPlugin {
     ]
 
     /// App Store Connect に作る商品の ID（apps/api/src/purchase/apple.ts の UNLOCK_PRODUCT と同じ）
-    private let productId = "com.kantayamamoto.trends.unlock"
+    private let productId = "com.kakuremiino.trends.unlock"
 
     /// 端末の国の通貨で表した値段
     @objc func product(_ call: CAPPluginCall) {
