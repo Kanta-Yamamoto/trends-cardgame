@@ -1,11 +1,13 @@
-import { CARDS } from "@trends/cards";
-import { DAILY_PACKS, MAX_OPEN_PACKS, packChance, packPool } from "@trends/game-core";
+import { CARDS, type CardDef } from "@trends/cards";
+import { DAILY_PACKS, MAX_OPEN_PACKS } from "@trends/game-core";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { ATTR_META } from "../cards/meta";
 import { type Access, useAccess } from "../gacha/access";
 import { useCollection } from "../gacha/collection";
 import { Opening, type PulledCard } from "../gacha/Opening";
 import { PACK_NAME, Pack } from "../gacha/Pack";
+import { CardPopup } from "../game/CardPopup";
 import { api, useSession } from "../online/session";
 import { useUnlock } from "../purchase/Unlock";
 import { usePageMusic } from "../sound/music";
@@ -13,19 +15,16 @@ import { GachaTour } from "../tutorial/TourGuides";
 import { SlotTable } from "./GachaRates";
 import "../styles/gacha.css";
 
-const POOL = packPool(CARDS);
-/** パックに入るカードの種類（トークンを除く） */
-export const PACK_KINDS = Object.values(POOL).flat().length;
-
-/** 1 パックで出る割合の目安（「3パックに1枚」など） */
-function perPack(rarity: number) {
-  const p = packChance(rarity, POOL);
-  if (p >= 0.999) return "毎パック1枚以上";
-  return `${Math.round(1 / p)}パックに1枚`;
-}
+const card = (id: string) => CARDS.find((c) => c.id === id);
+/** パックの左右に覗かせるカード（第1弾の顔の 3 人のうち、パックの絵でない 2 人） */
+const SIDE_L = card("c16");
+const SIDE_R = card("c15");
+/** ピックアップカード。押すと拡大の小窓で効果まで読める */
+const PICKUP = ["g20", "c2", "c3"].flatMap((id) => card(id) ?? []);
 
 /**
- * ガチャ（11月1日。お金ではなくパックを開ける体験として作り直した）：真ん中にパック、下に開けるボタン。
+ * ガチャ（11月2日。オーナーと案 D で決めた形）：左右にカードが覗くパック、帯のパック名、ピックアップカード、下に開けるボタン。
+ * 確率の文は画面に出さず、提供割合に置く（審査に要る）。この画面だけ、パックに合わせて赤・黒・白の地にする。
  * 買う前はチュートリアルの 1 パックだけ、買ったあとは毎日のパックを開ける（docs/product.md）。
  * 開けたらパックを開ける演出（gacha/Opening.tsx）
  */
@@ -39,6 +38,7 @@ export function Gacha() {
   const loadCards = useCollection((s) => s.load);
   const showUnlock = useUnlock((s) => s.show);
   const [rates, setRates] = useState(false);
+  const [zoom, setZoom] = useState<CardDef | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // n：開けるたびに増やし、開ける画面を作り直す（もう1パックのとき、前のパックの続きにならないように）
@@ -71,23 +71,41 @@ export function Gacha() {
 
   return (
     <section className="page gx-top">
-      <span className="gx-rays" aria-hidden="true" />
-      <span className="gx-iri" aria-hidden="true" />
-      <div className="gx-pack-wrap">
-        <Pack />
-      </div>
-      <div className="gx-info">
-        <h2>{PACK_NAME}</h2>
-        <p className="gx-sub">1パック 5枚入り・全{PACK_KINDS}種類</p>
-        <div className="gx-rate3 g2">
-          {[5, 4, 3].map((r) => (
-            <div key={r}>
-              <span className="gx-stars">{"★".repeat(r)}</span>
-              <b>{perPack(r)}</b>
-            </div>
-          ))}
+      <div className="gx-hero">
+        <img className="gx-peek l" src={SIDE_L?.art} alt="" draggable={false} />
+        <img className="gx-peek r" src={SIDE_R?.art} alt="" draggable={false} />
+        <div className="gx-pack-wrap">
+          <Pack />
         </div>
       </div>
+      <h2 className="gx-ribbon">
+        <small>第1弾</small>
+        {PACK_NAME}
+      </h2>
+      <section className="gx-pick" aria-label="ピックアップカード">
+        <h3>ピックアップカード</h3>
+        <div className="gx-pick-row">
+          {PICKUP.map((c) => (
+            <button key={c.id} type="button" className="gx-pick-card" onClick={() => setZoom(c)}>
+              <img src={c.art} alt="" draggable={false} />
+              <b>{c.name}</b>
+              <span className="gx-stars">{"★".repeat(c.rarity)}</span>
+              <span className="gx-pick-tags">
+                {c.attributes.map((a) => (
+                  <i key={a} style={{ background: ATTR_META[a].color }}>
+                    {a}
+                  </i>
+                ))}
+                {c.kaiwai.slice(0, 1).map((k) => (
+                  <i key={k} className="kw">
+                    {k}
+                  </i>
+                ))}
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <div className="gx-dock">
         {left > 0 ? (
@@ -160,7 +178,8 @@ export function Gacha() {
         </div>
       )}
 
-      {!opening && !rates && <GachaTour />}
+      {zoom && <CardPopup card={zoom} onClose={() => setZoom(null)} />}
+      {!opening && !rates && !zoom && <GachaTour />}
       {opening && (
         <Opening
           key={opening.n}

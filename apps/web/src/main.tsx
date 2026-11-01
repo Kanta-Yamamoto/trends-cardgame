@@ -10,6 +10,9 @@ import "@fontsource/m-plus-1/700.css";
 import "@fontsource/m-plus-1/800.css";
 import "@fontsource/m-plus-1/900.css";
 import "@fontsource/lilita-one/400.css";
+// ロゴ・数字（Anton）と見出し・ボタン（禅角ゴシック）。11月2日にオーナーが比較の案 B を選んだ
+import "@fontsource/anton/400.css";
+import "@fontsource/zen-kaku-gothic-new/900.css";
 // ★5 ミナモの名前（カード面と、場に出たときの演出）
 import "@fontsource/m-plus-rounded-1c/800.css";
 import "@fontsource/dela-gothic-one/400.css";

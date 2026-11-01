@@ -4,12 +4,11 @@ import { Link, Navigate, useNavigate } from "react-router";
 import { ATTR_META } from "../cards/meta";
 import { useAccess } from "../gacha/access";
 import { markNewsSeen, NEWS, unseenCount } from "../home/news";
-import { InstallGuide, useCanInstall } from "../InstallButton";
 import { InviteFriends } from "../InviteFriends";
 import { isApp } from "../native";
 import { api, useSession } from "../online/session";
 import { useUnlock } from "../purchase/Unlock";
-import { dismissGuide, refreshApp, useReloadWhenNewer } from "../pwa";
+import { refreshApp, useReloadWhenNewer } from "../pwa";
 import { usePageMusic } from "../sound/music";
 import { SoundMenu } from "../sound/SoundMenu";
 import { useTutorial } from "../tutorial/progress";
@@ -26,6 +25,8 @@ import "../styles/home.css";
 /** ホームに立てるキャラクター：切り抜きの絵がある★5（トークンは除く） */
 const CHARAS = CARDS.filter((c) => c.rarity === 5 && c.subject && c.art && !c.token);
 const CHARA_KEY = "trends.homeChara";
+/** ホームでは、カードとは別の絵を立てるキャラクター（『トップアイドル』は、ガチャのパックと同じ、体まである切り抜き） */
+const HOME_SUBJECT: Record<string, string> = { m1: "/assets/cards/pack1-subject.webp" };
 /** 初めてのときは推し属性のミレイ（王道の属性。docs/design-mainline.md） */
 const FIRST_CHARA = "c13";
 
@@ -112,10 +113,6 @@ const I = {
     "M18.5 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z",
   ],
   trophy: ["M8 4h8v5a4 4 0 0 1-8 0z", "M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 21h8M9.5 17h5"],
-  phone: [
-    "M8.5 2h7A2.5 2.5 0 0 1 18 4.5v15a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 6 19.5v-15A2.5 2.5 0 0 1 8.5 2z",
-    "M12 7v7M9 11l3 3 3-3",
-  ],
   refresh: ["M20 11a8 8 0 1 0-2.3 5.7", "M20 4v7h-7"],
   logout: ["M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3", "M10 8l-4 4 4 4M6 12h10"],
   invite: ["M9 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7z", "M2.5 20a6.5 6.5 0 0 1 13 0", "M19 8v6M16 11h6"],
@@ -135,17 +132,16 @@ export function Home() {
   const locked = useAccess((s) => s.access?.unlocked === false);
   const showUnlock = useUnlock((s) => s.show);
   const navigate = useNavigate();
-  const canInstall = useCanInstall();
   usePageMusic("home");
   // 新しい版が出ていれば、ホームにいるあいだに黙って読み直す（pwa.ts）
   useReloadWhenNewer();
 
   const [charaId, setCharaId] = useState(loadChara);
   const chara = CHARAS.find((c) => c.id === charaId) ?? CHARAS[0];
+  const subject = (chara && HOME_SUBJECT[chara.id]) ?? chara?.subject;
   const [hop, setHop] = useState(0);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [sheet, setSheet] = useState<"news" | "menu" | "invite" | null>(null);
-  const [guide, setGuide] = useState(false);
   const [unseen, setUnseen] = useState(unseenCount);
   const [head, setHead] = useState(0);
   const [mine, setMine] = useState<MyRating | null>(null);
@@ -290,10 +286,10 @@ export function Home() {
             <span className={`hm-hop ${hopCls}`}>
               <span className="hm-float">
                 <span key={chara.id} className="hm-chara">
-                  <img src={chara.subject} alt="" />
+                  <img src={subject} alt="" />
                   <span
                     className="hm-shine"
-                    style={{ maskImage: `url(${chara.subject})`, WebkitMaskImage: `url(${chara.subject})` }}
+                    style={{ maskImage: `url(${subject})`, WebkitMaskImage: `url(${subject})` }}
                   />
                 </span>
               </span>
@@ -424,18 +420,6 @@ export function Home() {
                   <Icon d={I.guide} />
                   遊び方（チュートリアル）
                 </button>
-                {canInstall && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSheet(null);
-                      setGuide(true);
-                    }}
-                  >
-                    <Icon d={I.phone} />
-                    アプリとして入れる
-                  </button>
-                )}
                 {!isApp && (
                   <>
                     <button
@@ -458,14 +442,6 @@ export function Home() {
         </div>
       )}
       {!sheet && <HomeTour />}
-      {guide && (
-        <InstallGuide
-          onClose={(forever) => {
-            if (forever) dismissGuide(true);
-            setGuide(false);
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -41,7 +41,7 @@ export function GachaTour() {
       <Guide
         face="open"
         text="ここがガチャ。カードパックは 1 パック 5 枚入りで、★5 のカードも出るよ。"
-        shows={[".gx-info"]}
+        shows={[".gx-pick"]}
         next={{ label: "つぎへ", onClick: () => setStep(1) }}
         onSkip={end}
       />

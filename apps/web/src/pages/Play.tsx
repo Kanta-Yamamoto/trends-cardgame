@@ -101,7 +101,7 @@ import { endReason } from "../game/result";
 import { CATALOG, CPU, DECK_INFO, holdOpening, ME, openingMs, setPresenter, useGame } from "../game/store";
 import { useDragPlay } from "../game/useDragPlay";
 import { type ClockLeft, formatClock, useClockLeft, useLive } from "../online/live";
-import { usePageMusic } from "../sound/music";
+import { playMusicOnce, usePageMusic } from "../sound/music";
 import { SoundMenu } from "../sound/SoundMenu";
 import { playSe } from "../sound/se";
 import { lockZoom, resetZoom } from "../viewport";
@@ -1821,6 +1821,8 @@ export function Board({
             await gwait(50);
             const unitEl = document.querySelector<HTMLElement>(`[data-uid="${unit.uid}"]`);
             const field = ambushField.current;
+            // 毒の茨の演出の頭から、闇堕ちの曲を流す
+            playMusicOnce("dark");
             if (unitEl && field) {
               await kusahamiWither({ unit: unitEl, field, layer: fxLayer() });
               unitEl.style.opacity = "";
@@ -1983,6 +1985,8 @@ export function Board({
           hold(at + 900);
         }
       } else if (e.type === "darkFall" || e.type === "restored") {
+        // 闇堕ちの曲は、どのカードでも、裏返しの演出があってもなくても流す（流している間は流し直さない）
+        if (e.type === "darkFall") setTimeout(() => playMusicOnce("dark"), t + 80);
         const uid = uidAt(e.player, e.slot);
         // 毒の茨の演出で出した闇の姿は、もう場に出ているので裏返さない
         if (uid && withered.current.delete(uid)) continue;

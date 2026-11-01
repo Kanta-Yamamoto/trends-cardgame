@@ -1,4 +1,6 @@
+import { App } from "@capacitor/app";
 import { useEffect, useSyncExternalStore } from "react";
+import { isApp } from "../native";
 import BATTLE from "./battle.mp3";
 import COLLECTION from "./collection.mp3";
 import DARK from "./dark.mp3";
@@ -24,7 +26,10 @@ import PULL from "./pull.mp3";
  * - 音量とフェードが iPhone でも効く（iPhone では <audio> の volume を変えられない）
  * - Android の通知に「再生中」が出ない
  * - iPhone のマナーモードでは鳴らさず、ほかのアプリの音楽も止めない（audioSession を ambient に）
- * ブラウザは画面を一度押すまで音を出させないので、そのときは最初に押したところで鳴り始める
+ * 11月2日（オーナー：「携帯の設定として音を出すんだったら出しっぱなしにする」「そういうの全部なしでいい」）：
+ * アプリが前に出ている間は Web Audio を動かしたままにする。曲の無い画面で止める工夫をやめた（起こせないと効果音が消えていた）。
+ * 裏に回るとき・ホームへ戻る操作の途中は、全体をすぐ絞ってから止める（いきなり止めると異音が出る）。
+ * ブラウザは画面を一度押すまで音を出させないことがあるので、そのときは最初に押したところで鳴り始める
  */
 
 /** 曲と音量（曲そのままの大きさを 1）。音量は、どの曲も同じ大きさに聞こえるようにラウドネスで合わせた */
@@ -42,8 +47,15 @@ const TRACKS = {
 export type MusicName = keyof typeof TRACKS;
 const NAMES = Object.keys(TRACKS) as MusicName[];
 
-/** 効果音と比べた音楽の大きさ。音楽の段階 3 は、段階の倍率だけなら 2 だった大きさ（オーナー：「音楽の今の2を3に、効果音をそのままに」「音楽を相対的に小さく」） */
-const BGM_SCALE = 0.6;
+/** 効果音と比べた音楽の大きさ（オーナー：「音楽を相対的に小さく」。11月2日：「特に BGM がでかいかもしれない」で 0.6 から下げた） */
+const BGM_SCALE = 0.42;
+/** 全体の大きさ（オーナー：「iPhone の基準の音よりもだいぶ基準の音がでかすぎる」）。音楽と効果音の両方に掛ける */
+const MASTER = 0.4;
+/** 裏に回るときに全体を絞る時間と、戻るときに上げる時間（秒） */
+const PAUSE_FADE = 0.03;
+const WAKE_FADE = 0.25;
+/** 起こしても動かないときに、作り直すまでの時間（ミリ秒。iPhone は電話や切り替えのあと起きないことがある） */
+const WAKE_LIMIT = 600;
 /** 鳴り始め・止めるときのフェード（秒） */
 const FADE_IN = 1.2;
 const FADE_OUT = 0.4;
@@ -69,6 +81,11 @@ const decks = Object.fromEntries(
 ) as Record<MusicName, Deck>;
 
 let ctx: AudioContext | null = null;
+/** すべての音が通る、全体の大きさ */
+let master: GainNode | null = null;
+/** アプリが前に出ているか（iPhone でホームへ戻る操作の途中は、画面が見えていても false） */
+let appActive = true;
+let listening = false;
 /** 開いている画面の曲 */
 let current: MusicName | null = null;
 /** 画面の曲の代わりに、いま流す場面の曲（ガチャのパックを開けている間） */
@@ -87,9 +104,60 @@ function loadLevels(): SoundLevels {
   return readLevels((key) => localStorage.getItem(key));
 }
 
+/** アプリが前に出ていて、音を出してよいか */
+const audible = () => appActive && document.visibilityState === "visible";
+
 /** 今流す曲（無ければ null） */
 function wanted(): MusicName | null {
-  return levels.bgm > 0 && document.visibilityState === "visible" ? (scene ?? current) : null;
+  return levels.bgm > 0 && audible() ? (scene ?? current) : null;
+}
+
+/** 音の出口を作る */
+function open(): AudioContext {
+  const c = new AudioContext();
+  const m = c.createGain();
+  m.gain.value = MASTER;
+  m.connect(c.destination);
+  ctx = c;
+  master = m;
+  return c;
+}
+
+/** 起こしても動かない Web Audio を作り直す（読んだ音の波はそのまま使える） */
+function rebuild() {
+  const old = ctx;
+  for (const d of Object.values(decks)) {
+    d.source = null;
+    d.gain = null;
+  }
+  open();
+  old?.close().catch(() => {});
+  sync();
+}
+
+/** 止まっている Web Audio を起こす。起きなければ作り直す */
+function wake() {
+  const c = ctx;
+  if (!c || !audible()) return;
+  if (master) fadeTo(c, master, MASTER, WAKE_FADE);
+  if (c.state === "running") return;
+  c.resume().catch(() => {});
+  window.setTimeout(() => {
+    if (ctx === c && c.state !== "running" && audible()) rebuild();
+  }, WAKE_LIMIT);
+}
+
+/** 全体をすぐ絞ってから止める（いきなり止めると異音が出る） */
+function pause() {
+  const c = ctx;
+  if (!c) return;
+  if (master) fadeTo(c, master, 0, PAUSE_FADE);
+  window.setTimeout(
+    () => {
+      if (ctx === c && !audible()) c.suspend().catch(() => {});
+    },
+    PAUSE_FADE * 1000 + 30,
+  );
 }
 
 /** 初めて要るときに一度だけ用意する（Web Audio のないブラウザ・テストでは何もしない） */
@@ -98,14 +166,21 @@ function setup(): AudioContext | null {
   if (typeof AudioContext === "undefined") return null;
   const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
   if (session) session.type = "ambient";
-  ctx = new AudioContext();
-  // 押すまで音を出させないブラウザ・電話などで止められた iPhone は、次に押したときに鳴らし直す
-  const unlock = () => {
-    if (ctx && ctx.state !== "running" && wanted()) ctx.resume().catch(() => {});
-  };
-  for (const g of GESTURES) document.addEventListener(g, unlock, true);
-  document.addEventListener("visibilitychange", sync);
-  return ctx;
+  const c = open();
+  if (!listening) {
+    listening = true;
+    // 押すまで音を出させないブラウザ・電話などで止められた iPhone は、次に押したときに鳴らし直す
+    for (const g of GESTURES) document.addEventListener(g, wake, true);
+    document.addEventListener("visibilitychange", sync);
+    window.addEventListener("pageshow", sync);
+    // アプリでは、ホームへ戻る操作の途中（画面はまだ見えている）から止める
+    if (isApp)
+      void App.addListener("appStateChange", ({ isActive }) => {
+        appActive = isActive;
+        sync();
+      });
+  }
+  return c;
 }
 
 /** 曲を読んで音の波にする（失敗したら次に開いたときに読み直す） */
@@ -138,7 +213,7 @@ function play(c: AudioContext, name: MusicName, fadeIn: number) {
       if (!d.gain) {
         d.gain = c.createGain();
         d.gain.gain.value = 0;
-        d.gain.connect(c.destination);
+        if (master) d.gain.connect(master);
       }
       if (!d.source) {
         const offset = name === once ? 0 : d.offset % buffer.duration;
@@ -155,8 +230,8 @@ function play(c: AudioContext, name: MusicName, fadeIn: number) {
         d.source.start(0, offset);
         d.startedAt = c.currentTime - offset;
       }
-      // 押す前で音を出させてもらえないときは、押したときに鳴る（unlock）
-      c.resume().catch(() => {});
+      // 押す前で音を出させてもらえないときは、押したときに鳴る（wake）
+      wake();
       fadeTo(c, d.gain, TRACKS[name].volume * BGM_SCALE * levelGain(levels.bgm), fadeIn);
     })
     .catch(() => {
@@ -192,16 +267,11 @@ function sync() {
   const c = setup();
   if (!c) return;
   window.clearTimeout(stopTimer);
-  if (document.visibilityState === "hidden") {
-    // 裏に回ったら、すぐ止める（音の波はそのまま。戻ったら続きから小さい音で上げる）
-    for (const d of Object.values(decks)) {
-      if (!d.gain) continue;
-      d.gain.gain.cancelScheduledValues(0);
-      d.gain.gain.value = 0;
-    }
-    c.suspend().catch(() => {});
+  if (!audible()) {
+    pause();
     return;
   }
+  wake();
   const want = wanted();
   for (const name of NAMES) {
     const g = decks[name].gain;
@@ -210,12 +280,11 @@ function sync() {
   if (want) play(c, want, quickNext ? FADE_QUICK : slowNext ? FADE_SLOW : FADE_IN);
   slowNext = false;
   quickNext = false;
-  // 消え終わったら、流していない曲を止めて手放す。何も流さないなら Web Audio ごと止める（電池を使わない）
+  // 消え終わったら、流していない曲を止めて手放す
   stopTimer = window.setTimeout(
     () => {
       const now = wanted();
       for (const name of NAMES) if (name !== now) release(c, name);
-      if (!now && c.state === "running") c.suspend().catch(() => {});
     },
     FADE_OUT * 1000 + 50,
   );
@@ -296,19 +365,17 @@ export function useSoundLevels(): SoundLevels {
 }
 
 /** 効果音を鳴らす先（効果音が 0 の間・裏に回っている間は null） */
-export function soundOutput(): AudioContext | null {
-  if (levels.se === 0 || document.visibilityState !== "visible") return null;
-  return setup();
+export function soundOutput(): { ctx: AudioContext; out: AudioNode } | null {
+  if (levels.se === 0 || !audible()) return null;
+  const c = setup();
+  if (!c || !master) return null;
+  wake();
+  return { ctx: c, out: master };
 }
 
 /** 効果音の大きさの倍率 */
 export function seGain(): number {
   return levelGain(levels.se);
-}
-
-/** 効果音が鳴り終わったら呼ぶ。曲を流していない画面なら Web Audio を止める（電池を使わない） */
-export function soundDone() {
-  if (ctx?.state === "running" && !wanted()) ctx.suspend().catch(() => {});
 }
 
 /** 開いている画面に曲があるか（上の帯に音楽のボタンを出すかに使う） */

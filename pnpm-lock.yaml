@@ -117,6 +117,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@capacitor/app':
+        specifier: ^7.1.2
+        version: 7.1.2(@capacitor/core@7.6.9)
       '@capacitor/core':
         specifier: ^7.6.9
         version: 7.6.9
@@ -126,6 +129,9 @@ importers:
       '@capacitor/preferences':
         specifier: ^7.0.4
         version: 7.0.4(@capacitor/core@7.6.9)
+      '@fontsource/anton':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@fontsource/dela-gothic-one':
         specifier: 5.3.0
         version: 5.3.0
@@ -141,6 +147,9 @@ importers:
       '@fontsource/zen-antique':
         specifier: 5.3.0
         version: 5.3.0
+      '@fontsource/zen-kaku-gothic-new':
+        specifier: ^5.3.1
+        version: 5.3.1
       '@fontsource/zen-old-mincho':
         specifier: 5.3.1
         version: 5.3.1
@@ -356,6 +365,11 @@ packages:
   '@bramus/specificity@2.4.3':
     resolution: {integrity: sha512-0GEz8qJWokkUVYQYRukmkSHIFNoBH8QTreeHrAFbvz1XFYc3Y+puhMs8PQ5x8GNugiC2l5jvDBXKLbBIByeSBw==}
     hasBin: true
+
+  '@capacitor/app@7.1.2':
+    resolution: {integrity: sha512-d4I/oF/PRu4megL7/IGKYfe5j7yzSON1FRFgq6kH+m5kH6g7V+wyjHRLauCzGNjdRx4S+nWOumINds0qcRBtKg==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
 
   '@capacitor/cli@7.6.9':
     resolution: {integrity: sha512-QBDEf38yBAFTJehbi5FvAmhDWV1I/e7Zr3Z6XX0Bj+9T+/OY5EkGbw5/1e+3oIyyeepq3WtdSkLWHs3VNH2gCA==}
@@ -883,6 +897,9 @@ packages:
       '@noble/hashes':
         optional: true
 
+  '@fontsource/anton@5.3.0':
+    resolution: {integrity: sha512-OR1D5n124n2XRs66SbX7IjcOSptljEJE8FcDNnlni2y1/M6KpTx7cU2PIWzTSsBj4WFkHPw24On8qw3qkQZuTw==}
+
   '@fontsource/dela-gothic-one@5.3.0':
     resolution: {integrity: sha512-4A26Qs7TqYFWegJfYHx7KKWy01YybW/e7uhFDM8A8e1neVPm721laLnh0en60wtKihfNdCbJt0VVcEMHC4pHjw==}
 
@@ -897,6 +914,9 @@ packages:
 
   '@fontsource/zen-antique@5.3.0':
     resolution: {integrity: sha512-G9iu1kgpr0MvBWVoR+DjoVMgK5zdVVeMQ+qdHJ42ec8Ag+574uWuykjMbOn9Nfq560swzixiTNdMlWoNzzyCAg==}
+
+  '@fontsource/zen-kaku-gothic-new@5.3.1':
+    resolution: {integrity: sha512-L69mE6bkzeVK3UdTenxOmCIWvTwMxohJRNm1dAj+W+UiCULQ91b7M77ENVw+pjGmFL6zKPFYFeH3g8x2ugAJNw==}
 
   '@fontsource/zen-old-mincho@5.3.1':
     resolution: {integrity: sha512-wahFUlw1s0zKkxiTRj9jJiyVrdNT5uHNYWakr6cDEIgp91YoP/LOvfD2+JVIKiXIwTChDM1oW1yqXJbdtlI56w==}
@@ -4209,6 +4229,10 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
+  '@capacitor/app@7.1.2(@capacitor/core@7.6.9)':
+    dependencies:
+      '@capacitor/core': 7.6.9
+
   '@capacitor/cli@7.6.9':
     dependencies:
       '@ionic/cli-framework-output': 2.2.8
@@ -4515,6 +4539,8 @@ snapshots:
     optionalDependencies:
       '@noble/hashes': 1.8.0
 
+  '@fontsource/anton@5.3.0': {}
+
   '@fontsource/dela-gothic-one@5.3.0': {}
 
   '@fontsource/lilita-one@5.3.0': {}
@@ -4524,6 +4550,8 @@ snapshots:
   '@fontsource/m-plus-rounded-1c@5.3.0': {}
 
   '@fontsource/zen-antique@5.3.0': {}
+
+  '@fontsource/zen-kaku-gothic-new@5.3.1': {}
 
   '@fontsource/zen-old-mincho@5.3.1': {}
 

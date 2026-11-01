@@ -34,10 +34,10 @@
   --gold-ink: #946400;
   --accent: var(--pri-2);
   --foe: #d93a4a;
-  /* 画面の文字：M PLUS 1（ゲームでよく使われる角ゴシック）。数字・ロゴ：Lilita One（太く丸いゲームらしい数字） */
+  /* 画面の文字：M PLUS 1。数字・ロゴ：Anton。見出し・ボタン：禅角ゴシック（11月2日にオーナーが比較の案 B を選んだ。カード面の書体は cards/ のまま） */
   --f-ui: "M PLUS 1", "Hiragino Sans", "Yu Gothic", sans-serif;
-  --f-mark: "Lilita One", "M PLUS 1", sans-serif;
-  --f-head: "Dela Gothic One", "M PLUS 1", sans-serif;
+  --f-mark: "Anton", "Zen Kaku Gothic New", sans-serif;
+  --f-head: "Zen Kaku Gothic New", "M PLUS 1", sans-serif;
   /* 部品の決まり（10月26日の画面の作り直し）：色は少なく、すりガラスは 3 段、影は 1 色で 3 段 */
   --ink-3: #8a96a8;
   --line-2: #1f2d4426;
@@ -187,6 +187,7 @@ button { font: inherit; color: inherit; }
 .zoom .close { position: absolute; top: 16px; right: 16px; }
 /* ボタン：主（1 画面に 1 つ）はソーダの水色のグラデーションに白い字、ghost は白いすりガラスに濃い字、text は字だけ */
 .btn {
+  font-family: var(--f-head);
   border: 1px solid #ffffffd9; border-radius: 99px; padding: 10px 16px; font-weight: 800; font-size: 13px; cursor: pointer; text-decoration: none;
   color: #fff; background: var(--pri-grad); box-shadow: 0 6px 16px var(--pri-shadow), inset 0 1px 0 #ffffffb3; text-shadow: 0 1px 2px #00285040;
 }
@@ -1374,7 +1375,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 /* 『フィクサー』の登場：バトル場が黒に滲む。ターンが終わるまで黒のまま（FixerField.tsx が滲みを動かす） */
 .board.field-fixer { isolation: isolate; }
 .fixer-field { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; }
-.fixer-field .ff-ink { position: absolute; inset: 0; background: #0e0d0c; mask-image: linear-gradient(transparent, transparent); -webkit-mask-image: linear-gradient(transparent, transparent); }
+.fixer-field .ff-ink { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 /* 差し出しの黒い閃光（fx/blackFlash.ts）：盤面の中に置くキャンバス */
 .fx-blackflash { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none; }
 /* 貫いた一瞬（0.3 秒止まる間）だけ白黒が入れ替わる：地は白い紙、アイコンは黒い影 */

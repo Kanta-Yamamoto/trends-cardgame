@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appId: "com.kakuremiino.trends",
   appName: "TRENDS",
   webDir: "dist",
-  ios: { contentInset: "never", scrollEnabled: false },
+  ios: { contentInset: "never" },
 };
 
 export default config;

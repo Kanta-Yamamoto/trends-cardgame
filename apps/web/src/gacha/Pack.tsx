@@ -1,16 +1,15 @@
 /** パックの名前（今は 1 種類） */
-export const PACK_NAME = "第1弾パック";
+export const PACK_NAME = "DIRECTOR'S CUT";
 
 /**
  * パックの表の印刷。本体と、切り取り線より上の 2 枚に同じ絵を重ね、線で切り分ける。
- * 表紙のアイドルは『トップアイドル』の元の絵から、体を下の方まで切り抜いたもの（pack1-subject。
- * カード面の切り抜き m1-subject は胸の下で消えるので、パックには使わない）
+ * 表紙は『演出家』（11月2日。第1弾は『演出家』『フィクサー』『調停者』の 3 人を顔にする）
  */
 function Print() {
   return (
     <>
       <span className="gx-pk-foil" />
-      <img className="gx-pk-chara" src="/assets/cards/pack1-subject.webp" alt="" draggable={false} />
+      <img className="gx-pk-chara" src="/assets/cards/c17-subject.webp" alt="" draggable={false} />
       <span className="gx-pk-logo">TRENDS</span>
       <span className="gx-pk-band">第1弾</span>
       <span className="gx-pk-crimp t" />

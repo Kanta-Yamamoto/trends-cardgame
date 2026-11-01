@@ -143,10 +143,15 @@ export function HoloCard({
     setTilt(el, -0.3, -0.3, 0.4);
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // ひとりでに揺らさないカードは、毎フレームの処理をしない（11月2日。iPhone の発熱を抑える）
+    if (!idle || reduce) return () => ro.disconnect();
     let raf = 0;
+    let last = 0;
     const phase = Math.random() * 10;
     const tick = (t: number) => {
-      if (idle && !reduce && t - lastMove.current > 2200) {
+      // ゆっくりした揺れなので、毎秒 30 回で足りる
+      if (t - last >= 33 && t - lastMove.current > 2200) {
+        last = t;
         const s = t / 1000 + phase;
         setTilt(el, Math.sin(s * 0.8) * 0.5, Math.sin(s * 1.1 + 1) * 0.35, 0.45 + Math.sin(s) * 0.25);
       }

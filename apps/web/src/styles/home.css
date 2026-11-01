@@ -246,3 +246,9 @@
 @keyframes hm-shine { 0%, 50% { background-position: 100% 0; } 82%, 100% { background-position: 0% 0; } }
 @keyframes hm-sheen { 0%, 55% { background-position: 100% 0; } 90%, 100% { background-position: 0% 0; } }
 @keyframes hm-iri { to { background-position: 0 0, 300% 0; } }
+
+/*
+ * 11月2日：iPhone の発熱を抑える。背景の動きは、上のすりガラス（backdrop-filter）を毎フレーム描き直させるので、背景の飾りは止める。
+ * キャラクターの呼吸とボタンの光は残す
+ */
+.hm-blob.b1, .hm-blob.b2, .hm-rays, .hm-ring, .hm-disc, .hm-bubbles i, .hm-tile.gacha { animation: none; }

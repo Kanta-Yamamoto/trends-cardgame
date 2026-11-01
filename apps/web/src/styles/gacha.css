@@ -6,7 +6,7 @@
 .gx-pack { position: relative; width: 200px; height: 330px; filter: drop-shadow(0 22px 30px #1f487847); }
 /* 切り取り線（gacha/tear.ts の shape。Opening が .gx-pk-float に書く）。書かれていなければ、上の圧着の下に横まっすぐ */
 .gx-pack-wrap, .gx-pk-float { --tip: 0px; --yl: 38px; --yt: 38px; --yr: 38px; --ang: 0deg; --hx: 200px; --mouth: 0px; --mouth-end: 0px; --band: 1.2px; --capl: 0deg; --capr: 0deg; }
-.gx-pk-body, .gx-pk-flap { position: absolute; inset: 0; border-radius: 8px; overflow: hidden; background: linear-gradient(165deg, #f4f9ff 0%, #cfe6ff 22%, #ffd6ee 42%, #d3fff1 62%, #fff0c4 80%, #dcecff 100%); }
+.gx-pk-body, .gx-pk-flap { position: absolute; inset: 0; border-radius: 8px; overflow: hidden; background: #cf1b10; }
 .gx-pk-body { clip-path: polygon(0 var(--yl), 100% var(--yr), 100% 100%, 0 100%); }
 .gx-pk-cap { position: absolute; inset: 0; }
 /* 裂けきった切れ端：ぱっと右へ外れて少しだけ上へ跳ね、自然に落ちながら画面の右へ流れて、早めに消える */
@@ -24,24 +24,33 @@
 .gx-pk-crimp.b { bottom: 0; }
 .gx-pk-foil { position: absolute; inset: 0; background: repeating-linear-gradient(120deg, #ffffff00 0 14px, #ffffff66 14px 16px, #ffffff00 16px 30px); }
 .gx-pk-sheen { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, #ffffffb3 45%, #bfe8ff80 52%, transparent 66%) 0 0 / 300% 100%; animation: sheen 3.6s ease-in-out infinite; }
-.gx-pk-chara { position: absolute; left: 50%; top: 86px; width: 250px; transform: translateX(-50%); filter: drop-shadow(0 8px 12px #1f487855); pointer-events: none; user-select: none; }
-.gx-pk-logo { position: absolute; left: 0; right: 0; top: 50px; text-align: center; font: 400 38px/1 var(--f-mark); letter-spacing: 0.05em; color: #fff; text-shadow: 0 2px 0 #1272b0, 0 4px 0 #0d4f80, 0 10px 18px #1f487866; }
-.gx-pk-band { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); height: 26px; padding: 0 12px; border-radius: 13px; background: #1f2d44e6; color: #fff; font-size: 12px; font-weight: 800; line-height: 26px; white-space: nowrap; }
+.gx-pk-chara { position: absolute; left: 50%; top: 78px; width: 290px; transform: translateX(-50%); filter: drop-shadow(0 8px 12px #1f487855); pointer-events: none; user-select: none; }
+.gx-pk-logo { position: absolute; left: 0; right: 0; top: 50px; text-align: center; font: 400 38px/1 var(--f-mark); letter-spacing: 0.05em; color: #fff; text-shadow: 0 3px 0 #0e0d0c; }
+.gx-pk-band { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); height: 26px; padding: 0 12px; border-radius: 13px; background: #0e0d0ce6; color: #fff; font-size: 12px; font-weight: 800; line-height: 26px; white-space: nowrap; }
 
 /* ガチャの画面 */
-.gx-top { position: relative; padding-bottom: 190px; }
-.gx-rays { position: absolute; left: 50%; top: 183px; width: 900px; height: 900px; margin: -450px 0 0 -450px; z-index: -1; pointer-events: none; background: repeating-conic-gradient(from 0deg, #ffffffbf 0deg 6deg, transparent 6deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 52%); mask-image: radial-gradient(circle, #000 0%, transparent 52%); opacity: 0.6; animation: spin 90s linear infinite; }
-.gx-iri { position: absolute; left: 50%; top: 183px; width: 230px; height: 360px; margin: -180px 0 0 -115px; z-index: -1; border-radius: 30px; background: conic-gradient(from 0deg, #ffb3d9, #b5ccff, #9ef0dc, #ffe7a3, #ffb3d9); filter: blur(30px); opacity: 0.5; animation: spin 9s linear infinite; pointer-events: none; }
+.gx-top { position: relative; isolation: isolate; padding-bottom: 170px; }
+/* この画面だけ、パックに合わせて赤・黒・白にする（案 D。11月2日） */
+.gx-top::before { content: ""; position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at 50% 24%, #fff 0%, #f6efec 44%, #e9e4e2 100%); }
+.gx-hero { position: relative; display: grid; justify-items: center; margin-bottom: -18px; }
+.gx-peek { position: absolute; top: 56px; width: 36%; max-width: 150px; aspect-ratio: 63 / 88; object-fit: cover; border-radius: 10px; border: 3px solid #fff; box-sizing: border-box; box-shadow: 0 12px 26px #1a0a0840; }
+.gx-peek.l { left: -4px; transform: rotate(-12deg); }
+.gx-peek.r { right: -4px; transform: rotate(12deg); }
+.gx-ribbon { position: relative; z-index: 2; display: flex; align-items: baseline; gap: 10px; width: fit-content; margin: 0 auto; padding: 8px 24px 9px; background: #0e0d0c; border-bottom: 3px solid #cf1b10; color: #fff; font: 400 26px/1 var(--f-mark); letter-spacing: 0.04em; transform: rotate(-2deg); box-shadow: 0 8px 18px #1a0a0866; }
+.gx-ribbon small { font: 900 12px/1 var(--f-head); color: #ff6b5e; }
+.gx-dock .btn:not(.ghost, .text) { background: #0e0d0c; box-shadow: 0 6px 16px #1a0a0859; }
+.gx-pick { margin-top: 14px; }
+.gx-pick h3 { margin: 0 0 8px; text-align: center; font: 900 13px/1.2 var(--f-head); letter-spacing: 0.08em; color: #cf1b10; }
+.gx-pick-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 14px; }
+.gx-pick-card { display: grid; justify-items: center; gap: 3px; min-width: 0; padding: 0; border: 0; background: none; color: var(--ink); font-family: inherit; cursor: pointer; }
+.gx-pick-card img { width: 100%; aspect-ratio: 63 / 88; object-fit: cover; border-radius: 8px; border: 2px solid #fff; box-sizing: border-box; box-shadow: 0 6px 14px #1a0a0833; }
+.gx-pick-card b { font-size: 13px; font-weight: 800; }
+.gx-pick-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; }
+.gx-pick-tags i { padding: 1px 6px; border-radius: 8px; color: #fff; font-size: 10px; font-style: normal; font-weight: 800; }
+.gx-pick-tags i.kw { background: #1f2d44; }
 .gx-pack-wrap { display: grid; justify-items: center; padding-top: 14px; animation: gx-floaty 3.6s ease-in-out infinite; }
 /* ガチャの画面ではパックを少し小さく（下のデモまで 1 画面に収める） */
-.gx-pack-wrap .gx-pack { transform: scale(0.86); transform-origin: top center; margin-bottom: -46px; }
-.gx-info { display: grid; justify-items: center; gap: 6px; margin-top: 16px; text-align: center; }
-.gx-info h2 { margin: 0; font-size: 22px; font-weight: 800; }
-.gx-info .gx-sub { margin: 0; font-size: 12px; font-weight: 700; color: var(--ink-2); }
-.gx-rate3 { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 12px 6px; border-radius: var(--r-l); margin-top: 6px; }
-.gx-rate3 > div { display: grid; justify-items: center; gap: 4px; text-align: center; }
-.gx-rate3 > div + div { border-left: 1px solid var(--line); }
-.gx-rate3 b { font-size: 13px; font-weight: 800; }
+.gx-pack-wrap .gx-pack { transform: scale(0.86); transform-origin: top center; margin-bottom: -46px; filter: drop-shadow(0 16px 26px #1a0a0866); }
 .gx-stars { color: #e0a100; letter-spacing: -0.06em; font-size: 13px; }
 .gx-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9; max-width: 480px; margin: 0 auto; display: grid; gap: 6px; padding: 12px 16px max(18px, env(safe-area-inset-bottom, 0px)); border-radius: var(--r-xl) var(--r-xl) 0 0; background: var(--g3); -webkit-backdrop-filter: blur(24px) saturate(1.6); backdrop-filter: blur(24px) saturate(1.6); border-top: 1px solid #fff; box-shadow: var(--sh-3); }
 .gx-pulls { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; }
