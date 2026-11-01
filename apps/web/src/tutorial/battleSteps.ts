@@ -1,4 +1,4 @@
-import { type GameState, TUTORIAL } from "@trends/game-core";
+import { DEFAULT_CONFIG, type GameState, TUTORIAL } from "@trends/game-core";
 import { CATALOG } from "../game/store";
 import type { Face } from "./Guide";
 
@@ -32,7 +32,7 @@ export interface BattleStep {
   done?: (c: Ctx) => boolean;
 }
 
-const { me, foe, character, spell, ace, guard, omenSlot, guardSlot } = TUTORIAL;
+const { me, foe, character, spell, ace, guard, rival, omenSlot, rivalSlot, guardSlot } = TUTORIAL;
 /** カードの名前（『』で囲む） */
 const nm = (id: string) => `『${CATALOG[id]?.name ?? id}』`;
 const darkName = `『${CATALOG[ace]?.dark?.name ?? ""}』`;
@@ -46,16 +46,18 @@ const foePlayer = `[data-master="${foe}"]`;
 const myPlayer = `[data-master="${me}"]`;
 const omen = `[data-slot="${me}:${omenSlot}"]`;
 const CANCEL = ".hand-cancel";
+const END_TURN = ".end-turn";
 
 /** 自分の場の、そのカードの枠 */
 const slotOf = (g: GameState, id: string) => g.players[me].field.findIndex((u) => u?.cardId === id);
 
 /**
- * チュートリアルの対戦の案内（10月27日）。キャラクターを出す → 呪文 → 闇堕ち → プレイヤーへの攻撃 の順。
+ * チュートリアルの対戦の案内（10月27日）。
+ * 11月1日：レンが破壊されるところから見せる（オーナー：「レンが前のターンに破壊されるところもしっかりと表現しておきたい」）。
+ * レンで古参を攻撃して相打ち → 裏向きのカード → ターン終了 → 相手がガードを出す → キャラクターを出す → 呪文 →
+ * 「あと 4 ダメージ足りない」→ さっきのレンを闇堕ち → プレイヤーへの攻撃 の順。
  * 1 つの操作を「カードを選ぶ」「出す場所・相手を選ぶ」の 2 つに分け、選んだかどうかで光らせる場所を変える。
- * 文は用語集（docs/glossary.md）の呼び名だけで書く。**…** は強調、『…』はカードの名前（Rich.tsx）。
- * 11月1日：文を短くし（1 つの吹き出しは 2 行まで）、闇堕ちは「あと 4 ダメージ足りない」から、
- * 前のターンに破壊されたレンが闇堕ちで戻る、の流れでつなげた（友人の声「チュートリアルの闇落ちを前の文脈から丁寧に」）
+ * 文は用語集（docs/glossary.md）の呼び名だけで書き、1 つの吹き出しは 2 行まで。**…** は強調、『…』はカードの名前（Rich.tsx）
  */
 export const BATTLE_STEPS: readonly BattleStep[] = [
   {
@@ -63,8 +65,71 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
     next: "つぎへ",
     view: () => ({
       face: "open",
-      text: `下があなた、上が相手。相手の**ライフ ${TUTORIAL.foeLp}**を 0 にしたら勝ち！`,
+      text: "下があなた、上が相手。相手の**ライフ**を 0 にしたら勝ち！",
       shows: [foePlayer, myPlayer],
+    }),
+  },
+  {
+    id: "life",
+    next: "つぎへ",
+    view: () => ({
+      face: "point",
+      text: `ふつうライフは **${DEFAULT_CONFIG.startLp}**。今回は終わりぎわから始めるから、相手は**残り ${TUTORIAL.foeLp}**！`,
+      shows: [foePlayer],
+    }),
+  },
+  {
+    id: "trade",
+    done: (c) => !c.game.players[foe].field.some((u) => u?.cardId === rival),
+    view: (c) =>
+      c.attacker === omenSlot
+        ? {
+            face: "point",
+            text: `${nm(rival)}を押して、攻撃！`,
+            targets: [foeUnit(rivalSlot)],
+            allow: [ally(omenSlot), CANCEL],
+          }
+        : {
+            face: "point",
+            text: `★5${nm(ace)}で、相手の${nm(rival)}を攻撃しよう！ ${nm(ace)}を押してね。`,
+            targets: [ally(omenSlot)],
+          },
+  },
+  {
+    id: "traded",
+    next: "つぎへ",
+    view: () => ({
+      face: "surprise",
+      text: `${nm(rival)}を破壊！ …でも${nm(ace)}も、反撃で破壊されちゃった。`,
+      shows: [omen],
+    }),
+  },
+  {
+    id: "omenBorn",
+    next: "つぎへ",
+    view: () => ({
+      face: "open",
+      text: "大丈夫！ ★5は破壊されても**裏向き**で残って、あとで**闇堕ち**して戻ってくるの。",
+      shows: [omen],
+    }),
+  },
+  {
+    id: "endTurn",
+    done: (c) => c.game.turn === TUTORIAL.finalTurn && c.game.active === me,
+    view: () => ({
+      face: "point",
+      text: "破壊されたターンは、まだ闇堕ちできないよ。**ターン終了**を押そう！",
+      targets: [END_TURN],
+      shows: [omen],
+    }),
+  },
+  {
+    id: "guard",
+    next: "つぎへ",
+    view: () => ({
+      face: "think",
+      text: `相手は${nm(guard)}を出してきた。**ガード**持ちだから、先にこの子しか攻撃できないの…。`,
+      shows: [foeUnit(guardSlot)],
     }),
   },
   {
@@ -80,7 +145,7 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
           }
         : {
             face: "point",
-            text: `まずは**キャラクター**を出すよ。${nm(character)}を押してね。`,
+            text: `引いた**キャラクター**を出そう。${nm(character)}を押してね。`,
             targets: [handCard(character)],
           },
   },
@@ -91,15 +156,6 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
       face: "open",
       text: "**速攻**持ちだから、出したターンにすぐ攻撃できるよ！",
       shows: [ally(slotOf(c.game, character))],
-    }),
-  },
-  {
-    id: "guard",
-    next: "つぎへ",
-    view: () => ({
-      face: "think",
-      text: `でも${nm(guard)}は**ガード**持ち。先にこの子しか攻撃できないの…。`,
-      shows: [foeUnit(guardSlot)],
     }),
   },
   {
@@ -115,7 +171,7 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
           }
         : {
             face: "point",
-            text: `**呪文**で破壊しちゃおう！ ${nm(spell)}を押してね。`,
+            text: `ガードは**呪文**で破壊しちゃおう！ ${nm(spell)}を押してね。`,
             targets: [handCard(spell)],
           },
   },
@@ -133,7 +189,7 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
     next: "つぎへ",
     view: () => ({
       face: "surprise",
-      text: `そこでこの紫のカード！ 前のターンに破壊された★5${nm(ace)}だよ。`,
+      text: `そこで、さっきの${nm(ace)}！ 印が**炎**になったら、闇堕ちできるよ。`,
       shows: [omen],
     }),
   },
@@ -151,7 +207,7 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
           }
         : {
             face: "point",
-            text: "★5は破壊されても、**闇堕ち**して戻ってくるの。押してみて！",
+            text: `${nm(ace)}を押して、**闇堕ち**させよう！`,
             targets: [omen],
           },
   },

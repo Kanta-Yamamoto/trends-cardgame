@@ -83,6 +83,6 @@ export {
 } from "./record";
 export { nextRandom } from "./rng";
 export { type CpuThought, DEFAULT_SEARCH, evaluate, planTurnSearch, type SearchOptions } from "./search";
-export { createTutorialGame, TUTORIAL } from "./tutorial";
+export { createTutorialGame, TUTORIAL, tutorialFoeTurn } from "./tutorial";
 export * from "./types";
 export { actionFor, actionFrom, eventsFor, HIDDEN_CARD, stateFor } from "./view";

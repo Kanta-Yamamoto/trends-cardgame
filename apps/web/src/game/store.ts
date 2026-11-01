@@ -13,6 +13,7 @@ import {
   planMulligan,
   planTurnSearch,
   RuleError,
+  tutorialFoeTurn,
 } from "@trends/game-core";
 import { create } from "zustand";
 import { beforeBuffs } from "./beforeBuffs";
@@ -107,7 +108,7 @@ export interface RemoteLink {
 interface GameStore {
   /**
    * cpu＝CPU と対戦／online＝ほかの人と対戦（状態はサーバーから届く）／
-   * tutorial＝チュートリアルの 1 ターンだけの対戦（CPU は動かず、記録も送らない。tutorial/Tutorial.tsx）
+   * tutorial＝チュートリアルの対戦（相手は決めた手だけを打ち、記録も送らない。tutorial/Tutorial.tsx）
    */
   mode: "cpu" | "online" | "tutorial";
   /** 相手の名前 */
@@ -517,7 +518,11 @@ export const useGame = create<GameStore>((set, get) => {
       return;
     }
     const my = runId;
-    const actions = planTurnSearch(game, CPU, CATALOG, { onThink: logThought });
+    // チュートリアルの相手は考えず、決めた手（ガードを出してターン終了）だけを打つ
+    const actions =
+      get().mode === "tutorial"
+        ? tutorialFoeTurn(game)
+        : planTurnSearch(game, CPU, CATALOG, { onThink: logThought });
     set({ cpuBusy: true, selection: null });
     const delay = get().cpuDelay;
     const finish = () => {
@@ -774,7 +779,7 @@ export const useGame = create<GameStore>((set, get) => {
       then(commit({ type: "endTurn", player: ME }), (ok) => {
         if (!ok) return;
         set({ selection: null });
-        if (get().mode === "cpu") runCpu();
+        if (get().mode === "cpu" || get().mode === "tutorial") runCpu();
       });
     },
     startOnline: ({ deck, foeName, foeDeckRef, state, link: l }) => {
