@@ -25,7 +25,7 @@
 
 1. 新しいアプリを作る：名前 TRENDS ミームカードバトル、言語 日本語、Bundle ID `com.kakuremiino.trends`、SKU `trends-ios`
 2. アプリ内課金を作る：種類「非消耗型」、製品 ID `com.kakuremiino.trends.unlock`、参照名「全部解放」、価格 480 円、審査用のスクリーンショットを付ける
-3. アプリの「一般情報」にある Apple ID（数字）を Claude に伝える。サーバーの `APPLE_APP_ID` に入れないと、本番の購入を確かめられない（審査の購入は Sandbox なので、無くても審査は進む）
+3. アプリの Apple ID は `6829398027`（`infra/gcp.env` の `APPLE_APP_ID`）。これが無いと、本番の購入を確かめられない
 4. App 情報：プライバシーポリシーの URL は `https://trends-api-523738975867.asia-northeast1.run.app/privacy.html`、サポートの URL は同じサーバーの `/support.html`
 5. App のプライバシー：下の「App のプライバシーの答え」
 6. 年齢の区分：アンケートでは「ランダムな要素のあるアイテム（ルートボックス）」に「はい」と答える

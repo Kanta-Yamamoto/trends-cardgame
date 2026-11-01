@@ -118,6 +118,10 @@ resource "google_cloud_run_v2_service" "api" {
         value = var.google_client_id
       }
       env {
+        name  = "APPLE_APP_ID"
+        value = var.apple_app_id
+      }
+      env {
         name = "DATABASE_URL"
         value_source {
           secret_key_ref {

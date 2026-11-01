@@ -12,7 +12,6 @@
 
 - [ ] Xcode を入れたら、シミュレーターで Swift のコンパイルと買い切りの動きを確かめる
 - [ ] App Store 用のスクリーンショットを作る
-- [ ] App Store Connect の Apple ID をサーバーの `APPLE_APP_ID` に入れる
 
 ### オーナーがやること
 

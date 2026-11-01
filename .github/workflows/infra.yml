@@ -47,7 +47,7 @@ jobs:
         run: |
           set -o pipefail
           if ! terraform apply -auto-approve -input=false -no-color \
-            -var "project_id=${GCP_PROJECT_ID}" -var "region=${GCP_REGION}" -var "google_client_id=${GOOGLE_CLIENT_ID}" 2>&1 | tee apply.log; then
+            -var "project_id=${GCP_PROJECT_ID}" -var "region=${GCP_REGION}" -var "google_client_id=${GOOGLE_CLIENT_ID}" -var "apple_app_id=${APPLE_APP_ID}" 2>&1 | tee apply.log; then
             # エラー文を注釈に出す（ログを開かなくても、失敗の理由が分かるように）
             grep -A6 '^Error' apply.log | head -60 | while IFS= read -r line; do echo "::error::${line}"; done
             exit 1
