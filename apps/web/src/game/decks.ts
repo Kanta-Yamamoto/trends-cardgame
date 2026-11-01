@@ -20,6 +20,8 @@ export interface DeckSel {
   attrs: Attribute[];
   /** デッキ選択のサムネに出す★5（エース）のカード ID */
   ace?: string;
+  /** このデッキの売り（レンタルデッキだけ） */
+  points?: string[];
 }
 
 /**
@@ -62,6 +64,7 @@ export function builtinDeck(id: DeckId): DeckSel {
     cards,
     attrs: attrsOf(cards),
     ace: info.ace ?? aceOf(cards),
+    points: info.points,
   };
 }
 

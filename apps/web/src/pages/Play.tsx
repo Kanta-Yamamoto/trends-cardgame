@@ -457,10 +457,6 @@ function DeckSelect() {
   useEffect(() => warmFx(600), []);
   return (
     <>
-      <p className="deck-facts">
-        <span className="tag">先攻・後攻はランダム</span>
-        <span className="tag">CPU はほかのデッキから1つ</span>
-      </p>
       <DeckGrid onPick={start} cta="対戦する" />
       <details className="rules g2">
         <summary>ルール（かんたん版）</summary>
@@ -779,6 +775,9 @@ export function DeckGrid({
   usePageMusic("deckSelect");
   const [pending, setPending] = useState<DeckSel | null>(null);
   const [chosen, setChosen] = useState<DeckSel | null>(null);
+  /** 「デッキの説明」で開いているデッキ */
+  const [about, setAbout] = useState<DeckSel | null>(null);
+  const closeAbout = () => setAbout(null);
   // 決まりを守れていない自分のデッキ（属性が2つの、前に組んだデッキなど）は選べない。デッキ構築で直してもらう
   const readMine = useCallback(() => {
     const all = loadCustomDecks();
@@ -857,7 +856,11 @@ export function DeckGrid({
           <div className="deck-dock g3">
             <div className="deck-dock-text">
               <b>{chosen?.name ?? "デッキを選んでください"}</b>
-              {chosen && <span>{chosen.text}</span>}
+              {chosen && (
+                <button type="button" className="deck-about" onClick={() => setAbout(chosen)}>
+                  デッキの説明 ›
+                </button>
+              )}
             </div>
             <button
               type="button"
@@ -871,6 +874,7 @@ export function DeckGrid({
           </div>
         </>
       )}
+      {about && <DeckConfirm deck={about} label="閉じる" onConfirm={closeAbout} onCancel={closeAbout} />}
       {pending && confirmLabel && (
         <DeckConfirm
           deck={pending}
@@ -924,6 +928,13 @@ function DeckConfirm({
             <span>{deck.text}</span>
           </div>
         </div>
+        {deck.points && (
+          <ul className="deck-points">
+            {deck.points.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+        )}
         <CostStrip cards={deck.cards} />
         <p className="deck-confirm-lh">
           入っているカード<small>{deck.cards.length}枚</small>
@@ -939,9 +950,11 @@ function DeckConfirm({
           ))}
         </ul>
         <div className="deck-confirm-actions">
-          <button type="button" className="btn ghost lg" onClick={onCancel}>
-            選び直す
-          </button>
+          {onConfirm !== onCancel && (
+            <button type="button" className="btn ghost lg" onClick={onCancel}>
+              選び直す
+            </button>
+          )}
           <button type="button" className="btn lg" data-decide-se onClick={onConfirm}>
             {label}
           </button>
