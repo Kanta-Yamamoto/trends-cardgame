@@ -159,8 +159,7 @@ function ResumeMatch({ resume: { match, closesAt } }: { resume: Resume }) {
       <p>{cpu ? "CPU" : `${foe?.name ?? "相手"} さん`}との対戦の途中です。</p>
       {closesAt === null ? (
         <p className="muted">
-          戻るまでのあいだも、あなたのターンは 60
-          秒で終わり、持ち時間が減っていきます（使い切ると負け）。決着するまで、ほかの対戦はできません。
+          戻るまでのあいだも、あなたのターンは 60 秒で終わります。決着するまで、ほかの対戦はできません。
         </p>
       ) : (
         <p className="muted">
@@ -230,7 +229,6 @@ function RateCard({ token }: { token: string | null }) {
       </div>
       <p className="rate-facts">
         <span className="tag">1ターン 60秒</span>
-        <span className="tag">持ち時間 10分</span>
         <span className="tag">勝つとレートが上がる</span>
       </p>
     </section>

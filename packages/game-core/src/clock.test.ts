@@ -12,7 +12,7 @@ const T0 = 1_000_000;
 const GO = T0 + CLOCK.startGraceMs;
 const endTurn = (s: GameState) => applyAction(s, { type: "endTurn", player: s.active }, catalog).state;
 
-describe("持ち時間", () => {
+describe("時計（1 ターン 60 秒）", () => {
   it("始めは待ちのあとに時計が動き、1 ターンは 60 秒まで。過ぎたらサーバーがターンを終える", () => {
     const s = game();
     const c = startClock(s, T0);
@@ -23,20 +23,21 @@ describe("持ち時間", () => {
     expect(clockFor(c, s, T0 + 1000, "p1")).toMatchObject({ turnLeft: CLOCK.turnMs, holdMs: 4000 });
   });
 
-  it("持ち時間は、自分のターンのあいだ最初の 1 秒から減る（使った分だけ）", () => {
+  it("持ち時間は無い：前のターンに長く使っても、どのターンも 60 秒ある", () => {
     let s = game();
     let c = startClock(s, T0);
     let next = endTurn(s);
-    c = tickClock(c, s, next, GO + 20_000);
+    // p1 は 59 秒使ってターンを終えた
+    c = tickClock(c, s, next, GO + 59_000);
     s = next;
-    expect(c.bank).toEqual({ p1: CLOCK.bankMs - 20_000, p2: CLOCK.bankMs });
-    // p2 の画面が、すぐにターンの始めを見せ終えた
-    c = readyClock(c, s, "p2", s.turn, GO + 20_000);
-    // p2 は 5 秒でターンを終えた → 5 秒減る
+    c = readyClock(c, s, "p2", s.turn, GO + 59_000);
     next = endTurn(s);
-    c = tickClock(c, s, next, GO + 25_000);
-    expect(c.bank).toEqual({ p1: CLOCK.bankMs - 20_000, p2: CLOCK.bankMs - 5_000 });
-    expect(clockDeadline(c, next)).toBe(GO + 25_000 + CLOCK.turnGraceMs + CLOCK.turnMs);
+    c = tickClock(c, s, next, GO + 118_000);
+    s = next;
+    c = readyClock(c, s, "p1", s.turn, GO + 118_000);
+    // p1 の次のターンも 60 秒
+    expect(clockDeadline(c, s)).toBe(GO + 118_000 + CLOCK.turnMs);
+    expect(clockFor(c, s, GO + 118_000, "p1").turnLeft).toBe(CLOCK.turnMs);
   });
 
   it("ターンが変わったら、新しい手番の人の画面が見せ終える（ready）まで、10 秒を上限に時計を待たせる", () => {
@@ -62,20 +63,16 @@ describe("持ち時間", () => {
     expect(readyClock(r, next, "p2", next.turn, GO + 7_000)).toBe(r);
   });
 
-  it("持ち時間を使い切ったら時間切れ負け。残りが 60 秒より少なければ、そこまでしか待たない", () => {
+  it("持ち時間を使い切っても負けにならない（時間切れの負けは無い）。ターンは 60 秒まで待つ", () => {
     const s = game();
     const c = { ...startClock(s, T0), bank: { p1: 10_000, p2: CLOCK.bankMs } };
-    expect(clockDeadline(c, s)).toBe(GO + 10_000);
-    expect(clockFor(c, s, GO + 4_000, "p1").turnLeft).toBe(6_000);
-    const due = clockAction(c, s, GO + 10_000, catalog);
-    expect(due).toEqual({ type: "timeout", player: "p1" });
-    const r = applyAction(s, due as NonNullable<typeof due>, catalog);
-    expect(r.state.winner).toBe("p2");
-    expect(r.events.map((e) => e.type)).toEqual(["timedOut", "won"]);
-    expect(clockDeadline(tickClock(c, s, r.state, GO + 10_000), r.state)).toBeNull();
+    expect(clockDeadline(c, s)).toBe(GO + CLOCK.turnMs);
+    expect(clockFor(c, s, GO + 4_000, "p1").turnLeft).toBe(CLOCK.turnMs - 4_000);
+    expect(clockAction(c, s, GO + 10_000, catalog)).toBeNull();
+    expect(clockAction(c, s, GO + CLOCK.turnMs, catalog)).toEqual({ type: "endTurn", player: "p1" });
   });
 
-  it("画面に渡す時計：手番の人は、ターンの残りと、使っている分を引いた持ち時間。見る人を p1 にそろえる", () => {
+  it("画面に渡す時計：手番の人は、ターンの残り（持ち時間は前の版の画面のために送る）。見る人を p1 にそろえる", () => {
     const s = game();
     const c = startClock(s, T0);
     const v1 = clockFor(c, s, GO + 12_000, "p1");

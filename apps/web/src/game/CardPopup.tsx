@@ -8,18 +8,25 @@ import { HoloCard } from "../cards/HoloCard";
  * カードを押して隠すと、カードを傾ける動きと被るので、ボタンにした。オーナーがモックの D を選んだ）。
  * 闇堕ちを持つカードは、下の切り替えで闇堕ちの姿も見られる。外側・×・Esc で閉じる。
  * nav を渡すと、下に「前へ・次へ」を出して、重ねたまま前後のカードへ移れる（← → キーでも）
+ * 対戦の画面でも、どのカードを詳しく見るときもこの小窓を使う（11月2日）。対戦では bigText で効果文を大きくする
  */
 export function CardPopup({
   card,
   nav,
+  initialDark = false,
+  bigText = false,
   onClose,
 }: {
   card: CardDef;
+  /** 闇堕ちの姿から見せる（場にいる闇堕ちの姿のキャラクター） */
+  initialDark?: boolean;
+  /** 効果文を大きくする（対戦の画面。オーナー：「詳細表示時の効果文が小さすぎる」） */
+  bigText?: boolean;
   /** 並びの中の位置（1 から）と全体の数、前後へ移る関数 */
   nav?: { index: number; total: number; prev: () => void; next: () => void };
   onClose: () => void;
 }) {
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(initialDark && !!card.dark);
   const [textHidden, setTextHidden] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -31,7 +38,12 @@ export function CardPopup({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, nav]);
   return (
-    <div className="card-pop" role="dialog" aria-modal="true" aria-label={`${card.name} を拡大`}>
+    <div
+      className={`card-pop ${bigText ? "big-text" : ""}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${card.name} を拡大`}
+    >
       <button type="button" className="card-pop-bg" aria-label="閉じる" onClick={onClose} />
       <button
         type="button"

@@ -113,12 +113,12 @@ describe("ランダムマッチ・持ち時間・レーティング・ランキ�
     expect((await back).rating).toEqual({ before: 1500, after: 1516 });
   });
 
-  it("持ち時間を使い切ると、サーバーが時間切れの負けにして、レーティングも動く", async () => {
+  it("ターンの 60 秒を過ぎると、サーバーがターンを終える。持ち時間は無く、時間切れの負けにはならない", async () => {
     const { code, ta, tb, a, b, sa } = await pair("じかん", "ぎれ");
-    // 先に両者が引き直す（引き直しのあいだは持ち時間が減らない）
+    // 先に両者が引き直す
     for (const s of [a, b])
       await emit(s, "action", { code, action: { type: "mulligan", player: "p1", handIndexes: [] } });
-    // 手番の人が、ターンの 30 秒と持ち時間 5 分を使い切ったことにする
+    // 手番の人が、ターンの 60 秒と、前の版の持ち時間（10 分）を使い切ったことにする
     const db = app.get<Db>(DB);
     const [row] = await db.select().from(matches).where(eq(matches.code, code));
     const clock = row?.clock;
@@ -127,15 +127,15 @@ describe("ランダムマッチ・持ち時間・レーティング・ランキ�
       .update(matches)
       .set({ clock: { ...clock, since: Date.now() - CLOCK.turnMs - CLOCK.bankMs - 1000 } })
       .where(eq(matches.code, code));
-    // 入り直すと、サーバーが時間切れを見つけて進める
+    // 入り直すと、サーバーが時間切れを見つけて、ターンを終える
     const done = next<UpdateMsg>(a, "update");
     await emit(a, "join", { code });
     const u = await done;
-    expect(u.events.map((e) => e.type)).toEqual(["timedOut", "won"]);
-    const mine = sa.state?.active === "p1";
-    expect(u.state.winner).toBe(mine ? "p2" : "p1");
-    const loser = mine ? ta : tb;
-    expect((await rating(loser)).rating).toBe(1484);
+    expect(u.events.map((e) => e.type)).not.toContain("timedOut");
+    expect(u.state.winner).toBeNull();
+    expect(u.state.active).not.toBe(sa.state?.active);
+    expect((await rating(ta)).rating).toBe(1500);
+    expect((await rating(tb)).rating).toBe(1500);
   });
 
   it("友だちとの部屋は、決着してもレーティングが動かない", async () => {
