@@ -1,0 +1,187 @@
+/* 対戦の盤面（11月2日。Artifact「バトル画面の案」の F2）
+   奥が相手、手前が自分。真ん中の VS の線で陣地を分け、線の上下に文字欄を置く。
+   隙間の決まり：画面の左右 8px、カードの間 6px、場と文字欄の間 12px 以上、文字欄と VS の間 8px。
+   光る枠や札も、隣に被らないこと（オーナー：「隙間がないようなデザインはあんまり良くない」） */
+
+.stage .pstage { --art-field: calc(var(--card-h) - 60px); --art-hand: calc(var(--card-h) - 38px); --pn: #0d2848; --g: calc(6px + (var(--card-h) - 122px) * 0.4); position: relative; height: 100%; display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
+
+/* 奥：相手の陣地 */
+.pfoe { position: relative; z-index: 1; flex: none; display: grid; gap: var(--g); padding: 6px 8px 8px; --pn: #4a1636; background: linear-gradient(180deg, #3d1231e6, #6d1f45d9); }
+.ptop { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr) 80px minmax(0, 1fr); gap: 6px; height: 88px; min-height: 0; align-items: start; }
+.pmenu { width: 44px; height: 44px; padding: 0; border: 0; border-radius: 14px; display: grid; place-items: center; color: #fff; background: #ffffff24; cursor: pointer; }
+.pchips { display: grid; gap: 6px; justify-items: start; align-content: start; min-width: 0; padding-top: 4px; }
+.pchips.right { justify-items: end; }
+.pchips.row-chips { display: flex; flex-wrap: nowrap; gap: 4px; padding: 0; overflow: hidden; }
+.pchip { display: inline-flex; align-items: center; gap: 4px; height: 22px; max-width: 100%; padding: 0 8px; border-radius: 11px; box-sizing: border-box; background: #ffffff24; color: #fff; font-size: 11px; font-weight: 800; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pchip .pip { width: 9px; height: 9px; border-radius: 50%; background: #ffffff33; }
+.pchip .pip.on { background: linear-gradient(135deg, #ff7ac8, #7a6bff); box-shadow: 0 0 6px #c86bff; }
+.pchip.pname { display: block; line-height: 22px; }
+.ppiles button { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.pstates { position: absolute; right: 0; bottom: 0; display: flex; gap: 4px; }
+.pchip.st-shield { background: #7a6bff; }
+.pchip.st-cut { background: #2f8fd0; }
+.pchip.st-delayed { background: #b03a4a; }
+
+/* プレイヤーの顔：まわりの輪がライフの残り */
+.pface { position: relative; display: grid; justify-items: center; align-content: start; width: 80px; height: 88px; }
+.pf-ring { position: relative; width: 80px; height: 80px; padding: 0; border: 0; border-radius: 50%; display: block; background: conic-gradient(var(--c, #ff4d5e) var(--life), #ffffff26 0); box-shadow: 0 0 0 2px #ffffff55, 0 8px 18px #0006; }
+.pface.me .pf-ring { --c: #5cc8ff; width: 84px; height: 84px; }
+.pface.active .pf-ring { box-shadow: 0 0 0 2px #fff, 0 0 18px #ffffff80; }
+.pface.foe.active .pf-ring { box-shadow: 0 0 0 3px #ff8fa3, 0 0 20px #ff8fa3; }
+.pface.locked .pf-ring { filter: grayscale(0.75) brightness(0.7); }
+.pf-ring.targetable { cursor: pointer; animation: paim 0.8s ease-in-out infinite; }
+.pf-ring.drop-over { box-shadow: 0 0 0 6px #fff, 0 0 36px #ff4d5e; }
+@keyframes paim { 0%, 100% { box-shadow: 0 0 0 3px #ff4d5e, 0 0 18px #ff4d5e; } 50% { box-shadow: 0 0 0 5px #ff4d5e, 0 0 26px #ff4d5e; } }
+.pf-photo { position: absolute; inset: 5px; border-radius: 50%; overflow: hidden; background: #dff3ff; }
+.pf-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; display: block; }
+.pf-life { position: absolute; left: 50%; bottom: 0; translate: -50% 0; display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 10px; border-radius: 12px; background: #fff; color: #1f2d44; font-size: 10px; font-weight: 800; white-space: nowrap; box-shadow: 0 2px 6px #0006; }
+.pf-life b { font: 400 18px/1 var(--f-mark); color: #d92c3a; display: inline-block; animation: hit 0.45s ease-out; }
+.pface.me .pf-life b { color: #1f74d2; }
+.pface .atk-pv.leader { position: absolute; left: calc(100% + 8px); right: auto; top: 66px; transform: none; translate: none; animation: none; padding: 5px 8px; border-radius: 12px; background: #ff4d5e; color: #fff; font-size: 11px; font-weight: 800; line-height: 1; white-space: nowrap; pointer-events: none; }
+.pface .atk-pv.leader.lock { background: #5b6b80; }
+
+/* 場：5 枠が横いっぱい。カードは上が絵、下が札と数字の 2 段 */
+.pstage .row { display: grid; grid-template-columns: repeat(5, var(--slot)); gap: 6px; justify-content: center; }
+.pstage .slot { aspect-ratio: auto; width: var(--slot); height: var(--card-h); box-sizing: border-box; border-radius: 12px; padding: 0; }
+.pstage .slot.droppable { border: 2px solid #7ad6ff; background: #7ad6ff33; box-shadow: 0 0 10px #7ad6ff; }
+.pstage .slot.droppable::after { content: "ここに出す"; color: #fff; font-size: 10px; font-weight: 800; }
+.pstage .slot.center:not(.droppable) { border-color: #f2cf7a66; }
+.pstage .mini { aspect-ratio: auto; width: var(--slot); height: var(--card-h); box-sizing: border-box; border-radius: 12px; padding: 0; border: 2px solid #ffffffd9; display: block; overflow: hidden; background-color: var(--pn); }
+.pstage .mini::before, .pstage .mini::after { display: none; }
+.pstage .mini.has-art { background-size: 100% var(--art-field); background-position: 50% 0; background-repeat: no-repeat; }
+.pstage .mini.on-field { box-shadow: 0 3px 8px #0007; transition: transform 0.15s ease; }
+.pstage .mini.unit.ready { border-color: #f2c14e; box-shadow: 0 0 0 1px #f2c14e, 0 3px 8px #0007; }
+.pstage .mini.unit.tired { filter: saturate(0.6) brightness(0.78); }
+.pstage .mini.selected { transform: translateY(-4px); border-color: #fff; box-shadow: 0 0 0 3px #ff4d5e, 0 0 10px #ff4d5e; }
+.pstage .mini.targetable { border-color: #fff; animation: ptarget 0.8s ease-in-out infinite; }
+.pstage .mini.targetable.ally { animation: none; box-shadow: 0 0 0 3px #7dffb0, 0 0 10px #7dffb0; }
+.pstage .mini.buzz-pick { outline: none; animation: none; border-color: #fff; box-shadow: 0 0 0 3px #d77bff, 0 0 10px #d77bff; }
+@keyframes ptarget { 0%, 100% { box-shadow: 0 0 0 2px #ff4d5e, 0 0 6px #ff4d5e; } 50% { box-shadow: 0 0 0 3px #ff4d5e, 0 0 10px #ff4d5e; } }
+.pstage .mini.on-field .mini-kws, .pstage .mini-kws { position: absolute; justify-content: flex-start; left: 3px; right: 3px; top: calc(var(--art-field) + 4px); display: flex; flex-wrap: nowrap; gap: 2px; padding: 0; overflow: hidden; }
+.pstage .mini-kw { flex: none; padding: 1px 3px; border-radius: 6px; font-size: 9px; line-height: 1.25; }
+.pstage .mini-kw.st { background: #ffb13b; color: #3a2200; }
+.pstage .mini-kw.death.mini-skull { position: static; margin: 0; border-radius: 6px; display: grid; place-items: center; width: 16px; padding: 0; height: 14px; background: #c9b6ff; color: #2b1a5c; }
+.pstage .mini-kw.death svg { width: 11px; height: 11px; }
+.pstage .mini.has-pv .mini-kws { visibility: hidden; }
+.pstage .mini .atk-pv:not(.leader) { position: absolute; left: 3px; right: auto; bottom: auto; top: calc(var(--art-field) + 4px); transform: none; translate: none; animation: none; display: block; min-width: 0; box-shadow: none; padding: 1px 4px; border-radius: 6px; background: #ffffffe6; color: #1f2d44; font-size: 9px; font-weight: 800; line-height: 1.25; white-space: nowrap; }
+.pstage .mini .atk-pv.kill:not(.leader) { background: #7fe3c0; color: #06352a; }
+.pstage .mini .atk-pv.die { background: #ff8fa3; color: #4a0f1c; }
+.pstage .mini .atk-pv.both { background: #ffb13b; color: #3a2200; }
+.pstage .mini.on-field .mini-stats, .pstage .mini-stats { position: absolute; left: 4px; right: 4px; bottom: 4px; display: flex; justify-content: space-between; padding: 0; }
+.pstage .mini-atk, .pstage .mini-hp { box-sizing: border-box; min-width: 0; width: 23px; height: 23px; padding: 0; font-size: 13px; }
+.pstage .mini-ready { position: absolute; top: 4px; right: 4px; }
+
+/* 真ん中：VS の線と文字欄 */
+.pmid { position: relative; z-index: 3; flex: none; height: 40px; display: grid; grid-template-columns: 1fr 44px 1fr; align-items: center; padding: 0 8px; }
+.pmid::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 4px; margin-top: -2px; background: #fff; box-shadow: 0 0 14px #ffffffb0; }
+.pturn { position: relative; justify-self: start; height: 26px; padding: 0 12px; box-sizing: border-box; border-radius: 13px; display: inline-flex; align-items: center; color: #fff; background: #0f2340; border: 2px solid #fff; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.pturn.side { justify-self: end; border: 0; }
+.pturn.side.mine { background: #7ad6ff; color: #12365c; }
+.pturn.side.foe { background: #ff8fa3; color: #3a0f2a; }
+.pvs { position: relative; justify-self: center; width: 40px; height: 40px; box-sizing: border-box; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #0f2340; border: 2px solid #fff; box-shadow: 0 0 10px #ffffff90; font: 700 16px/1 "Zen Old Mincho", serif; }
+.pmsg { position: relative; flex: none; display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; height: 30px; margin: 0; padding: 0 12px; box-sizing: border-box; border-radius: 12px; color: #fff; background: #00000040; font-size: 12px; font-weight: 700; line-height: 1; }
+.pmsg span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pmsg i { flex: none; width: 18px; height: 24px; border-radius: 4px; background-size: cover; background-position: 50% 20%; }
+.pmsg.me.ask { background: #0b2544d9; box-shadow: 0 0 0 2px #7ad6ff; font-size: 13px; font-weight: 800; }
+.pmsg.me.err { background: #5a1420e6; box-shadow: 0 0 0 2px #ff8fa3; font-weight: 800; }
+.pmsg.foe.ask { background: #3a0f2ad9; box-shadow: 0 0 0 2px #ff8fa3; font-weight: 800; }
+
+/* 手前：自分の陣地 */
+.pself { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--g); padding: 8px 8px 8px; }
+.plow { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; }
+.pme { position: relative; flex: none; display: grid; grid-template-columns: 112px 1fr 112px; height: 118px; }
+.pme-left { display: grid; align-content: start; gap: 4px; }
+.pcost { margin: 2px 0 0; display: flex; align-items: baseline; gap: 4px; height: 36px; color: #fff; font-size: 12px; font-weight: 800; }
+.pcost b { font: 400 34px/1 var(--f-mark); color: #7fdcff; display: inline-block; animation: pop 0.3s ease-out; }
+.pcost small { font: 400 17px/1 var(--f-mark); color: #cfe6f7; }
+.pstage .buzz-btn { position: relative; width: 112px; height: 52px; padding: 0; display: grid; align-content: center; justify-items: center; gap: 2px; font: 900 16px/1 var(--f-head); border: 2px solid #fff; border-radius: 18px; }
+.pstage .buzz-btn { color: #fff; }
+.pstage .buzz-btn small { font: 800 11px/1.2 var(--f-ui); }
+.pstage .buzz-btn:disabled { background: #5b6b80; opacity: 1; }
+.pme-right { display: grid; align-content: start; gap: 4px; }
+.pme-right .btn { width: 112px; padding: 0; }
+.btn.ghost.phand-open { height: 36px; font-size: 13px; color: #fff; background: #ffffff1f; border: 2px solid #ffffffb0; box-shadow: none; }
+.pstage .end-turn { height: 50px; font: 900 16px/1 var(--f-head); border: 2px solid #fff; border-radius: 18px; }
+.pstage .end-turn.now { animation: none; }
+.pstage .end-turn:disabled { background: #5b6b80; opacity: 1; font-size: 14px; }
+.pme-foot { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 6px; pointer-events: none; }
+.pme-foot > * { pointer-events: auto; }
+.pme-foot .pchips { width: 112px; }
+.pface.me { position: relative; justify-self: center; align-self: center; width: 116px; height: 116px; display: block; }
+.pface.me .pf-ring { position: absolute; left: 16px; top: 16px; }
+.pface.me .pf-life { bottom: 14px; height: 22px; }
+.pgems { position: absolute; inset: 0; pointer-events: none; }
+.pgems i { position: absolute; left: 50%; top: 50%; width: 11px; height: 11px; margin: -5.5px; border-radius: 3px; background: #ffffff1f; transform: rotate(var(--a)) translateY(-52px) rotate(45deg); }
+.pgems i.left { background: #ffffff4d; }
+.pgems i.on { background: linear-gradient(135deg, #d6f6ff, #2fb7f2); box-shadow: 0 0 8px #5cd0ff; }
+.pgems i.fresh { animation: pgem 0.7s ease-out; }
+@keyframes pgem { from { scale: 2.6; background: #fff; } }
+
+/* 手札：場と同じ 5 列。6 枚からは同じ大きさのまま横に送る */
+.phand-zone { flex: none; }
+.phand { position: relative; }
+.pstage .hand { position: relative; display: grid; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: var(--slot); gap: 6px; padding: 0; justify-content: start; height: var(--card-h); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.pstage .hand::-webkit-scrollbar { display: none; }
+.pstage .hand.many { margin-right: -8px; padding-right: 8px; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
+.pstage .hand .mini { width: var(--slot); margin: 0; transform: none; touch-action: pan-x; }
+.pstage .hand .mini + .mini { margin: 0; }
+.pstage .hand .mini.has-art { background-size: 100% var(--art-hand); }
+.pstage .hand .mini.in-hand.playable { border-color: #79e0c4; box-shadow: 0 3px 8px #0007; }
+.pstage .hand .mini.in-hand.short { filter: none; border-color: #ffffff66; }
+.pstage .hand .mini.in-hand.short.has-art { background-blend-mode: multiply; background-color: #4a5a70; }
+.pstage .hand .mini.in-hand.selected { z-index: 1; transform: none; border-color: #fff; box-shadow: 0 0 0 2px #7ad6ff; }
+.pstage .hand .mini-cost { left: 4px; top: 4px; width: 26px; height: 26px; }
+.pstage .hand .mini-top, .pstage .hand .mini-stars, .pstage .hand .mini-name, .pstage .hand .mini-darkmark, .pstage .hand .mini-kws { display: none; }
+.pstage .hand .mini.is-post { border-radius: 12px; }
+.pstage .hand .mini-postmark { position: absolute; left: 5px; bottom: 9px; margin: 0; padding: 1px 4px; border-radius: 6px; background: #ffffffe6; color: #1f2d44; font-size: 9px; font-weight: 800; line-height: 1.25; }
+.pstage .hand .mini-postmark::before, .pstage .hand .mini-postmark::after { display: none; }
+
+/* 手札の場所に重ねる確認の帯 */
+.pask { position: absolute; left: -8px; right: -8px; bottom: -8px; z-index: 10; display: flex; gap: 12px; height: calc(var(--card-h) + 16px); box-sizing: border-box; padding: 12px 14px; border-radius: 22px 22px 0 0; color: #fff; background: #0b2544; box-shadow: 0 -8px 24px #0008; }
+.pask-art { flex: none; width: 72px; height: 100px; border-radius: 10px; background-size: cover; background-position: 50% 20%; }
+.pask-body { min-width: 0; flex: 1; display: grid; align-content: start; gap: 6px; }
+.pask-body b { font: 900 16px/1.25 var(--f-head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pask-body > span { font-size: 12px; font-weight: 700; line-height: 1.4; }
+.pask-acts { display: flex; gap: 8px; margin-top: 2px; }
+.pask-acts .btn { flex: 1; min-width: 0; height: 46px; padding: 0 8px; border-radius: 16px; font-size: 14px; }
+.pask-acts .btn.ghost.hand-cancel { position: static; flex: 0 0 84px; width: auto; height: 46px; max-height: none; writing-mode: horizontal-tb; display: inline-flex; align-items: center; justify-content: center; color: #fff; background: none; border: 2px solid #ffffffb0; box-shadow: none; }
+
+/* 下半分のシート（手札・場のカード・引き直し・闇堕ち・メニュー） */
+.psheet { position: absolute; left: -8px; right: -8px; top: 0; bottom: -8px; z-index: 11; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box; padding: 14px 12px 12px; border-radius: 24px 24px 0 0; color: #fff; background: #0b2544; box-shadow: 0 -10px 30px #0008; }
+.hs-reel { position: relative; flex: 1; min-height: 0; overflow: hidden; margin-inline: -12px; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.hs-card { position: absolute; left: 50%; top: 0; height: 100%; aspect-ratio: 63 / 88; padding: 0; border: 0; background: none; transform: translateX(-50%); transition: transform 0.25s ease, filter 0.25s ease; cursor: pointer; }
+.hs-card.far { filter: brightness(0.5); }
+.hs-card .holo { pointer-events: none; width: 100%; height: 100%; }
+.look-sheet .hs-card, .omen-sheet .hs-card { cursor: zoom-in; }
+.hs-dots { flex: none; display: flex; justify-content: center; gap: 6px; height: 8px; }
+.hs-dots i { width: 8px; height: 8px; border-radius: 50%; background: #ffffff4d; }
+.hs-dots i.on { background: #fff; }
+.ps-foot { flex: none; display: flex; align-items: center; gap: 8px; }
+.ps-foot .btn.lg { flex: 1; min-width: 0; width: auto; height: 56px; border-radius: 18px; }
+.btn.ghost.ps-back { flex: 0 0 72px; height: 56px; padding: 0; border-radius: 18px; color: #fff; background: none; border: 2px solid #ffffffb0; box-shadow: none; }
+.ps-note { flex: none; margin: 0; font-size: 12px; font-weight: 700; line-height: 1.5; text-align: center; }
+.ps-note.sub { color: #cfe6f7; }
+.mull-sheet .mulligan-hand { flex: 1; min-height: 0; display: flex; flex-wrap: nowrap; justify-content: center; align-items: center; gap: 6px; padding: 0; }
+.mull-sheet .mulligan-card { flex: 1 1 0; width: auto; max-width: 112px; min-width: 0; }
+.mull-sheet .mulligan-left { flex: none; font: 800 13px/1 var(--f-ui); color: #fff; white-space: nowrap; }
+.mull-sheet .mulligan-left.hurry { color: #ff8fa3; }
+.pmenu-sheet { gap: 0; }
+.pm-row { display: flex; align-items: center; gap: 8px; width: 100%; flex: none; height: 52px; padding: 0 8px; border: 0; border-bottom: 1px solid #ffffff26; background: none; color: #fff; font: 800 15px/1 var(--f-ui); text-align: left; cursor: pointer; }
+.pm-row svg { width: 20px; height: 20px; }
+.pm-row.ask { color: #ff8fa3; }
+.pmenu-sheet .ps-foot { margin-top: auto; padding-top: 8px; }
+
+/* 相手が出したカードは、相手の陣地の上に重ねて見せる */
+.pfoe .foe-reveal { position: absolute; left: 0; right: 0; top: 0; bottom: 42px; z-index: 6; display: grid; place-items: center; background: #0a0f1fb8; pointer-events: none; }
+.pfoe .foe-reveal .fr-card { width: auto; height: calc(100% - 12px); aspect-ratio: 63 / 88; }
+.pfoe .foe-reveal .holo { width: 100%; height: 100%; }
+
+/* ターンの切り替え：VS の線の上に帯を重ねる */
+.pmid .turn-banner { position: absolute; inset: 0; z-index: 4; display: block; }
+.pmid .tb-band { display: flex; align-items: center; justify-content: center; gap: 10px; height: 100%; padding: 0; background: #0f2340; border-block: 2px solid #fff; box-sizing: border-box; }
+.pmid .turn-banner.foe .tb-band { background: #3a0f2a; }
+.pmid .turn-banner.mine .tb-band { background: #0f2340; }
+.pmid .tb-band small { font: 400 16px/1 var(--f-mark); letter-spacing: 0; color: #7ad6ff; }
+.pmid .tb-band strong { font: 900 20px/1 var(--f-head); letter-spacing: 0; text-shadow: none; }
+
+.pstage .post-zone { position: absolute; inset: 0; z-index: 2; }

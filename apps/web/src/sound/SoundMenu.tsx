@@ -69,7 +69,7 @@ function LevelRow({ kind, label, value }: { kind: SoundKind; label: string; valu
 }
 
 /** 音の大きさのボタン。押すと、その下に音楽と効果音の大きさを変える小さな窓が開く（曲の流れる画面に置く。設定は 1 つで、どの画面にも効く） */
-export function SoundMenu({ className }: { className: string }) {
+export function SoundMenu({ className, label }: { className: string; label?: string }) {
   const levels = useSoundLevels();
   const [place, setPlace] = useState<Place | null>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -126,6 +126,7 @@ export function SoundMenu({ className }: { className: string }) {
             </>
           )}
         </svg>
+        {label}
       </button>
       {place &&
         createPortal(

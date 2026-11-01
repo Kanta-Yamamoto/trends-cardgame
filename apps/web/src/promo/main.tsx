@@ -19,6 +19,7 @@ import "../cards/rare.css";
 import "../cards/rare5.css";
 import "../cards/stats.css";
 import "../styles/app.css";
+import "../styles/battle.css";
 import "./promo.css";
 import { HoloCard } from "../cards/HoloCard";
 import { watchFrame } from "../frame";

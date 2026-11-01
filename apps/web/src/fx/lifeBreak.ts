@@ -2,7 +2,7 @@ import { gsap } from "gsap";
 import { FINISH_HIT, playSe } from "../sound/se";
 
 /**
- * 決着：負けた側のプレイヤーの帯（ライフのゲージ）が砕け、破片が画面のこちらへ飛んできて、それをきっかけに結果へ切り替わる。
+ * 決着：負けた側のプレイヤーのアイコンが砕け（11月2日。元はライフの帯。オーナー：「割れるのは相手のアイコンでいいかな」）、破片が画面のこちらへ飛んできて、それをきっかけに結果へ切り替わる。
  * オーナー：「体力が0以下になったら、プレイヤーの体力ゲージが壊れるか破壊されるかして、はっきり負けた、勝ったを認識させた上で
  * その破壊された破片が画面のこちらまで飛んできて、その破片を暗転とか切り替えのきっかけにして勝ち負けのリザルト画面を表示する」。
  * モックへの直し（10月27日）：「破壊された瞬間がスローモーションになればいい」「飛んでくる時は周りがボケてる感じで、
@@ -41,7 +41,9 @@ export interface LifeBreakOptions {
   board?: HTMLElement | null;
   /** ひびの出どころ（ライフのゲージ）。無ければ帯の真ん中 */
   gauge?: HTMLElement | null;
-  /** 破片の色味（負けた側のゲージの色） */
+  /** 砕けるアイコンの絵。あれば丸の形に切り抜き、破片はこの絵のかけらになる */
+  image?: string;
+  /** 破片の色味（負けた側のライフの色） */
   tint?: string;
   /**
    * 砕けるのが見ている人の帯か（負け）。負けは破片が黒く、まわりが色を失って暗く沈む。
@@ -145,6 +147,35 @@ function clipToRect(poly: P[], w: number, h: number): P[] {
   pts = cut(pts, (p) => p.x <= w, onX(w));
   pts = cut(pts, (p) => p.y >= 0, onY(0));
   pts = cut(pts, (p) => p.y <= h, onY(h));
+  return pts;
+}
+
+/** 丸の中に切り抜く（丸を 32 角形とみなして、1 辺ずつ切る） */
+function clipToCircle(poly: P[], w: number, h: number): P[] {
+  const cx = w / 2;
+  const cy = h / 2;
+  const limit = (Math.min(w, h) / 2) * Math.cos(Math.PI / 32);
+  let pts = poly;
+  for (let i = 0; i < 32 && pts.length > 2; i++) {
+    const t = (i / 32) * Math.PI * 2;
+    const over = (p: P) => (p.x - cx) * Math.cos(t) + (p.y - cy) * Math.sin(t) - limit;
+    const out: P[] = [];
+    const src = pts;
+    src.forEach((cur, k) => {
+      const prev = src[(k + src.length - 1) % src.length] as P;
+      const a = over(prev);
+      const b = over(cur);
+      const cross = () => ({
+        x: prev.x + ((cur.x - prev.x) * a) / (a - b),
+        y: prev.y + ((cur.y - prev.y) * a) / (a - b),
+      });
+      if (b <= 0) {
+        if (a > 0) out.push(cross());
+        out.push(cur);
+      } else if (a <= 0) out.push(cross());
+    });
+    pts = out;
+  }
   return pts;
 }
 
@@ -395,7 +426,7 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
     const next = vtx[(i + 1) % RAYS] as P[];
     ray.forEach((v, j) => {
       const poly = j === 0 ? [o, v, next[0] as P] : [ray[j - 1] as P, v, next[j] as P, next[j - 1] as P];
-      const pts = clipToRect(poly, w, h);
+      const pts = opts.image ? clipToCircle(poly, w, h) : clipToRect(poly, w, h);
       if (pts.length < 3) return;
       const { area, c } = areaOf(pts);
       if (area < 24) return;
@@ -413,6 +444,11 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
       sv.style.overflow = "visible";
       const id = `lb-glass-${++glassId}`;
       const local = pts.map((p) => `${(p.x - minX).toFixed(1)},${(p.y - minY).toFixed(1)}`).join(" ");
+      // アイコンは絵のかけらにする。自分のアイコン（負け）は、暗い色を重ねて沈める
+      const pic = opts.image
+        ? `<clipPath id="${id}-p"><polygon points="${local}"/></clipPath><image href="${opts.image}" x="${-minX}" y="${-minY}" width="${w}" height="${h}" preserveAspectRatio="xMidYMin slice" clip-path="url(#${id}-p)"/>`
+        : "";
+      const paint = opts.image ? (mine ? "#03060c99" : "none") : `url(#${id})`;
       sv.innerHTML =
         `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">` +
         `<stop offset="0" stop-color="${glass.a}" stop-opacity="0.97"/>` +
@@ -421,7 +457,7 @@ export function lifeBreak(bar: HTMLElement, opts: LifeBreakOptions): LifeBreak {
         `<linearGradient id="${id}-s" x1="-1" y1="0" x2="-0.4" y2="0.3"><stop offset="0" stop-color="#ffffff" stop-opacity="0"/>` +
         `<stop offset="0.5" stop-color="#ffffff" stop-opacity="${glass.shine}"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient></defs>` +
         // ふちの線は、大きくしても太らない（画面いっぱいにしたとき、白い太い帯にならないように）
-        `<polygon points="${local}" fill="url(#${id})" stroke="${glass.edge}" stroke-opacity="${glass.edgeOp}" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` +
+        `${pic}<polygon points="${local}" fill="${paint}" stroke="${glass.edge}" stroke-opacity="${glass.edgeOp}" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` +
         `<polygon points="${local}" fill="url(#${id}-s)"/>` +
         `<polygon points="${local}" fill="${end === "white" ? "#ffffff" : "#03060c"}" opacity="0"/>`;
       el.appendChild(sv);

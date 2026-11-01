@@ -12,6 +12,12 @@ export interface NewsItem {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: "2026-11-02-board",
+    date: "11/2",
+    tag: "更新",
+    title: "対戦の画面を作り直しました。相手のプレイヤーを攻撃して、ライフを 0 にすると勝ちです",
+  },
+  {
     id: "2026-11-02-sound",
     date: "11/2",
     tag: "更新",

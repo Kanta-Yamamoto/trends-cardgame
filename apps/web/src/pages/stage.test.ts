@@ -8,8 +8,8 @@ describe("measureStage（対戦画面の舞台の大きさ）", () => {
     expect(pixel.height).toBe(860); // 細長い画面は最大の高さ
     expect(pixel.width * pixel.scale).toBeLessThanOrEqual(412 + 0.01);
     expect(pixel.height * pixel.scale).toBeLessThanOrEqual(915 + 0.01);
-    expect(pixel.slot).toBe(71); // 5 枠が横いっぱい
-    expect(pixel.hand).toBe(124);
+    expect(pixel.slot).toBe(70); // 5 枠が横いっぱい
+    expect(pixel.card).toBe(146);
 
     const iphone = measureStage(393, 852, { t: 59, r: 0, b: 34, l: 0 });
     expect(iphone.height).toBeCloseTo(390 / (393 / 759), 0);
@@ -20,7 +20,7 @@ describe("measureStage（対戦画面の舞台の大きさ）", () => {
   it("縦長の PC の窓も、縦の舞台を中央に置く（高さは 740 まで低くする）", () => {
     const s = measureStage(768, 1024);
     expect(s.height).toBe(740);
-    expect(s.hand).toBe(84);
+    expect(s.card).toBe(122);
     expect(s.scale).toBeCloseTo(1024 / 740);
   });
 

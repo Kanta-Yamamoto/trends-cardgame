@@ -295,37 +295,12 @@ button { font: inherit; color: inherit; }
 .mini.targetable.ally { box-shadow: 0 0 0 2px #7dffb0, 0 0 24px #7dffb099; animation: none; cursor: pointer; }
 .mini.targetable, .pb-main.targetable { cursor: pointer; box-shadow: 0 0 0 2px var(--foe), 0 0 24px #ff5a6a99; animation: threat 0.9s ease-in-out infinite; }
 @keyframes threat { 50% { box-shadow: 0 0 0 2px var(--foe), 0 0 8px #ff5a6a55; } }
-
-.hand { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 10px; padding-top: 6px; }
 @media (hover: hover) { .mini.in-hand:hover:not(:disabled) { transform: translateY(-6px); } }
 .mini.in-hand.short { filter: grayscale(0.7) brightness(0.65); }
 .mini.in-hand.playable { box-shadow: 0 0 0 1.5px #7dffb0aa, 0 10px 22px -12px #000; }
 .mini.in-hand.selected { transform: translateY(-12px) scale(1.05); box-shadow: 0 0 0 2px var(--gold), 0 0 26px #f2cf7a99; }
-
-.pbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.pb-main {
-  flex: 1; display: flex; align-items: center; gap: 8px 18px; flex-wrap: wrap; padding: 10px 14px; border-radius: 14px; font-size: 12.5px; text-align: left;
-  --text: var(--ink); --muted: var(--ink-2); --line: #1f2d441f; --accent: var(--pri-2);
-  color: var(--text); border: 1px solid #ffffffe6; background: #ffffffe6; box-shadow: 0 6px 16px #0a1c3459;
-}
-.pbar.foe .pb-main { background: #fff3f5eb; }
 button.pb-main:disabled { cursor: default; }
-.pb-name { font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 6px; }
-.turn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold); }
-.pb-lp { display: flex; align-items: center; gap: 8px; }
-.pb-lp b { font: 800 18px/1 var(--f-mark); display: inline-block; animation: hit 0.45s ease-out; }
 @keyframes hit { 0% { transform: scale(1.5); color: var(--foe); } 100% { transform: none; } }
-.lp-bar { width: 90px; height: 6px; border-radius: 99px; background: #1f2d441f; overflow: hidden; }
-.lp-bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--pri-2), #8fdcfb); transition: width 0.5s cubic-bezier(.3, 1.4, .5, 1); }
-.pbar.foe .lp-bar span { background: linear-gradient(90deg, var(--foe), #ffb0b8); }
-.pb-mana { display: flex; align-items: center; gap: 6px; }
-.pb-mana b { font: 800 13px/1 var(--f-mark); color: var(--pri-3); }
-.pips { display: flex; gap: 3px; }
-.pips i { width: 8px; height: 8px; border-radius: 50%; background: #1f2d4424; }
-.pips i.on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
-.pb-count { color: var(--muted); }
-
-.pb-guard { font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 99px; background: #1f2d4414; color: var(--text); }
 
 .sheet { position: fixed; inset: 0; z-index: 25; display: grid; align-items: end; justify-items: center; animation: fade 0.2s ease-out; }
 .sheet-bg { position: absolute; inset: 0; border: 0; background: #14284673; backdrop-filter: blur(4px); cursor: pointer; }
@@ -368,11 +343,6 @@ button.pb-main:disabled { cursor: default; }
 .board { position: relative; border-radius: 18px; padding: 10px; transition: box-shadow 0.4s, background 0.4s; }
 .board.turn-me { background: linear-gradient(180deg, transparent 45%, #5cc8ff10); box-shadow: inset 0 -2px 0 #5cc8ff55; }
 .board.turn-foe { background: linear-gradient(0deg, transparent 45%, #ff4d5e12); box-shadow: inset 0 2px 0 #ff4d5e66; }
-.pb-main { transition: opacity 0.3s, box-shadow 0.3s; }
-.pb-main:not(.active) { opacity: 0.72; }
-.pbar.me .pb-main.active { box-shadow: 0 0 0 1.5px var(--me), 0 0 22px #5cc8ff44; opacity: 1; }
-.pbar.foe .pb-main.active { box-shadow: 0 0 0 1.5px var(--foe-c), 0 0 22px #ff4d5e44; opacity: 1; }
-.pb-main.targetable { opacity: 1; }
 .end-turn.now { animation: nudge 1.8s ease-in-out infinite; }
 @keyframes nudge { 0%, 70%, 100% { box-shadow: 0 0 0 0 #9fe3fb00, 0 8px 20px #0a1c3480; } 80% { box-shadow: 0 0 0 7px #9fe3fbaa, 0 8px 20px #0a1c3480; } }
 
@@ -403,11 +373,8 @@ button.pb-main:disabled { cursor: default; }
 
 /* 山札とトラッシュ */
 .piles { display: flex; gap: 10px; align-items: center; }
-.pile { position: relative; padding: 0; border: 0; background: none; display: grid; justify-items: center; align-content: center; gap: 2px; font-size: 10px; color: var(--muted); }
-.pile small { font-size: 10px; }
 button.pile { cursor: pointer; }
 button.pile:disabled { cursor: default; }
-.pile-count { position: absolute; top: -6px; right: 0; min-width: 22px; height: 20px; padding: 0 5px; border-radius: 99px; display: grid; place-items: center; font: 800 12px/1 var(--f-mark); color: var(--night); background: var(--text); box-shadow: 0 2px 6px #000a; z-index: 1; font-variant-numeric: tabular-nums; }
 /* カードの裏面：闇堕ちの色（紫黒の地に火の粉、真ん中に紫の雫）。裏向きになるのは闇堕ちだけなので、山札もこの面にそろえる */
 .cardback, .fx-cardback {
   border-radius: 6px; border: 1px solid #d6a8ffaa;
@@ -463,47 +430,18 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 /* 手札は扇のように持つ。--f は真ん中からのずれ（左がマイナス）。端ほど傾いて少し下がる */
 /* gap は 0（重なり具合は margin で決める。元の .hand の gap が残ると、枚数が多いときに端がはみ出す） */
 .stage .hand { --step: min(4.5deg, calc(24deg / var(--n))); display: flex; gap: 0; justify-content: center; align-items: end; padding: 14px 14px 0; }
-.stage .hand .mini {
-  flex: none; width: calc(var(--slot, 100px) * 0.92); transform-origin: 50% 120%;
-  transform: rotate(calc(var(--f, 0) * var(--step))) translateY(calc(var(--f, 0) * var(--f, 0) * 1.6px));
-  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
-}
-.stage .hand .mini + .mini { margin-left: min(-10px, calc((100% - var(--slot, 100px) * (0.92 * var(--n) + 0.7)) / (var(--n) - 1))); }
 /* PC はホバー、スマホは押して選んだときに、真っすぐ持ち上げて大きく見せる */
 @media (hover: hover) {
   .stage .hand .mini.in-hand:hover:not(:disabled) { z-index: 3; transform: translateY(-22px) scale(1.12); }
 }
-.stage .hand .mini.in-hand.selected { z-index: 4; transform: translateY(-26px) scale(1.14); }
-
 
 /* ---------- 縦の舞台（スマホの縦持ち：幅 390 を基準に、上から相手→場→自分→説明→手札） ---------- */
 /* 余った高さは、場の間（案内とターン終了の行）と手札の上に 3:2 で配る */
 .stage .pstage { height: 100%; display: grid; grid-template-rows: auto auto auto auto auto minmax(0, 1fr); align-content: start; gap: 6px; padding: 6px; border-radius: 0; }
-.ptop { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; min-height: 30px; }
-.ptop-left { display: flex; gap: 6px; justify-content: start; }
-.ptop .quit { padding: 5px 10px; font-size: 11px; }
-.ptop .turn-pill { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; line-height: 1; padding: 7px 14px 6px; white-space: nowrap; }
 /* TURN の数字は Lilita One（太さは1つだけ）。太字を重ねると線が太ってずれて見えるので、400 のまま・字間を詰めて文字の高さをそろえる */
 .ptop .turn-pill small { font: 400 12px/1 var(--f-mark); font-synthesis: none; letter-spacing: 0.06em; opacity: 0.8; padding-top: 1px; }
-.ptop-right { display: flex; gap: 6px; justify-content: end; }
-.ptop .plog, .ptop .resign { padding: 5px 10px; font-size: 11px; }
-.ptop .pmusic { padding: 4px 8px; }
-.ptop .pmusic svg { display: block; width: 15px; height: 15px; }
-.ptop .resign.ask { color: #fff; background: #c8303f; border-color: #ffb0b0; }
 /* マスター：左に名前・ライフ、右に手札・話題力。その右に山札とオワコン */
 .pstage .pbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
-.pstage .pb-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name count" "lp mana"; gap: 3px 10px; padding: 7px 10px; font-size: 11px; border-radius: 12px; }
-.pstage .pb-name { grid-area: name; font-size: 12.5px; flex-wrap: wrap; gap: 4px 6px; }
-.pstage .pb-count { grid-area: count; justify-self: end; font-size: 11px; }
-.pstage .pb-lp { grid-area: lp; gap: 6px; }
-.pstage .pb-lp b { font-size: 17px; }
-.pstage .lp-bar { flex: 1; width: auto; max-width: 110px; }
-.pstage .pb-mana { grid-area: mana; justify-self: end; gap: 4px; }
-.pstage .pips { gap: 2px; }
-.pstage .pips i { width: 7px; height: 7px; }
-.pstage .pb-guard, .pstage .pb-shield, .pstage .pb-delayed { font-size: 9.5px; padding: 1px 6px; margin: 0; }
-.pstage .piles { gap: 8px; }
-.pstage .pb-main .atk-pv { right: 6px; top: -12px; }
 /* 場：5 枠が横いっぱい。間の行は案内文と「ターン終了」 */
 .pfield { position: relative; display: grid; grid-template-rows: auto auto; gap: 18px; padding-block: 4px; }
 /* 反則のときだけ、場と場の間に短く出て消える */
@@ -517,45 +455,19 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
   --text: var(--ink); --muted: var(--ink-2); --line: #1f2d441f;
   color: var(--text); border: 1px solid #ffffffe6; background: #ffffffe6; box-shadow: 0 6px 16px #0a1c3459;
 }
-.ps-main { display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: center; gap: 8px; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.peek-strip.empty { grid-template-columns: minmax(0, 1fr); place-items: center; text-align: center; font-size: 11px; color: var(--muted); line-height: 1.5; padding: 6px 14px; }
-.peek-strip.is-dark { border-color: #b06bff; background: #f5edffeb; }
-.ps-art { width: 40px; height: 50px; border-radius: 6px; background-size: cover; background-position: center 25%; box-shadow: 0 0 0 1px #ffffff33; }
-.peek-strip.is-post .ps-art { border-radius: 10px 10px 10px 3px; }
-.ps-body { display: grid; gap: 2px; min-width: 0; }
-.ps-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
-.ps-name { font-size: 12.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.ps-name small { margin-left: 5px; font-size: 9.5px; font-weight: 700; color: var(--muted); }
-.peek-strip.is-dark .ps-name { color: #7a2cc0; }
-.ps-meta { display: inline-flex; align-items: center; gap: 3px; flex: none; font: 800 13px/1 var(--f-mark); }
-.ps-meta i { font-style: normal; }
-.ps-meta i small { font-size: 9px; color: var(--muted); }
-.ps-cost { width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 11px; color: #fff; background: #0b1018; box-shadow: 0 0 0 1.5px var(--gold); margin-right: 4px; }
 .ps-post { font: 800 9.5px/1 var(--f-ui); padding: 2px 6px; border-radius: 99px; background: #f6f2ea; color: #1b2230; box-shadow: 0 0 0 1px #1f2d4426; }
-.ps-effect { font-size: 10.5px; line-height: 1.4; color: #2f3d55; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.ps-effect em { font-style: normal; font-weight: 800; color: var(--gold-ink); margin-right: 5px; }
-.ps-kw { font-weight: 800; color: var(--gold-ink); margin-right: 5px; }
-.ps-effect .ps-state { color: var(--danger); }
-.ps-zoom { flex: none; font-size: 10px; font-weight: 800; color: var(--muted); padding: 4px 7px; border-radius: 99px; border: 1px solid #1f2d4433; background: none; cursor: pointer; }
 /* 手札：扇で持ち、横より大きく。選んだカードは上に持ち上げる */
 /* 直近の出来事（押すと記録の一覧） */
 /* 説明の帯の下〜手札：押すと選んだカードを戻す受け皿（記録の一覧は開かない） */
 .phand-zone { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 16px; min-height: 0; }
 /* 手札の上の段：右にバズとターン終了（対戦の記録は「記録」ボタンで開くときだけ） */
 .pdock { display: flex; justify-content: flex-end; padding-right: 2px; }
-.pdock-actions { display: inline-flex; align-items: center; gap: 6px; }
-.pdock .end-turn { padding: 11px 16px; font-size: 14px; white-space: nowrap; border: 2px solid #fff; box-shadow: 0 0 0 3px #2fa8e455, 0 8px 20px #0a1c3480; }
-.pdock .buzz-btn { padding: 10px 12px; }
 .phand { position: relative; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; }
 /* 枚数が多いほど傾きを小さくして、端のカードが画面の外に出ないように（左右に 14px の余白） */
 /* 右に 46px の余白（右手の親指で押す「戻す」の場所）を空けて並べる */
 .pstage .hand { --step: min(3.5deg, calc(12deg / var(--n))); padding: 18px 50px 24px 10px; justify-content: center; }
-.hand-cancel { position: absolute; right: 4px; bottom: 18px; width: 42px; height: 64%; max-height: 150px; display: grid; place-items: center; padding: 0; border-radius: 12px; border: 1.5px dashed #ffffff00; background: none; color: transparent; font: 800 11px/1.2 var(--f-ui); writing-mode: vertical-rl; letter-spacing: 0.2em; transition: border-color 0.15s, color 0.15s, background 0.15s; }
-.hand-cancel.on { border-color: #ffffff55; color: #ffffffcc; background: #ffffff0d; cursor: pointer; }
 /* 1枚あたり 50px は見えるように重ねて、残りの幅で大きく持つ（上限は舞台の高さで決めた --hand）。多いときは重ねて「広げる」で見る */
 .pstage .hand .mini { --w: clamp(88px, calc(100% - 20px - 50px * (var(--n) - 1)), var(--hand, 100px)); width: var(--w); transform-origin: 50% 112%; }
-.pstage .hand .mini + .mini { margin-left: min(-10px, calc((100% - var(--w) * (var(--n) + 0.4)) / (var(--n) - 1))); }
-.pstage .hand .mini.in-hand.selected { z-index: 4; transform: translateY(-34px) scale(1.12); }
 .pstage .mini-name { font-size: 10px; }
 /* 対戦の記録（縦の舞台では下から出る一覧） */
 .sheet .log-sheet { align-self: center; width: min(92vw, 560px); background: #fffffff2; border-radius: 20px; border: 1px solid #fff; box-shadow: 0 20px 50px #0b1a3055; }
@@ -721,7 +633,6 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 @keyframes fx-target { to { outline-color: #ffd36e; box-shadow: 0 0 18px #ff5a5f; } }
 @media (prefers-reduced-motion: reduce) { .foe-reveal, .fx-targeted { animation: none; } }
 
-
 /* ---------- カードを画面いっぱいに拡大（スマホで効果を読む） ---------- */
 .mini { -webkit-touch-callout: none; user-select: none; }
 .zoom-sheet { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));  animation: fade 0.15s ease-out; }
@@ -779,21 +690,15 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 
 /* 手札の引き直し（対戦の始め。Play.tsx の MulliganSheet） */
 .mulligan .zoom-sheet-bg { cursor: default; }
-.mulligan-body { position: relative; width: min(380px, 100%); max-height: 100%; overflow: auto; display: grid; gap: 10px; padding: 18px 16px 16px; border-radius: 22px; color: var(--ink); background: #fffffff2; border: 1px solid #fff; box-shadow: 0 20px 50px #0b1a3055; text-align: center; }
-.mulligan-q { margin: 0; font-size: 18px; font-weight: 800; }
-.mulligan-note { margin: 0; font-size: 12.5px; color: var(--muted); }
 .mulligan-hand { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 4px 0; }
 .mulligan-card { position: relative; width: min(150px, calc((100dvh - 250px) / 2 * 0.716), 42%); padding: 0; border: 0; border-radius: 10px; background: none; cursor: pointer; transition: transform 0.15s ease-out, filter 0.15s ease-out; }
 .mulligan-hand.n3 .mulligan-card { width: min(110px, calc((100dvh - 250px) * 0.716), 30%); }
 .mulligan-card .holo { width: 100%; }
 .mulligan-card.on { transform: translateY(6px) scale(0.94); filter: grayscale(0.7) brightness(0.8); }
 .mulligan-mark { position: absolute; left: 50%; top: 50%; translate: -50% -50%; padding: 6px 14px; white-space: nowrap; border-radius: 999px; font-size: 14px; font-weight: 800; color: #fff; background: var(--pri-2); box-shadow: 0 6px 16px #0b1a3055; pointer-events: none; }
-.mulligan-foot { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; margin-top: 4px; }
 .mulligan-left { min-width: 48px; font: 400 26px/1 var(--f-mark); color: var(--ink); }
 .mulligan-left small { margin-left: 2px; font: 800 12px/1 var(--f-ui); color: var(--muted); }
 .mulligan-left.hurry { color: #e2475b; }
-.mulligan-foot .btn { padding: 13px 10px; font-size: 15px; }
-.mulligan-wait { position: fixed; left: 50%; top: 50%; z-index: 60; translate: -50% -50%; padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 800; color: var(--ink); background: #fffffff2; box-shadow: 0 12px 30px #0b1a3044; white-space: nowrap; animation: fade 0.15s ease-out; }
 
 /* ターン終了の確認 */
 .end-confirm-body { position: relative; width: min(360px, 100%); display: grid; gap: 10px; padding: 20px 22px; border-radius: 22px; color: var(--ink); background: #fffffff2; border: 1px solid #fff; box-shadow: 0 20px 50px #0b1a3055; text-align: center; }
@@ -805,14 +710,7 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .end-confirm-actions .btn { padding: 13px 10px; font-size: 15px; }
 /* バズの確認：枠をバズの色に。対象の絵と、上がる数字を並べる */
 .buzz-confirm .end-confirm-body { border-color: #9d7bff88; box-shadow: 0 20px 50px #0b1a3055, 0 0 30px #9d7bff44; text-align: left; }
-.bzc-head { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; }
-.bzc-art { width: 56px; height: 74px; border-radius: 8px; background-size: cover; background-position: center 25%; box-shadow: 0 0 0 2px var(--bz1), 0 0 14px var(--bz3); }
 .buzz-confirm .end-confirm-q { font-size: 16px; line-height: 1.4; }
-.bzc-stats { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--muted); }
-.bzc-stats b { font: 400 17px/1 var(--f-mark); }
-.bzc-stats .atk b { color: var(--atk); }
-.bzc-stats .hp b { color: var(--hp); }
-.bzc-left { margin: 0; font-size: 12px; color: #6a4fe0; text-align: center; }
 .buzz-confirm .bzc-go { justify-content: center; }
 
 /* 投稿・登場時の効果：飛ぶ光と文字の札 */
@@ -937,7 +835,6 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 
 /* ---------- ドラッグで出す・攻撃する ---------- */
 .stage .hand .mini, .stage .row .mini { touch-action: none; }
-.stage .hand .mini.drag-src { opacity: 0.25; }
 .drag-ghost { position: fixed; z-index: 60; pointer-events: none; transform-origin: 50% 50%; filter: drop-shadow(0 18px 24px #000a); }
 .drag-ghost .mini { box-shadow: 0 0 0 2px var(--gold), 0 0 30px #f2cf7aaa; }
 .slot.drop-over { border-style: solid; border-color: var(--gold); background: #f2cf7a26; box-shadow: 0 0 28px #f2cf7a88; }
@@ -960,8 +857,6 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .atk-pv i { font-style: normal; font-size: 9px; font-weight: 900; padding: 1px 6px; border-radius: 99px; white-space: nowrap; }
 .atk-pv .pv-tag { background: #ff5a6a; color: #fff; }
 .atk-pv .pv-die { background: #1b2230; color: #ffb0b8; box-shadow: 0 0 0 1px #ff5a6a; }
-.pb-main { position: relative; }
-.pb-main .atk-pv { left: auto; right: 8px; top: 8px; transform: none; grid-auto-flow: column; align-items: center; }
 .atk-arrow.ally line { stroke: #7dffb0; filter: drop-shadow(0 0 8px #7dffb0); }
 .atk-arrow.ally polygon, .atk-arrow.ally circle { fill: #7dffb0; filter: drop-shadow(0 0 8px #7dffb0); }
 /* 対象を取らない呪文を選んだ・引っぱっているとき：バトル場ぜんたいが置き場（薄い点線の枠。手札より上に来たら金色）。字は出さない */
@@ -1035,10 +930,8 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 
 /* マスターに付いた時間差のダメージ（ミコト）：神の金と白 */
 .pb-delayed { margin-left: 6px; font-size: 10.5px; padding: 1px 6px; border-radius: 999px; color: #3a2a00; background: linear-gradient(90deg, #fff6d6, #f2c94c); font-weight: 800; box-shadow: 0 0 6px rgba(242, 201, 76, 0.7); }
-.pb-shield { margin-left: 6px; font-size: 10.5px; padding: 1px 6px; border-radius: 999px; color: #08202e; background: #9fd8ff; font-weight: 800; }
 /* 盾（受けるダメージを1回ごとに減らす）が効いている間：帯の表面に六角の金の膜が張り、光が横に流れ続ける（10月25日、オーナーがモックの案 A を選んだ） */
 .pb-cut { margin-left: 6px; font-size: 10.5px; padding: 1px 7px; border-radius: 999px; color: #8a5d00; background: #f2c14e38; border: 1px solid #e0a82e88; font-weight: 800; white-space: nowrap; }
-.pstage .pb-cut { font-size: 9.5px; padding: 0 6px; margin: 0; }
 .pb-film {
   position: absolute; inset: 0; border-radius: inherit; pointer-events: none; overflow: hidden;
   background:
@@ -1341,9 +1234,6 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .buzz-pips i, .pb-buzz i { width: 7px; height: 7px; border-radius: 50%; background: #00000044; box-shadow: inset 0 0 0 1px #0004; }
 .buzz-pips i.on { background: var(--bz-ink); }
 .buzz-btn:disabled .buzz-pips i.on { background: var(--bz1); }
-.pb-buzz { margin-left: 8px; font-size: 10px; font-weight: 800; color: #6a4fe0; }
-.pb-buzz i { background: #1f2d4424; }
-.pb-buzz i.on { background: var(--bz-grad); box-shadow: 0 0 6px var(--bz2); }
 /* バズの演出（fx/buzzPower.ts）：キャラの絵の帯、赤い光の筋のキャンバス、「+2」。言葉の「バズ」は出さない */
 .fx-canvas { position: fixed; pointer-events: none; }
 .fx-buzz-dim { position: fixed; background: #05031099; opacity: 0; }
@@ -1364,13 +1254,8 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 /* 差し出しの案内：選ぶまで進めない場面なので、何の効果で何をするかを場と場の間に出し、選べる自分のアイコン以外を暗くして押せなくする（上の帯の「記録」「降参」は残す） */
 .pstage.sac-mode :is(.pbar, .peek-strip, .phand-zone, .foe-row),
 .pstage.sac-mode .pfield .row :is(.unit:not(.sac), .slot) { opacity: 0.22; pointer-events: none; transition: opacity 0.3s ease; }
-.sac-guide { position: absolute; left: 50%; top: 50%; z-index: 8; display: grid; justify-items: center; gap: 3px; width: max-content; max-width: 94%; padding: 9px 16px 10px; border-radius: 12px; background: #f2f1ee; color: #0e0d0c; text-align: center; box-shadow: 0 8px 24px #000c; transform: translate(-50%, calc(-100% - 4px)); animation: sac-guide-in 0.35s 0.2s ease both; }
-.sac-guide small { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; color: #6b6762; }
-.sac-guide strong { font-size: 14px; font-weight: 900; line-height: 1.35; }
-.sac-guide span { font-size: 10.5px; font-weight: 700; color: #4a4743; }
 /* 自分が選ぶときは、下（自分の場）を指す */
 .sac-guide.mine::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; background: inherit; transform: translateX(-50%) rotate(45deg); border-radius: 2px; }
-.sac-guide.wait { background: #1c1b19; color: #f2f1ee; box-shadow: 0 0 0 1px #f2f1ee55, 0 8px 24px #000c; transform: translate(-50%, -50%); }
 @keyframes sac-guide-in { from { opacity: 0; translate: 0 6px; } }
 @media (prefers-reduced-motion: reduce) { .sac-guide { animation-duration: 0.01s; } }
 
