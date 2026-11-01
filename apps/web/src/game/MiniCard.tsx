@@ -150,23 +150,26 @@ export function MiniCard({
       {!onField && <span className="mini-name">{name}</span>}
       {(keywords.length > 0 || view) && (
         <span className="mini-kws">
-          {/* 場では本当に要る札だけ：ガードと状態。ほかのキーワードは押して見る */}
-          {/* 場の札は押しても解説を開かない（攻撃先を選ぶときの誤タップを防ぐ。解説は説明の帯から） */}
-          {keywords
-            .filter((k) => !onField || k === "ガード")
-            .map((k) =>
-              onField ? (
-                <span key={k} className="mini-kw">
-                  {k}
-                </span>
-              ) : (
-                <HelpTerm key={k} term={k} className="mini-kw" />
-              ),
-            )}
+          {/* 状態を先に。場の札は押しても解説を開かない（攻撃先を選ぶときの誤タップを防ぐ。解説はシートで見る） */}
           {view?.exposed && <span className="mini-kw st">晒し</span>}
           {view?.unit.exposeAtTurnEnd && <span className="mini-kw st">晒し予告</span>}
           {view?.asleep && <span className="mini-kw st">眠り</span>}
           {view?.unit.silenced && <span className="mini-kw st">沈黙</span>}
+          {keywords.map((k) =>
+            onField ? (
+              <span key={k} className="mini-kw">
+                {k}
+              </span>
+            ) : (
+              <HelpTerm key={k} term={k} className="mini-kw" />
+            ),
+          )}
+          {/* 【破壊されたとき】を持つキャラクターには、ドクロの印 */}
+          {onField && view?.deathEffect && (
+            <span className="mini-kw death mini-skull" title="【破壊されたとき】">
+              <SkullIcon />
+            </span>
+          )}
         </span>
       )}
       {/* 呪文は攻撃力・体力の代わりに、吹き出しの「呪文」札を出す（キャラクターと見分けやすく） */}
@@ -179,12 +182,6 @@ export function MiniCard({
           <span key={hp} className={`mini-hp ${hurt ? "hurt" : ""} ${hpUp ? "up" : ""}`} title="体力">
             {hp}
           </span>
-        </span>
-      )}
-      {/* 【破壊されたとき】を持つキャラクターには、攻撃力と体力の間にドクロの印（倒すと何か起きると分かるように） */}
-      {onField && view?.deathEffect && (
-        <span className="mini-skull" title="【破壊されたとき】">
-          <SkullIcon />
         </span>
       )}
       {children}

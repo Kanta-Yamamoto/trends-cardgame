@@ -26,6 +26,7 @@ import "./cards/rare.css";
 import "./cards/rare5.css";
 import "./cards/stats.css";
 import "./styles/app.css";
+import "./styles/battle.css";
 import { hideBootWhenReady } from "./boot";
 import { FRAME_ID, watchFrame } from "./frame";
 import { stripInviteFromUrl } from "./invite";

@@ -279,6 +279,28 @@ async function presentPhased(
   return cur;
 }
 
+/** 自分のアイコン（アイコンの登録が入るまでは、案内役のちびミナモ） */
+const MY_ICON = "/assets/tutorial/minamo-cheer.webp";
+const DEFAULT_FOE_ICON = "/assets/cards/c17-art.jpg";
+const COST_SLOTS = Array.from({ length: 10 }, (_, i) => i);
+/** シートでカードをめくる、指の動きの幅 */
+const SWIPE_PX = 50;
+/** 自分の手の結果を、手前の文字欄に見せておく時間 */
+const BOARD_LINE_MS = 3000;
+/** 真ん中の文字欄に出す出来事（引く・ターンの始めなどの細かい動きは出さない） */
+const BOARD_LINE_EVENTS = new Set<GameEvent["type"]>([
+  "played",
+  "cast",
+  "battle",
+  "leaderDamaged",
+  "buzz",
+  "darkFall",
+  "sacrificed",
+  "bounced",
+  "stolen",
+  "transformed",
+]);
+
 function describe(e: GameEvent): string {
   switch (e.type) {
     case "played":
@@ -373,11 +395,11 @@ const PORTRAIT_W = 390;
 const PORTRAIT_H_MIN = 740;
 const PORTRAIT_H_MAX = 860;
 /** 縦の舞台の左右の余白と、枠どうしの間（pstage の CSS と合わせる） */
-const PORTRAIT_PAD = 6;
-const PORTRAIT_GAP = 5;
+const PORTRAIT_PAD = 8;
+const PORTRAIT_GAP = 6;
 const fitPortraitSlot = (width: number) => Math.floor((width - PORTRAIT_PAD * 2 - PORTRAIT_GAP * 4) / 5);
-/** 縦の舞台の手札の幅：舞台が高いほど大きく持つ（場2段・プレイヤー2つ・説明の帯を引いた残りから） */
-const fitHand = (height: number) => Math.max(84, Math.min(124, Math.floor((height - 600) * 0.6)));
+/** 場と手札のカードの高さ：舞台が高いほど縦に長く見せる（低い舞台でも、まわりの隙間を残す） */
+const fitCard = (height: number) => Math.max(122, Math.min(146, Math.floor(122 + (height - 740) * 0.2)));
 
 export interface Stage {
   width: number;
@@ -386,8 +408,8 @@ export interface Stage {
   slot: number;
   cx: number;
   cy: number;
-  /** 手札のカードの幅 */
-  hand: number;
+  /** 場と手札のカードの高さ */
+  card: number;
 }
 
 function safeArea(probe: HTMLElement | null) {
@@ -410,7 +432,7 @@ export function measureStage(vw: number, vh: number, safe = { t: 0, r: 0, b: 0, 
     slot: fitPortraitSlot(PORTRAIT_W),
     cx: safe.l + w / 2,
     cy: safe.t + h / 2,
-    hand: fitHand(height),
+    card: fitCard(height),
   };
 }
 
@@ -633,54 +655,28 @@ function OmenSheet({
       ? "闇堕ちを持つキャラクターが破壊されました。破壊された次のターンから、自分のターンに闇堕ちの姿で出せます。裏向きのカードがある枠には、キャラクターを出せません。"
       : `${owner}の闇堕ちを持つキャラクターが破壊されました。${owner}は、破壊された次のターンから、自分のターンに闇堕ちの姿で出せます。`;
   return (
-    <div
-      className="zoom-sheet end-confirm buzz-confirm dark-confirm"
-      role="dialog"
-      aria-modal="true"
-      aria-label={`裏向きの${card.name}`}
-    >
-      <button type="button" className="zoom-sheet-bg" aria-label="閉じる" onClick={onClose} />
-      <div className="end-confirm-body">
-        <p className="end-confirm-q">{card.name}</p>
-        <p className="dkc-state">{state}</p>
-        {owner === null && !ready && <p className="dkc-wait">いまは出せません</p>}
-        <div className="bzc-head dkc-dark">
-          {(dark.art ?? card.art) && (
-            <span className="bzc-art" style={{ backgroundImage: `url(${dark.art ?? card.art})` }} />
-          )}
-          <div>
-            <p className="dkc-label">闇堕ちの姿</p>
-            <p className="bzc-stats">
-              <span>{dark.name}</span>
-              <span className="atk">
-                攻撃力 <b>{dark.attack}</b>
-              </span>
-              <span className="hp">
-                体力 <b>{dark.hp}</b>
-              </span>
-              <span>{rush}</span>
-            </p>
-          </div>
+    <section className="psheet omen-sheet" role="dialog" aria-label={`裏向きの${card.name}`}>
+      <p className="ps-note">{state}</p>
+      <div className="hs-reel">
+        <div className="hs-card">
+          <HoloCard card={card} darkForm idle={false} />
         </div>
-        {dark.effect && <p className="dkc-effect">{dark.effect}</p>}
-        {ready ? (
-          <div className="end-confirm-actions">
-            <button type="button" className="btn ghost" onClick={onClose}>
-              やめる
-            </button>
-            <button type="button" className="btn dkc-go" onClick={onFall}>
-              闇堕ちさせる
-            </button>
-          </div>
-        ) : (
-          <div className="end-confirm-actions one">
-            <button type="button" className="btn ghost" onClick={onClose}>
-              閉じる
-            </button>
-          </div>
+      </div>
+      <p className="ps-note sub">
+        {rush}
+        {owner === null && !ready && "・いまは出せません"}
+      </p>
+      <div className="ps-foot">
+        <button type="button" className="btn ghost ps-back" onClick={onClose}>
+          {ready ? "戻る" : "閉じる"}
+        </button>
+        {ready && (
+          <button type="button" className="btn lg dkc-go" onClick={onFall}>
+            闇堕ちさせる
+          </button>
         )}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -971,57 +967,21 @@ function DeckConfirm({
   );
 }
 
-/** ターン終了の確認。まだ攻撃できるキャラクターや、残っているコストがあれば添える */
-/**
- * ターン終了の確認。場と手札でまだできること（攻撃・出す・バズ・闇堕ち）があるときだけ出す。
- * 何もできなければ、確かめずにターンを終える（Board の endTurnBtn）
- */
-function EndTurnConfirm({
-  options,
-  onYes,
-  onNo,
-}: {
-  options: TurnOptions;
-  onYes: () => void;
-  onNo: () => void;
-}) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onNo();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onNo]);
-  const notes = [
-    options.attackers > 0 && `攻撃できるキャラクターが ${options.attackers} 体います`,
-    options.playable > 0 && `出せる手札が ${options.playable} 枚あります`,
-    options.buzz && "バズが使えます",
-    options.darkFall > 0 && "闇堕ちできる裏向きのカードがあります",
-  ].filter((x): x is string => !!x);
-  return (
-    <div
-      className="zoom-sheet end-confirm"
-      role="alertdialog"
-      aria-modal="true"
-      aria-label="ターン終了の確認"
-    >
-      <button type="button" className="zoom-sheet-bg" aria-label="やめる" onClick={onNo} />
-      <div className="end-confirm-body">
-        <p className="end-confirm-q">まだできることがあります</p>
-        <ul className="end-confirm-list">
-          {notes.map((n) => (
-            <li key={n}>{n}</li>
-          ))}
-        </ul>
-        <div className="end-confirm-actions">
-          <button type="button" className="btn ghost" onClick={onNo}>
-            ターンを続ける
-          </button>
-          <button type="button" className="btn" onClick={onYes}>
-            ターンを終了する
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+/** ターン終了の確認に添える、まだできること */
+function endNote(o: TurnOptions) {
+  return [
+    o.attackers > 0 && `攻撃できる ${o.attackers} 体`,
+    o.playable > 0 && `出せるカード ${o.playable} 枚`,
+    o.buzz && "バズが使えます",
+    o.darkFall > 0 && "闇堕ちできます",
+  ]
+    .filter(Boolean)
+    .join("・");
+}
+
+/** バズの確認に添える、バズしたあとの攻撃力・体力 */
+function buzzNote(v: UnitView) {
+  return `攻撃力 ${v.attack} → ${v.attack + DEFAULT_CONFIG.buzzAttack}　体力 ${v.hp} → ${v.hp + DEFAULT_CONFIG.buzzHp}　突進`;
 }
 
 /**
@@ -1061,43 +1021,37 @@ function MulliganSheet({
     setPicked((p) => (p.includes(i) ? p.filter((x) => x !== i) : [...p, i]));
   };
   return (
-    <div className="zoom-sheet mulligan" role="dialog" aria-modal="true" aria-label="手札の引き直し">
-      <div className="zoom-sheet-bg" aria-hidden="true" />
-      <div className="mulligan-body">
-        <p className="mulligan-q">手札を引き直しますか？</p>
-        <p className="mulligan-note">戻すカードを選ぶと、同じ枚数を山札から引き直します</p>
-        <div className={`mulligan-hand n${hand.length}`}>
-          {hand.map((id, i) => {
-            const card = CATALOG[id];
-            const on = picked.includes(i);
-            return card ? (
-              <button
-                // biome-ignore lint/suspicious/noArrayIndexKey: 手札の位置で選ぶ
-                key={i}
-                type="button"
-                className={`mulligan-card ${on ? "on" : ""}`}
-                data-tap-se
-                aria-pressed={on}
-                aria-label={`${card.name}${on ? "（戻す）" : ""}`}
-                onClick={() => toggle(i)}
-              >
-                <HoloCard card={card} idle={false} />
-                {on && <span className="mulligan-mark">戻す</span>}
-              </button>
-            ) : null;
-          })}
-        </div>
-        <div className="mulligan-foot">
-          <span className={`mulligan-left ${left <= 10_000 ? "hurry" : ""}`}>
-            {Math.ceil(left / 1000)}
-            <small>秒</small>
-          </span>
-          <button type="button" className="btn" data-tap-se onClick={() => send(picked)}>
-            {picked.length > 0 ? `${picked.length}枚を引き直す` : "このまま始める"}
-          </button>
-        </div>
+    <section className="psheet mull-sheet" role="dialog" aria-label="手札の引き直し">
+      <div className={`mulligan-hand n${hand.length}`}>
+        {hand.map((id, i) => {
+          const card = CATALOG[id];
+          const on = picked.includes(i);
+          return card ? (
+            <button
+              // biome-ignore lint/suspicious/noArrayIndexKey: 手札の位置で選ぶ
+              key={i}
+              type="button"
+              className={`mulligan-card ${on ? "on" : ""}`}
+              data-tap-se
+              aria-pressed={on}
+              aria-label={`${card.name}${on ? "（戻す）" : ""}`}
+              onClick={() => toggle(i)}
+            >
+              <HoloCard card={card} idle={false} />
+              {on && <span className="mulligan-mark">戻す</span>}
+            </button>
+          ) : null;
+        })}
       </div>
-    </div>
+      <div className="ps-foot">
+        <span className={`mulligan-left ${left <= 10_000 ? "hurry" : ""}`}>
+          のこり {Math.ceil(left / 1000)} 秒
+        </span>
+        <button type="button" className="btn lg" data-tap-se onClick={() => send(picked)}>
+          {picked.length > 0 ? `${picked.length} 枚引き直す` : "このまま始める"}
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -1141,65 +1095,6 @@ function QuitConfirm({
   );
 }
 
-/** バズの確認：対象のキャラクターと、バズしたあとの攻撃力・体力・残りの回数を見せる */
-function BuzzConfirm({
-  card,
-  view,
-  left,
-  onYes,
-  onNo,
-}: {
-  card: CardDef;
-  view: UnitView;
-  left: number;
-  onYes: () => void;
-  onNo: () => void;
-}) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onNo();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onNo]);
-  return (
-    <div
-      className="zoom-sheet end-confirm buzz-confirm"
-      role="alertdialog"
-      aria-modal="true"
-      aria-label="バズの確認"
-    >
-      <button type="button" className="zoom-sheet-bg" aria-label="やめる" onClick={onNo} />
-      <div className="end-confirm-body">
-        <div className="bzc-head">
-          {card.art && <span className="bzc-art" style={{ backgroundImage: `url(${card.art})` }} />}
-          <div>
-            <p className="end-confirm-q">{card.name}をバズらせますか？</p>
-            <p className="bzc-stats">
-              <span className="atk">
-                攻撃力 {view.attack} → <b>{view.attack + DEFAULT_CONFIG.buzzAttack}</b>
-              </span>
-              <span className="hp">
-                体力 {view.hp} → <b>{view.hp + DEFAULT_CONFIG.buzzHp}</b>
-              </span>
-              <span>突進が付く</span>
-            </p>
-          </div>
-        </div>
-        <p className="bzc-left">
-          残り {left} 回 → {Math.max(0, left - 1)} 回
-        </p>
-        <div className="end-confirm-actions">
-          <button type="button" className="btn ghost" onClick={onNo}>
-            やめる
-          </button>
-          <button type="button" className="btn buzz-btn bzc-go" onClick={onYes}>
-            バズらせる
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 type Peek = {
   id: string;
   view?: UnitView;
@@ -1214,19 +1109,19 @@ type DragSrc = { kind: "hand"; index: number } | { kind: "unit"; slot: number };
 
 /** 攻撃したときの見込み（与えるダメージ・破壊できるか）を、攻撃先に重ねて出す */
 function AttackBadge({ pv, leader }: { pv: AttackPreview; leader?: boolean }) {
-  const tag = leader
-    ? pv.kills && "とどめ"
-    : pv.kills && pv.dies
-      ? "相打ち"
-      : pv.kills
-        ? "墓地"
-        : pv.dies
-          ? "返り討ち"
-          : null;
+  if (leader)
+    return (
+      <span className={`atk-pv leader ${pv.kills ? "kill" : ""}`} aria-hidden="true">
+        ここを攻撃 -{pv.toDefender}
+        {pv.kills && " とどめ"}
+      </span>
+    );
+  const tag =
+    pv.kills && pv.dies ? "相打ち" : pv.kills ? "破壊できる" : pv.dies ? "破壊される" : `-${pv.toDefender}`;
+  const tone = pv.kills && pv.dies ? "both" : pv.kills ? "kill" : pv.dies ? "die" : "";
   return (
-    <span className={`atk-pv ${pv.kills ? "kill" : ""}`} aria-hidden="true">
-      <b>-{pv.toDefender}</b>
-      {tag && <i className={pv.dies && !pv.kills ? "pv-die" : "pv-tag"}>{tag}</i>}
+    <span className={`atk-pv ${tone}`} aria-hidden="true">
+      {tag}
     </span>
   );
 }
@@ -1354,6 +1249,8 @@ export function Board({
     foeMove,
   } = useGame();
   const online = mode === "online";
+  /** チュートリアルは案内どおり、手札を押したらすぐ場を選ぶ（シートを挟まない） */
+  const direct = mode === "tutorial";
   // 盤面を出している間は、対戦の曲を流す（CPU 戦・オンライン対戦のどちらも。上の帯の左の音楽のボタンで止められる）
   usePageMusic("battle");
   // オンライン対戦の持ち時間（CPU 戦では null）
@@ -1383,6 +1280,15 @@ export function Board({
   const [peek, setPeek] = useState<Peek | null>(null);
   /** 画面いっぱいに大きく見ているカード（スマホで効果を読むため） */
   const [zoom, setZoom] = useState<Peek | null>(null);
+  /** 手札を下半分のシートで見ている位置（「出す」を押すと場を選ぶ手順に進む） */
+  const [handOpen, setHandOpen] = useState<number | null>(null);
+  /** 場のカードを下半分のシートで見ている */
+  const [look, setLook] = useState<Peek | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  /** 真ん中の文字欄：奥は相手の手、手前は自分の手の結果（少し見せて案内に戻す） */
+  const [foeLine, setFoeLine] = useState<BoardLine | null>(null);
+  const [myLine, setMyLine] = useState<BoardLine | null>(null);
+  const lineSeen = useRef(-1);
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
   /** 『フィクサー』の登場：バトル場が黒に滲む（出したターンが終わるまで続く） */
   const [fixer, setFixer] = useState<{ id: number } | null>(null);
@@ -1415,12 +1321,14 @@ export function Board({
   // テストなど、オープニングの長さが 0 のときは見せない
   const openingOn = opening > openSeen && openingMs() > 0;
   const foeDeck = useMemo(() => foeDeckSel(foeDeckRef), [foeDeckRef]);
+  /** 相手のアイコン（アイコンの登録が入るまでは、相手のデッキのエースの絵） */
+  const foeIcon = CATALOG[foeDeck?.ace ?? ""]?.art ?? DEFAULT_FOE_ICON;
   /** プレイヤーへの攻撃が当たった瞬間に先に見せたライフ（state が進むまでの間の表示）。同じ出来事の数字を二重に出さないためにも使う */
   const [lpHit, setLpHit] = useState<{ player: PlayerId; lp: number } | null>(null);
   const hitShown = useRef<{ player: PlayerId; lp: number } | null>(null);
   /** 出来事に合わせて出した演出（数字・バナーなど）が見え終わる時刻（performance.now()） */
   const fxUntil = useRef(0);
-  /** 決着したあと、結果を出したか（最後の一撃を見せ終えてから出す）。"broke" は、帯が砕けて暗転したあと（明けるのと同時に見せる） */
+  /** 決着したあと、結果を出したか（最後の一撃を見せ終えてから出す）。"broke" は、アイコンが砕けて切り替わったあと（明けるのと同時に見せる） */
   const [resultOpen, setResultOpen] = useState<false | "plain" | "broke">(false);
   // 攻撃のあと state が進んだら、本当のライフの表示に戻す
   // biome-ignore lint/correctness/useExhaustiveDependencies: game が変わったときだけ戻す
@@ -1448,7 +1356,29 @@ export function Board({
     setBuzzAsk(null);
     setResignAsk(false);
     setQuitAsk(false);
+    setHandOpen(null);
+    setLook(null);
+    setMenuOpen(false);
   }, [foeMove]);
+
+  // 真ん中の文字欄に、いちばん新しい手を出す（奥は相手の手、手前は自分の手）
+  useEffect(() => {
+    const last = [...log].reverse().find((l) => BOARD_LINE_EVENTS.has(l.e.type));
+    if (!last) {
+      lineSeen.current = -1;
+      setFoeLine(null);
+      setMyLine(null);
+      return;
+    }
+    if (last.id === lineSeen.current) return;
+    lineSeen.current = last.id;
+    const cardId = "cardId" in last.e ? last.e.cardId : undefined;
+    const line = { text: describe(last.e), art: cardId ? CATALOG[cardId]?.art : undefined };
+    if (useGame.getState().game?.active === CPU) return setFoeLine(line);
+    setMyLine(line);
+    const t = setTimeout(() => setMyLine(null), BOARD_LINE_MS);
+    return () => clearTimeout(t);
+  }, [log]);
 
   const handUsable = (g: GameState, i: number) => {
     const id = g.players[ME].hand[i];
@@ -2052,8 +1982,8 @@ export function Board({
         layer: fxLayer(),
         frame: frameRect(),
         board: document.querySelector<HTMLElement>(".pstage"),
-        gauge: bar.querySelector<HTMLElement>(".lp-bar"),
-        // 破片の色味は、負けた側のライフのゲージの色。負けは破片が黒く、まわりが暗く沈む。勝ちは破片がキラッと光る。
+        image: loser === ME ? MY_ICON : foeIcon,
+        // 破片は負けた側のアイコンの絵のかけら。ふちの色味は、負けた側のライフの色。負けは破片が黒く、まわりが暗く沈む。勝ちは破片がキラッと光る。
         // ぶつかったあとは、勝ちは白転・負けは暗転（lifeBreak の中で決まる）
         tint: loser === ME ? "#8fdcfb" : "#ffb0b8",
         mine: loser === ME,
@@ -2066,7 +1996,7 @@ export function Board({
       live = false;
       fx?.cancel();
     };
-  }, [winner]);
+  }, [winner, foeIcon]);
 
   // バズが使えるようになったら（自分のターンの始め・4ターン目になったとき）、ボタンの枠を光らせる。
   // 演出中・CPU の思考中の出入りでは光らせ直さないよう、盤面の状態だけで見る
@@ -2133,7 +2063,6 @@ export function Board({
   const preview = (t: AttackTarget) =>
     attacking && canHit(t) ? previewAttack(game, ME, selection.slot, t, CATALOG) : null;
   const foeGuarded = foe.field.some((u) => u && viewUnit(game, CPU, u, CATALOG).guard);
-  const peekCard = (peek ? CATALOG[peek.id] : null) ?? null;
 
   const unitCard = (owner: PlayerId, slot: number, u: Unit) => {
     const card = CATALOG[u.cardId] as CardDef;
@@ -2152,10 +2081,13 @@ export function Board({
           view={view}
           onField
           drop={`foe:${slot}`}
-          className={`unit foe-unit enter ${hit || castable ? "targetable" : ""} ${drag?.over === `foe:${slot}` && (hit || castable) ? "drop-over" : ""}`}
+          className={`unit foe-unit enter ${hit || castable ? "targetable" : ""} ${pv ? "has-pv" : ""} ${drag?.over === `foe:${slot}` && (hit || castable) ? "drop-over" : ""}`}
           onClick={() => {
             if (justDragged()) return;
-            castable ? cast({ side: "enemy", slot }) : hit ? attack({ kind: "unit", slot }) : setPeek(p);
+            if (castable) return cast({ side: "enemy", slot });
+            if (hit) return attack({ kind: "unit", slot });
+            setPeek(p);
+            setLook(p);
           }}
           onPeek={() => setPeek(p)}
           onLongPress={() => setZoom(p)}
@@ -2189,12 +2121,14 @@ export function Board({
           if (selected) return select(null);
           setPeek(p);
           if (ready) select({ kind: "attacker", slot });
+          else setLook(p);
         }}
         onPeek={() => setPeek(p)}
         onLongPress={() => setZoom(p)}
       >
-        {ready && (
-          <em className="mini-ready">{u.attacksLeft > 1 ? "2回攻撃可" : u.rushOnly ? "突進" : "攻撃可"}</em>
+        {/* 攻撃できることは金の枠で見せる。札は、ふつうの攻撃と違うときだけ */}
+        {ready && (u.attacksLeft > 1 || u.rushOnly) && (
+          <em className="mini-ready">{u.attacksLeft > 1 ? "2回攻撃可" : "突進"}</em>
         )}
       </MiniCard>
     );
@@ -2217,15 +2151,18 @@ export function Board({
         card={card}
         cost={cost}
         className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""} ${drag?.src.kind === "hand" && drag.src.index === i ? (card.type === "post" && card.target ? "selected" : "drag-src") : ""}`}
-        // 手元で扇のように持つ（真ん中からのずれ）
-        style={{ "--f": i - (me.hand.length - 1) / 2 } as CSSProperties}
         onPress={!usable ? undefined : (e) => begin(e, { kind: "hand", index: i })}
         onClick={() => {
           if (justDragged()) return;
           setPeek(p);
+          // ふだんは下半分のシートで見る。チュートリアルは案内どおり、押して場を選ぶ
+          if (!direct) {
+            select(null);
+            setHandOpen(i);
+            return;
+          }
           if (!myTurn) return;
           if (selected && card.type === "post" && !card.target) return cast();
-          // キャラクターは、出す枠を自分で選んだときだけ出す（もう一度押しても勝手に出さず、選ぶのをやめる）
           select(selected ? null : { kind: "hand", index: i });
         }}
         onPeek={() => setPeek(p)}
@@ -2234,52 +2171,48 @@ export function Board({
     );
   };
 
-  // 舞台の部品。横の舞台（3列）と縦の舞台（1列）で同じものを並べ替える
-  const foeBar = (
-    <PlayerBar
+  // 舞台の部品
+  const lifeOf = (p: PlayerId) => (lpHit?.player === p ? lpHit.lp : game.players[p].lp);
+  const foeFace = (
+    <PlayerFace
       side="foe"
       name={foeName}
-      lp={lpHit?.player === CPU ? lpHit.lp : foe.lp}
-      mana={foe.mana}
-      maxMana={foe.maxMana}
-      hand={foe.hand.length}
-      buzz={foe.buzzLeft ?? 0}
+      icon={foeIcon}
+      lp={lifeOf(CPU)}
       active={game.active === CPU}
-      guarded={foeGuarded}
-      shielded={isShielded(game, CPU)}
       cut={damageCutOn(game, CPU)}
-      delayed={delayedDamageOn(game, CPU)}
+      locked={attacking && foeGuarded && !canHit({ kind: "leader" })}
       targetable={attacking && canHit({ kind: "leader" })}
       dropOver={drag?.over === "leader" && attacking && canHit({ kind: "leader" })}
       preview={preview({ kind: "leader" })}
       onClick={() => !justDragged() && attack({ kind: "leader" })}
-      piles={<Piles owner={CPU} deck={foe.deck.length} trash={foe.trash} onTrash={() => setTrashView(CPU)} />}
-      clock={online && foeClock && !game.winner ? <ClockChip left={foeClock} /> : null}
     />
   );
-  const meBar = (
-    <PlayerBar
+  const meFace = (
+    <PlayerFace
       side="me"
       name="あなた"
-      lp={lpHit?.player === ME ? lpHit.lp : me.lp}
-      mana={me.mana}
-      maxMana={me.maxMana}
-      hand={me.hand.length}
-      buzz={me.buzzLeft ?? 0}
+      icon={MY_ICON}
+      lp={lifeOf(ME)}
       active={game.active === ME}
-      shielded={isShielded(game, ME)}
       cut={damageCutOn(game, ME)}
-      delayed={delayedDamageOn(game, ME)}
-      piles={<Piles owner={ME} deck={me.deck.length} trash={me.trash} onTrash={() => setTrashView(ME)} />}
-      clock={online && myClock && !game.winner ? <ClockChip left={myClock} mine /> : null}
-    />
+    >
+      <CostGems mana={me.mana} max={me.maxMana} />
+    </PlayerFace>
   );
-  const turnPill = !game.winner && (
-    <span className={`turn-pill ${game.active === ME ? "mine" : "foe"}`}>
-      <small>TURN {game.turn}</small>
-      {game.active === ME ? "あなたのターン" : "相手のターン"}
-    </span>
-  );
+  /** プレイヤーに付いている状態（無敵・ダメージ軽減・ターンの終わりのダメージ） */
+  const statusChips = (p: PlayerId) => {
+    const cut = damageCutOn(game, p);
+    const delayed = delayedDamageOn(game, p);
+    return (
+      <>
+        {isShielded(game, p) && <span className="pchip st-shield">無敵</span>}
+        {cut > 0 && <span className="pchip st-cut">ダメージ-{cut}</span>}
+        {delayed > 0 && <span className="pchip st-delayed">ターンの終わりに {delayed} ダメージ</span>}
+      </>
+    );
+  };
+  const turnOn = !game.winner;
   const foeRow = (
     <div className="row foe-row">
       {SLOT_KEYS.map((key, slot) => {
@@ -2343,10 +2276,11 @@ export function Board({
     </div>
   );
   const handEl = (
-    <div className="hand" data-hand={ME} data-drop="hand" style={{ "--n": me.hand.length } as CSSProperties}>
+    <div className={`hand ${me.hand.length > 5 ? "many" : ""}`} data-hand={ME} data-drop="hand">
       {me.hand.map((id, i) => handCard(id, i))}
     </div>
   );
+  const buzzLeft = me.buzzLeft ?? 0;
   const buzzBtn = (
     <button
       type="button"
@@ -2359,15 +2293,11 @@ export function Board({
       }}
       disabled={!canBuzz && !buzzing}
       title={buzzWhy ?? "選んだ自分のキャラクター1体に攻撃力+2・体力+2・突進"}
-      aria-label={`バズ（残り${me.buzzLeft ?? 0}回）${buzzWhy ? `：${buzzWhy}` : ""}`}
+      aria-label={`バズ（残り${buzzLeft}回）${buzzWhy ? `：${buzzWhy}` : ""}`}
     >
       {buzzOpen && buzzWake > 0 && <span key={buzzWake} className="buzz-ring" aria-hidden="true" />}
       バズ
-      <span className="buzz-pips" aria-hidden="true">
-        {[0, 1].map((k) => (
-          <i key={k} className={k < (me.buzzLeft ?? 0) ? "on" : ""} />
-        ))}
-      </span>
+      <small>のこり {buzzLeft} 回</small>
     </button>
   );
   /** このターンにまだできることがあるか（場と手札。game-core の turnOptions） */
@@ -2378,12 +2308,14 @@ export function Board({
       className={`btn end-turn ${myTurn ? "now" : ""}`}
       onClick={() => {
         // 場と手札でまだできること（攻撃・出す・バズ・闇堕ち）が無ければ、確かめずにターンを終える
-        if (hasTurnOptions(turnOptions(game, ME, CATALOG))) setConfirmEnd(true);
-        else endTurn();
+        if (hasTurnOptions(turnOptions(game, ME, CATALOG))) {
+          select(null);
+          setConfirmEnd(true);
+        } else endTurn();
       }}
       disabled={!myTurn}
     >
-      ターン終了
+      {game.active === ME ? "ターン終了" : "相手のターン"}
     </button>
   );
   const logList = (
@@ -2398,33 +2330,101 @@ export function Board({
         ))}
     </ol>
   );
-  const resignBtn = online && !game.winner && (
-    <button
-      type="button"
-      className={`btn ghost resign ${resignAsk ? "ask" : ""}`}
-      onClick={() => (resignAsk ? resign() : setResignAsk(true))}
-      onBlur={() => setResignAsk(false)}
-    >
-      {resignAsk ? "本当に降参する" : "降参"}
-    </button>
-  );
-  const quitBtn = (
-    <button
-      type="button"
-      className="btn ghost quit"
-      data-tap-se
-      onClick={() => (game.winner ? quit() : setQuitAsk(true))}
-    >
-      {online ? "ロビーへ" : "戻る"}
-    </button>
-  );
-  /** 選んだカード（手札・攻撃するキャラクター）をやめて、手札を元の形に戻す */
-  const cancelSelection = () => {
-    if (selection) select(null);
+  /** シートの「出す」「使う」のボタンの文と、押せるか */
+  const handAction = (i: number) => {
+    const id = me.hand[i];
+    const card = id ? CATALOG[id] : undefined;
+    if (!id || !card) return { label: "", ok: false };
+    const verb = card.type === "icon" ? "出す" : "使う";
+    if (game.active !== ME) return { label: "相手のターンです", ok: false };
+    if (effectiveCost(game, ME, id, CATALOG) > me.mana) return { label: "コストが足りません", ok: false };
+    if (card.type === "icon" && freeSlot < 0) return { label: "場に空きがありません", ok: false };
+    if (card.type === "post" && card.target && castTargets(game, ME, id, CATALOG).length === 0)
+      return { label: "使える相手がいません", ok: false };
+    return { label: verb, ok: myTurn };
   };
+  /** 手札の枚数が減っても、シートは残っているカードを指す */
+  const sheetIndex = handOpen === null ? null : Math.min(handOpen, me.hand.length - 1);
+  const closeMenu = (after: () => void) => {
+    setMenuOpen(false);
+    after();
+  };
+  const lookCard = look ? CATALOG[look.id] : undefined;
+  const options = turnOptions(game, ME, CATALOG);
+  const dealt = !mulliganOpen && !openingOn && !dealing;
+  // 奥の文字欄：相手の手と状態
+  const foeText: BoardLine | null = sacGuide?.source
+    ? { text: `${sacGuide.source}の効果` }
+    : mulliganOpen && game.mulligan?.waiting.includes(CPU)
+      ? { text: "相手が手札を選んでいます" }
+      : !dealt
+        ? { text: game.active === CPU ? "相手が先攻です" : "相手は後攻です" }
+        : (foeLine ?? { text: "相手の手がここに出ます" });
+  // 手前の文字欄：次に何をするか。指示のときは光らせる
+  const askText = sacGuide
+    ? sacGuide.mine
+      ? "破壊する自分のキャラクターを1体選んでください"
+      : "相手が破壊するキャラクターを選んでいます"
+    : mulliganOpen && game.mulligan?.waiting.includes(ME)
+      ? "戻すカードを選んでください"
+      : attacking
+        ? foeGuarded && !canHit({ kind: "leader" })
+          ? "ガードのキャラクターを攻撃してください"
+          : "攻撃する相手を選んでください"
+        : buzzAsk !== null
+          ? "このキャラクターにバズしますか"
+          : buzzing
+            ? "バズするキャラクターを選んでください"
+            : selection?.kind === "hand" && selectedCard
+              ? selectedCard.type === "icon"
+                ? "出す場所を選んでください"
+                : selectedCard.target
+                  ? "対象を選んでください"
+                  : "このカードを使いますか"
+              : confirmEnd
+                ? "ターンを終えますか"
+                : omenAsk && fallSlots.includes(omenAsk.slot)
+                  ? "闇堕ちさせますか"
+                  : null;
+  const hint = !dealt
+    ? game.active === ME
+      ? "あなたが先攻です"
+      : "あなたは後攻です 手札 +1 枚"
+    : game.active !== ME
+      ? "相手のターンです"
+      : options.attackers + options.playable === 0
+        ? "ターンを終えられます"
+        : `攻撃できる ${options.attackers} 体・出せるカード ${options.playable} 枚`;
+  const myText: BoardLine = error
+    ? { text: error }
+    : askText
+      ? { text: askText }
+      : (myLine ?? { text: hint });
   const field = fieldOf(game, CATALOG);
   const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}${director !== null ? " field-director" : ""}${arbiter ? " field-arbiter" : ""}${fixer ? " field-fixer" : ""}${god ? " field-god" : ""}${sacGuide ? " sac-mode" : ""}`;
   const fieldLayer = field ? <FieldLayer kind={field.kind} mine={field.owner === ME} /> : null;
+
+  // 相手が出したカードは、相手の陣地の上に重ねて見せる
+  const revealEl = reveal && CATALOG[reveal.cardId] && (
+    <div key={reveal.id} className={`foe-reveal ${reveal.mine ? "mine" : ""}`} aria-live="polite">
+      <div className="fr-card">
+        <HoloCard card={CATALOG[reveal.cardId] as CardDef} idle={false} />
+      </div>
+    </div>
+  );
+  const bannerEl = banner && (
+    <div
+      key={banner.id}
+      className={`turn-banner ${banner.mine ? "mine" : "foe"}`}
+      aria-hidden="true"
+      onAnimationEnd={(e) => e.target === e.currentTarget && setBanner(null)}
+    >
+      <div className="tb-band">
+        <small>TURN {banner.turn}</small>
+        <strong>{banner.mine ? "あなたのターン" : "相手のターン"}</strong>
+      </div>
+    </div>
+  );
 
   return (
     <div className="play-full">
@@ -2439,11 +2439,11 @@ export function Board({
             height: stage.height,
             transform: `translate(-50%, -50%) scale(${stage.scale})`,
             "--slot": `${stage.slot}px`,
-            "--hand": `${stage.hand}px`,
+            "--card-h": `${stage.card}px`,
           } as CSSProperties
         }
       >
-        {/* 縦の舞台：上から 相手 → 相手の場 → 自分の場 → 自分 → 押したカードの説明 → バズ・ターン終了 →（余白）→ 手札 */}
+        {/* 縦の舞台：奥が相手、手前が自分。真ん中の VS の線で陣地を分ける */}
         <div className={`pstage ${boardClass}`} data-drop="board">
           {fieldLayer}
           {director !== null && (
@@ -2457,75 +2457,243 @@ export function Board({
           {ambush !== null && (
             <div key={ambush} className="kusa-field" ref={ambushField} aria-hidden="true" />
           )}
-          <div className="ptop">
-            {/* 音楽のボタンは左（右はオンライン対戦で「降参」まで並び、空きがない） */}
-            <span className="ptop-left">
-              {quitBtn}
-              <SoundMenu className="btn ghost small pmusic" />
-            </span>
-            {turnPill}
-            <span className="ptop-right">
-              <button type="button" className="btn ghost small plog" onClick={() => setLogOpen(true)}>
-                記録
+          {drag && throwHint && <div className={`post-zone ${throwOver ? "over" : ""}`} aria-hidden="true" />}
+          <div className="pfoe">
+            <div className="ptop">
+              <button type="button" className="pmenu" aria-label="メニュー" onClick={() => setMenuOpen(true)}>
+                <svg
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
               </button>
-              {resignBtn}
-            </span>
-          </div>
-          {foeBar}
-          <div className="pfield">
-            {throwHint && <div className={`post-zone ${throwOver ? "over" : ""}`} aria-hidden="true" />}
-            {foeRow}
-            {/* 場と場の間には何も置かない（反則のときだけ、短く知らせて消える）。例外は、差し出しのように選ぶまで進めない場面の案内 */}
-            {sacGuide && (
-              <div className={`sac-guide ${sacGuide.mine ? "mine" : "wait"}`} role="status">
-                {sacGuide.source && <small>{sacGuide.source}の効果</small>}
-                {sacGuide.mine ? (
-                  <>
-                    <strong>破壊する自分のキャラクターを1体選んでください</strong>
-                    <span>相手も1体選び、選ばれたキャラクターは同時に破壊されます</span>
-                  </>
-                ) : (
-                  <strong>相手が破壊するキャラクターを選んでいます</strong>
-                )}
+              <div className="pchips">
+                <span className="pchip" data-hand={CPU}>
+                  手札 {foe.hand.length}
+                </span>
+                <span className="pchip" title={`バズ 残り${foe.buzzLeft ?? 0}回`}>
+                  バズ
+                  {[0, 1].map((k) => (
+                    <i key={k} className={`pip ${k < (foe.buzzLeft ?? 0) ? "on" : ""}`} />
+                  ))}
+                </span>
+                {online && <span className="pchip pname">{foeName}</span>}
               </div>
-            )}
-            {error && (
-              <p key={error} className="ptoast" role="alert">
-                {error}
-              </p>
-            )}
-            {meRow}
-          </div>
-          {meBar}
-          <PeekStrip card={peekCard} view={peek?.view} onOpen={() => setZoom(peek)} />
-          {/* ここから下（手札のまわりの空き）を押すと、選んだカードを手札に戻す */}
-          {/* biome-ignore lint/a11y/useKeyWithClickEvents: キーボードでは「戻す」ボタンで同じことができる */}
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: 余白を押して選択をやめるための受け皿 */}
-          <div
-            className="phand-zone"
-            onClick={(e) => {
-              const t = e.target as HTMLElement;
-              if (!t.closest(".mini, button")) cancelSelection();
-            }}
-          >
-            <div className="pdock">
-              {/* 操作のボタンは、手札を持つ右手の親指が届く右下にまとめる（スマホのカードゲームの定番の位置） */}
-              <span className="pdock-actions">
-                {buzzBtn}
-                {endTurnBtn}
-              </span>
+              {foeFace}
+              <div className="pchips right">
+                <span className="pchip">
+                  コスト {foe.mana}/{foe.maxMana}
+                </span>
+                <Piles
+                  owner={CPU}
+                  deck={foe.deck.length}
+                  trash={foe.trash}
+                  onTrash={() => setTrashView(CPU)}
+                />
+                {online && foeClock && !game.winner && <ClockChip left={foeClock} />}
+              </div>
+              <div className="pstates">{statusChips(CPU)}</div>
             </div>
-            <div className="phand">
-              {handEl}
-              <button
-                type="button"
-                className={`hand-cancel ${selection ? "on" : ""}`}
-                onClick={cancelSelection}
-                aria-label="選んだカードを手札に戻す"
-                tabIndex={selection ? 0 : -1}
-              >
-                <span aria-hidden="true">戻す</span>
-              </button>
+            {foeRow}
+            <BoardText line={foeText} className={`foe ${game.active === CPU && dealt ? "ask" : ""}`} />
+            {revealEl}
+          </div>
+          <div className="pmid">
+            {turnOn && (
+              <>
+                <span className="pturn">TURN {game.turn}</span>
+                <span className="pvs">VS</span>
+                <span className={`pturn side ${game.active === ME ? "mine" : "foe"}`}>
+                  {game.active === ME ? "あなたのターン" : "相手のターン"}
+                </span>
+              </>
+            )}
+            {bannerEl}
+          </div>
+          <div className="pself">
+            <BoardText line={myText} className={`me ${error ? "err" : askText ? "ask" : ""}`} />
+            <div className="plow">
+              {meRow}
+              <div className="pme">
+                <div className="pme-left">
+                  <p className="pcost">
+                    <span>コスト</span>
+                    <b key={me.mana}>{me.mana}</b>
+                    <small>/{me.maxMana}</small>
+                  </p>
+                  {buzzBtn}
+                </div>
+                {meFace}
+                <div className="pme-right">
+                  <button
+                    type="button"
+                    className="btn ghost phand-open"
+                    disabled={me.hand.length === 0}
+                    onClick={() => {
+                      select(null);
+                      setHandOpen(0);
+                    }}
+                  >
+                    手札を見る
+                  </button>
+                  {endTurnBtn}
+                </div>
+                <div className="pme-foot">
+                  <span className="pchips row-chips">
+                    {online && myClock && !game.winner && <ClockChip left={myClock} mine />}
+                    {statusChips(ME)}
+                    {me.hand.length > 5 && <span className="pchip">手札 {me.hand.length}</span>}
+                  </span>
+                  <Piles owner={ME} deck={me.deck.length} trash={me.trash} onTrash={() => setTrashView(ME)} />
+                </div>
+              </div>
+              <div className="phand-zone">
+                <div className="phand">{handEl}</div>
+              </div>
+
+              {selection?.kind === "hand" && selectedCard && !direct && !drag && (
+                <AskBar
+                  art={selectedCard.art}
+                  title={selectedCard.name}
+                  onBack={() => {
+                    const i = selection.index;
+                    select(null);
+                    setHandOpen(i);
+                  }}
+                  go={
+                    postSelected && !selectedCard.target
+                      ? { label: "使う", onClick: () => cast() }
+                      : undefined
+                  }
+                />
+              )}
+              {buzzing && buzzAsk === null && (
+                <AskBar title={`バズ のこり ${buzzLeft} 回`} onBack={() => select(null)} />
+              )}
+              {buzzAsk !== null && buzzAskUnit && canBuzz && (
+                <AskBar
+                  art={(CATALOG[buzzAskUnit.cardId] as CardDef).art}
+                  title={(CATALOG[buzzAskUnit.cardId] as CardDef).name}
+                  note={buzzNote(viewUnit(game, ME, buzzAskUnit, CATALOG))}
+                  onBack={() => setBuzzAsk(null)}
+                  go={{
+                    label: "バズする",
+                    onClick: () => {
+                      setBuzzAsk(null);
+                      buzz(buzzAsk);
+                    },
+                  }}
+                />
+              )}
+              {confirmEnd && myTurn && (
+                <AskBar
+                  title="まだできることがあります"
+                  note={endNote(options)}
+                  onBack={() => setConfirmEnd(false)}
+                  go={{
+                    label: "ターン終了",
+                    onClick: () => {
+                      setConfirmEnd(false);
+                      endTurn();
+                    },
+                  }}
+                />
+              )}
+
+              {sheetIndex !== null && sheetIndex >= 0 && (
+                <HandSheet
+                  cards={me.hand}
+                  index={sheetIndex}
+                  action={handAction(sheetIndex)}
+                  onIndex={setHandOpen}
+                  onZoom={(i) => setZoom({ id: me.hand[i] as string, where: "hand", index: i })}
+                  onClose={() => setHandOpen(null)}
+                  onGo={() => {
+                    setHandOpen(null);
+                    select({ kind: "hand", index: sheetIndex });
+                  }}
+                />
+              )}
+              {look && lookCard && (
+                <LookSheet
+                  card={lookCard}
+                  view={look.view}
+                  onZoom={() => setZoom(look)}
+                  onClose={() => setLook(null)}
+                />
+              )}
+              {omenAsk && askedOmen && CATALOG[askedOmen.cardId] && (
+                <OmenSheet
+                  card={CATALOG[askedOmen.cardId] as CardDef}
+                  owner={omenAsk.owner === ME ? null : foeName}
+                  ready={omenAsk.owner === ME && fallSlots.includes(omenAsk.slot)}
+                  onFall={() => {
+                    setOmenAsk(null);
+                    darkFall(omenAsk.slot);
+                  }}
+                  onClose={() => setOmenAsk(null)}
+                />
+              )}
+              {mulliganOpen &&
+                !openingOn &&
+                !dealing &&
+                !animating &&
+                mullSent !== opening &&
+                game.mulligan?.waiting.includes(ME) && (
+                  <MulliganSheet
+                    key={opening}
+                    hand={me.hand}
+                    deadline={mulliganDeadline}
+                    onDone={(indexes) => {
+                      setMullSent(opening);
+                      mulligan(indexes);
+                    }}
+                  />
+                )}
+              {menuOpen && (
+                <section className="psheet pmenu-sheet" role="dialog" aria-label="メニュー">
+                  <button type="button" className="pm-row" onClick={() => closeMenu(() => setLogOpen(true))}>
+                    対戦の記録
+                  </button>
+                  <SoundMenu className="pm-row" label="音の大きさ" />
+                  <button type="button" className="pm-row" onClick={() => closeMenu(() => setTrashView(ME))}>
+                    自分の墓地を見る
+                  </button>
+                  <button type="button" className="pm-row" onClick={() => closeMenu(() => setTrashView(CPU))}>
+                    相手の墓地を見る
+                  </button>
+                  {online && !game.winner && (
+                    <button
+                      type="button"
+                      className={`pm-row ${resignAsk ? "ask" : ""}`}
+                      onClick={() => (resignAsk ? resign() : setResignAsk(true))}
+                      onBlur={() => setResignAsk(false)}
+                    >
+                      {resignAsk ? "本当に降参する" : "降参する"}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="pm-row"
+                    data-tap-se
+                    onClick={() => closeMenu(() => (game.winner ? quit() : setQuitAsk(true)))}
+                  >
+                    {online ? "ロビーへ戻る" : "対戦をやめる"}
+                  </button>
+                  <div className="ps-foot">
+                    <button type="button" className="btn lg" onClick={() => setMenuOpen(false)}>
+                      閉じる
+                    </button>
+                  </div>
+                </section>
+              )}
             </div>
           </div>
         </div>
@@ -2557,13 +2725,6 @@ export function Board({
               </div>
             ) : null;
           })}
-        </div>
-      )}
-
-      {throwHint && !drag && (
-        // 対象を取らない呪文を押して選んだだけのときも、同じ矢印で「場へ」を示す
-        <div className="vp-layer">
-          <PostThrowArrow from={null} />
         </div>
       )}
 
@@ -2622,41 +2783,6 @@ export function Board({
         </div>
       )}
 
-      {banner && (
-        <div
-          key={banner.id}
-          className={`turn-banner ${banner.mine ? "mine" : "foe"}`}
-          aria-hidden="true"
-          onAnimationEnd={(e) => e.target === e.currentTarget && setBanner(null)}
-        >
-          <div className="tb-band">
-            <small>TURN {banner.turn}</small>
-            <strong>{banner.mine ? "あなたのターン" : "相手のターン"}</strong>
-          </div>
-        </div>
-      )}
-
-      {reveal && CATALOG[reveal.cardId] && (
-        <div key={reveal.id} className={`foe-reveal ${reveal.mine ? "mine" : ""}`} aria-live="polite">
-          <span className="fr-label">
-            {reveal.mine ? "あなたの呪文" : `${foeName}が${reveal.kind === "play" ? "出した" : "使った"}`}
-          </span>
-          <div className="fr-card">
-            <HoloCard card={CATALOG[reveal.cardId] as CardDef} idle={false} />
-          </div>
-        </div>
-      )}
-
-      {confirmEnd && myTurn && (
-        <EndTurnConfirm
-          options={turnOptions(game, ME, CATALOG)}
-          onYes={() => {
-            setConfirmEnd(false);
-            endTurn();
-          }}
-          onNo={() => setConfirmEnd(false)}
-        />
-      )}
       {quitAsk && !game.winner && (
         <QuitConfirm
           question={online ? "ロビーに戻りますか？" : "デッキ選びに戻りますか？"}
@@ -2667,27 +2793,6 @@ export function Board({
           }}
           onNo={() => setQuitAsk(false)}
         />
-      )}
-      {mulliganOpen &&
-        !openingOn &&
-        !dealing &&
-        !animating &&
-        mullSent !== opening &&
-        game.mulligan?.waiting.includes(ME) && (
-          <MulliganSheet
-            key={opening}
-            hand={me.hand}
-            deadline={mulliganDeadline}
-            onDone={(indexes) => {
-              setMullSent(opening);
-              mulligan(indexes);
-            }}
-          />
-        )}
-      {mulliganOpen && !openingOn && !dealing && !animating && !game.mulligan?.waiting.includes(ME) && (
-        <div className="mulligan-wait" role="status">
-          相手が手札を引き直しています
-        </div>
       )}
       {openingOn && deck && (
         <Opening
@@ -2700,33 +2805,6 @@ export function Board({
             openingSeen = opening;
             setOpenSeen(opening);
           }}
-        />
-      )}
-      {buzzAsk !== null && buzzAskUnit && canBuzz && (
-        <BuzzConfirm
-          card={CATALOG[buzzAskUnit.cardId] as CardDef}
-          view={viewUnit(game, ME, buzzAskUnit, CATALOG)}
-          left={me.buzzLeft ?? 0}
-          onYes={() => {
-            setBuzzAsk(null);
-            buzz(buzzAsk);
-          }}
-          onNo={() => {
-            setBuzzAsk(null);
-            if (buzzing) select(null);
-          }}
-        />
-      )}
-      {omenAsk && askedOmen && CATALOG[askedOmen.cardId] && (
-        <OmenSheet
-          card={CATALOG[askedOmen.cardId] as CardDef}
-          owner={omenAsk.owner === ME ? null : foeName}
-          ready={omenAsk.owner === ME && fallSlots.includes(omenAsk.slot)}
-          onFall={() => {
-            setOmenAsk(null);
-            darkFall(omenAsk.slot);
-          }}
-          onClose={() => setOmenAsk(null)}
         />
       )}
       {cut && CATALOG[cut.cardId] && (
@@ -2795,76 +2873,175 @@ export function Board({
   );
 }
 
-/**
- * 縦の舞台で、押したカードの説明を1本の帯で見せる（大きなカードを置く場所がないため）。
- * 絵・名前・コスト・攻撃力/体力・効果文（2行まで）。押すと画面いっぱいに拡大して全文を読める。
- * 攻撃力・体力は強化やダメージを入れない元の値（今の値は盤面のカードで見る）
- */
-function PeekStrip({ card, view, onOpen }: { card: CardDef | null; view?: UnitView; onOpen: () => void }) {
-  if (!card) {
-    return (
-      <div className="peek-strip empty">
-        <span>カードを押すと、ここに説明が出ます。長押しで画面いっぱいに拡大</span>
-      </div>
-    );
-  }
-  const dark = !!view?.unit.dark && card.dark;
-  const art = dark ? (card.dark?.art ?? card.art) : card.art;
-  const name = dark ? card.dark?.name : card.name;
-  const effect = (dark ? card.dark?.effect : card.effect) ?? "";
-  // 効果文に書いていないキーワード（バズなどで付いたもの）だけを札で出す。説明は語を押した先の小窓
-  const keywords = (view?.keywords ?? card.keywords).filter((k) => !effect.includes(`${k}。`));
-  const states = view
-    ? [
-        view.exposed && "晒し状態",
-        view.unit.exposeAtTurnEnd && "ターンの終わりに晒される",
-        view.asleep && "眠り状態",
-        view.unit.silenced && "沈黙状態",
-      ].filter((x): x is string => !!x)
-    : [];
+/** 真ん中の文字欄の 1 行 */
+function BoardText({ line, className }: { line: BoardLine | null; className: string }) {
   return (
-    <div className={`peek-strip ${dark ? "is-dark" : ""} ${card.type === "post" ? "is-post" : ""}`}>
-      <button type="button" className="ps-main" onClick={onOpen} aria-label={`${name} の説明を大きく見る`}>
-        <span
-          className="ps-art"
-          style={
-            art
-              ? { backgroundImage: `url(${art})` }
-              : { background: ATTR_META[card.attributes[0] ?? "自然"].deep }
-          }
-        />
-        <span className="ps-body">
-          <span className="ps-head">
-            <b className="ps-name">{name}</b>
-            <span className="ps-meta">
-              <i className="ps-cost">{card.cost}</i>
-              {card.type === "icon" ? (
-                <>
-                  <i className="t-atk">{dark ? card.dark?.attack : card.attack}</i>／
-                  <i className="t-hp">{dark ? card.dark?.hp : card.hp}</i>
-                </>
-              ) : (
-                <i className="ps-post">呪文</i>
-              )}
-            </span>
-          </span>
-          <span className="ps-effect">
-            {keywords.map((k) => (
-              <HelpTerm key={k} term={k} className="ps-kw" />
-            ))}
-            {states.length > 0 && (
-              <em className="ps-state">
-                <EffectText text={states.join("・")} />
-              </em>
-            )}
-            <EffectText text={effect} />
-          </span>
-        </span>
-      </button>
-      <button type="button" className="ps-zoom" onClick={onOpen} aria-label="大きく見る">
-        拡大
-      </button>
-    </div>
+    <p className={`pmsg ${className}`} role="status">
+      {line?.art && <i style={{ backgroundImage: `url(${line.art})` }} />}
+      <span>{line?.text}</span>
+    </p>
+  );
+}
+
+/** 手札の場所に重ねて出す確認の帯。押して決めるまで進まず、「戻る」で引き返せる */
+function AskBar({
+  art,
+  title,
+  note,
+  onBack,
+  go,
+}: {
+  art?: string;
+  title: string;
+  note?: string;
+  onBack: () => void;
+  go?: { label: string; onClick: () => void };
+}) {
+  return (
+    <section className="pask" role="dialog" aria-label={title}>
+      {art && <span className="pask-art" style={{ backgroundImage: `url(${art})` }} />}
+      <div className="pask-body">
+        <b>{title}</b>
+        {note && <span>{note}</span>}
+        <div className="pask-acts">
+          <button type="button" className="btn ghost hand-cancel" onClick={onBack}>
+            戻る
+          </button>
+          {go && (
+            <button type="button" className="btn" data-decide-se onClick={go.onClick}>
+              {go.label}
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** 手札を下半分で見るシート。左右のスワイプでカードをめくり、「出す」「使う」で場を選ぶ手順へ進む */
+function HandSheet({
+  cards,
+  index,
+  action,
+  onIndex,
+  onZoom,
+  onClose,
+  onGo,
+}: {
+  cards: string[];
+  index: number;
+  action: { label: string; ok: boolean };
+  onIndex: (i: number) => void;
+  onZoom: (i: number) => void;
+  onClose: () => void;
+  onGo: () => void;
+}) {
+  const [dx, setDx] = useState(0);
+  const start = useRef<number | null>(null);
+  const moved = useRef(false);
+  const last = cards.length - 1;
+  const pull = (index === 0 && dx > 0) || (index === last && dx < 0) ? dx * 0.3 : dx;
+  const up = (x: number) => {
+    if (start.current === null) return;
+    const d = x - start.current;
+    start.current = null;
+    setDx(0);
+    if (!moved.current || Math.abs(d) < SWIPE_PX) return;
+    onIndex(Math.max(0, Math.min(last, index + (d < 0 ? 1 : -1))));
+  };
+  return (
+    <section className="psheet hand-sheet" role="dialog" aria-label="手札">
+      <div
+        className="hs-reel"
+        onPointerDown={(e) => {
+          start.current = e.clientX;
+          moved.current = false;
+        }}
+        onPointerMove={(e) => {
+          if (start.current === null) return;
+          const d = e.clientX - start.current;
+          if (Math.abs(d) < 8 && !moved.current) return;
+          moved.current = true;
+          setDx(d);
+        }}
+        onPointerUp={(e) => up(e.clientX)}
+        onPointerCancel={(e) => up(e.clientX)}
+        onPointerLeave={(e) => up(e.clientX)}
+      >
+        {cards.map((id, i) => {
+          const card = CATALOG[id];
+          // 重い絵を増やさないよう、見ているカードと両隣だけ置く
+          if (!card || Math.abs(i - index) > 1) return null;
+          return (
+            <button
+              // biome-ignore lint/suspicious/noArrayIndexKey: 同じカードが並ぶので手札の位置で見分ける
+              key={i}
+              type="button"
+              className={`hs-card ${i === index ? "" : "far"}`}
+              aria-label={card.name}
+              style={{
+                transform: `translateX(calc(-50% + ${(i - index) * 108}% + ${pull}px))`,
+                transition: dx ? "none" : undefined,
+              }}
+              onClick={() => {
+                if (moved.current) return;
+                if (i === index) onZoom(i);
+                else onIndex(i);
+              }}
+            >
+              <HoloCard card={card} idle={false} />
+            </button>
+          );
+        })}
+      </div>
+      <div className="hs-dots" aria-hidden="true">
+        {cards.map((id, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: 手札の位置そのものを点で見せる
+          <i key={`${id}-${i}`} className={i === index ? "on" : ""} />
+        ))}
+      </div>
+      <div className="ps-foot">
+        <button type="button" className="btn ghost ps-back" onClick={onClose}>
+          閉じる
+        </button>
+        <button type="button" className="btn lg" data-decide-se disabled={!action.ok} onClick={onGo}>
+          {action.label}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/** 場のカードを下半分で見るシート。カードを押すと画面いっぱいに拡大する */
+function LookSheet({
+  card,
+  view,
+  onZoom,
+  onClose,
+}: {
+  card: CardDef;
+  view?: UnitView;
+  onZoom: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <section className="psheet look-sheet" role="dialog" aria-label={card.name}>
+      <div className="hs-reel">
+        <button
+          type="button"
+          className="hs-card"
+          aria-label={`${view?.name ?? card.name}を拡大`}
+          onClick={onZoom}
+        >
+          <HoloCard card={card} darkForm={view?.unit.dark} idle={false} />
+        </button>
+      </div>
+      <div className="ps-foot">
+        <button type="button" className="btn lg" onClick={onClose}>
+          閉じる
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -2944,87 +3121,32 @@ function Result({
   );
 }
 
-/** 山札（裏向きの束）と墓地（いちばん上のカード）。墓地を押すと一覧を出す */
+/** 山札と墓地の枚数。墓地を押すと一覧を出す（山札・墓地の場所はカードが飛ぶ演出の目印にもなる） */
 function Piles({
   owner,
   deck,
   trash,
   onTrash,
-  dark,
 }: {
   owner: PlayerId;
   deck: number;
   trash: string[];
   onTrash: () => void;
-  /** 墓地に闇堕ちできるカードがある（mine＝今出せる／foe＝相手が出してくるかも） */
-  dark?: "mine" | "foe";
 }) {
-  const top = trash.at(-1);
-  const topCard = top ? CATALOG[top] : null;
   return (
-    <div className="piles">
-      <div className="pile" data-pile={`deck-${owner}`} title={`山札 ${deck}枚`}>
-        <span className={`cardback depth-${Math.min(3, Math.ceil(deck / 5))} ${deck === 0 ? "empty" : ""}`} />
-        <b className="pile-count">{deck}</b>
-        <small>山札</small>
-      </div>
-      <button
-        type="button"
-        className={`pile ${dark ? `dark-ready ${dark}` : ""}`}
-        data-pile={`trash-${owner}`}
-        onClick={onTrash}
-        disabled={trash.length === 0}
-        aria-label={`墓地 ${trash.length}枚を見る`}
-      >
-        {topCard ? (
-          <span
-            className="trash-top"
-            style={
-              topCard.art
-                ? { backgroundImage: `url(${topCard.art})` }
-                : { background: ATTR_META[topCard.attributes[0] ?? "自然"].deep }
-            }
-          >
-            <i>{topCard.name}</i>
-          </span>
-        ) : (
-          <span className="trash-empty" />
-        )}
-        <b className="pile-count">{trash.length}</b>
-        <small>{dark === "mine" ? "闇堕ち" : "墓地"}</small>
+    <span className="pchip ppiles">
+      <span data-pile={`deck-${owner}`}>山札 {deck}</span>・
+      <button type="button" data-pile={`trash-${owner}`} onClick={onTrash}>
+        墓地 {trash.length}
       </button>
-    </div>
+    </span>
   );
 }
 
-interface BarProps {
-  side: "me" | "foe";
-  name: string;
-  lp: number;
-  mana: number;
-  maxMana: number;
-  hand: number;
-  active: boolean;
-  /** 場にガードがいてプレイヤーを攻撃できない */
-  guarded?: boolean;
-  /** プレイヤーが守られていて、ダメージを受けない */
-  shielded?: boolean;
-  /** 盾：受けるダメージを1回ごとに減らす数（0 なら無し）。帯の表面に金の膜を張る */
-  cut?: number;
-  /** このプレイヤーに付いている「次の自分のターンの終わりに受けるダメージ」（0 なら無し） */
-  delayed?: number;
-  targetable?: boolean;
-  /** ドラッグした攻撃が、いまこのプレイヤーの上にある */
-  dropOver?: boolean;
-  /** 攻撃したときの見込み */
-  preview?: AttackPreview | null;
-  onClick?: () => void;
-  piles: React.ReactNode;
-  /** バズの残り回数 */
-  buzz?: number;
-  /** オンライン対戦の持ち時間 */
-  clock?: React.ReactNode;
-  children?: React.ReactNode;
+/** 真ん中の文字欄の 1 行（文と、添えるカードの絵） */
+interface BoardLine {
+  text: string;
+  art?: string;
 }
 
 /**
@@ -3059,81 +3181,58 @@ function ClockChip({ left, mine }: { left: ClockLeft; mine?: boolean }) {
   );
 }
 
-function PlayerBar({
+/**
+ * プレイヤーの顔。攻撃する相手はこのアイコンで、まわりの輪がライフの残り。
+ * 決着のときは、このアイコン（data-master）が砕ける
+ */
+function PlayerFace({
   side,
   name,
+  icon,
   lp,
-  mana,
-  maxMana,
-  hand,
   active,
-  guarded,
-  shielded,
   cut = 0,
-  delayed = 0,
+  locked,
   targetable,
   dropOver,
   preview,
   onClick,
-  piles,
   children,
-  buzz,
-  clock,
-}: BarProps) {
-  const pct = Math.max(0, Math.min(100, (lp / 20) * 100));
-  const pips = Array.from({ length: Math.max(maxMana, mana) }, (_, i) => i < mana);
+}: {
+  side: "me" | "foe";
+  name: string;
+  icon: string;
+  lp: number;
+  active?: boolean;
+  /** ダメージを減らす効果の量（膜を出す） */
+  cut?: number;
+  /** ガードに守られて攻撃できない */
+  locked?: boolean;
+  targetable?: boolean;
+  dropOver?: boolean;
+  preview?: AttackPreview | null;
+  onClick?: () => void;
+  children?: React.ReactNode;
+}) {
+  const ring = { "--life": `${Math.max(0, Math.min(100, (lp / 20) * 100))}%` } as CSSProperties;
   const body = (
     <>
-      <span className="pb-name">
-        {name}のプレイヤー
-        {active && <i className="turn-dot" title="この人のターン" />}
-        {guarded && <span className="pb-guard">ガードで守られている</span>}
-        {shielded && <span className="pb-shield">無敵（次の相手のターンまで）</span>}
-        {cut > 0 && <span className="pb-cut">ダメージ-{cut}</span>}
-        {delayed > 0 && <span className="pb-delayed">ターンの終わりに{delayed}ダメージ</span>}
-        {clock}
+      <span className="pf-photo">
+        <img src={icon} alt="" draggable={false} />
       </span>
-      <span className="pb-lp">
-        ライフ <b key={lp}>{lp}</b>
-        <span className="lp-bar">
-          <span style={{ width: `${pct}%` }} />
-        </span>
-      </span>
-      <span className="pb-mana" title={`コスト ${mana} / ${maxMana}`}>
-        コスト
-        <span className="pips">
-          {pips.map((on, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: コストの玉は位置そのものが意味を持つ
-            <i key={i} className={on ? "on" : ""} />
-          ))}
-        </span>
-        <b>
-          {mana}/{maxMana}
-        </b>
-      </span>
-      <span className="pb-count">
-        <span data-hand={side === "me" ? undefined : CPU}>手札 {hand}</span>
-        {buzz !== undefined && (
-          <span className="pb-buzz" title={`バズ 残り${buzz}回`}>
-            バズ
-            {[0, 1].map((k) => (
-              <i key={k} className={k < buzz ? "on" : ""} />
-            ))}
-          </span>
-        )}
-      </span>
-      {preview && <AttackBadge pv={preview} leader />}
       {cut > 0 && <i className="pb-film" aria-hidden="true" />}
     </>
   );
   return (
-    <div className={`pbar ${side}`}>
+    <div className={`pface ${side} ${active ? "active" : ""} ${locked ? "locked" : ""}`}>
+      {children}
       {onClick ? (
         <button
           type="button"
           data-master={side === "me" ? ME : CPU}
-          data-drop={side === "foe" ? "leader" : undefined}
-          className={`pb-main ${active ? "active" : ""} ${targetable ? "targetable" : ""} ${dropOver ? "drop-over" : ""}`}
+          data-drop="leader"
+          className={`pf-ring ${targetable ? "targetable" : ""} ${dropOver ? "drop-over" : ""}`}
+          style={ring}
           disabled={!targetable}
           onClick={onClick}
           aria-label={`${name}のプレイヤーを攻撃`}
@@ -3141,12 +3240,30 @@ function PlayerBar({
           {body}
         </button>
       ) : (
-        <div className={`pb-main ${active ? "active" : ""}`} data-master={side === "me" ? ME : CPU}>
+        <div className="pf-ring" data-master={side === "me" ? ME : CPU} style={ring}>
           {body}
         </div>
       )}
-      {piles}
-      {children}
+      <span className="pf-life">
+        ライフ <b key={lp}>{lp}</b>
+      </span>
+      {preview && <AttackBadge pv={preview} leader />}
+      {locked && <span className="atk-pv leader lock">ガードで守られています</span>}
     </div>
+  );
+}
+
+/** 自分の顔のまわりのコスト。上から時計回りに 10 個並べ、使える分が光る。増えた 1 個は key が変わって飛び出す */
+function CostGems({ mana, max }: { mana: number; max: number }) {
+  return (
+    <span className="pgems" aria-label={`コスト ${mana} / ${max}`} role="img">
+      {COST_SLOTS.map((i) => (
+        <i
+          key={i === max - 1 ? `new-${max}` : i}
+          className={`${i < mana ? "on" : i < max ? "left" : ""} ${i === max - 1 ? "fresh" : ""}`}
+          style={{ "--a": `${i * 36}deg` } as CSSProperties}
+        />
+      ))}
+    </span>
   );
 }
