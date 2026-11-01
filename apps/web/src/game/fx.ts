@@ -333,6 +333,10 @@ export async function animateAttack(
   const back = { x: -dx * 0.08, y: -dy * 0.08 };
 
   atkEl.style.zIndex = "6";
+  // 攻撃する側の陣地ごと、真ん中の VS の線（.pmid）と相手の陣地より上に出す。
+  // カードの z-index は陣地の中でしか効かず、線の下をくぐって見えていた（11月2日）
+  const side = atkEl.closest<HTMLElement>(".pfoe, .pself");
+  if (side) side.style.zIndex = "5";
   const lunge = atkEl.animate(
     [
       { transform: "none" },
@@ -387,6 +391,7 @@ export async function animateAttack(
   lunge.play();
   await lunge.finished.catch(() => {});
   atkEl.style.zIndex = "";
+  if (side) side.style.zIndex = "";
 
   // 倒れるものはトラッシュへ
   if (def && dv && dmg >= dv.hp && goesToTrash(dv)) void toTrash(defEl, foeId);
