@@ -281,21 +281,14 @@ async function presentPhased(
 /** 自分のアイコン（アイコンの登録が入るまでは、案内役のちびミナモ） */
 const MY_ICON = "/assets/tutorial/minamo-cheer.webp";
 const DEFAULT_FOE_ICON = "/assets/cards/c17-art.jpg";
-/** 自分の手の結果を、手前の文字欄に見せておく時間 */
+/** バトルの結果を、手前の文字欄に見せておく時間 */
 const BOARD_LINE_MS = 3000;
-/** 真ん中の文字欄に出す出来事（引く・ターンの始めなどの細かい動きは出さない） */
-const BOARD_LINE_EVENTS = new Set<GameEvent["type"]>([
-  "played",
-  "cast",
-  "battle",
-  "leaderDamaged",
-  "buzz",
-  "darkFall",
-  "sacrificed",
-  "bounced",
-  "stolen",
-  "transformed",
-]);
+/**
+ * 手前の文字欄に出す出来事：バトルの履歴だけ（両者の攻撃と、プレイヤーへのダメージ）。
+ * 11月2日。オーナー：「本当にその場で見えないと困るもののみを対象にしたい」。出した・使った・バズなどは、
+ * カードの表示や演出で分かるので出さない
+ */
+const BOARD_LINE_EVENTS = new Set<GameEvent["type"]>(["battle", "leaderDamaged"]);
 
 function describe(e: GameEvent): string {
   switch (e.type) {
@@ -1359,7 +1352,7 @@ export function Board({
     setMenuOpen(false);
   }, [foeMove]);
 
-  // 真ん中の文字欄に、いちばん新しい手を出す（奥は相手の手、手前は自分の手）
+  // 手前の文字欄に、いちばん新しいバトルの結果を 3 秒だけ出す（自分・相手のどちらのターンでも）
   useEffect(() => {
     const last = [...log].reverse().find((l) => BOARD_LINE_EVENTS.has(l.e.type));
     if (!last) {
@@ -1371,8 +1364,6 @@ export function Board({
     lineSeen.current = last.id;
     const cardId = "cardId" in last.e ? last.e.cardId : undefined;
     const line = { text: describe(last.e), art: cardId ? CATALOG[cardId]?.art : undefined };
-    // 相手の文字欄はやめた（11月2日）。相手のターンの出来事は、文字欄には出さない
-    if (useGame.getState().game?.active === CPU) return;
     setMyLine(line);
     const t = setTimeout(() => setMyLine(null), BOARD_LINE_MS);
     return () => clearTimeout(t);
@@ -2373,7 +2364,6 @@ export function Board({
     after();
   };
   const options = turnOptions(game, ME, CATALOG);
-  const dealt = !mulliganOpen && !openingOn && !dealing;
   // 手前の文字欄：次に何をするか。指示のときは光らせる
   const askText = sacGuide
     ? sacGuide.mine
@@ -2400,20 +2390,9 @@ export function Board({
                 : omenAsk && fallSlots.includes(omenAsk.slot)
                   ? "闇堕ちさせますか"
                   : null;
-  const hint = !dealt
-    ? game.active === ME
-      ? "あなたが先攻です"
-      : "あなたは後攻です 手札 +1 枚"
-    : game.active !== ME
-      ? "相手のターンです"
-      : options.attackers + options.playable === 0
-        ? "ターンを終えられます"
-        : `攻撃できる ${options.attackers} 体・出せるカード ${options.playable} 枚`;
-  const myText: BoardLine = error
-    ? { text: error }
-    : askText
-      ? { text: askText }
-      : (myLine ?? { text: hint });
+  // 手前の文字欄：その場で見えないと困るものだけ（反則の理由・次の操作の指示・バトルの結果）。何も無ければ空ける
+  //（11月2日。先攻・後攻、攻撃できる数・出せる枚数、相手のターンです、などの案内はやめた）
+  const myText: BoardLine | null = error ? { text: error } : askText ? { text: askText } : myLine;
   const field = fieldOf(game, CATALOG);
   const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}${director !== null ? " field-director" : ""}${arbiter ? " field-arbiter" : ""}${fixer ? " field-fixer" : ""}${god ? " field-god" : ""}${sacGuide ? " sac-mode" : ""}`;
   const fieldLayer = field ? <FieldLayer kind={field.kind} mine={field.owner === ME} /> : null;
@@ -2544,7 +2523,10 @@ export function Board({
             {bannerEl}
           </div>
           <div className="pself">
-            <BoardText line={myText} className={`me ${error ? "err" : askText ? "ask" : ""}`} />
+            <BoardText
+              line={myText}
+              className={`me ${error ? "err" : askText ? "ask" : ""} ${myText ? "" : "empty"}`}
+            />
             <div className="plow">
               {meRow}
               <div className="pme">

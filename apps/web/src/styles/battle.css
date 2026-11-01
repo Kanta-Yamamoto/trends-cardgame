@@ -93,6 +93,8 @@
 .pmsg span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pmsg i { flex: none; width: 18px; height: 24px; border-radius: 4px; background-size: cover; background-position: 50% 20%; }
 .pmsg.me.ask { background: #0b2544d9; box-shadow: 0 0 0 2px #7ad6ff; font-size: 13px; font-weight: 800; }
+/* 出すものが無いときは、高さだけ残して見せない */
+.pmsg.empty { background: none; box-shadow: none; }
 .pmsg.me.err { background: #5a1420e6; box-shadow: 0 0 0 2px #ff8fa3; font-weight: 800; }
 .pmsg-space { flex: none; height: 30px; }
 
