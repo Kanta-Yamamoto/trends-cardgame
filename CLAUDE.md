@@ -33,6 +33,7 @@ pnpm verify     # CI と同じ確かめ（先に pnpm db:up）。dev に取り�
 TRENDS_INVITE=合言葉 pnpm logs:cpu fetch   # 本番から CPU 対戦の記録を取り出す（pnpm logs:cpu summary で一覧）
 pnpm promo:video c17 8.1   # SNS 用のカードの動画を sns/c17.mp4 に作る（先に pnpm dev）
 pnpm promo:video scene god # 本物の盤面で演出の場面を sns/scene-god.mp4 に撮る（先に pnpm dev）
+pnpm promo:video intro     # 撮った場面をつなぎ、効果音と曲を重ねて sns/intro.mp4 にする
 ```
 
 環境変数は `.env.example` を参照（`apps/api/.env` に `DATABASE_URL`。手元でオンライン対戦を試すときは `AUTH_DEV_LOGIN=true` で名前だけのログインが使える）。
