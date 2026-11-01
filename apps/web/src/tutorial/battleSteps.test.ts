@@ -40,6 +40,8 @@ describe("チュートリアルの対戦の案内", () => {
     expect(step("spell").view(ctx(g, { hand: spell })).targets).toEqual([`[data-drop="foe:${guardSlot}"]`]);
     g = apply(g, { type: "cast", player: me, handIndex: 0, target: { side: "enemy", slot: guardSlot } });
     expect(step("spell").done?.(ctx(g))).toBe(true);
+    // 闇堕ちの前に、あと何ダメージ足りないかを言う（相手のライフ 5 − 出したキャラクターの攻撃力 1）
+    expect(step("short").view(ctx(g)).text).toContain("4 ダメージ");
     // 闇堕ち：小窓が開いたら「闇堕ちさせる」を光らせる
     expect(step("darkFall").done?.(ctx(g))).toBe(false);
     expect(step("darkFall").view(ctx(g, { omenOpen: true })).targets).toEqual([".dkc-go"]);

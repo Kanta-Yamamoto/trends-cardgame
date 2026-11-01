@@ -4,10 +4,12 @@ import { warmFx } from "../fx/warm";
 import { ME, useGame } from "../game/store";
 import { useSession } from "../online/session";
 import { Board } from "../pages/Play";
+import { AttrTour } from "./AttrTour";
 import { BATTLE_STEPS, type Ctx } from "./battleSteps";
 import { faceUrl, Guide, preloadFaces } from "./Guide";
 import { MinamoIntro, T_LEAVE } from "./MinamoIntro";
 import { useTutorial } from "./progress";
+import { Rich } from "./Rich";
 import "../styles/tutorial.css";
 
 /** 画面にその要素があるか（盤面の中の小窓・演出の出入りを、少しずつ見て知る） */
@@ -31,7 +33,8 @@ const ALWAYS = [".card-zoom", ".help-sheet"];
  * チュートリアル（10月27日。オーナー：「初回ログイン時に、最初にカードのなかのvtuberミナモを写して…ちびキャラみなもが出てきて、
  * チュートリアルを説明してくれる」「cpu対戦か特別に作った何かに誘導して基本のキャラ出し、呪文出し、闇堕ち、プレイヤー殴りで
  * 残り5体力とかを削って勝ち、のあと戻ってきてガチャに誘導しておわり」）。
- * 導入（MinamoIntro）→ チュートリアルの対戦（本物の盤面。案内は Guide）→ 勝ったらホームへ戻り、ガチャへ案内する（TourGuides.tsx）
+ * 導入（MinamoIntro。あいさつ・あるあるがカードに・キラカード）→ チュートリアルの対戦（本物の盤面。案内は Guide）
+ * → 勝ったら属性の紹介（AttrTour）→ ホームへ戻り、ガチャへ案内する（TourGuides.tsx）
  */
 export function Tutorial() {
   const user = useSession((s) => s.user);
@@ -41,6 +44,7 @@ export function Tutorial() {
   const navigate = useNavigate();
   const [battle, setBattle] = useState(false);
   const [intro, setIntro] = useState(true);
+  const [attrs, setAttrs] = useState(false);
 
   useEffect(() => {
     preloadFaces();
@@ -69,7 +73,10 @@ export function Tutorial() {
 
   return (
     <section className="page play tut-page">
-      {battle && inGame && <Board result={({ broke }) => <TutorialWin broke={broke} onNext={finish} />} />}
+      {battle && inGame && (
+        <Board result={({ broke }) => <TutorialWin broke={broke} onNext={() => setAttrs(true)} />} />
+      )}
+      {attrs && <AttrTour onNext={finish} onSkip={skip} />}
       {battle && inGame && !intro && <BattleGuide onSkip={skip} />}
       {intro && <MinamoIntro playerName={user?.name ?? ""} onBattle={toBattle} onSkip={skip} />}
     </section>
@@ -137,8 +144,7 @@ function TutorialWin({ broke, onNext }: { broke: boolean; onNext: () => void }) 
         <div className="tw-talk g3">
           <b className="tut-who">ミナモ</b>
           <p>
-            やったね！
-            キャラクターを出す・呪文・闇堕ち・攻撃、これで基本はばっちり。最後に、カードの集め方を教えるね。
+            <Rich text="やったね！ これで**基本はばっちり**。つぎは、カードの**属性**を見てみよう！" />
           </p>
         </div>
       </section>

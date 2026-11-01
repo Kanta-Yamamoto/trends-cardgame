@@ -53,7 +53,9 @@ const slotOf = (g: GameState, id: string) => g.players[me].field.findIndex((u) =
 /**
  * チュートリアルの対戦の案内（10月27日）。キャラクターを出す → 呪文 → 闇堕ち → プレイヤーへの攻撃 の順。
  * 1 つの操作を「カードを選ぶ」「出す場所・相手を選ぶ」の 2 つに分け、選んだかどうかで光らせる場所を変える。
- * 文は用語集（docs/glossary.md）の呼び名だけで書く
+ * 文は用語集（docs/glossary.md）の呼び名だけで書く。**…** は強調、『…』はカードの名前（Rich.tsx）。
+ * 11月1日：文を短くし（1 つの吹き出しは 2 行まで）、闇堕ちは「あと 4 ダメージ足りない」から、
+ * 前のターンに破壊されたレンが闇堕ちで戻る、の流れでつなげた（友人の声「チュートリアルの闇落ちを前の文脈から丁寧に」）
  */
 export const BATTLE_STEPS: readonly BattleStep[] = [
   {
@@ -61,7 +63,7 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
     next: "つぎへ",
     view: () => ({
       face: "open",
-      text: `ここが対戦の画面。下があなた、上が相手だよ。相手のライフは残り ${TUTORIAL.foeLp}。0 にしたら勝ち！`,
+      text: `下があなた、上が相手。相手の**ライフ ${TUTORIAL.foeLp}**を 0 にしたら勝ち！`,
       shows: [foePlayer, myPlayer],
     }),
   },
@@ -72,13 +74,13 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
       c.hand === character
         ? {
             face: "point",
-            text: "光っている枠を押すと、そこに出せるよ。",
+            text: "光っている枠に出そう！",
             targets: [openSlots],
             allow: [handCard(character), CANCEL],
           }
         : {
             face: "point",
-            text: `まずはキャラクターを出そう。手札の${nm(character)}を押してね。`,
+            text: `まずは**キャラクター**を出すよ。${nm(character)}を押してね。`,
             targets: [handCard(character)],
           },
   },
@@ -87,7 +89,7 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
     next: "つぎへ",
     view: (c) => ({
       face: "open",
-      text: "出せた！ キャラクターはふつう、出した次のターンから攻撃できる。でも速攻を持つキャラクターは、出したターンから攻撃できるの。",
+      text: "**速攻**持ちだから、出したターンにすぐ攻撃できるよ！",
       shows: [ally(slotOf(c.game, character))],
     }),
   },
@@ -96,7 +98,7 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
     next: "つぎへ",
     view: () => ({
       face: "think",
-      text: `でも、相手の${nm(guard)}はガードを持っている。ガードがいる間は、ガードしか攻撃できないの…。`,
+      text: `でも${nm(guard)}は**ガード**持ち。先にこの子しか攻撃できないの…。`,
       shows: [foeUnit(guardSlot)],
     }),
   },
@@ -107,22 +109,31 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
       c.hand === spell
         ? {
             face: "point",
-            text: `相手の${nm(guard)}を押すと、3ダメージ！`,
+            text: `${nm(guard)}に 3 ダメージ！`,
             targets: [foeUnit(guardSlot)],
             allow: [handCard(spell), CANCEL],
           }
         : {
             face: "point",
-            text: `呪文で破壊しちゃおう。手札の${nm(spell)}を押してね。呪文は、使うと効果が出て墓地へ行くカードだよ。`,
+            text: `**呪文**で破壊しちゃおう！ ${nm(spell)}を押してね。`,
             targets: [handCard(spell)],
           },
+  },
+  {
+    id: "short",
+    next: "つぎへ",
+    view: (c) => ({
+      face: "think",
+      text: `ガードは消えた！ でも${nm(character)}だけじゃ、あと **${c.game.players[foe].lp - (CATALOG[character]?.attack ?? 0)} ダメージ**足りない…。`,
+      shows: [foePlayer],
+    }),
   },
   {
     id: "omen",
     next: "つぎへ",
     view: () => ({
       face: "surprise",
-      text: `やったね！ 次は闇堕ち。紫に光っているのは、前のターンに破壊された★5${nm(ace)}の裏向きのカードだよ。`,
+      text: `そこでこの紫のカード！ 前のターンに破壊された★5${nm(ace)}だよ。`,
       shows: [omen],
     }),
   },
@@ -140,7 +151,7 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
           }
         : {
             face: "point",
-            text: "闇堕ちを持つ★5は、破壊されても裏向きで残るの。自分のターンに押すと、闇堕ちの姿で出せるよ。押してみて！",
+            text: "★5は破壊されても、**闇堕ち**して戻ってくるの。押してみて！",
             targets: [omen],
           },
   },
@@ -149,7 +160,7 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
     next: "つぎへ",
     view: () => ({
       face: "surprise",
-      text: `${darkName}、登場！ 闇堕ちの姿も速攻を持っているから、このターンから相手のプレイヤーを攻撃できるよ。`,
+      text: `${darkName}、復活！ 闇堕ちすると**攻撃力と体力が入れ替わる**よ。`,
       shows: [ally(omenSlot)],
     }),
   },
@@ -166,7 +177,7 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
           }
         : {
             face: "point",
-            text: `相手のプレイヤーを攻撃しよう。${darkName}を押してね。`,
+            text: `**速攻**もあるから、すぐ攻撃できる！ ${darkName}を押して。`,
             targets: [ally(omenSlot)],
           },
   },
@@ -184,7 +195,7 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
           }
         : {
             face: "cheer",
-            text: `相手のライフは残り ${c.game.players[foe].lp}！ ${nm(character)}でとどめを刺そう。`,
+            text: `残り ${c.game.players[foe].lp}！ ${nm(character)}でとどめだ！`,
             targets: [ally(at)],
           };
     },

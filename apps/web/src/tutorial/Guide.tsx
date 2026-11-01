@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { frameRect } from "../frame";
+import { Rich } from "./Rich";
 
 /** ちびミナモの表情（apps/web/public/assets/tutorial/minamo-*.webp。元の絵は assets/original/minamo-chibi-*.webp） */
 export type Face = "open" | "point" | "cheer" | "think" | "shy" | "surprise";
@@ -270,7 +271,9 @@ export function Guide({
             </>
           ) : (
             <>
-              <p key={text}>{text}</p>
+              <p key={text}>
+                <Rich text={text} />
+              </p>
               {next && (
                 <div className="tut-acts">
                   <button type="button" className="btn small" onClick={next.onClick}>

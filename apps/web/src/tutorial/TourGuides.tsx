@@ -17,7 +17,7 @@ export function HomeTour() {
   return (
     <Guide
       face="point"
-      text="おかえり！ カードは、ガチャでカードパックを開けると集まるよ。『ガチャを回す』を押してね。"
+      text="おかえり！ カードは**ガチャ**で集めるよ。押してみて！"
       targets={[".hm-tile.gacha"]}
       onSkip={() => setStage("done")}
     />
@@ -35,7 +35,7 @@ export function GachaTour() {
     return (
       <Guide
         face="open"
-        text="ここがガチャ。カードパックは 1 パック 5 枚入りで、★5 のカードも出るよ。"
+        text="1 パック **5 枚**入り。**★5** が出るかも…！"
         shows={[".gx-info"]}
         next={{ label: "つぎへ", onClick: () => setStep(1) }}
         onSkip={end}
@@ -45,7 +45,7 @@ export function GachaTour() {
   return (
     <Guide
       face="cheer"
-      text="いまは準備中だから、ためしに引けるデモで遊べるよ。『1パック』を押して、開けてみて！ 案内はこれでおしまい。いっぱい遊んでね！"
+      text="いまは**デモ**で引けるよ。『1パック』を開けてみて！ 案内はこれでおしまい。いっぱい遊んでね！"
       targets={[GACHA_PACK]}
       onTarget={end}
       onSkip={end}
