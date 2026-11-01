@@ -1,5 +1,5 @@
 import { type Ref, useEffect, useImperativeHandle, useRef } from "react";
-import { type Bleed, bleedMask, makeBleed, paintMask } from "../cards/inkBleed";
+import { type Bleed, makeBleed, paintBleed } from "../cards/inkBleed";
 
 /**
  * 『フィクサー』が場に出たとき：バトル場が黒に滲む（見た目だけ。ルールは game-core）。
@@ -17,10 +17,13 @@ export interface FixerHandle {
 const IN_MS = 2200;
 const OUT_MS = 2200;
 
+/** 墨の色（#0e0d0c） */
+const INK: [number, number, number] = [14, 13, 12];
+
 const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export function FixerField({ onDone, ref }: { onDone: () => void; ref?: Ref<FixerHandle> }) {
-  const ink = useRef<HTMLDivElement>(null);
+  const ink = useRef<HTMLCanvasElement>(null);
   const closing = useRef(false);
   const bleed = useRef<Bleed | null>(null);
   const done = useRef(onDone);
@@ -35,14 +38,14 @@ export function FixerField({ onDone, ref }: { onDone: () => void; ref?: Ref<Fixe
     bleed.current = makeBleed(w, h, 23, [0.5, 0.45]);
     const b = bleed.current;
     if (reduced()) {
-      paintMask(el, bleedMask(b, 1));
+      paintBleed(el, b, 1, INK);
       return;
     }
     let raf = 0;
     const t0 = performance.now();
     const step = (now: number) => {
       const u = Math.min(1, (now - t0) / IN_MS);
-      paintMask(el, bleedMask(b, u));
+      paintBleed(el, b, u, INK);
       if (u < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
@@ -61,7 +64,7 @@ export function FixerField({ onDone, ref }: { onDone: () => void; ref?: Ref<Fixe
     const t0 = performance.now();
     const step = (now: number) => {
       const u = Math.min(1, (now - t0) / OUT_MS);
-      if (b) paintMask(el, bleedMask(b, 1 - u));
+      if (b) paintBleed(el, b, 1 - u, INK);
       if (u < 1) requestAnimationFrame(step);
       else done.current();
     };
@@ -72,7 +75,7 @@ export function FixerField({ onDone, ref }: { onDone: () => void; ref?: Ref<Fixe
 
   return (
     <div className="fixer-field" aria-hidden="true">
-      <div className="ff-ink" ref={ink} />
+      <canvas className="ff-ink" ref={ink} />
     </div>
   );
 }

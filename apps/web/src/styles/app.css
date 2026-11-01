@@ -1374,7 +1374,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 /* 『フィクサー』の登場：バトル場が黒に滲む。ターンが終わるまで黒のまま（FixerField.tsx が滲みを動かす） */
 .board.field-fixer { isolation: isolate; }
 .fixer-field { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; }
-.fixer-field .ff-ink { position: absolute; inset: 0; background: #0e0d0c; mask-image: linear-gradient(transparent, transparent); -webkit-mask-image: linear-gradient(transparent, transparent); }
+.fixer-field .ff-ink { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 /* 差し出しの黒い閃光（fx/blackFlash.ts）：盤面の中に置くキャンバス */
 .fx-blackflash { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none; }
 /* 貫いた一瞬（0.3 秒止まる間）だけ白黒が入れ替わる：地は白い紙、アイコンは黒い影 */

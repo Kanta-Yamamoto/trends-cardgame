@@ -100,6 +100,32 @@ export function bleedMask(b: Bleed, u: number): string {
   return `url(${b.canvas.toDataURL()})`;
 }
 
+/**
+ * キャンバスに、滲みを色付きで直接描く（u は bleedMask と同じ）。盤面の演出はこちらを使う。
+ * 毎フレーム画像にして mask-image に渡すと、iPhone は画像の読み込みが間に合わないコマが抜けて、ちらつく（11月2日）
+ */
+export function paintBleed(
+  canvas: HTMLCanvasElement,
+  b: Bleed,
+  u: number,
+  [r, g, bl]: [number, number, number],
+) {
+  canvas.width = b.w;
+  canvas.height = b.h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const img = ctx.createImageData(b.w, b.h);
+  const th = lerp(-SOFT, 1 + SOFT, bleedEase(clamp01(u)));
+  for (let k = 0; k < b.field.length; k++) {
+    const a = u >= 1 ? 1 : u <= 0 ? 0 : clamp01((th - (b.field[k] as number) + SOFT) / (2 * SOFT));
+    img.data[k * 4] = r;
+    img.data[k * 4 + 1] = g;
+    img.data[k * 4 + 2] = bl;
+    img.data[k * 4 + 3] = Math.round(a * a * (3 - 2 * a) * 255);
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
 /** 要素に滲みのマスクを当てる（大きさいっぱいに引き伸ばす） */
 export function paintMask(el: HTMLElement, mask: string) {
   el.style.maskImage = mask;
