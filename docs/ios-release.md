@@ -4,11 +4,11 @@
 
 ## 全体の形
 
-- アプリは `apps/web/ios`（Capacitor。依存は Swift Package Manager）。Bundle ID は `com.kantayamamoto.trends`
+- アプリは `apps/web/ios`（Capacitor。依存は Swift Package Manager）。Bundle ID は `com.kakuremiino.trends`
 - iPhone だけ・縦だけ（iPad のスクリーンショットが要らない）。iOS 15 以上
 - ビルドと TestFlight への配信は Xcode Cloud（年会費に月 25 時間込み）。`ios/App/ci_scripts/ci_post_clone.sh` が画面を組み立てる
 - 手元の Mac は Xcode 26.3 まで。Xcode 27 が必須になっても、Xcode Cloud で出し続けられる
-- 買い切りの商品 ID は `com.kantayamamoto.trends.unlock`（`apps/api/src/purchase/apple.ts` と `TrendsStorePlugin.swift`）
+- 買い切りの商品 ID は `com.kakuremiino.trends.unlock`（`apps/api/src/purchase/apple.ts` と `TrendsStorePlugin.swift`）
 
 ## 1. Apple の登録 ★
 
@@ -23,8 +23,8 @@
 
 ## 3. App Store Connect の準備 ★（文面は Claude が用意する）
 
-1. 新しいアプリを作る：名前 TRENDS（取られていたら別名）、言語 日本語、Bundle ID `com.kantayamamoto.trends`、SKU `trends-ios`
-2. アプリ内課金を作る：種類「非消耗型」、製品 ID `com.kantayamamoto.trends.unlock`、参照名「全部解放」、価格 480 円、審査用のスクリーンショットを付ける
+1. 新しいアプリを作る：名前 TRENDS ミームカードバトル、言語 日本語、Bundle ID `com.kakuremiino.trends`、SKU `trends-ios`
+2. アプリ内課金を作る：種類「非消耗型」、製品 ID `com.kakuremiino.trends.unlock`、参照名「全部解放」、価格 480 円、審査用のスクリーンショットを付ける
 3. アプリの「一般情報」にある Apple ID（数字）を Claude に伝える。サーバーの `APPLE_APP_ID` に入れないと、本番の購入を確かめられない（審査の購入は Sandbox なので、無くても審査は進む）
 4. App 情報：プライバシーポリシーの URL は `https://trends-api-523738975867.asia-northeast1.run.app/privacy.html`、サポートの URL は同じサーバーの `/support.html`
 5. App のプライバシー：下の「App のプライバシーの答え」
@@ -70,10 +70,10 @@
 
 ## App Store に貼る文面
 
-- 名前：TRENDS
+- 名前：TRENDS ミームカードバトル（ホーム画面とゲームの中のロゴは TRENDS のまま）
 - サブタイトル：ネットのいまが、キラカードで戦う
 - カテゴリ：ゲーム（カード）
-- キーワード：カードゲーム,対戦,TCG,デッキ構築,パック開封,オンライン対戦,キラカード,ミーム,CPU対戦
+- キーワード：トレンド,カードゲーム,対戦,TCG,デッキ構築,パック開封,オンライン対戦,キラカード,ミーム,CPU対戦
 - 買い切りの表示名：全部解放する
 - 買い切りの説明：デッキを組む・パックを開ける機能を解放します
 

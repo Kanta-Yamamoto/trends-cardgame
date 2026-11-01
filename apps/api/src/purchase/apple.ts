@@ -2,8 +2,8 @@ import { Environment, SignedDataVerifier } from "@apple/app-store-server-library
 import { APPLE_ROOT_CA_G3 } from "./apple-root-ca";
 
 /** アプリの Bundle ID と、買い切りの商品 ID（App Store Connect に同じ ID で作る） */
-export const BUNDLE_ID = "com.kantayamamoto.trends";
-export const UNLOCK_PRODUCT = "com.kantayamamoto.trends.unlock";
+export const BUNDLE_ID = "com.kakuremiino.trends";
+export const UNLOCK_PRODUCT = "com.kakuremiino.trends.unlock";
 
 /** App Store が署名した購入の中身のうち、使うところ */
 export interface VerifiedPurchase {
