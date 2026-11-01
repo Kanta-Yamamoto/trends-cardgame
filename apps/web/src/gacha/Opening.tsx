@@ -34,16 +34,9 @@ const HIT = {
 const BIG = { show: 3500, shrink: 800, settle: 250 } as const;
 /** カードの縦横比（幅 / 高さ。cards.css の aspect-ratio と同じ） */
 const CARD_RATIO = 63 / 88;
-/** 舞台のカードの幅（gacha.css の .gx-card と同じ。舞台ごと --s 倍になる） */
+/** 舞台のカードの幅・高さ（gacha.css の .gx-card と同じ。舞台ごと --s 倍になる） */
 const CARD_W = 210;
-/** 開け終わったときの 5 枚の並び（上に 3 枚、下に 2 枚。舞台の真ん中からの位置） */
-const GRID = [
-  [-118, -96],
-  [0, -96],
-  [118, -96],
-  [-59, 76],
-  [59, 76],
-] as const;
+const CARD_H = 293;
 
 /** ★5 を引いたあとの白い舞台で、きらめく光の粒（画面の中の位置 %・きらめき始めるまでの秒） */
 const MOTES = [
@@ -111,6 +104,38 @@ function stageScale() {
 }
 
 /**
+ * カードの大きさ（11月1日。オーナー：「パック画面で表示するカードの大きさを大きくしたい」）。舞台の倍率（--s）に掛ける倍率で、画面の幅に収まる大きさまで。
+ * - reveal：めくるカード（1 枚ずつ見せるとき）。前は 1 倍（スマホの縦で幅の 56%）→ 1.25 倍まで（左右に 28px ずつ残す）
+ * - done：開け終わったときの 5 枚の並び（上に 3 枚、下に 2 枚）。前は 0.5 倍 → 上の 3 枚が画面の幅いっぱい（左右 10px・間 6px）になるまで。0.62 倍まで
+ */
+function cardScale(s: number) {
+  const w = frameSize().width / s;
+  return {
+    reveal: Math.min(1.25, (w - 56 / s) / CARD_W),
+    done: Math.min(0.62, (w - 32 / s) / 3 / CARD_W),
+  };
+}
+
+/** 舞台の倍率とカードの倍率（画面の大きさが変わったら測り直す） */
+function layout() {
+  const s = stageScale();
+  return { scale: s, cs: cardScale(s) };
+}
+
+/** 開け終わったときの 5 枚の並び（上に 3 枚、下に 2 枚。舞台の真ん中からの位置）。k はカードの倍率 */
+function doneGrid(k: number, s: number) {
+  const dx = CARD_W * k + 6 / s;
+  const dy = (CARD_H * k + 22) / 2;
+  return [
+    [-dx, -dy - 10],
+    [0, -dy - 10],
+    [dx, -dy - 10],
+    [-dx / 2, dy - 10],
+    [dx / 2, dy - 10],
+  ] as const;
+}
+
+/**
  * パックを開ける（画面いっぱい）。パックの上半分を横になぞって裂き（手ごたえは tear.ts）、1 枚ずつめくる。
  * 5 枚目が★4・★5 のときは、浮かせて回し、漏れた光が白く画面を覆ってから、当たりのカードを見せる。
  * 10 パックは 1 パックずつ同じ開け方で、スキップすると 10 パックの結果へ
@@ -129,7 +154,7 @@ export function Opening({
   onAgain?: () => void;
 }) {
   const [s, setS] = useState<St>(FIRST);
-  const [scale, setScale] = useState(stageScale);
+  const [{ scale, cs }, setLayout] = useState(layout);
   const ref = useRef(s);
   ref.current = s;
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -157,7 +182,7 @@ export function Opening({
   const patch = (p: Partial<St>) => setS((prev) => ({ ...prev, ...p }));
 
   useEffect(() => {
-    const onResize = () => setScale(stageScale());
+    const onResize = () => setLayout(layout());
     window.addEventListener("resize", onResize);
     return () => {
       window.removeEventListener("resize", onResize);
@@ -286,7 +311,8 @@ export function Opening({
     if (el && box) {
       const r = el.getBoundingClientRect();
       const c = box.getBoundingClientRect();
-      const k = (CARD_W * stageScale()) / CARD_RATIO / r.height;
+      const st = stageScale();
+      const k = (CARD_W * cardScale(st).reveal * st) / CARD_RATIO / r.height;
       const dy = c.top + c.height / 2 - 10 - (r.top + r.height / 2);
       el.style.transform = `translate(0px, ${dy.toFixed(2)}px) scale(${k.toFixed(4)})`;
     }
@@ -333,9 +359,11 @@ export function Opening({
     hint = s.flipped ? "タップで次へ" : "タップでめくる";
   else if (phase === "done") hint = "5枚を手に入れました";
   const isLast = s.at >= packs.length - 1;
+  const grid = doneGrid(cs.done, scale);
 
   const vars = {
     "--s": scale,
+    "--cr": cs.reveal,
     "--sq": `${t.sq}ms`,
     "--win": `${Math.round(t.sq * (1 - t.whiteFrom))}ms`,
     "--wout": `${t.whiteOut}ms`,
@@ -435,19 +463,19 @@ export function Opening({
             z = i === 0 ? 50 : 40 - i;
             cls = "out";
           } else if (phase === "done") {
-            const g = GRID[i] ?? [0, 0];
-            tf = `translate(${g[0]}px, ${g[1]}px) scale(.5)`;
+            const g = grid[i] ?? [0, 0];
+            tf = `translate(${g[0].toFixed(1)}px, ${g[1].toFixed(1)}px) scale(${cs.done.toFixed(3)})`;
             z = 10 + i;
           } else if (phase === "reveal" && i < s.cur) {
             tf = `translate(${(i - 2) * 70}px, 245px) scale(.3)`;
             z = 10 + i;
           } else if (phase === "reveal" && i === s.cur) {
             const up = i === 4 && lifting;
-            tf = up ? "translate(0px, -26px) scale(1.06)" : "translate(0px, 0px) scale(1)";
+            tf = `translate(0px, ${up ? -26 : 0}px) scale(${(cs.reveal * (up ? 1.06 : 1)).toFixed(3)})`;
             z = 50;
           } else {
             const d = i - s.cur;
-            tf = `translate(${d * 4}px, ${-d * 6}px) scale(1)`;
+            tf = `translate(${d * 4}px, ${-d * 6}px) scale(${cs.reveal.toFixed(3)})`;
             z = 40 - d;
           }
           if (flip) cls += " flip";

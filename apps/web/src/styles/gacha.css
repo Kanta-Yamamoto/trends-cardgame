@@ -196,13 +196,13 @@
 .gx-face .holo { width: 100%; }
 .gx-card.hit .gx-face { box-shadow: 0 0 16px #ffffffcc, 0 14px 22px #0008; }
 .gx-new { position: absolute; left: 50%; top: -34px; transform: translateX(-50%); height: 38px; padding: 0 18px; border-radius: 19px; background: #fff; color: var(--pri-3); font: 400 26px/38px var(--f-mark); letter-spacing: 0.06em; box-shadow: 0 4px 12px #0005; }
-.gx-tap { position: absolute; left: -135px; top: -170px; width: 270px; height: 340px; z-index: 60; border: 0; padding: 0; background: none; cursor: pointer; }
+.gx-tap { position: absolute; left: -135px; top: -170px; width: 270px; height: 340px; scale: var(--cr, 1); z-index: 60; border: 0; padding: 0; background: none; cursor: pointer; }
 /* 当たり：宙に浮かせ、真ん中を軸に回す（左が手前）。30% までは加速、そこからゆっくり。表は見せず、まわりから後ろの光が漏れる */
 .gx-card.lift .gx-back { box-shadow: 0 36px 46px #000b; }
 .gx-card.sq .gx-in { transform-origin: 50% 50%; animation: gx-squeeze var(--sq) linear forwards; }
 .gx-card.sq .gx-back::after { content: ""; position: absolute; inset: -3px; border-radius: 12px; box-shadow: inset 0 0 28px 6px #ffffffd9, 0 0 22px 6px #ffffffb3; animation: gx-lit var(--sq) ease-in forwards; }
 .gx-spill { position: absolute; left: 0; top: -26px; width: 0; height: 0; z-index: 45; pointer-events: none; }
-.gx-spill-core { position: absolute; left: -105px; top: -147px; width: 210px; height: 293px; border-radius: 16px; background: #fff; filter: blur(12px); animation: gx-spill-core var(--sq) linear forwards; }
+.gx-spill-core { position: absolute; left: -105px; top: -147px; width: 210px; height: 293px; scale: var(--cr, 1); border-radius: 16px; background: #fff; filter: blur(12px); animation: gx-spill-core var(--sq) linear forwards; }
 .gx-spill-glow { position: absolute; left: -300px; top: -300px; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, #ffffff 0%, #ffffffb3 22%, #bfe8ff4d 45%, transparent 68%); animation: gx-spill-glow var(--sq) linear forwards; }
 /* 白い光：画面を覆ってから、ゆっくり引く */
 .gx-white { position: absolute; inset: 0; z-index: 90; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 50%, #fff 0%, #fff 45%, #eef8ff 100%); }
@@ -213,7 +213,7 @@
 .gx-pr-bg { position: absolute; inset: 0; z-index: 0; border: 0; padding: 0; background: none; cursor: pointer; }
 .gx-pr-halo { position: absolute; left: 50%; top: 47%; width: 520px; height: 520px; margin: -260px 0 0 -260px; border-radius: 50%; background: radial-gradient(circle, #ffffff 0%, #ffffffcc 30%, #bfe8ff59 52%, transparent 70%); animation: gx-breathe 3.2s ease-in-out infinite; pointer-events: none; }
 .gx-pr-spark { position: absolute; bottom: -20px; width: 12px; height: 12px; background: #fff; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 4px #9fd8f7); animation: gx-rise 5s linear infinite; pointer-events: none; }
-.gx-pr-card { position: absolute; z-index: 1; left: 50%; top: 47%; width: min(270px, 70vw); transform: translate(-50%, -50%); animation: gx-pr-in var(--wout) cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+.gx-pr-card { position: absolute; z-index: 1; left: 50%; top: 47%; width: min(320px, calc(100% - 48px)); transform: translate(-50%, -50%); animation: gx-pr-in var(--wout) cubic-bezier(0.2, 0.8, 0.3, 1) both; }
 .gx-pr-card .holo { width: 100%; }
 .gx-pr-new { position: absolute; z-index: 2; left: 50%; top: calc(47% - min(189px, 49vw) - 40px); transform: translateX(-50%); height: 30px; padding: 0 16px; border-radius: 15px; background: var(--pri-grad); color: #fff; font: 400 18px/30px var(--f-mark); letter-spacing: 0.08em; box-shadow: 0 6px 16px #1780c447; animation: pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) calc(var(--wout) * 0.6) both; }
 .gx-pr-foot { position: absolute; left: 16px; right: 16px; bottom: max(24px, env(safe-area-inset-bottom, 0px)); z-index: 2; pointer-events: none; display: grid; justify-items: center; gap: 10px; animation: fade 0.6s ease-out var(--wout) both; }
