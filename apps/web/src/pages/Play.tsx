@@ -2144,12 +2144,23 @@ export function Board({
       (card.type === "icon" ? freeSlot >= 0 : !card.target || castTargets(game, ME, id, CATALOG).length > 0);
     const selected = selection?.kind === "hand" && selection.index === i;
     const p: Peek = { id, where: "hand", index: i };
+    // 扇形：真ん中からの位置で傾け、外ほど少し下げる。間隔は CSS（.hand の幅）で決める
+    const n = me.hand.length;
+    const off = i - (n - 1) / 2;
+    const ang = n > 1 ? Math.min(3, 12 / (n - 1)) : 0;
+    const fan = {
+      "--i": i,
+      "--n": n,
+      "--rot": `${off * ang}deg`,
+      "--dy": `${n > 1 ? (off * off * Math.min(1.6, 6 / (((n - 1) / 2) ** 2))).toFixed(2) : 0}px`,
+    } as CSSProperties;
     return (
       <MiniCard
         key={`${id}-${i}`}
         inHand
         card={card}
         cost={cost}
+        style={fan}
         className={`in-hand ${usable ? "playable" : "short"} ${selected ? "selected" : ""} ${drag?.src.kind === "hand" && drag.src.index === i ? (card.type === "post" && card.target ? "selected" : "drag-src") : ""}`}
         onPress={!usable ? undefined : (e) => begin(e, { kind: "hand", index: i })}
         onClick={() => {
@@ -2276,7 +2287,7 @@ export function Board({
     </div>
   );
   const handEl = (
-    <div className={`hand ${me.hand.length > 5 ? "many" : ""}`} data-hand={ME} data-drop="hand">
+    <div className="hand fan" data-hand={ME} data-drop="hand">
       {me.hand.map((id, i) => handCard(id, i))}
     </div>
   );
@@ -2555,11 +2566,13 @@ export function Board({
                     {statusChips(ME)}
                     {me.hand.length > 5 && <span className="pchip">手札 {me.hand.length}</span>}
                   </span>
-                  <Piles owner={ME} deck={me.deck.length} trash={me.trash} onTrash={() => setTrashView(ME)} />
                 </div>
               </div>
               <div className="phand-zone">
-                <div className="phand">{handEl}</div>
+                <div className="phand">
+                  {handEl}
+                  <DeckPile owner={ME} deck={me.deck.length} trash={me.trash} onTrash={() => setTrashView(ME)} />
+                </div>
               </div>
 
               {selection?.kind === "hand" && selectedCard && !direct && !drag && (
@@ -3139,11 +3152,45 @@ function Piles({
 }) {
   return (
     <span className="pchip ppiles">
-      <span data-pile={`deck-${owner}`}>山札 {deck}</span>・
+      <span data-pile={`deck-${owner}`}>
+        <i className="cardback pp-back" aria-hidden="true" />
+        山札 {deck}
+      </span>
+      ・
       <button type="button" data-pile={`trash-${owner}`} onClick={onTrash}>
         墓地 {trash.length}
       </button>
     </span>
+  );
+}
+
+/** 自分の山札：手札の右に、裏向きのカードの束（枚数で厚みが変わる）と枚数。下に墓地 */
+function DeckPile({
+  owner,
+  deck,
+  trash,
+  onTrash,
+}: {
+  owner: PlayerId;
+  deck: number;
+  trash: string[];
+  onTrash: () => void;
+}) {
+  const layers = deck >= 10 ? 3 : deck >= 4 ? 2 : deck >= 1 ? 1 : 0;
+  return (
+    <div className="pdeck">
+      <span className={`pdeck-stack ${deck === 0 ? "empty" : ""}`} data-pile={`deck-${owner}`}>
+        {Array.from({ length: Math.max(layers - 1, 0) }, (_, k) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: 厚みの層は並びが変わらない
+          <i key={k} className="pdeck-layer" style={{ "--k": layers - 1 - k } as CSSProperties} />
+        ))}
+        {deck > 0 && <i className="cardback" />}
+        <b>{deck}</b>
+      </span>
+      <button type="button" className="pchip pdeck-trash" data-pile={`trash-${owner}`} onClick={onTrash}>
+        墓地 {trash.length}
+      </button>
+    </div>
   );
 }
 
