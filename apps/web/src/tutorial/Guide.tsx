@@ -67,6 +67,21 @@ const boxesOf = (sels: readonly string[]): Box[] =>
       ];
     }),
   );
+/**
+ * 押してほしい場所が、画面の中にあって、ほかの要素（下に固定した帯など）に隠れていないか。
+ * 上・真ん中・下の 3 か所で、いちばん手前にある要素がその場所自身（か中身）かを確かめる。案内そのもの（.tut-ui）は数えない
+ */
+function inSight(el: HTMLElement): boolean {
+  const r = el.getBoundingClientRect();
+  const vh = window.innerHeight;
+  if (r.top < 0 || r.bottom > vh) return false;
+  const x = r.left + r.width / 2;
+  return [0.2, 0.5, 0.8].every((k) => {
+    const hit = document.elementFromPoint(x, r.top + r.height * k);
+    return !hit || el.contains(hit) || !!hit.closest(".tut-ui");
+  });
+}
+
 const same = (a: Box[], b: Box[]) =>
   a.length === b.length &&
   a.every((x, i) => {
@@ -168,14 +183,21 @@ export function Guide({
     };
   }, [targets.join(","), allow.join(",")]);
 
-  // 吹き出しの手前で、光らせた場所が画面の外にあれば見えるところまで動かす（ガチャのページなど、縦に長い画面）
+  // 光らせた場所が画面の外にあるか、下に固定した帯（ガチャの「1パック」「10パック」の帯など）に隠れていれば、
+  // 見えるところまで動かす（11月1日。オーナー：ガチャの案内で、デモの「1パック」が下の帯の裏に隠れ、輪が帯の上に出ていた）。
+  // 絵や書体が読み込まれて並びがずれることがあるので、少し後にもう一度確かめる
   useEffect(() => {
-    if (hidden) return;
-    const el = targets[0] ? document.querySelector<HTMLElement>(targets[0]) : null;
-    const r = el?.getBoundingClientRect();
-    if (el && r && (r.top < 0 || r.bottom > window.innerHeight)) {
-      el.scrollIntoView({ block: "center", behavior: "smooth" });
-    }
+    if (hidden || !targets[0]) return;
+    const sel = targets[0];
+    const check = () => {
+      const el = document.querySelector<HTMLElement>(sel);
+      if (el && !inSight(el)) el.scrollIntoView({ block: "center", behavior: "smooth" });
+    };
+    check();
+    const timers = [300, 900].map((ms) => setTimeout(check, ms));
+    return () => {
+      for (const t of timers) clearTimeout(t);
+    };
   }, [targets[0], hidden]);
 
   // 案内が次へ進んだら、終わるかの問いは閉じる
