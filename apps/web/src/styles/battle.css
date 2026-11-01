@@ -3,13 +3,15 @@
    隙間の決まり：画面の左右 8px、カードの間 6px、場と文字欄の間 12px 以上、文字欄と VS の間 8px。
    光る枠や札も、隣に被らないこと（オーナー：「隙間がないようなデザインはあんまり良くない」） */
 
-.stage .pstage { --art-field: calc(var(--card-h) - 60px); --art-hand: calc(var(--card-h) - 38px); --pn: #0d2848; --g: calc(6px + (var(--card-h) - 122px) * 0.4); position: relative; height: 100%; display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
+.stage .pstage { --art-field: calc(var(--card-h) - 60px); --pn: #0d2848; --g: calc(6px + (var(--card-h) - 122px) * 0.4); position: relative; height: 100%; display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
 
 /* 奥：相手の陣地 */
 .pfoe { position: relative; z-index: 1; flex: none; display: grid; gap: var(--g); padding: 6px 8px 8px; --pn: #4a1636; background: linear-gradient(180deg, #3d1231e6, #6d1f45d9); }
-.ptop { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr) 80px minmax(0, 1fr); gap: 6px; height: 88px; min-height: 0; align-items: start; }
-.pmenu { width: 44px; height: 44px; padding: 0; border: 0; border-radius: 14px; display: grid; place-items: center; color: #fff; background: #ffffff24; cursor: pointer; }
+/* 相手のアイコンは画面の真ん中。メニューは左の列の中に重ね、左右の列の幅をそろえる（11月2日。メニューの分だけ右にずれていた） */
+.ptop { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 80px minmax(0, 1fr); gap: 6px; height: 88px; min-height: 0; align-items: start; }
+.pmenu { position: absolute; left: 0; top: 0; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 14px; display: grid; place-items: center; color: #fff; background: #ffffff24; cursor: pointer; }
 .pchips { display: grid; gap: 6px; justify-items: start; align-content: start; min-width: 0; padding-top: 4px; }
+.ptop > .pchips:not(.right) { padding-left: 50px; }
 .pchips.right { justify-items: end; }
 .pchips.row-chips { display: flex; flex-wrap: nowrap; gap: 4px; padding: 0; overflow: hidden; }
 .pchip { display: inline-flex; align-items: center; gap: 4px; height: 22px; max-width: 100%; padding: 0 8px; border-radius: 11px; box-sizing: border-box; background: #ffffff24; color: #fff; font-size: 11px; font-weight: 800; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -48,7 +50,10 @@
 .pstage .slot.center:not(.droppable) { border-color: #f2cf7a66; }
 .pstage .mini { aspect-ratio: auto; width: var(--slot); height: var(--card-h); box-sizing: border-box; border-radius: 12px; padding: 0; border: 2px solid #ffffffd9; display: block; overflow: hidden; background-color: var(--pn); }
 .pstage .mini::before, .pstage .mini::after { display: none; }
-.pstage .mini.has-art { background-size: 100% var(--art-field); background-position: 50% 0; background-repeat: no-repeat; }
+/* 絵は引き伸ばさない：カード全体に元の比率（2:3）で敷き、下の段（札と数字）にかかる所だけ暗くする（11月2日。オーナー：縦横の縮尺がおかしい） */
+.pstage .mini.has-art { background-size: cover; background-position: 50% 18%; background-repeat: no-repeat; }
+.pstage .mini.has-art::before { display: block; content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(180deg, transparent 48%, #0a1020a6 70%, #0a1020eb 100%); }
+.pstage .mini.has-art.is-dark::before { background: linear-gradient(180deg, #2a0d3a22 40%, #12051ab3 70%, #07020bee 100%); }
 .pstage .mini.on-field { box-shadow: 0 3px 8px #0007; transition: transform 0.15s ease; }
 .pstage .mini.unit.ready { border-color: #f2c14e; box-shadow: 0 0 0 1px #f2c14e, 0 3px 8px #0007; }
 .pstage .mini.unit.tired { filter: saturate(0.6) brightness(0.78); }
@@ -125,7 +130,6 @@
 .pstage .hand.many { margin-right: -8px; padding-right: 8px; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
 .pstage .hand .mini { width: var(--slot); margin: 0; transform: none; touch-action: pan-x; }
 .pstage .hand .mini + .mini { margin: 0; }
-.pstage .hand .mini.has-art { background-size: 100% var(--art-hand); }
 .pstage .hand .mini.in-hand.playable { border-color: #79e0c4; box-shadow: 0 3px 8px #0007; }
 .pstage .hand .mini.in-hand.short { filter: none; border-color: #ffffff66; }
 .pstage .hand .mini.in-hand.short.has-art { background-blend-mode: multiply; background-color: #4a5a70; }
@@ -172,9 +176,6 @@
 .pmenu-sheet .ps-foot { margin-top: auto; padding-top: 8px; }
 
 /* 相手が出したカードは、相手の陣地の上に重ねて見せる */
-.pfoe .foe-reveal { position: absolute; left: 0; right: 0; top: 0; bottom: 42px; z-index: 6; display: grid; place-items: center; background: #0a0f1fb8; pointer-events: none; }
-.pfoe .foe-reveal .fr-card { width: auto; height: calc(100% - 12px); aspect-ratio: 63 / 88; }
-.pfoe .foe-reveal .holo { width: 100%; height: 100%; }
 
 /* ターンの切り替え：VS の線の上に帯を重ねる */
 .pmid .turn-banner { position: absolute; inset: 0; z-index: 4; display: block; }
