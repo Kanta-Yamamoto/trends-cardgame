@@ -1,6 +1,7 @@
 import { gsap } from "gsap";
 import { frameRect } from "../frame";
 import { playSe } from "../sound/se";
+import { fieldRect } from "./fieldRect";
 import "./godDescent.css";
 
 /**
@@ -176,7 +177,7 @@ export async function godDescent(o: GodDescentOpts): Promise<void> {
   // 大きく見せる位置：画面の真ん中に3枚。高さは相手の場と自分の場の間
   const GW = Math.min(f.width * 0.3, 150);
   const GH = (GW * 88) / 63;
-  const rows = document.querySelector(".pfield")?.getBoundingClientRect();
+  const rows = fieldRect();
   const upY = rows ? rows.top + rows.height / 2 - f.top : f.height * 0.4;
   const upX = [-1, 0, 1].map((d) => f.width / 2 + d * (GW + 10));
   ov.style.setProperty("--gd-up", `${(upY / f.height) * 100}%`);

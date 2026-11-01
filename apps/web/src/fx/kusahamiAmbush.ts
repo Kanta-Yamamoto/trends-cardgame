@@ -1,6 +1,7 @@
 import { gsap } from "gsap";
 import { frameRect } from "../frame";
 import { playSe } from "../sound/se";
+import { fieldRect } from "./fieldRect";
 import "./kusahamiAmbush.css";
 
 /**
@@ -281,8 +282,8 @@ function setupLayers(o: KusahamiAmbushOpts) {
   const kf = ur.width / sc / CARD_W;
   const gx = (ur.left + ur.width / 2 - fr.left) / sc;
   const gy = (ur.top + ur.height / 2 - fr.top) / sc;
-  // 草原の範囲：相手の場と自分の場（.pfield）。見つからなければ枠のまわり
-  const pf = document.querySelector(".pfield")?.getBoundingClientRect();
+  // 草原の範囲：相手の場と自分の場（fieldRect）。見つからなければ枠のまわり
+  const pf = fieldRect();
   const meadowTop = pf ? (pf.top - fr.top) / sc - 6 * kf : gy - 150 * kf;
   const meadowH = pf ? pf.height / sc + 12 * kf : 300 * kf;
   const veil = document.createElement("div");
@@ -702,7 +703,7 @@ export async function kusahamiWither(o: KusahamiAmbushOpts): Promise<void> {
   const veins = buildVeins();
   const rs = rng(43);
   // 胞子（着地のあと、毒の草の上をゆっくり昇る）
-  const pf = document.querySelector(".pfield")?.getBoundingClientRect();
+  const pf = fieldRect();
   const top = (pf ? pf.top : CY - 150 * k) - f.top;
   const bottom = (pf ? pf.bottom : CY + 150 * k) - f.top;
   const spores = Array.from({ length: 70 }, () => ({
