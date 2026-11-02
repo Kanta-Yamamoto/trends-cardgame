@@ -3,14 +3,7 @@ import type { INestApplication } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Test } from "@nestjs/testing";
 import { CARDS, DECKS } from "@trends/cards";
-import {
-  DAILY_PACKS,
-  encodeCustomDeck,
-  type RuleCard,
-  starterCollection,
-  validateDeck,
-  WELCOME_PACKS,
-} from "@trends/game-core";
+import { DAILY_PACKS, encodeCustomDeck, PACK_CAP, packPool, WELCOME_PACKS } from "@trends/game-core";
 import { eq } from "drizzle-orm";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -156,7 +149,7 @@ describe("プレイヤー名の登録・買い切り・ガチャ", () => {
     expect(next.body.message).toBe("パックは買い切りのあとに開けられます");
   });
 
-  it("買うとその日は 10 パック開けられる。持っているカードはガチャで引いたカードだけ。同じ購入を送っても増えない", async () => {
+  it("買うとその日は 20 パック開けられる。持っているカードはガチャで引いたカードだけ。同じ購入を送っても増えない", async () => {
     const { id, token } = await device();
     await http().post("/gacha/open").set(as(token)).send({ packs: 1 }).expect(200);
     const tx = `tx-${Date.now()}`;
@@ -172,8 +165,30 @@ describe("プレイヤー名の登録・買い切り・ガチャ", () => {
 
     const ten = await http().post("/gacha/open").set(as(token)).send({ packs: 10 }).expect(200);
     expect(ten.body.packs).toHaveLength(10);
-    expect(ten.body.access.packs).toBe(0);
+    expect(ten.body.access.packs).toBe(WELCOME_PACKS - 10);
+    await http()
+      .post("/gacha/open")
+      .set(as(token))
+      .send({ packs: WELCOME_PACKS - 10 })
+      .expect(200);
     await http().post("/gacha/open").set(as(token)).send({ packs: 1 }).expect(400);
+  });
+
+  it("2 枚持っているカードは、ガチャで出ない", async () => {
+    const { id, token } = await device();
+    await buy(token).expect(200);
+    // ★5 を 1 種類だけ残して、ほかの★5 は全部 2 枚持っている。★5 は 1 パックに 1 枚までなので、2 パックで出る★5 は残した 1 種類だけ
+    const fives = packPool(CARDS)[5] ?? [];
+    const keep = fives[0] as string;
+    await db
+      .insert(userCards)
+      .values(
+        fives.filter((cardId) => cardId !== keep).map((cardId) => ({ userId: id, cardId, count: PACK_CAP })),
+      );
+    const rarity = new Map(CARDS.map((c) => [c.id, c.rarity]));
+    const got = await http().post("/gacha/open").set(as(token)).send({ packs: 2 }).expect(200);
+    for (const pack of got.body.packs as { id: string }[][])
+      for (const c of pack) if (rarity.get(c.id) === 5) expect(c.id).toBe(keep);
   });
 
   it("次の日は 3 パックに戻り、ためられない", async () => {
@@ -212,8 +227,8 @@ describe("プレイヤー名の登録・買い切り・ガチャ", () => {
     expect(back.body.user.id).toBe(before.id);
   });
 
-  it("買う前は自分のデッキを保存できず、対戦でも使えない。買うと、引いたカードとレンタルデッキのカードで使える", async () => {
-    const { token } = await device();
+  it("買う前は自分のデッキを保存できず、対戦でも使えない。買うと、ガチャで引いたカードだけで使える", async () => {
+    const { id, token } = await device();
     const deck = [...DECKS.solo_flame];
     const ref = encodeCustomDeck(deck);
     const save = (t: string) =>
@@ -227,30 +242,15 @@ describe("プレイヤー名の登録・買い切り・ガチャ", () => {
 
     await buy(token).expect(200);
     await save(token).expect(200);
-    const made = await http().post("/matches").set(as(token)).send({ deck: ref }).expect(201);
-    expect(made.body.code).toBeTruthy();
-
-    // レンタルデッキに無いカードを 1 枚入れたデッキは、引いていなければ使えない。引いていれば使える
-    const catalog = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string, RuleCard>;
-    const rental = starterCollection(DECKS);
-    const withOther = CARDS.filter((c) => !rental[c.id])
-      .flatMap((c) => deck.map((_, i) => deck.map((x, j) => (j === i ? c.id : x))))
-      .find((d) => validateDeck(d, catalog).length === 0);
-    if (!withOther) throw new Error("レンタルデッキに無いカードを入れたデッキが作れない");
-    const otherRef = encodeCustomDeck(withOther);
-    const other = await device();
-    await buy(other.token).expect(200);
-    await db.delete(userCards).where(eq(userCards.userId, other.id));
-    await http().post("/matches").set(as(other.token)).send({ deck: ref }).expect(201);
-    const lack = await http().post("/matches").set(as(other.token)).send({ deck: otherRef });
+    // レンタルデッキと同じカードでも、引いていなければ使えない（11月2日）
+    const lack = await http().post("/matches").set(as(token)).send({ deck: ref });
     expect(lack.status).toBe(400);
     expect(lack.body.message).toBe("持っていないカードが入っています");
     const counts = new Map<string, number>();
-    for (const c of withOther) counts.set(c, (counts.get(c) ?? 0) + 1);
-    await db
-      .insert(userCards)
-      .values([...counts].map(([cardId, count]) => ({ userId: other.id, cardId, count })));
-    await http().post("/matches").set(as(other.token)).send({ deck: otherRef }).expect(201);
+    for (const c of deck) counts.set(c, (counts.get(c) ?? 0) + 1);
+    await db.insert(userCards).values([...counts].map(([cardId, count]) => ({ userId: id, cardId, count })));
+    const made = await http().post("/matches").set(as(token)).send({ deck: ref }).expect(201);
+    expect(made.body.code).toBeTruthy();
     // 構築済みデッキは、買わなくても使える
     const free = await device();
     await http().post("/matches").set(as(free.token)).send({ deck: "solo_flame" }).expect(201);

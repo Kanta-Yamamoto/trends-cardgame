@@ -4,13 +4,12 @@ import {
   CARDS,
   type CardDef,
   DECK_SIZE,
-  DECKS,
   type DeckId,
   MAX_COPIES,
   MAX_DARK_CARDS,
   MAX_DECK_ATTRIBUTES,
 } from "@trends/cards";
-import { type Collection, rentalPool, starterCollection } from "@trends/game-core";
+import type { Collection } from "@trends/game-core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EffectText } from "../cards/EffectText";
 import { HoloCard } from "../cards/HoloCard";
@@ -37,11 +36,6 @@ import { useUnlock } from "../purchase/Unlock";
 import { usePageMusic } from "../sound/music";
 
 type Filter = Attribute | "ニュートラル" | "全部";
-/**
- * レンタルデッキのカード。自分のデッキには、ガチャで引いたカードにこれを足して入れられる（11月2日の仮の形。game-core の rentalPool）。
- * カード一覧の「持っている」はガチャで引いたカードだけ
- */
-const RENTAL = starterCollection(DECKS);
 const FILTERS: Filter[] = ["全部", ...ATTRIBUTES, "ニュートラル"];
 const ICON_PLUS = (
   <svg
@@ -154,7 +148,7 @@ export function Decks() {
     return (
       <DeckEditor
         deck={editing}
-        owned={access?.allCards === false ? rentalPool(cards ?? {}, RENTAL) : null}
+        owned={access?.allCards === false ? (cards ?? {}) : null}
         onBack={() => setEditing(null)}
         onSave={(d) => {
           const next = list.some((x) => x.id === d.id)

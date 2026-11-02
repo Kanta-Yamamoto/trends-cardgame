@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extraCopies, missingCards, rentalPool, starterCollection } from "./collection";
+import { extraCopies, missingCards, starterCollection } from "./collection";
 
 describe("持っているカード", () => {
   const deck = ["a", "a", "b", "c"];
@@ -12,11 +12,6 @@ describe("持っているカード", () => {
 
   it("レンタルデッキのカードは、いちばん多く入っているデッキの枚数ずつ", () => {
     expect(starterCollection({ x: ["a", "a", "b"], y: ["a", "b", "b", "c"] })).toEqual({ a: 2, b: 2, c: 1 });
-  });
-
-  it("デッキに入れられるカードは、引いたカードとレンタルデッキのカードの多い方の枚数", () => {
-    expect(rentalPool({ a: 3, d: 1 }, { a: 2, b: 2 })).toEqual({ a: 3, b: 2, d: 1 });
-    expect(rentalPool({}, { a: 1 })).toEqual({ a: 1 });
   });
 
   it("デッキに入れられる 2 枚を超えた分がダブり", () => {

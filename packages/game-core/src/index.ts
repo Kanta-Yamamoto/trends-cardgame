@@ -10,7 +10,7 @@ export {
   startClock,
   tickClock,
 } from "./clock";
-export { type Collection, extraCopies, missingCards, rentalPool, starterCollection } from "./collection";
+export { type Collection, extraCopies, missingCards, starterCollection } from "./collection";
 export {
   CUSTOM_DECK_PREFIX,
   deckAttributes,
@@ -55,6 +55,8 @@ export {
   type GachaCard,
   MAX_OPEN_PACKS,
   openPack,
+  openPacks,
+  PACK_CAP,
   PACK_SIZE,
   PACK_SLOTS,
   type PackPool,

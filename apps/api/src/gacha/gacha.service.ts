@@ -7,8 +7,8 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { CARDS } from "@trends/cards";
-import { MAX_OPEN_PACKS, openPack, packDay, packPool, packsToday } from "@trends/game-core";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { MAX_OPEN_PACKS, openPacks, packDay, packPool, packsToday } from "@trends/game-core";
+import { eq, sql } from "drizzle-orm";
 import { isOpenAccount, isUnlocked } from "../auth/access";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
@@ -88,16 +88,17 @@ export class GachaService {
         .set(isUnlocked(u) ? { packs: left - count, packsDay: today } : { tutorialPack: false })
         .where(eq(users.id, userId));
 
-      const opened = Array.from({ length: count }, () => openPack(POOL, rand));
-      const ids = [...new Set(opened.flat())];
-      const owned = new Set(
+      // 2 枚持っているカードは出ない（game-core の PACK_CAP）ので、持っている枚数を全部読んでから開ける
+      const have = Object.fromEntries(
         (
           await tx
-            .select({ id: userCards.cardId })
+            .select({ id: userCards.cardId, count: userCards.count })
             .from(userCards)
-            .where(and(eq(userCards.userId, userId), inArray(userCards.cardId, ids)))
-        ).map((r) => r.id),
+            .where(eq(userCards.userId, userId))
+        ).map((r) => [r.id, r.count]),
       );
+      const opened = openPacks(POOL, rand, count, have);
+      const owned = new Set(Object.keys(have));
       const result: PulledCard[][] = opened.map((pack) =>
         pack.map((id) => {
           const isNew = !owned.has(id);

@@ -9,8 +9,14 @@
 export const PACK_SIZE = 5;
 /** 買い切りのあと、毎日開けられるパックの数（日が変わるとこの数に戻り、ためられない） */
 export const DAILY_PACKS = 3;
-/** 買い切りを買った日に開けられるパックの数 */
-export const WELCOME_PACKS = 10;
+/** 買い切りを買った日に開けられるパックの数（11月2日に 10 → 20。オーナー：「初回で20パック付与でどうですか？」） */
+export const WELCOME_PACKS = 20;
+/**
+ * この枚数を持っているカードは、ガチャで出ない（11月2日。オーナー：「2枚持っている場合にはガチャで出てこなくなる仕様にすると網羅率が上がりませんか？」）。
+ * デッキに入れられる枚数（MAX_COPIES）と同じ。★の出る確率は変えず、同じ★の中で、まだ 2 枚持っていないカードから選ぶ。
+ * その★のカードを全部 2 枚持っていれば、その★のどのカードも出る
+ */
+export const PACK_CAP = 2;
 /** 一度に開けられるパックの数 */
 export const MAX_OPEN_PACKS = 10;
 
@@ -88,8 +94,11 @@ export function packChance(rarity: number, pool: PackPool): number {
   return 1 - miss;
 }
 
-/** 1 パック開ける（5 枚の ID。並びは枠の順で、5 枚目がいちばん★が高い枠）。rand は 0 以上 1 未満を返す */
-export function openPack(pool: PackPool, rand: () => number): string[] {
+/**
+ * 1 パック開ける（5 枚の ID。並びは枠の順で、5 枚目がいちばん★が高い枠）。rand は 0 以上 1 未満を返す。
+ * owned（持っている枚数）を渡すと、PACK_CAP 枚持っているカードを除いて選び、出たカードを owned に足す
+ */
+export function openPack(pool: PackPool, rand: () => number, owned?: Map<string, number>): string[] {
   return PACK_SLOTS.map((slot) => {
     const odds = slotOdds(slot, pool);
     let r = rand();
@@ -101,8 +110,23 @@ export function openPack(pool: PackPool, rand: () => number): string[] {
       }
       r -= o.p;
     }
-    const ids = rarity === undefined ? undefined : pool[rarity];
-    if (!ids?.length) throw new Error("パックに入れるカードがありません");
-    return ids[Math.min(ids.length - 1, Math.floor(rand() * ids.length))] as string;
+    const all = rarity === undefined ? undefined : pool[rarity];
+    if (!all?.length) throw new Error("パックに入れるカードがありません");
+    const left = owned ? all.filter((id) => (owned.get(id) ?? 0) < PACK_CAP) : all;
+    const ids = left.length > 0 ? left : all;
+    const id = ids[Math.min(ids.length - 1, Math.floor(rand() * ids.length))] as string;
+    owned?.set(id, (owned.get(id) ?? 0) + 1);
+    return id;
   });
+}
+
+/** count パック続けて開ける。owned は持っている枚数（ID ごと）で、PACK_CAP 枚持っているカードは出ない。前のパックで出た分も数える */
+export function openPacks(
+  pool: PackPool,
+  rand: () => number,
+  count: number,
+  owned: Readonly<Record<string, number>>,
+): string[][] {
+  const have = new Map(Object.entries(owned));
+  return Array.from({ length: count }, () => openPack(pool, rand, have));
 }

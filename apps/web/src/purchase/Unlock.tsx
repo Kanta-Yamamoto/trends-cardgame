@@ -1,4 +1,4 @@
-import { DAILY_PACKS } from "@trends/game-core";
+import { DAILY_PACKS, WELCOME_PACKS } from "@trends/game-core";
 import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { useAccess } from "../gacha/access";
@@ -77,7 +77,9 @@ export function UnlockSheet() {
         <p className="unlock-lead">TRENDS のすべての機能が使えるようになります</p>
         <ul className="unlock-list g2">
           <li>デッキを組む</li>
-          <li>パックを開ける（毎日 {DAILY_PACKS} パック）</li>
+          <li>
+            パックを開ける（解放した日に {WELCOME_PACKS} パック、次の日から毎日 {DAILY_PACKS} パック）
+          </li>
           <li>カードを集める</li>
         </ul>
         {error && <p className="unlock-error">{error}</p>}

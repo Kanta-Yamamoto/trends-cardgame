@@ -20,9 +20,9 @@ export function missingCards(deck: readonly string[], owned: Collection): Record
 
 /**
  * レンタルデッキのカード：構築済みデッキのカードを、いちばん多く入っているデッキの枚数ずつ。
- * 11月1日は、買い切りを買った時点で持っている扱いにしていた。11月2日から、持っているカードはガチャで引いたカードだけにし
- * （オーナー：「カード一覧で有効化されるカードや枚数はガチャで引いたカードのみにして欲しい」）、
- * デッキを組むときだけ、これを足して使える（rentalPool。レンタルのカードを使えるかはオーナーと相談中）
+ * 11月1日は、買い切りを買った時点で持っている扱いにしていた。11月2日から、持っているカードはガチャで引いたカードだけで、
+ * 自分のデッキにも引いたカードだけを入れられる（オーナー：「カード一覧で有効化されるカードや枚数はガチャで引いたカードのみにして欲しい」
+ * 「引いたカードしか使えない方がいい」）。今は使っていない
  */
 export function starterCollection(
   decks: Readonly<Record<string, readonly string[]>>,
@@ -34,16 +34,6 @@ export function starterCollection(
     for (const [id, n] of counts) owned[id] = Math.max(owned[id] ?? 0, n);
   }
   return owned;
-}
-
-/**
- * 自分のデッキに入れられるカード：ガチャで引いたカードに、レンタルデッキのカードを足したもの（ID ごとに多い方の枚数）。
- * 11月2日の時点の仮の形。オーナーが「引いたカードしか使えない方がいい」と決めたら、引いたカードだけにする
- */
-export function rentalPool(pulled: Collection, rental: Collection): Record<string, number> {
-  const pool: Record<string, number> = { ...pulled };
-  for (const [id, n] of Object.entries(rental)) pool[id] = Math.max(pool[id] ?? 0, n);
-  return pool;
 }
 
 /** ダブりの枚数（デッキに入れられる MAX_COPIES 枚を超えた分） */

@@ -173,7 +173,7 @@ export function Gacha() {
             <h2>1パック（5枚）の中身</h2>
             <SlotTable />
             <p className="gx-note" style={{ marginTop: 10 }}>
-              同じ★のカードは、どれも同じ確率で出ます。同じカードが出ることもあります。
+              同じ★の中では、まだ2枚持っていないカードが、どれも同じ確率で出ます。2枚持っているカードは出ません（その★のカードを全部2枚持っているときは、その★のどのカードも出ます）。
             </p>
             <div className="gx-btns">
               <button type="button" className="btn ghost" onClick={() => setRates(false)}>
