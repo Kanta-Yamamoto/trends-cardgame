@@ -2072,7 +2072,6 @@ export function Board({
   const omenAt = (owner: PlayerId, slot: number) => darkOmens(game, owner).find((o) => o.slot === slot);
   const canHit = (t: AttackTarget) =>
     targets.some((x) => (x.kind === "leader" ? t.kind === "leader" : t.kind === "unit" && t.slot === x.slot));
-  const freeSlot = openSlots(game, ME)[0] ?? -1;
   // いま闇堕ちさせられる自分の裏向きのカードの枠（破壊されたターンは闇堕ちできない）
   const fallSlots = myTurn ? darkFallSlots(game, ME) : [];
   const askedOmen = omenAsk ? omenAt(omenAsk.owner, omenAsk.slot) : undefined;
@@ -2136,8 +2135,12 @@ export function Board({
           if (castable) return cast({ side: "ally", slot });
           if (selected) return select(null);
           setPeek(p);
-          if (ready) select({ kind: "attacker", slot });
-          else setZoom(p);
+          // 押す＝いつも小窓で詳しく見る。攻撃するのは小窓の「攻撃する」から（11月2日。相談のページの案 A）。チュートリアルは案内どおり押して選ぶ
+          if (ready && direct) select({ kind: "attacker", slot });
+          else {
+            select(null);
+            setZoom(p);
+          }
         }}
         onPeek={() => setPeek(p)}
         onLongPress={() => setZoom(p)}
@@ -2154,10 +2157,7 @@ export function Board({
     const card = CATALOG[id];
     if (!card) return null;
     const cost = effectiveCost(game, ME, id, CATALOG);
-    const usable =
-      myTurn &&
-      cost <= me.mana &&
-      (card.type === "icon" ? freeSlot >= 0 : !card.target || castTargets(game, ME, id, CATALOG).length > 0);
+    const usable = myTurn && handUsable(game, i);
     const selected = selection?.kind === "hand" && selection.index === i;
     const p: Peek = { id, where: "hand", index: i };
     // 扇形：真ん中からの位置で傾け、外ほど少し下げる。間隔は CSS（.hand の幅）で決める
@@ -2182,14 +2182,12 @@ export function Board({
         onClick={() => {
           if (justDragged()) return;
           setPeek(p);
-          // 出せるカードは、押すとそのまま出す場所・対象を選ぶ（「戻る」で引き返せる）。出せないカードは小窓で詳しく見る
-          //（11月2日。下半分の手札のシートはやめた。オーナー：「現在の手札の詳細機能は無しにして」）
+          // 押す＝いつも小窓で詳しく見る。出せるカードは小窓の「出す」「使う」から出す場所・対象を選ぶ
+          //（11月2日。オーナーが相談のページの案 A を選んだ。選んだカードと下の帯が重なっていた）。選んでいるカードを押すと選ぶのをやめる
           if (!direct) {
-            if (!usable) {
-              select(null);
-              return setZoom(p);
-            }
-            return select(selected ? null : { kind: "hand", index: i });
+            if (selected) return select(null);
+            select(null);
+            return setZoom(p);
           }
           // チュートリアルは案内どおり、押して場を選ぶ
           if (!myTurn) return;
@@ -2364,6 +2362,37 @@ export function Board({
     after();
   };
   const options = turnOptions(game, ME, CATALOG);
+  // 小窓の下に出す、このカードでできること。出せる手札は「出す」「使う」、攻撃できるキャラクターは「攻撃する」（チュートリアルでは出さない）
+  const zoomAction = ((): { label: string; onClick: () => void } | undefined => {
+    if (!zoom || direct || !myTurn || game.winner || buzzing || sacGuide) return undefined;
+    if (zoom.where === "hand") {
+      const index = zoom.index;
+      const card = CATALOG[zoom.id];
+      if (!card || me.hand[index] !== zoom.id || !handUsable(game, index)) return undefined;
+      return {
+        label: card.type === "icon" ? "出す" : "使う",
+        onClick: () => {
+          setZoom(null);
+          select({ kind: "hand", index });
+          // 対象の無い呪文は、小窓で決めたらそのまま使う
+          if (card.type === "post" && !card.target) cast();
+        },
+      };
+    }
+    if (zoom.where === "mine") {
+      const slot = zoom.index;
+      const u = me.field[slot];
+      if (!u || u.cardId !== zoom.id || !canUnitAttack(game, u)) return undefined;
+      return {
+        label: "攻撃する",
+        onClick: () => {
+          setZoom(null);
+          select({ kind: "attacker", slot });
+        },
+      };
+    }
+    return undefined;
+  })();
   // 手前の文字欄：次に何をするか。指示のときは光らせる
   const askText = sacGuide
     ? sacGuide.mine
@@ -2526,6 +2555,7 @@ export function Board({
             <BoardText
               line={myText}
               className={`me ${error ? "err" : askText ? "ask" : ""} ${myText ? "" : "empty"}`}
+              onBack={!direct && (attacking || selection?.kind === "hand") ? () => select(null) : undefined}
             />
             <div className="plow">
               {meRow}
@@ -2560,19 +2590,6 @@ export function Board({
                 </div>
               </div>
 
-              {selection?.kind === "hand" && selectedCard && !direct && !drag && (
-                <AskBar
-                  art={selectedCard.art}
-                  title={selectedCard.name}
-                  onArt={() => setZoom({ id: selectedCard.id, where: "hand", index: selection.index })}
-                  onBack={() => select(null)}
-                  go={
-                    postSelected && !selectedCard.target
-                      ? { label: "使う", onClick: () => cast() }
-                      : undefined
-                  }
-                />
-              )}
               {buzzing && buzzAsk === null && (
                 <AskBar title={`バズ のこり ${buzzLeft} 回`} onBack={() => select(null)} />
               )}
@@ -2803,6 +2820,7 @@ export function Board({
           card={CATALOG[zoom.id] as CardDef}
           initialDark={zoom.dark ?? zoom.view?.unit.dark}
           bigText
+          action={zoomAction}
           onClose={() => setZoom(null)}
         />
       )}
@@ -2852,12 +2870,26 @@ export function Board({
 }
 
 /** 真ん中の文字欄の 1 行 */
-function BoardText({ line, className }: { line: BoardLine | null; className: string }) {
+function BoardText({
+  line,
+  className,
+  onBack,
+}: {
+  line: BoardLine | null;
+  className: string;
+  /** 出す場所・攻撃する相手を選んでいる間の「戻る」（選ぶのをやめる） */
+  onBack?: () => void;
+}) {
   return (
-    <p className={`pmsg ${className}`} role="status">
+    <div className={`pmsg ${className} ${onBack ? "has-back" : ""}`}>
       {line?.art && <i style={{ backgroundImage: `url(${line.art})` }} />}
-      <span>{line?.text}</span>
-    </p>
+      <span role="status">{line?.text}</span>
+      {onBack && (
+        <button type="button" className="pmsg-back" onClick={onBack}>
+          戻る
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -2866,32 +2898,18 @@ function AskBar({
   art,
   title,
   note,
-  onArt,
   onBack,
   go,
 }: {
   art?: string;
   title: string;
   note?: string;
-  /** 絵を押したとき（カードを小窓で詳しく見る） */
-  onArt?: () => void;
   onBack: () => void;
   go?: { label: string; onClick: () => void };
 }) {
   return (
     <section className="pask" role="dialog" aria-label={title}>
-      {art &&
-        (onArt ? (
-          <button
-            type="button"
-            className="pask-art"
-            style={{ backgroundImage: `url(${art})` }}
-            aria-label={`${title} を大きく見る`}
-            onClick={onArt}
-          />
-        ) : (
-          <span className="pask-art" style={{ backgroundImage: `url(${art})` }} />
-        ))}
+      {art && <span className="pask-art" style={{ backgroundImage: `url(${art})` }} />}
       <div className="pask-body">
         <b>{title}</b>
         {note && <span>{note}</span>}
