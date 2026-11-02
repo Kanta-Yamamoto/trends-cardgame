@@ -1665,9 +1665,9 @@
 #### PixAI での描き直し（11月2日）
 オーナーが PixAI で描き直す（c16 の PixAI 版のような、平らな塗りと少ない色の絵にそろえる）。縦横比は PixAI の設定で 2:3 にする。今の絵の「真下から見上げるジャンプ」と短いスカート・へそ出しは、スカートの中が写りやすく、ホームの最初のキャラクターとして審査でも気になる（[ios-release.md](ios-release.md)）ので、上半身を斜め下から・長袖の衣装に変える。品質のタグ（傑作・最高品質など）は描き込みとつやが増えるので入れない。
 
-ポジティブ（英語。品質の語は、線と塗りをくっきりさせるもの（best quality・highres など）だけ入れ、描き込みとつやが増えやすい masterpiece は入れない。絵柄はセル画の語（anime screencap・cel shading・flat color）で決める）：
+ポジティブ（オーナーの希望で、品質と絵柄の決まった語は英語、キャラクターごとに変わる語は日本語。品質の語は線と塗りをくっきりさせるものだけ入れ、描き込みとつやが増えやすい masterpiece は入れない）：
 ```text
-best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, pink theme, 2d, 1girl, solo, idol, young woman, long hair, pale pink hair, magenta hair tips, flowing hair, star-shaped pupils, open mouth, singing, big smile, white and magenta idol costume, long sleeves, frilled shoulders, high collar, holding microphone, microphone near mouth, arm up, open hand, upper body, slightly from below, dutch angle, arched back, hair blowing, dynamic pose, dark navy background, diagonal pink stripes, few heart confetti, empty space at bottom
+best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, ピンクの色調, 女の子1人, アイドル, 若い女性, ロングヘア, 淡いピンクの髪, 毛先がマゼンタ, 流れる髪, 星形の瞳, 口を開けて歌う, 満面の笑み, 白とマゼンタのアイドル衣装, 長袖, 肩のフリル, ハイネック, マイクを口元に持つ, 片腕を上げる, 開いた手, 上半身, やや下から, 斜めに傾けた画角, 背中を反らす, 髪がなびく, 動きのあるポーズ, 濃い紺の背景, 斜めのピンクの縞, ハートの紙吹雪を少し
 ```
 
 ネガティブ（オーナーの希望で英語。PixAI のモデルは英語のタグのほうが効く）：
@@ -1675,7 +1675,7 @@ best quality, high quality, highres, clean lineart, sharp focus, anime screencap
 shiny skin, glossy, oily skin, wet, specular highlights, rim lighting, backlighting, glowing, bloom, lens flare, sparkles, light particles, bokeh, depth of field, thick painting, realistic, photorealistic, photo, 3d, cgi, heavy gradient, overdetailed, intricate details, detailed hair strands, generic face, expressionless, midriff, navel, revealing clothes, miniskirt, upskirt, panties, underwear, cleavage, crowd, audience, multiple girls, text, logo, signature, watermark, border, frame, bad hands, extra fingers, missing fingers, extra arms, extra legs, blurry lineart, lowres, worst quality
 ```
 
-闇堕ち（病み期のミレイ）は、同じシードで、ポジティブの次の語だけ入れ替える：`pink theme` → `dark purple theme`、`magenta hair tips` → `purple hair tips`、`star-shaped pupils` → `red eyes, empty eyes`、`big smile` → `faint smile`、`white and magenta idol costume` → `black and crimson idol costume`、`dark navy background` → `dark purple background`、`diagonal pink stripes` → `diagonal crimson stripes`、`few heart confetti` → `few black feathers`
+闇堕ち（病み期のミレイ）は、同じシードで、ポジティブの次の語だけ入れ替える：「ピンクの色調」→「暗い紫の色調」、「毛先がマゼンタ」→「毛先が紫」、「星形の瞳」→「ハイライトのない赤い瞳」、「満面の笑み」→「口元だけのかすかな笑み」、「白とマゼンタのアイドル衣装」→「黒と深紅のアイドル衣装」、「濃い紺の背景」→「暗い紫の背景」、「斜めのピンクの縞」→「斜めの深紅の縞」、「ハートの紙吹雪を少し」→「黒い羽を少し」
 
 ### g18 大御所コメンテーター
 ```text
