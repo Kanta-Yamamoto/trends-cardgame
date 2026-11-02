@@ -61,7 +61,12 @@ describe("ガチャ（1 パック 5 枚）", () => {
     const rand = seeded(2026);
     const n = 30_000;
     const got: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    for (let i = 0; i < n; i++) for (const id of openPack(pool, rand)) got[rarityOf[id] as number]++;
+    for (let i = 0; i < n; i++) {
+      for (const id of openPack(pool, rand)) {
+        const r = rarityOf[id] as number;
+        got[r] = (got[r] ?? 0) + 1;
+      }
+    }
     const per = (r: number) => (got[r] ?? 0) / n;
     expect(Math.abs(per(5) - 1 / 5)).toBeLessThan(0.015);
     expect(Math.abs(per(4) - 1 / 4)).toBeLessThan(0.015);
