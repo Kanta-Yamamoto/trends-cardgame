@@ -1675,7 +1675,9 @@ best quality, high quality, highres, clean lineart, sharp focus, anime screencap
 shiny skin, glossy, oily skin, wet, specular highlights, rim lighting, backlighting, glowing, bloom, lens flare, sparkles, light particles, bokeh, depth of field, thick painting, realistic, photorealistic, photo, 3d, cgi, heavy gradient, overdetailed, intricate details, detailed hair strands, generic face, expressionless, midriff, navel, revealing clothes, miniskirt, upskirt, panties, underwear, cleavage, crowd, audience, multiple girls, text, logo, signature, watermark, border, frame, bad hands, extra fingers, missing fingers, extra arms, extra legs, blurry lineart, lowres, worst quality
 ```
 
-**11月2日に通常の絵を差し替えた**：上のプロンプトでオーナーが PixAI で描いた絵（片手を上げ、マイクを口元に、上を見て歌う）。元は `assets/original/c13.webp`（832×1472）。下を切って 2:3 にし、`c13-art.jpg` にした。切り抜き `c13-subject.webp` は `tools/cutout.py --fade-from 0.6` のあと、腕と頭の間に残った黒い地と、本体から離れた紙吹雪を消した。前の ChatGPT の絵は `assets/original/c13-chatgpt.webp`。闇堕ちの絵はまだ前のまま。
+**11月2日に通常の絵を差し替えた**：上のプロンプトでオーナーが PixAI で描いた絵（片手を上げ、マイクを口元に、上を見て歌う）。元は `assets/original/c13.webp`（832×1472）。下を切って 2:3 にし、`c13-art.jpg` にした。切り抜き `c13-subject.webp` は `tools/cutout.py --fade-from 0.6` のあと、腕と頭の間に残った黒い地と、本体から離れた紙吹雪を消した。前の ChatGPT の絵は `assets/original/c13-chatgpt.webp`。
+
+**11月3日に闇堕ちの絵も差し替えた**：オーナーが PixAI で描いた絵（黒と深紅の衣装、黒い羽の髪飾り、マイクを掲げて上を向いて笑う）。下のプロンプトの「こちらを見下ろす」とは違う絵だが、オーナーが闇堕ちとして送ってくれたものを使った。通常と同じく下を切って 2:3 にし、`c13-dark-art.jpg`・`c13-dark-subject.webp`（`--fade-from 0.6`。紫の地なので、そのままきれいに抜けた）。元は `assets/original/c13-dark.webp`、前の ChatGPT の絵は `assets/original/c13-dark-chatgpt.webp`。
 
 闇堕ち（病み期のミレイ）：同じポーズでは上を向いて歌っていて、こちらを向かないのが良くない（オーナー：「こっちを向いた上で、ちょっと見下す感じに」）。歌うのをやめ、あごを上げてこちらを見下ろす形にした。顔をそろえるため、通常の絵と同じシードで。ポジティブ：
 ```text
