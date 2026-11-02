@@ -281,15 +281,6 @@ async function presentPhased(
 /** 自分のアイコン（アイコンの登録が入るまでは、案内役のちびミナモ） */
 const MY_ICON = "/assets/tutorial/minamo-cheer.webp";
 const DEFAULT_FOE_ICON = "/assets/cards/c17-art.jpg";
-/** バトルの結果を、手前の文字欄に見せておく時間 */
-const BOARD_LINE_MS = 3000;
-/**
- * 手前の文字欄に出す出来事：バトルの履歴だけ（両者の攻撃と、プレイヤーへのダメージ）。
- * 11月2日。オーナー：「本当にその場で見えないと困るもののみを対象にしたい」。出した・使った・バズなどは、
- * カードの表示や演出で分かるので出さない
- */
-const BOARD_LINE_EVENTS = new Set<GameEvent["type"]>(["battle", "leaderDamaged"]);
-
 function describe(e: GameEvent): string {
   switch (e.type) {
     case "played":
@@ -1279,9 +1270,6 @@ export function Board({
   /** 手札を下半分のシートで見ている位置（「出す」を押すと場を選ぶ手順に進む） */
   /** 場のカードを下半分のシートで見ている */
   const [menuOpen, setMenuOpen] = useState(false);
-  /** 真ん中の文字欄：奥は相手の手、手前は自分の手の結果（少し見せて案内に戻す） */
-  const [myLine, setMyLine] = useState<BoardLine | null>(null);
-  const lineSeen = useRef(-1);
   const [banner, setBanner] = useState<{ id: number; mine: boolean; turn: number } | null>(null);
   /** 『フィクサー』の登場：バトル場が黒に滲む（出したターンが終わるまで続く） */
   const [fixer, setFixer] = useState<{ id: number } | null>(null);
@@ -1351,23 +1339,6 @@ export function Board({
     setQuitAsk(false);
     setMenuOpen(false);
   }, [foeMove]);
-
-  // 手前の文字欄に、いちばん新しいバトルの結果を 3 秒だけ出す（自分・相手のどちらのターンでも）
-  useEffect(() => {
-    const last = [...log].reverse().find((l) => BOARD_LINE_EVENTS.has(l.e.type));
-    if (!last) {
-      lineSeen.current = -1;
-      setMyLine(null);
-      return;
-    }
-    if (last.id === lineSeen.current) return;
-    lineSeen.current = last.id;
-    const cardId = "cardId" in last.e ? last.e.cardId : undefined;
-    const line = { text: describe(last.e), art: cardId ? CATALOG[cardId]?.art : undefined };
-    setMyLine(line);
-    const t = setTimeout(() => setMyLine(null), BOARD_LINE_MS);
-    return () => clearTimeout(t);
-  }, [log]);
 
   const handUsable = (g: GameState, i: number) => {
     const id = g.players[ME].hand[i];
@@ -2419,9 +2390,10 @@ export function Board({
                 : omenAsk && fallSlots.includes(omenAsk.slot)
                   ? "闇堕ちさせますか"
                   : null;
-  // 手前の文字欄：その場で見えないと困るものだけ（反則の理由・次の操作の指示・バトルの結果）。何も無ければ空ける
-  //（11月2日。先攻・後攻、攻撃できる数・出せる枚数、相手のターンです、などの案内はやめた）
-  const myText: BoardLine | null = error ? { text: error } : askText ? { text: askText } : myLine;
+  // 手前の文字欄：反則の理由と次の操作の指示だけ。何も無ければ空ける
+  //（11月2日。先攻・後攻、攻撃できる数・出せる枚数、相手のターンです、などの案内はやめた。
+  //  バトルの結果の文もやめた。オーナー：「これ不要、消しなさい」）
+  const myText: BoardLine | null = error ? { text: error } : askText ? { text: askText } : null;
   const field = fieldOf(game, CATALOG);
   const boardClass = `board turn-${game.active === ME ? "me" : "foe"}${field ? ` field-${field.kind}` : ""}${director !== null ? " field-director" : ""}${arbiter ? " field-arbiter" : ""}${fixer ? " field-fixer" : ""}${god ? " field-god" : ""}${sacGuide ? " sac-mode" : ""}`;
   const fieldLayer = field ? <FieldLayer kind={field.kind} mine={field.owner === ME} /> : null;
