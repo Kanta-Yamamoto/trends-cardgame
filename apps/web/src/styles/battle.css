@@ -97,6 +97,10 @@
 .pmsg.empty { background: none; box-shadow: none; }
 .pmsg.me.err { background: #5a1420e6; box-shadow: 0 0 0 2px #ff8fa3; font-weight: 800; }
 .pmsg-space { flex: none; height: 30px; }
+/* 出す場所・攻撃する相手を選んでいる間の「戻る」。文字欄の右の端に置き、文字はその左に収める（11月2日。案 A で下の帯をやめた） */
+.pmsg.has-back { padding: 0 66px 0 12px; }
+.pmsg-back { position: absolute; right: 3px; top: 50%; translate: 0 -50%; height: 24px; padding: 0 12px; border: 0; border-radius: 9px; background: #ffffff26; box-shadow: inset 0 0 0 1px #ffffff73; color: #fff; font: 700 12px/1 var(--f-head); cursor: pointer; }
+.pmsg-back::before { content: ""; position: absolute; inset: -8px -3px -8px -6px; }
 
 /* 手前：自分の陣地 */
 .pself { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--g); padding: 8px 8px 8px; }
@@ -153,7 +157,6 @@
 /* 手札の場所に重ねる確認の帯 */
 .pask { position: absolute; left: -8px; right: -8px; bottom: -8px; z-index: 10; display: flex; gap: 12px; height: calc(var(--lane-h) + 16px); box-sizing: border-box; padding: 12px 14px; border-radius: 22px 22px 0 0; color: #fff; background: #0b2544; box-shadow: 0 -8px 24px #0008; }
 .pask-art { flex: none; width: 72px; height: 100px; padding: 0; border: 0; border-radius: 10px; background-size: cover; background-position: 50% 20%; }
-button.pask-art { cursor: zoom-in; box-shadow: 0 0 0 2px #ffffffb0; }
 .pask-body { min-width: 0; flex: 1; display: grid; align-content: start; gap: 6px; }
 .pask-body b { font: 900 16px/1.25 var(--f-head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pask-body > span { font-size: 12px; font-weight: 700; line-height: 1.4; }

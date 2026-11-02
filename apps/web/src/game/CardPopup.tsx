@@ -8,13 +8,16 @@ import { HoloCard } from "../cards/HoloCard";
  * カードを押して隠すと、カードを傾ける動きと被るので、ボタンにした。オーナーがモックの D を選んだ）。
  * 闇堕ちを持つカードは、下の切り替えで闇堕ちの姿も見られる。外側・×・Esc で閉じる。
  * nav を渡すと、下に「前へ・次へ」を出して、重ねたまま前後のカードへ移れる（← → キーでも）
- * 対戦の画面でも、どのカードを詳しく見るときもこの小窓を使う（11月2日）。対戦では bigText で効果文を大きくする
+ * 対戦の画面でも、どのカードを詳しく見るときもこの小窓を使う（11月2日）。対戦では bigText で効果文を大きくする。
+ * action を渡すと、カードの下に「閉じる」と、そのカードでできること（出す・使う・攻撃する）のボタンを出す
+ *（11月2日。押す＝いつも詳しく見る、読んでから小窓で決める。オーナーが相談のページの案 A を選んだ）
  */
 export function CardPopup({
   card,
   nav,
   initialDark = false,
   bigText = false,
+  action,
   onClose,
 }: {
   card: CardDef;
@@ -24,6 +27,8 @@ export function CardPopup({
   bigText?: boolean;
   /** 並びの中の位置（1 から）と全体の数、前後へ移る関数 */
   nav?: { index: number; total: number; prev: () => void; next: () => void };
+  /** カードの下に出す、このカードでできること（対戦の画面。出せる手札・攻撃できるキャラクター） */
+  action?: { label: string; onClick: () => void };
   onClose: () => void;
 }) {
   const [dark, setDark] = useState(initialDark && !!card.dark);
@@ -99,6 +104,16 @@ export function CardPopup({
               onClick={() => setDark(true)}
             >
               闇堕ちの姿
+            </button>
+          </div>
+        )}
+        {action && (
+          <div className="card-pop-acts">
+            <button type="button" className="btn ghost" onClick={onClose}>
+              閉じる
+            </button>
+            <button type="button" className="btn" data-decide-se onClick={action.onClick}>
+              {action.label}
             </button>
           </div>
         )}
