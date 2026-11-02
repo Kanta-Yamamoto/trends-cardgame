@@ -30,6 +30,7 @@ import "./styles/battle.css";
 import { hideBootWhenReady } from "./boot";
 import { FRAME_ID, watchFrame } from "./frame";
 import { stripInviteFromUrl } from "./invite";
+import { isApp } from "./native";
 import { isStandalone, registerPwa } from "./pwa";
 import { watchSoundEffects } from "./sound/se";
 import { watchTaps } from "./tapMark";
@@ -53,6 +54,8 @@ window.addEventListener("vite:preloadError", (e) => {
 });
 // ホーム画面のアプリとして開いているときは、どの画面でも拡大縮小しない（アプリらしく）
 if (isStandalone()) lockZoom();
+// アプリかブラウザかで見た目の重さを変える印（ブラウザでは重いぼかしを減らす。app.css）
+if (isApp) document.documentElement.classList.add("is-app");
 
 const root = document.getElementById("root");
 if (!root) throw new Error("#root がありません");
