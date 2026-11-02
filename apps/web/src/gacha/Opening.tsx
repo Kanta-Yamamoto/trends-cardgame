@@ -153,6 +153,8 @@ export function Opening({
   /** 開け終わった結果から見せる（画面が読み直されたあとに出し直すとき） */
   resume?: boolean;
 }) {
+  /** 「演出をすべてスキップしますか？」を出している */
+  const [askSkip, setAskSkip] = useState(false);
   const [s, setS] = useState<St>(() => {
     if (!resume) return FIRST;
     if (packs.length > 1) return { ...FIRST, summary: true };
@@ -342,7 +344,9 @@ export function Opening({
     else patch({ cur: p.cur + 1, flipped: false });
   };
   const closePresent = () => patch({ phase: "done", hit: "shown" });
+  /** 演出をすべて飛ばして結果へ（10 パックは結果の一覧、1 パックは 5 枚の並び） */
   const skip = () => {
+    setAskSkip(false);
     stopAll();
     if (many) patch({ summary: true });
     else patch({ phase: "done", hit: rare ? "shown" : "" });
@@ -513,15 +517,8 @@ export function Opening({
           {phase === "reveal" && <b>{Math.min(s.cur + 1, 5)} / 5</b>}
         </p>
       )}
-      {(phase === "idle" || phase === "reveal") && (
-        <div className="gx-open-dock one">
-          <button type="button" className="btn ghost gx-dk" onClick={skip}>
-            スキップ
-          </button>
-        </div>
-      )}
       {phase === "done" && (
-        <div className="gx-open-dock">
+        <div className={`gx-open-dock ${many ? "one" : ""}`}>
           {!many ? (
             <>
               <button type="button" className="btn ghost gx-dk" onClick={onClose}>
@@ -534,18 +531,13 @@ export function Opening({
               )}
             </>
           ) : (
-            <>
-              <button type="button" className="btn ghost gx-dk" onClick={() => patch({ summary: true })}>
-                まとめて見る
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={isLast ? () => patch({ summary: true }) : nextPack}
-              >
-                {isLast ? "結果を見る" : `次のパック（${s.at + 2}/${packs.length}）`}
-              </button>
-            </>
+            <button
+              type="button"
+              className="btn"
+              onClick={isLast ? () => patch({ summary: true }) : nextPack}
+            >
+              {isLast ? "結果を見る" : `次のパック（${s.at + 2}/${packs.length}）`}
+            </button>
           )}
         </div>
       )}
@@ -594,6 +586,40 @@ export function Opening({
       <div
         className={`gx-white ${hit === "white" || hit === "hold" ? "in" : hit === "present" ? "out" : ""}`}
       />
+      {/* 演出をスキップ（11月2日。オーナー：「基本的にスキップはできないようにして、でも右上とかで三角二つで、演出をスキップする、ボタンは用意しておいて、
+          それを押すと確認モーダルが出て…スキップするを押すと、結果一覧の画面にいく」「それ以外は基本しっかりパックをめくっていきたい」）。
+          前は下の「スキップ」と、開け終わったパックの「まとめて見る」で、押すとすぐ全部の結果へ飛んでいた */}
+      {(many || phase !== "done") && (
+        <button
+          type="button"
+          className="gx-skip"
+          aria-label="演出をスキップ"
+          onClick={() => setAskSkip(true)}
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M3 5.5v13l9-6.5zM12 5.5v13l9-6.5z" />
+          </svg>
+        </button>
+      )}
+      {askSkip && (
+        <div className="gx-ask" role="alertdialog" aria-modal="true" aria-label="演出のスキップの確認">
+          <button type="button" className="gx-ask-bg" aria-label="閉じる" onClick={() => setAskSkip(false)} />
+          <div className="end-confirm-body">
+            <p className="end-confirm-q">演出をすべてスキップしますか？</p>
+            <p className="end-confirm-note">
+              {many ? "残りのパックの結果を、まとめて見ます" : "引いた 5 枚を、すぐに見ます"}
+            </p>
+            <div className="end-confirm-actions">
+              <button type="button" className="btn ghost" onClick={() => setAskSkip(false)}>
+                やめる
+              </button>
+              <button type="button" className="btn" data-decide-se onClick={skip}>
+                スキップする
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
