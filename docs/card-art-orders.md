@@ -1670,9 +1670,9 @@
 1人の女の子, アイドル, 22歳くらい, 淡いピンクのロングヘア, 毛先がマゼンタ, 大きく広がる髪, 星形のハイライトの瞳, 口を大きく開けて歌う, 全力の笑顔, 白とマゼンタのステージ衣装, 長袖, 肩のフリル, ハイネック, 片手でマイクを口元に持つ, もう片方の腕を高く上げる, 開いた手のひら, 上半身, 斜め下から見上げる, 体を少し反らす, 髪がなびく, 動きのある構図, アニメ塗り, セル画, フラットな色面, 影は1段, 太い主線, 少ない色数, ピンクとマゼンタと白と紺, 濃い紺の背景, 斜めに走る太いピンクの帯, 小さなハートの紙吹雪を少し, 画面の下は背景だけ
 ```
 
-ネガティブ：
+ネガティブ（オーナーの希望で英語。PixAI のモデルは英語のタグのほうが効く）：
 ```text
-テカリ, 光沢, つやのある肌, 濡れた質感, リムライト, 逆光, 発光, ブルーム, レンズフレア, キラキラ, 光の粒, ぼけた光の玉, 被写界深度, 厚塗り, リアル, 写真, 3DCG, グラデーションの多い塗り, 描き込みすぎ, 細かすぎる髪, 量産型の顔, 無表情, へそ出し, 露出の多い服, ミニスカート, スカートの中, 下着, 胸の強調, 真下からのアングル, 群衆, 観客, 複数人, 文字, ロゴ, 署名, ウォーターマーク, 枠, 崩れた手, 指の本数の間違い, 余分な腕, 余分な脚, ぼやけた線, 低品質
+shiny skin, glossy, oily skin, wet, specular highlights, rim lighting, backlighting, glowing, bloom, lens flare, sparkles, light particles, bokeh, depth of field, thick painting, realistic, photorealistic, photo, 3d, cgi, heavy gradient, overdetailed, intricate details, detailed hair strands, generic face, expressionless, midriff, navel, revealing clothes, miniskirt, upskirt, panties, underwear, cleavage, crowd, audience, multiple girls, text, logo, signature, watermark, border, frame, bad hands, extra fingers, missing fingers, extra arms, extra legs, blurry lineart, lowres, worst quality
 ```
 
 闇堕ち（病み期のミレイ）は、同じシードで、ポジティブの次の語だけ入れ替える：「白とマゼンタのステージ衣装」→「黒と深い赤のステージ衣装」、「毛先がマゼンタ」→「毛先が紫」、「星形のハイライトの瞳」→「ハイライトのない赤い瞳」、「全力の笑顔」→「口元だけの笑み, 笑っていない目」、「ピンクとマゼンタと白と紺」→「黒と深い赤と紫」、「濃い紺の背景」→「黒に近い紫の背景」、「斜めに走る太いピンクの帯」→「斜めに走る太い深い赤の帯」、「小さなハートの紙吹雪を少し」→「黒い羽を少し」
