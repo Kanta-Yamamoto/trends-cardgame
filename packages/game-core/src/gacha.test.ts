@@ -152,10 +152,10 @@ describe("毎日のパック", () => {
     expect(packDay(new Date("2026-11-01T15:00:00Z"))).toBe("2026-11-02");
   });
 
-  it("同じ日は残りのまま。日が変わると 3 パックに戻り、ためられない", () => {
+  it("同じ日は残りのまま。日が変わると 5 パックに戻り、ためられない", () => {
     expect(packsToday(1, "2026-11-01", "2026-11-01")).toBe(1);
     expect(packsToday(0, "2026-11-01", "2026-11-02")).toBe(DAILY_PACKS);
     expect(packsToday(2, null, "2026-11-02")).toBe(DAILY_PACKS);
-    expect(packsToday(7, "2026-11-01", "2026-11-02")).toBe(7);
+    expect(packsToday(9, "2026-11-01", "2026-11-02")).toBe(9);
   });
 });

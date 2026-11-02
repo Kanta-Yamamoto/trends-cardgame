@@ -191,7 +191,7 @@ describe("プレイヤー名の登録・買い切り・ガチャ", () => {
       for (const c of pack) if (rarity.get(c.id) === 5) expect(c.id).toBe(keep);
   });
 
-  it("次の日は 3 パックに戻り、ためられない", async () => {
+  it("次の日は 5 パックに戻り、ためられない", async () => {
     const { id, token } = await device();
     await buy(token).expect(200);
     await db.update(users).set({ packs: 0, packsDay: "2026-01-01" }).where(eq(users.id, id));
