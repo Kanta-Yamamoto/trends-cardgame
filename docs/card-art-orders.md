@@ -1618,6 +1618,22 @@ best quality, high quality, highres, clean lineart, sharp focus, anime screencap
 手前のカウンターと瓶は暗い紫の影に。下3分の1は、暗いカウンターと紫の光のにじみだけ
 ```
 
+#### PixAI での描き直し（11月3日。通常と闇堕ち）
+ミレイと同じ形（品質と絵柄の語は英語、キャラクターの部分は日本語）。★5 なので上半身。ミレイ・専門家（下から見上げる）と重ならないよう、ベッドの人をのぞき込む「上から」の画角のまま。「しーっ」の指はルリの見せ場なので残す。縦長 2:3 は PixAI の設定で。
+
+ポジティブ：
+```text
+best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, 水色と白の色調, 女の子1人, 20代前半の女性, 淡い水色のロングヘア, 低い位置の二つ結び, 白いナースキャップ, 青い十字, 白いナース服, 水色のリボン, 片目を閉じる, 人差し指を唇に当てる, しーっのポーズ, やさしい微笑み, 胸元に小さなマイク, 上半身, 上から見下ろす, こちらをのぞき込む, 前かがみ, 紺色の夜の背景, 大きな丸い月, シャボン玉の輪を少し
+```
+
+闇堕ち（不眠のルリ）：同じシードで、同じポーズのまま。ポジティブ：
+```text
+best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, 暗い紫と深紅の色調, 女の子1人, 20代前半の女性, 淡い水色のロングヘア, 毛先が紫, 低い位置の二つ結び, 黒っぽい紫のナースキャップ, 深紅の十字, 白いナース服, 深紅のリボン, 両目を開く, ハイライトのない深い赤の瞳, 目の下に紫のくま, 人差し指を唇に当てる, しーっのポーズ, やさしい微笑み, 胸元に黒い小さなマイク, 上半身, 上から見下ろす, こちらをのぞき込む, 前かがみ, 暗い紫の夜の背景, 欠けた月, 黒い泡を少し
+```
+
+ネガティブ：どちらもミレイの英語版の最後に `extra fingers on lips, hospital equipment` を足す
+
+
 ## 第6弾（10月19日追加の16枚：単属性デッキの穴埋めと、30枚デッキ化）
 
 単属性デッキを組めるように、足りないコスト帯（共通の 5c・6c、メロいと草の 6c ★5、神の 4c・7c、炎上の 2c・5c、癒しの 1c・4c・6c）と足りない役割（草のドローと除去、炎上のドロー）を埋める 16 枚。10月19日の深夜に ChatGPT で描いて取り込み済み（元の画像は `assets/original/<ID>.webp`）。★5 のポーズは「手を伸ばす」以外にした。
