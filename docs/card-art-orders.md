@@ -1675,7 +1675,13 @@ best quality, high quality, highres, clean lineart, sharp focus, anime screencap
 shiny skin, glossy, oily skin, wet, specular highlights, rim lighting, backlighting, glowing, bloom, lens flare, sparkles, light particles, bokeh, depth of field, thick painting, realistic, photorealistic, photo, 3d, cgi, heavy gradient, overdetailed, intricate details, detailed hair strands, generic face, expressionless, midriff, navel, revealing clothes, miniskirt, upskirt, panties, underwear, cleavage, crowd, audience, multiple girls, text, logo, signature, watermark, border, frame, bad hands, extra fingers, missing fingers, extra arms, extra legs, blurry lineart, lowres, worst quality
 ```
 
-闇堕ち（病み期のミレイ）は、同じシードで、ポジティブの次の語だけ入れ替える：「ピンクの色調」→「暗い紫の色調」、「毛先がマゼンタ」→「毛先が紫」、「星形の瞳」→「ハイライトのない赤い瞳」、「満面の笑み」→「口元だけのかすかな笑み」、「白とマゼンタのアイドル衣装」→「黒と深紅のアイドル衣装」、「濃い紺の背景」→「暗い紫の背景」、「斜めのピンクの縞」→「斜めの深紅の縞」、「ハートの紙吹雪を少し」→「黒い羽を少し」
+**11月2日に通常の絵を差し替えた**：上のプロンプトでオーナーが PixAI で描いた絵（片手を上げ、マイクを口元に、上を見て歌う）。元は `assets/original/c13.webp`（832×1472）。下を切って 2:3 にし、`c13-art.jpg` にした。切り抜き `c13-subject.webp` は `tools/cutout.py --fade-from 0.6` のあと、腕と頭の間に残った黒い地と、本体から離れた紙吹雪を消した。前の ChatGPT の絵は `assets/original/c13-chatgpt.webp`。闇堕ちの絵はまだ前のまま。
+
+闇堕ち（病み期のミレイ）：同じポーズでは上を向いて歌っていて、こちらを向かないのが良くない（オーナー：「こっちを向いた上で、ちょっと見下す感じに」）。歌うのをやめ、あごを上げてこちらを見下ろす形にした。顔をそろえるため、通常の絵と同じシードで。ポジティブ：
+```text
+best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, 暗い紫の色調, 女の子1人, アイドル, 若い女性, ロングヘア, 淡いピンクの髪, 毛先が紫, 二つ結び, 流れる髪, ハイライトのない赤い瞳, こちらを見る, 見下す目線, 半目, あごを少し上げる, 口を閉じる, 片方の口角だけ上げた冷たい笑み, 黒と深紅のアイドル衣装, 長袖, 肩のフリル, ハイネック, マイクを胸の下で持つ, 片手を腰に, 上半身, 正面, やや下から, 髪がなびく, 暗い紫の背景, 斜めの深紅の縞, 黒い羽を少し
+```
+ネガティブは通常の英語版の最後に `looking away, looking up, closed eyes, singing, open mouth, big smile` を足す。
 
 ### g18 大御所コメンテーター
 ```text
