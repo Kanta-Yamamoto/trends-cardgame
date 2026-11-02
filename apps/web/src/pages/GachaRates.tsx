@@ -1,5 +1,5 @@
 import { CARDS } from "@trends/cards";
-import { PACK_SLOTS, packChance, packPool, slotOdds } from "@trends/game-core";
+import { PACK_SLOTS, packPool, perPack, slotOdds } from "@trends/game-core";
 import { useState } from "react";
 import "../styles/gacha.css";
 
@@ -75,12 +75,13 @@ export function GachaRates() {
         <small>全{KINDS}種類</small>
       </div>
       <div className="gx-per">
-        {[5, 4, 3].map((r) => {
-          const p = packChance(r, POOL);
+        {/* 1 パックに入る枚数の平均（11月2日。★5 は 5 パックに 1 枚 … ★1 は毎パック 1 枚以上） */}
+        {[5, 4, 3, 2, 1].map((r) => {
+          const p = perPack(r, POOL);
           return (
             <div key={r} className="g2">
               <span className="gx-stars">{stars(r)}</span>
-              <b>{pct(p)}</b>
+              <b>{pct(Math.min(1, p))}</b>
               <small>{p >= 0.9999 ? "毎パック1枚以上" : `${Math.round(1 / p)}パックに1枚`}</small>
             </div>
           );

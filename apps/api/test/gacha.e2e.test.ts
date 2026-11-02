@@ -138,9 +138,11 @@ describe("プレイヤー名の登録・買い切り・ガチャ", () => {
     expect(one.body.packs[0]).toHaveLength(5);
     expect(one.body.access).toEqual({ unlocked: false, allCards: false, packs: 0 });
     const ranks = one.body.packs[0].map((c: { id: string }) => rarityOf[c.id]);
-    expect(ranks[3]).toBe(3);
-    expect(ranks[4]).toBeGreaterThanOrEqual(3);
-    expect(one.body.packs[0][3].isNew).toBe(true);
+    // 1〜3 枚目は★1、4 枚目は★1・★2、5 枚目は★2 以上（11月2日）
+    expect(ranks.slice(0, 3)).toEqual([1, 1, 1]);
+    expect([1, 2]).toContain(ranks[3]);
+    expect(ranks[4]).toBeGreaterThanOrEqual(2);
+    expect(one.body.packs[0][4].isNew).toBe(true);
     const owned = await db.select().from(userCards).where(eq(userCards.userId, id));
     expect(owned.reduce((n, r) => n + r.count, 0)).toBe(5);
 
