@@ -169,12 +169,17 @@ async function create(): Promise<FxStage | null> {
   fitToFrame();
   window.addEventListener("resize", fitToFrame);
 
-  // 何も動いていないときは描かない
+  // 何も動いていないときは描かない。何も載っていなければ Canvas ごと隠す（11月2日。画面全体を覆う透明な Canvas を、
+  // 何も描いていない間も毎フレーム重ねていて、ブラウザで重かった）
   app.ticker.stop();
+  app.canvas.style.visibility = "hidden";
   let active = 0;
   const hold = () => {
     active += 1;
-    if (active === 1) app.ticker.start();
+    if (active === 1) {
+      app.canvas.style.visibility = "";
+      app.ticker.start();
+    }
     let done = false;
     return () => {
       if (done) return;
@@ -183,6 +188,7 @@ async function create(): Promise<FxStage | null> {
       if (active === 0) {
         app.render();
         app.ticker.stop();
+        if (root.children.length === 0) app.canvas.style.visibility = "hidden";
       }
     };
   };

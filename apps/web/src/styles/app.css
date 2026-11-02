@@ -116,12 +116,15 @@ html, body { touch-action: manipulation; }
 body {
   margin: 0;
   min-height: 100vh;
-  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 42%, var(--bg-bot) 100%) fixed;
+  background: var(--bg-mid);
   color: var(--text);
   font-family: var(--f-ui);
   /* 太さが1種類しかない書体（Dela Gothic One・Lilita One）を、ブラウザが無理に太らせない */
   font-synthesis-weight: none;
 }
+/* 地のグラデーションは、画面に固定した 1 枚の層にする（11月2日。前は background-attachment: fixed で、
+   PC・Android のブラウザは何かが変わるたびに画面全体の地を描き直して重かった。iPhone はこの指定を無視するので軽かった） */
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 42%, var(--bg-bot) 100%); }
 button { font: inherit; color: inherit; }
 /* 画面はスマホの縦の形1つだけ。PC でも同じ幅の列を中央に置く（2つの画面を保守しないため） */
 .shell { max-width: 480px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right)) 40px max(16px, env(safe-area-inset-left)); }
@@ -1049,6 +1052,10 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 /* カードの拡大：画面に重ねる小窓（CardPopup。デッキを組む画面・カード一覧。カードだけ。闇堕ちを持つカードは姿の切り替え、カード一覧は前後へ） */
 .card-pop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 72px 24px max(24px, env(safe-area-inset-bottom, 0px)); animation: fade 0.15s ease-out; }
 .card-pop-bg { position: absolute; inset: 0; border: 0; padding: 0; background: #283c5a59; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); cursor: pointer; }
+/* ブラウザでは、画面全体のぼかしをやめて少し濃い幕にする（11月2日。ブラウザで小窓を開くたびに重かった。アプリはぼかしのまま） */
+:root:not(.is-app) .card-pop-bg { -webkit-backdrop-filter: none; backdrop-filter: none; background: #1c2c46a8; }
+/* 対戦の盤面の裏に隠れた上の帯は描かない（すりガラスを毎フレーム描き直していた） */
+.shell:has(.pstage) .topbar { visibility: hidden; }
 .card-pop-body { position: relative; display: grid; gap: 14px; width: min(100%, 340px, calc((100dvh - 190px) * 0.716)); animation: pop 0.25s cubic-bezier(.2, 1.4, .4, 1); }
 .card-pop:has(.card-pop-nav) .card-pop-body { width: min(100%, 340px, calc((100dvh - 250px) * 0.716)); }
 /* 文字を隠す目のボタン（× の左）。押している間は水色。× と目は、見た目より少し広く押せる（指で押しやすく。2 つのあいだの 8px は半分ずつ） */
