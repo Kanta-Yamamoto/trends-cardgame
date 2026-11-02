@@ -10,7 +10,7 @@ export {
   startClock,
   tickClock,
 } from "./clock";
-export { type Collection, extraCopies, missingCards, starterCollection } from "./collection";
+export { type Collection, extraCopies, missingCards, rentalPool, starterCollection } from "./collection";
 export {
   CUSTOM_DECK_PREFIX,
   deckAttributes,

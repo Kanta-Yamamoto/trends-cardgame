@@ -125,6 +125,8 @@
 .gx-terms div span:first-child { color: var(--ink-2); }
 
 /* パックを開ける（画面いっぱい。地は対戦の盤面と同じ濃い青。白い光が映えるように） */
+/* 開けている間は、上の帯を隠す（ガチャの画面は isolation で層を分けているので、開ける画面が帯の下に入り、★5 の画面いっぱいのカードや見出しが帯に隠れていた。11月2日） */
+.shell:has(.gx-open) > .topbar { visibility: hidden; }
 .gx-open { position: fixed; inset: 0; z-index: 70; overflow: hidden; isolation: isolate; color: #fff; background: radial-gradient(circle at 50% 52%, #1d5a92 0%, #0d2f57 45%, #071a33 100%); animation: fade 0.25s ease-out; }
 .gx-open::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0.25; background-image: radial-gradient(#ffffffcc 1px, transparent 1.5px); background-size: 22px 22px; -webkit-mask-image: radial-gradient(circle at 50% 50%, #000, transparent 70%); mask-image: radial-gradient(circle at 50% 50%, #000, transparent 70%); }
 .gx-open-head { position: absolute; left: 0; right: 0; top: 0; z-index: 12; display: flex; align-items: center; gap: 10px; padding: max(12px, env(safe-area-inset-top, 0px)) 14px 8px; }
@@ -161,6 +163,7 @@
 /* カード（裏と表。表は HoloCard） */
 .gx-card { position: absolute; left: -105px; top: -147px; width: 210px; height: 293px; perspective: 1000px; transition: transform 0.55s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.4s; }
 .gx-card.hid { opacity: 0; pointer-events: none; }
+.gx-card.behind-big { visibility: hidden; }
 .gx-card.out { transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.1s; }
 .gx-in { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.35s cubic-bezier(0.3, 0.7, 0.3, 1); }
 .gx-card.flip .gx-in { transform: rotateY(180deg); }
@@ -212,8 +215,9 @@
 .gx-big-end, .gx-big-end *, .gx-big-end *::before, .gx-big-end *::after { animation-play-state: paused !important; }
 .gx-big-end .holo { width: 100%; }
 /* 入れ替えは、小さくなってから短く（大きいうちに入れ替えると、文字の板が大きく二重に見え、カードの形の方は画面の横にはみ出す） */
-.gx-big:is(.shrink, .settle) .gx-big-end { opacity: 1; transition: opacity calc(var(--shrink) * 0.15) linear calc(var(--shrink) * 0.5); }
-.gx-big:is(.shrink, .settle) .gx-big-in { opacity: 0; transition: opacity calc(var(--shrink) * 0.15) linear calc(var(--shrink) * 0.55); }
+/* 画面の形からカードの形へは、短く入れ替える（形の違う 2 枚が半透明で重なる間は二重に見えるので、0.12 秒から 0.06 秒に。11月2日） */
+.gx-big:is(.shrink, .settle) .gx-big-end { opacity: 1; transition: opacity calc(var(--shrink) * 0.04) linear calc(var(--shrink) * 0.55); }
+.gx-big:is(.shrink, .settle) .gx-big-in { opacity: 0; transition: opacity calc(var(--shrink) * 0.08) linear calc(var(--shrink) * 0.55); }
 .gx-big:is(.shrink, .settle) .gx-big-in *, .gx-big:is(.shrink, .settle) .gx-big-in *::before, .gx-big:is(.shrink, .settle) .gx-big-in *::after { animation-play-state: paused !important; }
 /* 画面を枠にするので、カードは傾けない。遠近（perspective）も外す（3D の重なりの中で色を混ぜると、iPhone でちらつくことがある） */
 .gx-big .holo .card { transform: none; }

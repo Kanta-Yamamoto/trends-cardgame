@@ -28,8 +28,10 @@ import {
   RuleError,
   rateGame,
   readyClock,
+  rentalPool,
   resolveDeckRef,
   startClock,
+  starterCollection,
   tickClock,
   validateDeck,
 } from "@trends/game-core";
@@ -40,6 +42,8 @@ import { DB } from "../db/db.module";
 import { type MatchRatings, type MatchRow, matches, userCards, users } from "../db/schema";
 
 const CATALOG = Object.fromEntries(CARDS.map((c) => [c.id, c])) as Record<string, RuleCard>;
+/** レンタルデッキのカード（自分のデッキに足して使える。game-core の rentalPool） */
+const RENTAL = starterCollection(DECKS);
 /** 読み間違えやすい文字（0/O・1/I など）を除いた合言葉の文字 */
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const newCode = () => Array.from({ length: 6 }, () => CODE_CHARS[randomInt(CODE_CHARS.length)]).join("");
@@ -120,7 +124,8 @@ export class MatchesService {
       .select({ id: userCards.cardId, count: userCards.count })
       .from(userCards)
       .where(eq(userCards.userId, userId));
-    const owned = Object.fromEntries(rows.map((r) => [r.id, r.count]));
+    // 引いたカードに、レンタルデッキのカードを足して使える（11月2日の仮の形。game-core の rentalPool）
+    const owned = rentalPool(Object.fromEntries(rows.map((r) => [r.id, r.count])), RENTAL);
     if (Object.keys(missingCards(cards, owned)).length > 0)
       throw new BadRequestException("持っていないカードが入っています");
   }

@@ -5,6 +5,7 @@ import { Link } from "react-router";
 import { ATTR_META } from "../cards/meta";
 import { type Access, useAccess } from "../gacha/access";
 import { useCollection } from "../gacha/collection";
+import { forgetPull, keepPull, resumePull } from "../gacha/lastPull";
 import { Opening, type PulledCard } from "../gacha/Opening";
 import { PACK_NAME, Pack } from "../gacha/Pack";
 import { CardPopup } from "../game/CardPopup";
@@ -32,6 +33,7 @@ export function Gacha() {
   // 開いている間は、ガチャの曲を流す（パックを開ける演出の間も）
   usePageMusic("gacha");
   const token = useSession((s) => s.token);
+  const userId = useSession((s) => s.user?.id ?? "");
   const access = useAccess((s) => s.access);
   const loadAccess = useAccess((s) => s.load);
   const setAccess = useAccess((s) => s.set);
@@ -42,7 +44,13 @@ export function Gacha() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // n：開けるたびに増やし、開ける画面を作り直す（もう1パックのとき、前のパックの続きにならないように）
-  const [opening, setOpening] = useState<{ packs: PulledCard[][]; n: number } | null>(null);
+  // resume：画面が読み直されたあとに、見終わっていなかった結果を出し直す（最初から結果の画面で。gacha/lastPull.ts）
+  const [opening, setOpening] = useState<{ packs: PulledCard[][]; n: number; resume?: boolean } | null>(
+    () => {
+      const packs = userId ? resumePull(userId) : null;
+      return packs ? { packs, n: 1, resume: true } : null;
+    },
+  );
 
   useEffect(() => {
     void loadAccess(token);
@@ -60,6 +68,7 @@ export function Gacha() {
       .then((r) => {
         setAccess(r.access);
         setOpening((o) => ({ packs: r.packs, n: (o?.n ?? 0) + 1 }));
+        keepPull(userId, r.packs);
         void loadCards(token);
       })
       .catch((e: Error) => setError(e.message))
@@ -184,7 +193,11 @@ export function Gacha() {
         <Opening
           key={opening.n}
           packs={opening.packs}
-          onClose={() => setOpening(null)}
+          resume={opening.resume}
+          onClose={() => {
+            forgetPull();
+            setOpening(null);
+          }}
           onAgain={left > 0 ? () => open(1) : undefined}
         />
       )}
