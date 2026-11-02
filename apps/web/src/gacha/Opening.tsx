@@ -144,13 +144,21 @@ export function Opening({
   packs,
   onClose,
   onAgain,
+  resume,
 }: {
   packs: PulledCard[][];
   onClose: () => void;
   /** 1 パックのとき「もう1パック」 */
   onAgain?: () => void;
+  /** 開け終わった結果から見せる（画面が読み直されたあとに出し直すとき） */
+  resume?: boolean;
 }) {
-  const [s, setS] = useState<St>(FIRST);
+  const [s, setS] = useState<St>(() => {
+    if (!resume) return FIRST;
+    if (packs.length > 1) return { ...FIRST, summary: true };
+    const top = BY_ID.get(packs[0]?.[4]?.id ?? "")?.rarity ?? 3;
+    return { ...FIRST, phase: "done", hit: top >= 4 ? "shown" : "" };
+  });
   const [{ scale, cs }, setLayout] = useState(layout);
   const ref = useRef(s);
   ref.current = s;
@@ -476,6 +484,9 @@ export function Opening({
           if (i === 4 && hit === "hold") cls += " now";
           if (i === 4 && (hit === "lift" || squeezing)) cls += " lift";
           if (i === 4 && squeezing) cls += " sq";
+          // ★5 を画面いっぱいに出している間は、舞台のカードを隠す（縮める途中、画面の形のカードは舞台のカードより細くなり、
+          // 左右から舞台のカードがはみ出して二重に見えていた。11月2日）。舞台に渡す settle から見せる
+          if (i === 4 && big && (hit === "present" || hit === "shrink")) cls += " behind-big";
           if (i === 4 && rare && (hit === "settle" || hit === "shown" || (phase === "done" && hit !== "")))
             cls += " hit";
           return (

@@ -10,7 +10,7 @@ describe("持っているカード", () => {
     expect(missingCards(deck, { a: 2, b: 1, c: 1 })).toEqual({});
   });
 
-  it("買ったときに持つカードは、いちばん多く入っているデッキの枚数ずつ", () => {
+  it("レンタルデッキのカードは、いちばん多く入っているデッキの枚数ずつ", () => {
     expect(starterCollection({ x: ["a", "a", "b"], y: ["a", "b", "b", "c"] })).toEqual({ a: 2, b: 2, c: 1 });
   });
 

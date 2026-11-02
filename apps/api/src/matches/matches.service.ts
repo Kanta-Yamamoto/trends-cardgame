@@ -120,6 +120,7 @@ export class MatchesService {
       .select({ id: userCards.cardId, count: userCards.count })
       .from(userCards)
       .where(eq(userCards.userId, userId));
+    // 入れられるのはガチャで引いたカードだけ（11月2日。オーナー：「引いたカードしか使えない方がいい」）
     const owned = Object.fromEntries(rows.map((r) => [r.id, r.count]));
     if (Object.keys(missingCards(cards, owned)).length > 0)
       throw new BadRequestException("持っていないカードが入っています");

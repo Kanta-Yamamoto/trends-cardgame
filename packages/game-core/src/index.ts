@@ -55,6 +55,8 @@ export {
   type GachaCard,
   MAX_OPEN_PACKS,
   openPack,
+  openPacks,
+  PACK_CAP,
   PACK_SIZE,
   PACK_SLOTS,
   type PackPool,

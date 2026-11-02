@@ -1,15 +1,11 @@
 import { BadRequestException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
-import { DECKS } from "@trends/cards";
-import { packDay, starterCollection, WELCOME_PACKS } from "@trends/game-core";
-import { eq, sql } from "drizzle-orm";
+import { packDay, WELCOME_PACKS } from "@trends/game-core";
+import { eq } from "drizzle-orm";
 import { AuthService } from "../auth/auth.service";
 import type { Db } from "../db/client";
 import { DB } from "../db/db.module";
-import { purchases, userCards, users } from "../db/schema";
+import { purchases, users } from "../db/schema";
 import { PURCHASE_VERIFIER, type PurchaseVerifier, UNLOCK_PRODUCT } from "./apple";
-
-/** 買い切りを買ったときに持っているカード */
-const STARTER = Object.entries(starterCollection(DECKS));
 
 @Injectable()
 export class PurchaseService {
@@ -59,18 +55,12 @@ export class PurchaseService {
         productId: bought.productId,
         environment: bought.environment,
       });
+      // 持っているカードはガチャで引いたカードだけ。レンタルデッキのカードは配らない（11月2日）
       const [after] = await tx
         .update(users)
         .set({ unlocked: true, packs: WELCOME_PACKS, packsDay: packDay(new Date()), tutorialPack: false })
         .where(eq(users.id, userId))
         .returning();
-      await tx
-        .insert(userCards)
-        .values(STARTER.map(([cardId, count]) => ({ userId, cardId, count })))
-        .onConflictDoUpdate({
-          target: [userCards.userId, userCards.cardId],
-          set: { count: sql`greatest(${userCards.count}, excluded.count)` },
-        });
       return after;
     });
     if (!row) throw new Error("購入を保存できませんでした");

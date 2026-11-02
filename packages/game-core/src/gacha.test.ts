@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   DAILY_PACKS,
   openPack,
+  openPacks,
+  PACK_CAP,
   PACK_SIZE,
   PACK_SLOTS,
   packChance,
@@ -105,16 +107,55 @@ describe("ガチャ（1 パック 5 枚）", () => {
   });
 });
 
+describe("2 枚持っているカードは出ない", () => {
+  const rand = seeded(7);
+  it("PACK_CAP 枚持っているカードは出ず、★の枠はそのまま", () => {
+    // ★5 を 1 種類だけ残して、ほかの全部を 2 枚持っている
+    const ids = Object.values(pool).flat();
+    const keep = pool[5]?.[0] as string;
+    const owned = Object.fromEntries(ids.filter((id) => id !== keep).map((id) => [id, PACK_CAP]));
+    for (let i = 0; i < 300; i++) {
+      const [pack] = openPacks(pool, rand, 1, owned);
+      const last = pack?.[4] as string;
+      if (rarityOf[last] === 5) expect(last).toBe(keep);
+    }
+  });
+
+  it("前のパックで出た分も数える。その★を全部 2 枚持てば、その★のどれでも出る", () => {
+    const small = packPool([
+      { id: "a", rarity: 1 },
+      { id: "b", rarity: 3 },
+      { id: "c", rarity: 4 },
+      { id: "d", rarity: 4 },
+    ]);
+    const have = new Map<string, number>();
+    const r = seeded(3);
+    for (let i = 0; i < 12; i++) {
+      openPack(small, r, have);
+      const c = have.get("c") ?? 0;
+      const d = have.get("d") ?? 0;
+      // 片方が 2 枚を超えるのは、もう片方も 2 枚になってから
+      if (Math.max(c, d) > PACK_CAP) expect(Math.min(c, d)).toBeGreaterThanOrEqual(PACK_CAP);
+    }
+    // ★1 は 1 種類だけなので、2 枚を超えても出る
+    expect(have.get("a")).toBe(36);
+  });
+
+  it("持っている枚数が空なら、渡さないときと同じ結果", () => {
+    expect(openPacks(pool, seeded(5), 1, {})).toEqual([openPack(pool, seeded(5))]);
+  });
+});
+
 describe("毎日のパック", () => {
   it("パックの日は日本の日付で数える", () => {
     expect(packDay(new Date("2026-11-01T14:59:59Z"))).toBe("2026-11-01");
     expect(packDay(new Date("2026-11-01T15:00:00Z"))).toBe("2026-11-02");
   });
 
-  it("同じ日は残りのまま。日が変わると 3 パックに戻り、ためられない", () => {
+  it("同じ日は残りのまま。日が変わると 5 パックに戻り、ためられない", () => {
     expect(packsToday(1, "2026-11-01", "2026-11-01")).toBe(1);
     expect(packsToday(0, "2026-11-01", "2026-11-02")).toBe(DAILY_PACKS);
     expect(packsToday(2, null, "2026-11-02")).toBe(DAILY_PACKS);
-    expect(packsToday(7, "2026-11-01", "2026-11-02")).toBe(7);
+    expect(packsToday(9, "2026-11-01", "2026-11-02")).toBe(9);
   });
 });
