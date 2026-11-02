@@ -86,7 +86,10 @@
 
 /* 提供割合のページ */
 .gx-rates { padding-bottom: 30px; }
-.gx-per { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.gx-per { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+/* 上に★5・★4・★3、下に★2・★1（11月2日に 3 つから 5 つに） */
+.gx-per > div { grid-column: span 2; }
+.gx-per > div:nth-child(n + 4) { grid-column: span 3; }
 .gx-per > div { display: grid; justify-items: center; gap: 5px; padding: 12px 4px; border-radius: var(--r-m); text-align: center; }
 .gx-per b { font: 400 20px/1 var(--f-mark); }
 .gx-per small { font-size: 10.5px; font-weight: 700; color: var(--ink-2); }

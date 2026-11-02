@@ -1,8 +1,10 @@
 /**
  * ガチャ（10月27日）。1 パック 5 枚。11月1日からジェムをやめ、買い切りのあとに配るパックを開ける形にした（docs/product.md）。
- * オーナーの決めた封入率：★5 が 3 パックに 1 枚・★4 が 2 パックに 1 枚・★3 が 1 パックに 1 枚。
- * それを満たすパックの中身（Claude の案）：1〜3 枚目は★1・★2、4 枚目は★3、5 枚目は★5 1/3・★4 1/2・★3 1/6。
- * 同じ枠で出られるカードは、どれも同じ確率（★1・★2 の枠は、★1 と★2 をまとめた中から選ぶ）
+ * 封入率（11月2日。オーナー：「星5が5パックに一枚の割合、星4が4パックに一枚、星3が3パックに一枚、星2が2パックに1枚、星1が1パックに一枚以上
+ * みたいな綺麗な感じになりませんかね」。前は★5 が 3 パックに 1 枚・★4 が 2 パックに 1 枚・★3 が 1 パックに 1 枚）。
+ * それを満たすパックの中身（Claude の案）：1〜3 枚目は★1、4 枚目は★2 17/60・★1 43/60、
+ * 5 枚目は★2 以上（★5 1/5・★4 1/4・★3 1/3・★2 13/60）。★2 は 4・5 枚目を合わせて 1/2。
+ * 同じ枠で出られるカードは、どれも同じ確率（2 枚持っているカードは出ない。PACK_CAP）
  */
 
 /** 1 パックの枚数 */
@@ -35,16 +37,23 @@ export type PackSlot =
   | { kind: "odds"; odds: readonly { rarity: number; p: number }[] };
 
 export const PACK_SLOTS: readonly PackSlot[] = [
-  { kind: "even", rarities: [1, 2] },
-  { kind: "even", rarities: [1, 2] },
-  { kind: "even", rarities: [1, 2] },
-  { kind: "even", rarities: [3] },
+  { kind: "even", rarities: [1] },
+  { kind: "even", rarities: [1] },
+  { kind: "even", rarities: [1] },
   {
     kind: "odds",
     odds: [
-      { rarity: 5, p: 1 / 3 },
-      { rarity: 4, p: 1 / 2 },
-      { rarity: 3, p: 1 / 6 },
+      { rarity: 2, p: 17 / 60 },
+      { rarity: 1, p: 43 / 60 },
+    ],
+  },
+  {
+    kind: "odds",
+    odds: [
+      { rarity: 5, p: 1 / 5 },
+      { rarity: 4, p: 1 / 4 },
+      { rarity: 3, p: 1 / 3 },
+      { rarity: 2, p: 13 / 60 },
     ],
   },
 ];
@@ -83,6 +92,14 @@ export function slotOdds(slot: PackSlot, pool: PackPool): { rarity: number; p: n
   const live = slot.odds.filter((o) => (pool[o.rarity]?.length ?? 0) > 0);
   const sum = live.reduce((n, o) => n + o.p, 0);
   return live.map((o) => ({ rarity: o.rarity, p: o.p / sum, kinds: pool[o.rarity]?.length ?? 0 }));
+}
+
+/** 1 パックに入る、その★の枚数の平均（★5 は 1/5 など。封入率はこの数で決めている） */
+export function perPack(rarity: number, pool: PackPool): number {
+  return PACK_SLOTS.reduce(
+    (n, slot) => n + (slotOdds(slot, pool).find((o) => o.rarity === rarity)?.p ?? 0),
+    0,
+  );
 }
 
 /** 1 パックで、その★が 1 枚以上出る確率 */
