@@ -1299,14 +1299,14 @@ best quality, high quality, highres, clean lineart, sharp focus, anime screencap
 ```
 
 #### PixAI での描き直し（11月3日）
-ミレイと同じ形（品質と絵柄の語は英語、キャラクターの部分は日本語）。★4 なので、★4以下の決まりどおり全身にした（[card-art-orders-low.md](card-art-orders-low.md) の c10 と同じポーズ）。縦横比は PixAI の設定で 2:3。
+ミレイと同じ形（品質と絵柄の語は英語、キャラクターの部分は日本語）。オーナー：ユズハは「熱波師」。水風呂に腰かける形をやめ、サウナ室でタオルを振って熱波を送る形にした。★4 なので、★4以下の決まりどおり全身。縦長 2:3 は PixAI の設定で。
 
 ポジティブ：
 ```text
-best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, 水色の色調, 女の子1人, 20代の女性, 水色の髪, 髪をタオルでまとめる, 首にタオル, 頬を赤らめる, 目を細める, 満ち足りた笑み, 白いガウン, 膝丈のガウン, 全身, 水風呂のふちに腰かける, 足を水に浸す, 両手をふちにつく, やや上から, 斜めの画角, 水色と白のタイルの壁, 奥に木の扉, 水面の輪, 湯気を少し
+best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, 水色と白の色調, 女の子1人, 20代の女性, 熱波師, 水色の髪, 水色のサウナハット, 頬を赤らめる, 自信のある笑み, 白いTシャツ, 紺のハーフパンツ, 首にタオル, 両手で大きなタオルを頭上で振る, タオルが大きく弧を描く, 熱波の線, 片足を踏み出す, 全身, 斜めの画角, 木のサウナ室, 木の段, サウナストーン, 湯気を少し
 ```
 
-ネガティブ：ミレイの英語版の最後に `nude, naked, towel only, bathing, bathtub, steam censor` を足す（お風呂の場面で肌を出させないため）
+ネガティブ：ミレイの英語版の最後に `nude, naked, towel only, bathing, bathtub, swimsuit, steam censor` を足す（サウナの場面で肌を出させないため）
 
 
 ## 第4弾（10月18日追加の16枚：界隈を読むカード）
