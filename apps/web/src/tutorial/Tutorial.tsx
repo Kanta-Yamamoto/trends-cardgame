@@ -24,8 +24,8 @@ function useDomFlag(selector: string): boolean {
 const FX_ON = ".turn-banner, .dark-cut, .foe-reveal";
 /** 演出の間も押せるもの（闇堕ちの演出は押すと飛ばせる） */
 const SKIPPABLE = ".dark-cut";
-/** いつでも押せるもの：光らせたカードを長押しして開いた拡大表示と、用語の説明（閉じられるように） */
-const ALWAYS = [".card-zoom", ".help-sheet"];
+/** いつでも押せるもの：光らせたカードを長押しして開いたカードの小窓と、用語の説明（閉じられるように） */
+const ALWAYS = [".card-pop", ".help-sheet"];
 
 /**
  * チュートリアル（10月27日。オーナー：「初回ログイン時に、最初にカードのなかのvtuberミナモを写して…ちびキャラみなもが出てきて、
@@ -81,7 +81,7 @@ function BattleGuide({ onSkip }: { onSkip: () => void }) {
   const game = useGame((s) => s.game);
   const selection = useGame((s) => s.selection);
   const storeBusy = useGame((s) => s.animating || s.cpuBusy);
-  const omenOpen = useDomFlag(".dark-confirm");
+  const omenOpen = useDomFlag(".omen-sheet");
   const fxOn = useDomFlag(FX_ON);
   // 拡大表示・用語の説明を開いている間は、案内を消す（閉じたら戻す）
   const zoomed = useDomFlag(ALWAYS.join(", "));

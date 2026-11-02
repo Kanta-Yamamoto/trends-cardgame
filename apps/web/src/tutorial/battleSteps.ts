@@ -134,9 +134,8 @@ export const BATTLE_STEPS: readonly BattleStep[] = [
         ? {
             face: "point",
             text: "『闇堕ちさせる』を押して！",
-            targets: [".dkc-go"],
-            shows: [".dark-confirm .end-confirm-body"],
-            allow: [".dark-confirm"],
+            targets: [".omen-sheet .dkc-go"],
+            allow: [".omen-sheet"],
           }
         : {
             face: "point",

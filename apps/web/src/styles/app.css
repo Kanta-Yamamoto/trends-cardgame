@@ -1215,7 +1215,6 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 @keyframes omen-mark-pulse {
   50% { --om-size: calc(var(--om-base) * 1.15); box-shadow: 0 0 0 1.5px var(--om-ring), 0 0 0 3px #fff, 0 0 16px 5px #fff, 0 2px 8px #000c; }
 }
-.dark-confirm .end-confirm-body { --text: #f3eaff; --muted: #cdb4e6; --line: #ffffff22; color: var(--text); background: #1d0f2bf5; border-color: #b06bff99; box-shadow: 0 20px 50px #000c, 0 0 30px #b06bff55; }
 .dkc-state { margin: 0; font-size: 13px; line-height: 1.6; color: var(--text); }
 .dkc-wait { margin: 0; font-size: 12.5px; font-weight: 800; color: #f2cf7a; }
 .dkc-dark { padding-top: 10px; border-top: 1px solid var(--line); }
