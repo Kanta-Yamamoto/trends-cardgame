@@ -42,7 +42,7 @@ describe("チュートリアルの対戦の案内", () => {
     expect(step("spell").done?.(ctx(g))).toBe(true);
     // 闇堕ち：小窓が開いたら「闇堕ちさせる」を光らせる
     expect(step("darkFall").done?.(ctx(g))).toBe(false);
-    expect(step("darkFall").view(ctx(g, { omenOpen: true })).targets).toEqual([".dkc-go"]);
+    expect(step("darkFall").view(ctx(g, { omenOpen: true })).targets).toEqual([".omen-sheet .dkc-go"]);
     g = apply(g, { type: "darkFall", player: me, slot: omenSlot });
     expect(step("darkFall").done?.(ctx(g))).toBe(true);
     // 攻撃：選んだら相手のプレイヤーを光らせる
