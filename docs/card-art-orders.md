@@ -1299,14 +1299,18 @@ best quality, high quality, highres, clean lineart, sharp focus, anime screencap
 ```
 
 #### PixAI での描き直し（11月3日）
-ミレイと同じ形（品質と絵柄の語は英語、キャラクターの部分は日本語）。オーナー：ユズハは「熱波師」。水風呂に腰かける形をやめ、サウナ室でタオルを振って熱波を送る形にした。★4 なので、★4以下の決まりどおり全身。縦長 2:3 は PixAI の設定で。
+オーナー：ユズハは「熱波師」。水風呂に腰かける形をやめ、サウナ室でタオルを振って熱波を送る形にした。★4 なので全身。縦長 2:3 は PixAI の設定で。
+品質と絵柄の語は、オーナーが送ってくれた見本のプロンプト（Vtuber の立ち絵のような王道アニメ調、くっきりした線画とセル塗り、髪と瞳に繊細なハイライト、目の英語の語）に合わせた。ミレイの「平らな塗り」より描き込む。髪と瞳のハイライトを止めないよう、ネガティブから `specular highlights` を外した。
 
 ポジティブ：
 ```text
-best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, 水色と白の色調, 女の子1人, 20代の女性, 熱波師, 水色の髪, 水色のサウナハット, 頬を赤らめる, 自信のある笑み, 白いTシャツ, 紺のハーフパンツ, 首にタオル, 両手で大きなタオルを頭上で振る, タオルが大きく弧を描く, 熱波の線, 片足を踏み出す, 全身, 斜めの画角, 木のサウナ室, 木の段, サウナストーン, 湯気を少し
+best quality, high quality, highres, clean lineart, sharp focus, vtuber style, standing illustration, anime style, cel shading, detailed hair highlights, anime eyes, douyin eyes, detailed eyes, high detail eyes, multicolored iris, detailed iris, full lashes, dark lashes, 2d, solo, empty space at bottom, 水色と白の色調, 女の子1人, 20代の女性, 熱波師, 水色の髪, 水色のサウナハット, 大きな水色の瞳, 頬を赤らめる, 愛嬌のある得意げな笑み, 左右非対称の表情, 白いTシャツ, 紺のハーフパンツ, 首にタオル, 両手で大きなタオルを頭上で振る, タオルが大きく弧を描く, 熱波の線, 片足を踏み出す, 全身, 斜めの画角, 木のサウナ室, 木の段, サウナストーン, 湯気を少し
 ```
 
-ネガティブ：ミレイの英語版の最後に `nude, naked, towel only, bathing, bathtub, swimsuit, steam censor` を足す（サウナの場面で肌を出させないため）
+ネガティブ：
+```text
+shiny skin, glossy, oily skin, wet, rim lighting, backlighting, glowing, bloom, lens flare, sparkles, light particles, bokeh, depth of field, thick painting, realistic, photorealistic, photo, 3d, cgi, heavy gradient, overdetailed, intricate details, detailed hair strands, generic face, symmetrical face, expressionless, midriff, navel, revealing clothes, miniskirt, upskirt, panties, underwear, cleavage, crowd, audience, multiple girls, text, logo, signature, watermark, border, frame, bad hands, extra fingers, missing fingers, extra arms, extra legs, blurry lineart, lowres, worst quality, nude, naked, towel only, bathing, bathtub, swimsuit, steam censor
+```
 
 
 ## 第4弾（10月18日追加の16枚：界隈を読むカード）
