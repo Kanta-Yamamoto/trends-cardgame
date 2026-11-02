@@ -966,11 +966,6 @@ function endNote(o: TurnOptions) {
     .join("・");
 }
 
-/** バズの確認に添える、バズしたあとの攻撃力・体力 */
-function buzzNote(v: UnitView) {
-  return `攻撃力 ${v.attack} → ${v.attack + DEFAULT_CONFIG.buzzAttack}　体力 ${v.hp} → ${v.hp + DEFAULT_CONFIG.buzzHp}　突進`;
-}
-
 /**
  * 手札の引き直し（対戦の始め）。戻すカードを押して選び、決定で送る。
  * 30 秒たったら、そのとき選んでいるカードで送る（deadline はオンライン対戦ならサーバーの時計から。CPU 戦は開いてから 30 秒）
@@ -1264,7 +1259,6 @@ export function Board({
   } | null>(null);
   /** 闇堕ちの演出（画面全体） */
   const [cut, setCut] = useState<DarkCut | null>(null);
-  const [peek, setPeek] = useState<Peek | null>(null);
   /** 画面いっぱいに大きく見ているカード（スマホで効果を読むため） */
   const [zoom, setZoom] = useState<Peek | null>(null);
   /** 手札を下半分のシートで見ている位置（「出す」を押すと場を選ぶ手順に進む） */
@@ -1317,8 +1311,6 @@ export function Board({
   const { stage, probe } = useStage();
   /** ターン終了の確認を出しているか（押し間違いで終わらないように） */
   const [confirmEnd, setConfirmEnd] = useState(false);
-  /** バズの確認を出している自分のキャラクターの枠（キャラクターを選んでからバズを押すと出る） */
-  const [buzzAsk, setBuzzAsk] = useState<number | null>(null);
   // 説明を出している裏向きのカード（持ち主と枠）
   const [omenAsk, setOmenAsk] = useState<{ owner: PlayerId; slot: number } | null>(null);
   /** バズが使えるようになった回数。増えるたびに、ボタンの枠の光を右回りに走らせる */
@@ -1334,7 +1326,6 @@ export function Board({
     setTrashView(null);
     setLogOpen(false);
     setConfirmEnd(false);
-    setBuzzAsk(null);
     setResignAsk(false);
     setQuitAsk(false);
     setMenuOpen(false);
@@ -1361,14 +1352,11 @@ export function Board({
       if (!g || g.active !== ME || g.winner || s.cpuBusy || s.animating) return false;
       if (src.kind === "hand") {
         if (!handUsable(g, src.index)) return false;
-        const id = g.players[ME].hand[src.index] as string;
-        setPeek({ id, where: "hand", index: src.index });
         select({ kind: "hand", index: src.index });
         return true;
       }
       const u = g.players[ME].field[src.slot];
       if (!u || !canUnitAttack(g, u)) return false;
-      setPeek({ id: u.cardId, view: viewUnit(g, ME, u, CATALOG), where: "mine", index: src.slot });
       select({ kind: "attacker", slot: src.slot });
       return true;
     },
@@ -2032,14 +2020,6 @@ export function Board({
   const buzzing = selection?.kind === "buzz";
   const buzzWhy = buzzBlock(game, ME);
   const canBuzz = myTurn && !buzzWhy;
-  // バズの対象：いま選んでいる自分のキャラクター（攻撃のために選んだもの・押して説明を出したもの）
-  const buzzTarget = (() => {
-    if (attacking) return selection.slot;
-    if (peek?.where !== "mine") return null;
-    const u = me.field[peek.index];
-    return u && u.cardId === peek.id ? peek.index : null;
-  })();
-  const buzzAskUnit = buzzAsk === null ? undefined : me.field[buzzAsk];
   const omenAt = (owner: PlayerId, slot: number) => darkOmens(game, owner).find((o) => o.slot === slot);
   const canHit = (t: AttackTarget) =>
     targets.some((x) => (x.kind === "leader" ? t.kind === "leader" : t.kind === "unit" && t.slot === x.slot));
@@ -2072,10 +2052,8 @@ export function Board({
             if (justDragged()) return;
             if (castable) return cast({ side: "enemy", slot });
             if (hit) return attack({ kind: "unit", slot });
-            setPeek(p);
             setZoom(p);
           }}
-          onPeek={() => setPeek(p)}
           onLongPress={() => setZoom(p)}
         >
           {pv && <AttackBadge pv={pv} />}
@@ -2099,13 +2077,12 @@ export function Board({
         onClick={() => {
           if (justDragged()) return;
           if (sac) return sacrifice(slot);
+          // バズするキャラクターを選んでいる間は、押したキャラクターにそのままバズする（11月2日。オーナー：「その後キャラクターを選んだらバズするようにしてもいい」）
           if (buzzing) {
-            setPeek(p);
-            return setBuzzAsk(slot);
+            return buzz(slot);
           }
           if (castable) return cast({ side: "ally", slot });
           if (selected) return select(null);
-          setPeek(p);
           // 押す＝いつも小窓で詳しく見る。攻撃するのは小窓の「攻撃する」から（11月2日。相談のページの案 A）。チュートリアルは案内どおり押して選ぶ
           if (ready && direct) select({ kind: "attacker", slot });
           else {
@@ -2113,7 +2090,6 @@ export function Board({
             setZoom(p);
           }
         }}
-        onPeek={() => setPeek(p)}
         onLongPress={() => setZoom(p)}
       >
         {/* 攻撃できることは金の枠で見せる。札は、ふつうの攻撃と違うときだけ */}
@@ -2152,7 +2128,6 @@ export function Board({
         onPress={!usable ? undefined : (e) => begin(e, { kind: "hand", index: i })}
         onClick={() => {
           if (justDragged()) return;
-          setPeek(p);
           // 押す＝いつも小窓で詳しく見る。出せるカードは小窓の「出す」「使う」から出す場所・対象を選ぶ
           //（11月2日。オーナーが相談のページの案 A を選んだ。選んだカードと下の帯が重なっていた）。選んでいるカードを押すと選ぶのをやめる
           if (!direct) {
@@ -2165,7 +2140,6 @@ export function Board({
           if (selected && card.type === "post" && !card.target) return cast();
           select(selected ? null : { kind: "hand", index: i });
         }}
-        onPeek={() => setPeek(p)}
         onLongPress={() => setZoom(p)}
       />
     );
@@ -2285,8 +2259,7 @@ export function Board({
       className={`btn buzz-btn ${buzzing ? "on" : ""} ${canBuzz ? "ready" : ""}`}
       onClick={() => {
         if (buzzing) return select(null);
-        // キャラクターを選んであれば確認を出す。選んでいなければ、選ぶところから
-        if (buzzTarget !== null) return setBuzzAsk(buzzTarget);
+        // いつもバズするキャラクターを選ぶところから。選んだキャラクターにそのままバズする（下の確認の帯はやめた。11月2日）
         select({ kind: "buzz" });
       }}
       disabled={!canBuzz && !buzzing}
@@ -2375,21 +2348,19 @@ export function Board({
         ? foeGuarded && !canHit({ kind: "leader" })
           ? "ガードのキャラクターを攻撃してください"
           : "攻撃する相手を選んでください"
-        : buzzAsk !== null
-          ? "このキャラクターにバズしますか"
-          : buzzing
-            ? "バズするキャラクターを選んでください"
-            : selection?.kind === "hand" && selectedCard
-              ? selectedCard.type === "icon"
-                ? "出す場所を選んでください"
-                : selectedCard.target
-                  ? "対象を選んでください"
-                  : "このカードを使いますか"
-              : confirmEnd
-                ? "ターンを終えますか"
-                : omenAsk && fallSlots.includes(omenAsk.slot)
-                  ? "闇堕ちさせますか"
-                  : null;
+        : buzzing
+          ? "バズするキャラクターを選んでください"
+          : selection?.kind === "hand" && selectedCard
+            ? selectedCard.type === "icon"
+              ? "出す場所を選んでください"
+              : selectedCard.target
+                ? "対象を選んでください"
+                : "このカードを使いますか"
+            : confirmEnd
+              ? "ターンを終えますか"
+              : omenAsk && fallSlots.includes(omenAsk.slot)
+                ? "闇堕ちさせますか"
+                : null;
   // 手前の文字欄：反則の理由と次の操作の指示だけ。何も無ければ空ける
   //（11月2日。先攻・後攻、攻撃できる数・出せる枚数、相手のターンです、などの案内はやめた。
   //  バトルの結果の文もやめた。オーナー：「これ不要、消しなさい」）
@@ -2527,7 +2498,11 @@ export function Board({
             <BoardText
               line={myText}
               className={`me ${error ? "err" : askText ? "ask" : ""} ${myText ? "" : "empty"}`}
-              onBack={!direct && (attacking || selection?.kind === "hand") ? () => select(null) : undefined}
+              onBack={
+                !direct && (attacking || buzzing || selection?.kind === "hand")
+                  ? () => select(null)
+                  : undefined
+              }
             />
             <div className="plow">
               {meRow}
@@ -2562,24 +2537,6 @@ export function Board({
                 </div>
               </div>
 
-              {buzzing && buzzAsk === null && (
-                <AskBar title={`バズ のこり ${buzzLeft} 回`} onBack={() => select(null)} />
-              )}
-              {buzzAsk !== null && buzzAskUnit && canBuzz && (
-                <AskBar
-                  art={(CATALOG[buzzAskUnit.cardId] as CardDef).art}
-                  title={(CATALOG[buzzAskUnit.cardId] as CardDef).name}
-                  note={buzzNote(viewUnit(game, ME, buzzAskUnit, CATALOG))}
-                  onBack={() => setBuzzAsk(null)}
-                  go={{
-                    label: "バズする",
-                    onClick: () => {
-                      setBuzzAsk(null);
-                      buzz(buzzAsk);
-                    },
-                  }}
-                />
-              )}
               {confirmEnd && myTurn && (
                 <AskBar
                   title="まだできることがあります"
