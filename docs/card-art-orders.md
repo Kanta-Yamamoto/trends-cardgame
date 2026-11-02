@@ -1280,6 +1280,17 @@
 背景：湯気と水しぶき、木のサウナと青い水。最大の描き込み。光源は窓からの1つ
 ```
 
+#### PixAI での描き直し（11月3日）
+ミレイと同じ形（品質と絵柄の語は英語、キャラクターの部分は日本語）。★4 なので、★4以下の決まりどおり全身にした（[card-art-orders-low.md](card-art-orders-low.md) の c10 と同じポーズ）。縦横比は PixAI の設定で 2:3。
+
+ポジティブ：
+```text
+best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, 水色の色調, 女の子1人, 20代の女性, 水色の髪, 髪をタオルでまとめる, 首にタオル, 頬を赤らめる, 目を細める, 満ち足りた笑み, 白いガウン, 膝丈のガウン, 全身, 水風呂のふちに腰かける, 足を水に浸す, 両手をふちにつく, やや上から, 斜めの画角, 水色と白のタイルの壁, 奥に木の扉, 水面の輪, 湯気を少し
+```
+
+ネガティブ：ミレイの英語版の最後に `nude, naked, towel only, bathing, bathtub, steam censor` を足す（お風呂の場面で肌を出させないため）
+
+
 ## 第4弾（10月18日追加の16枚：界隈を読むカード）
 
 10月18日に下の注文で ChatGPT に描いてもらい、取り込み済み（元の画像は `assets/original/<ID>.webp`、対戦用は `apps/web/public/assets/cards/<ID>-art.jpg`）。
