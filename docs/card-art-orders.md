@@ -382,6 +382,24 @@
 背景：白と金色の研究室を描くが、主役のまわりは明るく空ける。エフェクトはホログラムと後光
 ```
 
+#### PixAI での描き直し（11月3日）
+ミレイと同じ形（品質と絵柄の語は英語、キャラクターの部分は日本語）。★5 なので上半身。ミレイ（正面で上を見る）と重ならないよう、体を横に向けて振り返り、ペン先でこちらを指す（「それ、論文ありますか？」）。前の絵のメガネを押し上げる手は指が崩れやすく、レンズの光・ホログラム・後光はつやと光が増えるのでやめた。縦横比は PixAI の設定で 2:3。
+
+ポジティブ：
+```text
+best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, 金と白の色調, 女性1人, 30代の女性, 銀髪のまとめ髪, 後れ毛, 細いメガネ, 鋭い目つき, 片眉を上げる, 口を閉じた冷静な表情, 白衣, 金色のライン, 黒いハイネックのインナー, 片手にペン, ペン先をこちらへ向ける, もう片手で分厚いファイルを抱える, 上半身, 体を横に向けて顔だけこちらへ振り返る, やや下から, 見下ろす目線, 白い背景, 金の線で描いた大きな円と図形, 線のグラフを少し
+```
+
+ネガティブ：ミレイの英語版の最後に `lens reflection, glowing glasses, hologram, halo` を足す
+
+闇堕ち（陰謀論者）：同じシードで、同じポーズのまま色と表情と背景を変える。ポジティブ：
+```text
+best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, くすんだ紫と緑の色調, 女性1人, 30代の女性, 銀髪のまとめ髪, 乱れた後れ毛, 細いメガネ, 目を見開く, 渦を巻く瞳, 引きつった笑み, 汚れた白衣, 紫のライン, 黒いハイネックのインナー, 片手にペン, ペン先をこちらへ向ける, もう片手で分厚いファイルを抱える, 上半身, 体を横に向けて顔だけこちらへ振り返る, やや下から, 見下ろす目線, 暗い紫の背景, 斜めに張られた赤い糸, ピンで留めた無地の紙を数枚
+```
+
+ネガティブ：上と同じ（ミレイの英語版＋ `lens reflection, glowing glasses, hologram, halo`）
+
+
 
 # 第2弾
 
