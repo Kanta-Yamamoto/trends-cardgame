@@ -102,6 +102,7 @@ const GAPS: Partial<Record<SeName, number>> = { statUp: 0.25 };
 
 const buffers = new Map<SeName, AudioBuffer>();
 const loading = new Set<SeName>();
+/** 最後に鳴らした時刻（秒。画面の時計で測る。Web Audio の時計は作り直すと 0 に戻り、止まっている間は進まないので使わない） */
 const lastAt = new Map<SeName, number>();
 
 function load(c: AudioContext, name: SeName) {
@@ -127,8 +128,9 @@ export function playSe(name: SeName) {
     load(c, name);
     return;
   }
-  if (c.currentTime - (lastAt.get(name) ?? -1) < (GAPS[name] ?? MIN_GAP)) return;
-  lastAt.set(name, c.currentTime);
+  const now = performance.now() / 1000;
+  if (now - (lastAt.get(name) ?? Number.NEGATIVE_INFINITY) < (GAPS[name] ?? MIN_GAP)) return;
+  lastAt.set(name, now);
   const gain = c.createGain();
   gain.gain.value = SOUNDS[name].volume * seGain();
   gain.connect(out);

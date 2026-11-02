@@ -135,13 +135,17 @@ function rebuild() {
   sync();
 }
 
-/** 止まっている Web Audio を起こす。起きなければ作り直す */
-function wake() {
+/**
+ * 止まっている Web Audio を起こす。押したときに起こしても起きなければ作り直す
+ * （11月2日：押す前は起きないのが普通なので、押したときだけ作り直す。押す前にも作り直していて、押すまで 0.6 秒ごとに作り直していた）
+ */
+function wake(byGesture = false) {
   const c = ctx;
   if (!c || !audible()) return;
   if (master) fadeTo(c, master, MASTER, WAKE_FADE);
   if (c.state === "running") return;
   c.resume().catch(() => {});
+  if (!byGesture) return;
   window.setTimeout(() => {
     if (ctx === c && c.state !== "running" && audible()) rebuild();
   }, WAKE_LIMIT);
@@ -170,7 +174,7 @@ function setup(): AudioContext | null {
   if (!listening) {
     listening = true;
     // 押すまで音を出させないブラウザ・電話などで止められた iPhone は、次に押したときに鳴らし直す
-    for (const g of GESTURES) document.addEventListener(g, wake, true);
+    for (const g of GESTURES) document.addEventListener(g, () => wake(true), true);
     document.addEventListener("visibilitychange", sync);
     window.addEventListener("pageshow", sync);
     // アプリでは、ホームへ戻る操作の途中（画面はまだ見えている）から止める
