@@ -65,13 +65,13 @@ export function setTilt(el: HTMLElement, nx: number, ny: number, glow: number) {
   el.style.setProperty("--g", glow.toFixed(2));
 }
 
-/** 傾きとホロが動く「キラカード」になる★の下限 */
-export const KIRA_RARITY = 4;
+/** 傾きとホロが動く「キラカード」になる★の下限（11月3日。オーナー：★4以下は傾けるキラの加工は要らない） */
+export const KIRA_RARITY = 5;
 
 interface Props {
   card: CardDef;
   /**
-   * 触ると傾いてホロが動く。★4以上のカードだけに効く。
+   * 触ると傾いてホロが動く。★5 のカードだけに効く。
    * 一覧のように何枚も並ぶ場所では付けない（毎フレームの更新が重いため）
    */
   interactive?: boolean;
@@ -125,7 +125,7 @@ export function HoloCard({
   const live = interactive && card.rarity >= KIRA_RARITY;
   const cardRef = useRef<HTMLDivElement>(null);
   const lastMove = useRef(0);
-  const face = FACES[card.id] ?? (card.rarity >= KIRA_RARITY ? RARE : GENERIC);
+  const face = FACES[card.id] ?? (card.rarity >= 4 ? RARE : GENERIC);
 
   useEffect(() => {
     const el = cardRef.current;
