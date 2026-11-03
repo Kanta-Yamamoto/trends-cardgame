@@ -382,6 +382,24 @@
 背景：白と金色の研究室を描くが、主役のまわりは明るく空ける。エフェクトはホログラムと後光
 ```
 
+#### PixAI での描き直し（11月3日）
+ミレイと同じ形（品質と絵柄の語は英語、キャラクターの部分は日本語）。オーナー：「背景も含めて、膝から上くらい」。★5 だが顔のアップではなく膝から上にし、研究室を描く。ミレイ（正面で上を見る）と重ならないよう、体を横に向けて振り返り、ペン先でこちらを指す（「それ、論文ありますか？」）。前の絵のメガネを押し上げる手は指が崩れやすく、レンズの光・ホログラム・後光はつやと光が増えるのでやめた。縦横比は PixAI の設定で 2:3。
+
+ポジティブ：
+```text
+best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, 金と白の色調, 女性1人, 30代の女性, 銀髪のまとめ髪, 後れ毛, 細いメガネ, 鋭い目つき, 片眉を上げる, 口を閉じた冷静な表情, 白衣, 金色のライン, 黒いハイネックのインナー, 片手にペン, ペン先をこちらへ向ける, もう片手で分厚いファイルを抱える, 膝から上, 立ち姿, 体を横に向けて顔だけこちらへ振り返る, やや下から, 見下ろす目線, 白と金の研究室, 背の高い本棚, 図形と矢印だけを描いた大きな黒板, 資料を積んだ机, 窓から入る昼の光, 平らな塗りの背景
+```
+
+ネガティブ：ミレイの英語版の最後に `lens reflection, glowing glasses, hologram, halo, close-up, portrait, blurry background` を足す
+
+闇堕ち（陰謀論者）：同じシードで、同じポーズのまま色と表情と背景を変える。ポジティブ：
+```text
+best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, くすんだ紫と緑の色調, 女性1人, 30代の女性, 銀髪のまとめ髪, 乱れた後れ毛, 細いメガネ, 目を見開く, 渦を巻く瞳, 引きつった笑み, 汚れた白衣, 紫のライン, 黒いハイネックのインナー, 片手にペン, ペン先をこちらへ向ける, もう片手で分厚いファイルを抱える, 膝から上, 立ち姿, 体を横に向けて顔だけこちらへ振り返る, やや下から, 見下ろす目線, 夜の暗い研究室, 背の高い本棚, 壁一面にピンで留めた無地の紙, 紙と紙をつなぐ赤い糸, 散らかった机, 卓上ライトひとつ, 平らな塗りの背景
+```
+
+ネガティブ：上と同じ（ミレイの英語版＋ `lens reflection, glowing glasses, hologram, halo, close-up, portrait, blurry background`）
+
+
 
 # 第2弾
 
@@ -1280,6 +1298,23 @@
 背景：湯気と水しぶき、木のサウナと青い水。最大の描き込み。光源は窓からの1つ
 ```
 
+#### PixAI での描き直し（11月3日）
+**11月3日に絵を差し替えた**：オーナーが PixAI で描いた絵（白いサウナハットと白いTシャツで、タイルのサウナ室の段に腰かけ、片手を頬に寄せる）。下の熱波師のプロンプトとは違う絵だが、オーナーがユズハとして送ってくれたものを使った。768×1280 で届いたので下を切って 2:3 にし、`c10-art.jpg`・`c10-subject.webp`（`--fade-from 0.6`。そのままきれいに抜けた）。元は `assets/original/c10.webp`、前の ChatGPT の絵は `assets/original/c10-chatgpt.webp`。
+
+オーナー：ユズハは「熱波師」。水風呂に腰かける形をやめ、サウナ室でタオルを振って熱波を送る形にした。★4 なので全身。縦長 2:3 は PixAI の設定で。
+品質と絵柄の語は、オーナーが送ってくれた見本のプロンプト（Vtuber の立ち絵のような王道アニメ調、くっきりした線画とセル塗り、髪と瞳に繊細なハイライト、目の英語の語）に合わせた。ミレイの「平らな塗り」より描き込む。髪と瞳のハイライトを止めないよう、ネガティブから `specular highlights` を外した。
+
+ポジティブ：
+```text
+best quality, high quality, highres, clean lineart, sharp focus, vtuber style, standing illustration, anime style, cel shading, detailed hair highlights, anime eyes, douyin eyes, detailed eyes, high detail eyes, multicolored iris, detailed iris, full lashes, dark lashes, 2d, solo, empty space at bottom, 水色と白の色調, 女の子1人, 20代の女性, 熱波師, 水色の髪, 水色のサウナハット, 大きな水色の瞳, 頬を赤らめる, 愛嬌のある得意げな笑み, 左右非対称の表情, 白いTシャツ, 紺のハーフパンツ, 首にタオル, 両手で大きなタオルを頭上で振る, タオルが大きく弧を描く, 熱波の線, 片足を踏み出す, 全身, 斜めの画角, 木のサウナ室, 木の段, サウナストーン, 湯気を少し
+```
+
+ネガティブ：
+```text
+shiny skin, glossy, oily skin, wet, rim lighting, backlighting, glowing, bloom, lens flare, sparkles, light particles, bokeh, depth of field, thick painting, realistic, photorealistic, photo, 3d, cgi, heavy gradient, overdetailed, intricate details, detailed hair strands, generic face, symmetrical face, expressionless, midriff, navel, revealing clothes, miniskirt, upskirt, panties, underwear, cleavage, crowd, audience, multiple girls, text, logo, signature, watermark, border, frame, bad hands, extra fingers, missing fingers, extra arms, extra legs, blurry lineart, lowres, worst quality, nude, naked, towel only, bathing, bathtub, swimsuit, steam censor
+```
+
+
 ## 第4弾（10月18日追加の16枚：界隈を読むカード）
 
 10月18日に下の注文で ChatGPT に描いてもらい、取り込み済み（元の画像は `assets/original/<ID>.webp`、対戦用は `apps/web/public/assets/cards/<ID>-art.jpg`）。
@@ -1588,6 +1623,22 @@
 シャボン玉は黒いガラス玉のようになり、中に小さな赤い光。棚のゆるいぬいぐるみは目を開けてこちらを見る
 手前のカウンターと瓶は暗い紫の影に。下3分の1は、暗いカウンターと紫の光のにじみだけ
 ```
+
+#### PixAI での描き直し（11月3日。通常と闇堕ち）
+ミレイと同じ形（品質と絵柄の語は英語、キャラクターの部分は日本語）。★5 なので上半身。ミレイ・専門家（下から見上げる）と重ならないよう、ベッドの人をのぞき込む「上から」の画角のまま。「しーっ」の指はルリの見せ場なので残す。縦長 2:3 は PixAI の設定で。
+
+ポジティブ：
+```text
+best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, 水色と白の色調, 女の子1人, 20代前半の女性, 淡い水色のロングヘア, 低い位置の二つ結び, 白いナースキャップ, 青い十字, 白いナース服, 水色のリボン, 片目を閉じる, 人差し指を唇に当てる, しーっのポーズ, やさしい微笑み, 胸元に小さなマイク, 上半身, 上から見下ろす, こちらをのぞき込む, 前かがみ, 紺色の夜の背景, 大きな丸い月, シャボン玉の輪を少し
+```
+
+闇堕ち（不眠のルリ）：同じシードで、同じポーズのまま。ポジティブ：
+```text
+best quality, high quality, highres, clean lineart, sharp focus, anime screencap, cel shading, flat color, 2-tone shading, thick outlines, limited palette, 2d, solo, empty space at bottom, 暗い紫と深紅の色調, 女の子1人, 20代前半の女性, 淡い水色のロングヘア, 毛先が紫, 低い位置の二つ結び, 黒っぽい紫のナースキャップ, 深紅の十字, 白いナース服, 深紅のリボン, 両目を開く, ハイライトのない深い赤の瞳, 目の下に紫のくま, 人差し指を唇に当てる, しーっのポーズ, やさしい微笑み, 胸元に黒い小さなマイク, 上半身, 上から見下ろす, こちらをのぞき込む, 前かがみ, 暗い紫の夜の背景, 欠けた月, 黒い泡を少し
+```
+
+ネガティブ：どちらもミレイの英語版の最後に `extra fingers on lips, hospital equipment` を足す
+
 
 ## 第6弾（10月19日追加の16枚：単属性デッキの穴埋めと、30枚デッキ化）
 
