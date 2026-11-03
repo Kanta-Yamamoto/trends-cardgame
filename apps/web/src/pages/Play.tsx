@@ -2878,6 +2878,9 @@ function Result({
   const rating = useLive((s) => s.rating);
   const won = game.winner === ME;
   const why = endReason(events, ME, won);
+  const fin = why.finisher ? CATALOG[why.finisher.cardId] : undefined;
+  // 勝ちは自分の残りのライフ、負けは相手の残りのライフ（どれだけ迫ったか）
+  const leftLp = game.players[won ? ME : CPU].lp;
   return (
     <div
       className={`result ${won ? "win" : "lose"}${broke ? " after-break" : ""}`}
@@ -2887,11 +2890,32 @@ function Result({
     >
       <section className="result-body">
         <strong className="result-title">{won ? "勝利！" : "敗北…"}</strong>
-        <p className="result-why">
-          <b>{why.title}</b>
-          {why.detail}
-        </p>
-        <span className="result-turn">{game.turn} ターン目で決着</span>
+        <p className="result-why">{why.line}</p>
+        {fin && (
+          <figure className="result-fin">
+            <span className="result-fin-card">
+              <HoloCard card={fin} textHidden />
+            </span>
+            <figcaption>
+              <small>{why.finisher?.mine ? "決め手" : "相手の決め手"}</small>
+              <b>{fin.name}</b>
+            </figcaption>
+          </figure>
+        )}
+        <dl className="result-stats g2">
+          <div>
+            <dt>決着</dt>
+            <dd>
+              <b>{game.turn}</b>ターン目
+            </dd>
+          </div>
+          <div>
+            <dt>{won ? "残りのライフ" : "相手の残りのライフ"}</dt>
+            <dd>
+              <b>{leftLp}</b>
+            </dd>
+          </div>
+        </dl>
         {online && rating && (
           <div className="result-rating g2">
             <p className="result-rating-h">

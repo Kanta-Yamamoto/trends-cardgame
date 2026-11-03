@@ -239,7 +239,8 @@ export type GameEvent =
       hp: number;
     }
   | { type: "healed"; player: PlayerId; slot: number; cardId: string; amount: number }
-  | { type: "leaderDamaged"; player: PlayerId; amount: number; lp: number }
+  /** by：ダメージを与えたカード（攻撃したキャラクターなど。呪文・場に出たときの効果では付かず、直前の出来事で分かる） */
+  | { type: "leaderDamaged"; player: PlayerId; amount: number; lp: number; by?: string }
   | { type: "leaderHealed"; player: PlayerId; amount: number; lp: number }
   | { type: "drew"; player: PlayerId; cardId: string }
   | { type: "deckOut"; player: PlayerId }

@@ -49,6 +49,20 @@ const ICON_PLUS = (
     <path d="M12 5v14M5 12h14" />
   </svg>
 );
+const ICON_NEXT = (
+  <svg
+    className="db-next"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M9 6l6 6-6 6" />
+  </svg>
+);
 const ICON_COPY = (
   <svg
     viewBox="0 0 24 24"
@@ -171,19 +185,15 @@ export function Decks() {
           <span className="db-mk-ic" aria-hidden="true">
             {ICON_PLUS}
           </span>
-          <b>空のデッキから作る</b>
-          <small>{DECK_SIZE}枚を自由に</small>
+          <b>新しく作る</b>
+          <small>{DECK_SIZE}枚を自由に選ぶ</small>
         </button>
         <button type="button" className="db-mk copy g2" onClick={() => setPicking(true)}>
           <span className="db-mk-ic" aria-hidden="true">
             {ICON_COPY}
           </span>
-          <b>
-            レンタルデッキを
-            <br />
-            コピーして作る
-          </b>
-          <small>{builtinIds.length}個から選ぶ</small>
+          <b>コピーして作る</b>
+          <small>レンタルデッキ {builtinIds.length}個から</small>
         </button>
       </div>
       <div className="sec">
@@ -191,7 +201,14 @@ export function Decks() {
         <small>{list.length}個</small>
       </div>
       {list.length === 0 ? (
-        <p className="muted db-empty">まだデッキがありません。</p>
+        <div className="db-empty">
+          <span className="db-empty-cards" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+          <p>まだデッキがありません</p>
+        </div>
       ) : (
         <ul className="db-saved">
           {list.map((d, i) => {
@@ -204,65 +221,52 @@ export function Decks() {
                 className="db-saved-item g2"
                 style={{ animationDelay: `${Math.min(i, 8) * 0.06}s` }}
               >
-                <span className="db-thumb" style={{ background: deckGradient(sel.attrs, sel.ace) }}>
-                  <DeckAce id={sel.ace} />
-                </span>
-                <div className="db-saved-body">
-                  <div>
-                    <h3 className="db-saved-name">{d.name}</h3>
-                    <p className="db-saved-meta">
+                <button type="button" className="db-saved-open" onClick={() => setEditing({ ...d })}>
+                  <span className="db-thumb" style={{ background: deckGradient(sel.attrs, sel.ace) }}>
+                    <DeckAce id={sel.ace} />
+                  </span>
+                  <span className="db-saved-body">
+                    <b className="db-saved-name">{d.name}</b>
+                    <span className="db-saved-meta">
                       <span className="db-pill">
                         <AttrDots attrs={sel.attrs} />
                         {sel.attrs.length > 0 ? sel.attrs.join("×") : "ニュートラル"}
-                      </span>
-                      <span className={`db-cnt ${left === 0 ? "ok" : "ng"}`}>
-                        {d.cards.length}/{DECK_SIZE}
                       </span>
                       {errors.length === 0 ? (
                         <span className="tag ok">使えます</span>
                       ) : (
                         <span className="tag ng">{left > 0 ? `あと${left}枚` : "直すところあり"}</span>
                       )}
-                    </p>
-                  </div>
-                  <div className="db-saved-btns">
-                    <button type="button" className="btn small" onClick={() => setEditing({ ...d })}>
-                      編集
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-btn"
-                      aria-label="複製"
-                      onClick={() => create([...d.cards], `${d.name}（コピー）`)}
-                    >
-                      {ICON_COPY}
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-btn danger"
-                      aria-label="消す"
-                      onClick={() => {
-                        if (window.confirm(`「${d.name}」を消しますか？`))
-                          persist(list.filter((x) => x.id !== d.id));
-                      }}
-                    >
-                      {ICON_TRASH}
-                    </button>
-                  </div>
+                    </span>
+                  </span>
+                  {ICON_NEXT}
+                </button>
+                <div className="db-saved-btns">
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    aria-label="複製"
+                    onClick={() => create([...d.cards], `${d.name}（コピー）`)}
+                  >
+                    {ICON_COPY}
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-btn danger"
+                    aria-label="消す"
+                    onClick={() => {
+                      if (window.confirm(`「${d.name}」を消しますか？`))
+                        persist(list.filter((x) => x.id !== d.id));
+                    }}
+                  >
+                    {ICON_TRASH}
+                  </button>
                 </div>
               </li>
             );
           })}
         </ul>
       )}
-      <p className="db-foot g2">
-        {DECK_SIZE} 枚ちょうど・同じカードは {MAX_COPIES} 枚まで・属性は {MAX_DECK_ATTRIBUTES}{" "}
-        つ（ニュートラルのカードはいくつでも）・闇堕ちを持つカードは {MAX_DARK_CARDS}{" "}
-        枚まで（種類は問わない）。保存したデッキは「CPUと対戦」「オンライン対戦」のデッキ選びに出ます。
-        {user
-          ? `${user.name} のアカウントに保存しています。ほかの端末でも使えます。`
-          : "この端末にだけ保存しています。"}
-      </p>
       {picking && (
         <div className="deck-confirm" role="dialog" aria-modal="true" aria-label="コピーする構築済みデッキ">
           <button
@@ -285,21 +289,16 @@ export function Decks() {
                         create(b.cards, `${b.name}（コピー）`);
                       }}
                     >
-                      <span className="db-copy-dots">
-                        <AttrDots attrs={b.attrs} />
+                      <span className="db-copy-thumb" style={{ background: deckGradient(b.attrs, b.ace) }}>
+                        <DeckAce id={b.ace} />
                       </span>
-                      <span>{b.name}</span>
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M9 6l6 6-6 6" />
-                      </svg>
+                      <span className="db-copy-name">
+                        <b>{b.name}</b>
+                        <span className="db-copy-dots">
+                          <AttrDots attrs={b.attrs} />
+                        </span>
+                      </span>
+                      {ICON_NEXT}
                     </button>
                   </li>
                 );

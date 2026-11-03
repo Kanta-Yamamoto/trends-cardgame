@@ -505,7 +505,8 @@ export function damageCutOn(state: GameState, player: PlayerId): number {
   return state.turn <= (p.cutUntil ?? 0) ? (p.cutAmount ?? 0) : 0;
 }
 
-function damageLeader(state: GameState, player: PlayerId, amount: number, emit: Emit) {
+/** by は、ダメージを与えたカード（攻撃したキャラクター・効果の持ち主など。結果の画面の「決め手」に使う） */
+function damageLeader(state: GameState, player: PlayerId, amount: number, emit: Emit, by?: string) {
   const p = state.players[player];
   if (amount <= 0) return;
   if (isShielded(state, player)) {
@@ -520,7 +521,11 @@ function damageLeader(state: GameState, player: PlayerId, amount: number, emit: 
     if (amount <= 0) return;
   }
   p.lp = Math.max(0, p.lp - amount);
-  emit({ type: "leaderDamaged", player, amount, lp: p.lp });
+  emit(
+    by
+      ? { type: "leaderDamaged", player, amount, lp: p.lp, by }
+      : { type: "leaderDamaged", player, amount, lp: p.lp },
+  );
 }
 
 function healLeader(state: GameState, player: PlayerId, amount: number, config: Config, emit: Emit) {
@@ -796,7 +801,7 @@ function afterHeal(ctx: Ctx) {
         u.hpBuff += e.hp;
         emit({ type: "buffed", player, slot, cardId: u.cardId, attack: e.attack, hp: e.hp });
       } else if (e.do === "healBurn") {
-        damageLeader(state, opponent(player), e.amount, emit);
+        damageLeader(state, opponent(player), e.amount, emit, u.cardId);
       } else if (e.do === "healStrike") {
         const at = strongestEnemy(state, player, catalog);
         if (at >= 0) damageUnit(state, opponent(player), at, e.amount, emit);
@@ -1634,7 +1639,7 @@ export function applyAction(
       runRushEffects(state, player, action.from, t, catalog, config, emit);
       const av = viewUnit(state, player, atk, catalog);
       if (t.kind === "leader") {
-        damageLeader(state, foeId, av.attack, emit);
+        damageLeader(state, foeId, av.attack, emit, atk.cardId);
       } else {
         // お互いの攻撃力の分だけ、相手の体力を削る（ダメージは残る）
         const def = foe.field[t.slot] as Unit;
@@ -1674,7 +1679,7 @@ export function applyAction(
         if (killed)
           for (const fx of effectsOf(atk, catalog)) {
             if (fx.do !== "faceOnKill" || triggerOf(fx) !== "passive") continue;
-            damageLeader(state, foeId, fx.amount, (e) => after.push(e));
+            damageLeader(state, foeId, fx.amount, (e) => after.push(e), atk.cardId);
           }
         emit({
           type: "battle",
@@ -1711,7 +1716,7 @@ export function applyAction(
         me.delayedDamage = (me.delayedDamage ?? []).filter((d) => d.turn >= state.turn);
         for (const d of due) {
           emit({ type: "delayedDamageFired", player, cardId: d.cardId, amount: d.amount });
-          damageLeader(state, player, d.amount, emit);
+          damageLeader(state, player, d.amount, emit, d.cardId);
         }
         checkWinner(state, player, emit);
         if (state.winner) break;

@@ -375,6 +375,10 @@ describe("キーワード", () => {
     expect(s.players.p2.lp).toBe(16);
     expect(() => face(s, 0)).toThrow(/攻撃できません/);
   });
+  it("プレイヤーへのダメージには、攻撃したキャラクターのカードが付く（結果の画面の決め手）", () => {
+    const r = face(play(game(["twin"]), 0, 0), 0);
+    expect(r.events).toContainEqual({ type: "leaderDamaged", player: "p2", amount: 2, lp: 18, by: "twin" });
+  });
   it("突進：場に出たターンに相手のキャラクターにだけ攻撃できる（プレイヤーは不可）。次のターンからは普通", () => {
     let s = withFoe(["totsu"], ["wall"]);
     s = play(s, 0, 0);
@@ -1670,6 +1674,7 @@ describe("相手のプレイヤーに付与する時間差のダメージ（ミ�
     expect(e.events.map((x) => x.type)).toEqual(
       expect.arrayContaining(["delayedDamageFired", "leaderDamaged"]),
     );
+    expect(e.events.find((x) => x.type === "leaderDamaged")).toMatchObject({ by: "oracle" });
     s = e.state;
     expect(s.players.p2.lp).toBe(13);
     expect(delayedDamageOn(s, "p2")).toBe(0);
