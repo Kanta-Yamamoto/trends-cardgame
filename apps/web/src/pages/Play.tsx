@@ -96,13 +96,14 @@ import {
   summonCue,
 } from "../game/fx";
 import { MiniCard } from "../game/MiniCard";
-import { endReason } from "../game/result";
+import { resultTalk } from "../game/result";
 import { CATALOG, CPU, DECK_INFO, holdOpening, ME, openingMs, setPresenter, useGame } from "../game/store";
 import { useDragPlay } from "../game/useDragPlay";
 import { type ClockLeft, formatClock, useClockLeft, useLive } from "../online/live";
 import { playMusicOnce, usePageMusic } from "../sound/music";
 import { SoundMenu } from "../sound/SoundMenu";
 import { playSe } from "../sound/se";
+import { faceUrl } from "../tutorial/Guide";
 import { lockZoom, resetZoom } from "../viewport";
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -2791,7 +2792,6 @@ export function Board({
           broke={resultOpen === "broke"}
           onQuit={quit}
           online={online}
-          events={log.map((l) => l.e)}
         />
       )}
     </div>
@@ -2862,7 +2862,6 @@ function Result({
   onAgain,
   onQuit,
   online,
-  events,
   broke,
 }: {
   game: GameState;
@@ -2871,16 +2870,10 @@ function Result({
   onAgain?: () => void;
   onQuit: () => void;
   online: boolean;
-  /** 対戦の記録（決着の原因を出すため） */
-  events: GameEvent[];
 }) {
-  // ランダムマッチなら、レーティングの動き
-  const rating = useLive((s) => s.rating);
+  // 結果の画面は「勝利！／敗北…」とちびミナモの一言とボタンだけ（11月4日。オーナー：それ以外の言葉や要素を排除）
   const won = game.winner === ME;
-  const why = endReason(events, ME, won);
-  const fin = why.finisher ? CATALOG[why.finisher.cardId] : undefined;
-  // 勝ちは自分の残りのライフ、負けは相手の残りのライフ（どれだけ迫ったか）
-  const leftLp = game.players[won ? ME : CPU].lp;
+  const talk = resultTalk(won, game.turn, game.players[ME].lp, game.players[CPU].lp);
   return (
     <div
       className={`result ${won ? "win" : "lose"}${broke ? " after-break" : ""}`}
@@ -2890,58 +2883,13 @@ function Result({
     >
       <section className="result-body">
         <strong className="result-title">{won ? "勝利！" : "敗北…"}</strong>
-        <p className="result-why">{why.line}</p>
-        {fin && (
-          <figure className="result-fin">
-            <span className="result-fin-card">
-              <HoloCard card={fin} textHidden />
-            </span>
-            <figcaption>
-              <small>{why.finisher?.mine ? "決め手" : "相手の決め手"}</small>
-              <b>{fin.name}</b>
-            </figcaption>
-          </figure>
-        )}
-        <dl className="result-stats g2">
-          <div>
-            <dt>決着</dt>
-            <dd>
-              <b>{game.turn}</b>ターン目
-            </dd>
-          </div>
-          <div>
-            <dt>{won ? "残りのライフ" : "相手の残りのライフ"}</dt>
-            <dd>
-              <b>{leftLp}</b>
-            </dd>
-          </div>
-        </dl>
-        {online && rating && (
-          <div className="result-rating g2">
-            <p className="result-rating-h">
-              <span>ランダムマッチのレート</span>
-              <em className={rating.after >= rating.before ? "up" : "down"}>
-                {rating.after >= rating.before ? "+" : "−"}
-                {Math.abs(rating.after - rating.before)}
-              </em>
-            </p>
-            <p className="result-rating-r">
-              <span>{rating.before}</span>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
-              <b>{rating.after}</b>
-            </p>
-          </div>
-        )}
+        <span className="result-chibi" aria-hidden="true">
+          <img src={faceUrl(talk.face)} alt="" draggable={false} />
+        </span>
+        <div className="result-talk g3">
+          <b>ミナモ</b>
+          <p>{talk.text}</p>
+        </div>
       </section>
       <div className="result-actions">
         {onAgain && (

@@ -330,25 +330,15 @@ button.pb-main:disabled { cursor: default; }
 .result-title { font: 800 68px/1.1 var(--f-ui); letter-spacing: 0.04em; animation: pop 0.6s cubic-bezier(.2, 1.5, .4, 1) backwards; }
 .result.win .result-title { color: #f5b800; text-shadow: 0 2px 0 #fff, 0 10px 26px #c7860040; }
 .result.lose .result-title { color: var(--pri-3); text-shadow: 0 2px 0 #fff, 0 10px 26px #1272b033; }
-/* 決着の 1 行・決め手のカード・数字 2 つ（11月3日。見出しと説明が同じことを言っていたので 1 行にし、何で決まったかをカードで見せる） */
-.result-why { margin: 0; max-width: 300px; font-size: 15px; font-weight: 800; line-height: 1.5; color: var(--ink); animation: fade 0.6s 0.3s ease backwards; }
-.result-fin { position: relative; margin: 6px 0 0; display: grid; justify-items: center; gap: 10px; animation: rise-in 0.55s 0.35s ease-out backwards; }
-.result-fin-card { position: relative; width: min(164px, 42vw); }
-.result-fin-card .holo { width: 100%; }
-/* 勝ちはカードの後ろにゆっくり回る光、負けは光を出さずに色を少し落とす */
-.result.win .result-fin-card::before { content: ""; position: absolute; left: 50%; top: 50%; width: 260%; aspect-ratio: 1; translate: -50% -50%; z-index: -1; border-radius: 50%; background: repeating-conic-gradient(#fff6c800 0deg 9deg, #fff3b8a6 12deg 15deg, #fff6c800 18deg 30deg); -webkit-mask-image: radial-gradient(closest-side, #000 20%, transparent 100%); mask-image: radial-gradient(closest-side, #000 20%, transparent 100%); animation: fin-rays 24s linear infinite; pointer-events: none; }
-.result.win .result-fin-card::after { content: ""; position: absolute; inset: -18%; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, #ffffffe6, #fff4c266 55%, transparent); pointer-events: none; }
-.result.lose .result-fin-card { filter: saturate(0.55) brightness(0.96); }
-@keyframes fin-rays { to { rotate: 1turn; } }
-.result-fin figcaption { display: grid; gap: 2px; }
-.result-fin small { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; color: var(--ink-2); }
-.result-fin b { font-size: 16px; font-weight: 800; }
-.result-stats { width: 100%; max-width: 320px; margin: 6px 0 0; display: grid; grid-template-columns: 1fr 1fr; padding: 12px 0; border-radius: var(--r-l); animation: rise-in 0.5s 0.45s ease-out backwards; }
-.result-stats div { display: grid; gap: 4px; justify-items: center; }
-.result-stats div + div { border-left: 1px solid var(--line); }
-.result-stats dt { font-size: 11px; font-weight: 800; color: var(--ink-2); }
-.result-stats dd { margin: 0; font-size: 12px; font-weight: 800; color: var(--ink-2); }
-.result-stats dd b { margin-right: 2px; font: 400 26px/1 var(--f-mark); color: var(--ink); }
+/* ちびミナモの一言（11月4日。オーナー：勝利・敗北とボタンのほかは外し、ミナモのミニキャラに喋らせる。言葉は game/result.ts） */
+.result-chibi { width: min(44%, 190px); aspect-ratio: 512 / 768; animation: result-chibi-in 0.6s cubic-bezier(.2, 1.5, .4, 1) 0.25s backwards; }
+.result-chibi img { display: block; width: 100%; animation: result-float 2.6s ease-in-out 0.9s infinite; }
+.result.lose .result-chibi img { filter: saturate(0.85); }
+@keyframes result-chibi-in { from { opacity: 0; transform: translateY(30px) scale(0.6); } }
+@keyframes result-float { 50% { transform: translateY(-6px); } }
+.result-talk { max-width: 320px; padding: 10px 16px 12px; border-radius: 18px; text-align: left; animation: fade 0.5s 0.6s ease backwards; }
+.result-talk b { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.12em; color: var(--pri-2); }
+.result-talk p { margin: 2px 0 0; font-size: 15px; font-weight: 700; line-height: 1.6; color: var(--ink); }
 .result-actions { display: grid; gap: 10px; animation: rise-in 0.5s 0.6s ease-out backwards; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 .holo-btn { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 4.4% / 3.2%; }
@@ -622,16 +612,6 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .pb-clock.pick { background: #f2cf7a; color: var(--night); font-size: 9.5px; }
 .pb-clock.pick b { color: var(--night); }
 /* 結果のレートの動き */
-.result-rating { width: 100%; max-width: 320px; box-sizing: border-box; margin-top: 0; padding: 16px 18px; border-radius: var(--r-l); display: grid; gap: 8px; animation: rise-in 0.5s 0.45s ease-out backwards; }
-.result-rating p { margin: 0; }
-.result-rating-h { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; font-weight: 800; color: var(--ink-2); }
-.result-rating-h em { font: 400 16px/1 var(--f-mark); font-style: normal; }
-.result-rating-h em.up { color: var(--ok); }
-.result-rating-h em.down { color: var(--ng); }
-.result-rating-r { display: flex; align-items: baseline; justify-content: center; gap: 12px; }
-.result-rating-r span { font: 400 22px/1 var(--f-mark); color: var(--ink-3); }
-.result-rating-r svg { width: 20px; height: 20px; color: var(--ink-3); align-self: center; }
-.result-rating-r b { font: 400 46px/1 var(--f-mark); color: var(--pri-3); }
 @media (prefers-reduced-motion: reduce) { .radar i, .radar-sweep { animation-duration: 6s; } }
 
 /* ---------- 相手が出したカードを大きく見せる ---------- */
