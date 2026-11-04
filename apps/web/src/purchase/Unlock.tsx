@@ -1,5 +1,6 @@
 import { DAILY_PACKS, WELCOME_PACKS } from "@trends/game-core";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { create } from "zustand";
 import { useAccess } from "../gacha/access";
 import { useCollection } from "../gacha/collection";
@@ -40,6 +41,7 @@ export async function applyPurchase(get: () => Promise<{ jws: string | null }>) 
 export function UnlockSheet() {
   const open = useUnlock((s) => s.open);
   const hide = useUnlock((s) => s.hide);
+  const navigate = useNavigate();
   const [price, setPrice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +84,20 @@ export function UnlockSheet() {
           </li>
           <li>カードを集める</li>
         </ul>
+        {/* パックの中身はランダムなので、買う前に提供割合を見られるようにする（審査の決まり 3.1.1。11月4日） */}
+        <p className="unlock-odds">
+          パックから出るカードはランダムです。
+          <button
+            type="button"
+            className="btn text"
+            onClick={() => {
+              hide();
+              navigate("/gacha/rates");
+            }}
+          >
+            提供割合 ›
+          </button>
+        </p>
         {error && <p className="unlock-error">{error}</p>}
         <button
           type="button"
