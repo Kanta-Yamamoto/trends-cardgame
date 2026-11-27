@@ -1,0 +1,36 @@
+name: Cost report
+
+# 毎朝（日本時間 9 時 17 分ごろ）、きのうの GCP の利用料金を Issue「GCP の利用料金（毎日の報告）」にコメントする。
+# 中身は tools/cost-report.mjs。GCP には、Terraform が作った連携と読むだけのサービスアカウント（cost-reporter）でログインする。
+# 決まった時刻のワークフローは main で動くので、main だけに許した連携をそのまま使える
+on:
+  schedule:
+    - cron: "17 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+
+concurrency:
+  group: cost-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: 設定を読む（infra/gcp.env）
+        run: grep -E '^[A-Z_]+=' infra/gcp.env >> "$GITHUB_ENV"
+      - uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
+        with:
+          workload_identity_provider: projects/${{ env.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/github-actions
+          service_account: cost-reporter@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2
+      - name: 報告する
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node tools/cost-report.mjs

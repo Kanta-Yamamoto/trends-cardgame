@@ -4,11 +4,12 @@ API と Web を1つの Cloud Run で動かします（API が Web のビルド�
 
 ## 作るもの
 
-- Cloud Run `trends-api`（使わないときは0台。オンライン対戦の部屋をメモリで持つので最大1台、WebSocket 用にセッションアフィニティと1時間のタイムアウト）
+- Cloud Run `trends-api`（使わないときは0台。App Store の審査の間だけ 1 台を起こしておく。オンライン対戦の部屋をメモリで持つので最大1台、WebSocket 用にセッションアフィニティと1時間のタイムアウト）
 - Artifact Registry `trends`（Docker イメージ置き場）
 - Secret Manager `database-url` の読み取り権限（シークレット自体と値は bootstrap.sh で人が入れる）
 - GitHub Actions 用の Workload Identity 連携とデプロイ用サービスアカウント（鍵ファイルなしでデプロイ）
 - 予算アラート（`billing_account` を指定したときだけ）
+- 毎日の利用料金の報告に使う、請求の明細の書き出し先（BigQuery の `billing_export`）と、読むだけのサービスアカウント `cost-reporter`
 
 DB はここでは作りません。Neon などの無料枠の PostgreSQL を使い、その接続文字列を `database-url` に入れます。ログインのトークンに署名する鍵は、アプリが初回起動時に作って DB に保存します。
 
