@@ -25,7 +25,8 @@
 .gx-pk-foil { position: absolute; inset: 0; background: repeating-linear-gradient(120deg, #ffffff00 0 14px, #ffffff66 14px 16px, #ffffff00 16px 30px); }
 .gx-pk-sheen { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, #ffffffb3 45%, #bfe8ff80 52%, transparent 66%) 0 0 / 300% 100%; animation: sheen 3.6s ease-in-out infinite; }
 .gx-pk-chara { position: absolute; left: 50%; top: 78px; width: 290px; transform: translateX(-50%); filter: drop-shadow(0 8px 12px #1f487855); pointer-events: none; user-select: none; }
-.gx-pk-logo { position: absolute; left: 0; right: 0; top: 50px; text-align: center; font: 400 38px/1 var(--f-mark); letter-spacing: 0.05em; color: #fff; text-shadow: 0 3px 0 #0e0d0c; }
+.gx-pk-logo { position: absolute; left: 0; right: 0; top: 50px; }
+.gx-pk-logo .brand-logo { width: 120px; margin: 0 auto; filter: drop-shadow(0 3px 6px #0e0d0c66); }
 .gx-pk-band { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); height: 26px; padding: 0 12px; border-radius: 13px; background: #0e0d0ce6; color: #fff; font-size: 12px; font-weight: 800; line-height: 26px; white-space: nowrap; }
 
 /* ガチャの画面 */

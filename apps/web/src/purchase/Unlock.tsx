@@ -76,7 +76,7 @@ export function UnlockSheet() {
       <section className="unlock-sheet">
         <div className="unlock-grip" aria-hidden="true" />
         <h2>すべての機能を解放</h2>
-        <p className="unlock-lead">TRENDS のすべての機能が使えるようになります</p>
+        <p className="unlock-lead">BUZZ NOIR のすべての機能が使えるようになります</p>
         <ul className="unlock-list g2">
           <li>デッキを組む</li>
           <li>

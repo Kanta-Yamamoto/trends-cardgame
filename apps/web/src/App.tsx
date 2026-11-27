@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router";
 import { API_URL } from "./api/client";
 import { Login } from "./auth/Login";
 import { RegisterScreen } from "./auth/Register";
+import { BrandLogo } from "./brand/Logo";
 import { useAccess } from "./gacha/access";
 import { sendCrashedCpuLog } from "./game/cpuLog";
 import { useDeckSync } from "./game/deckSync";
@@ -97,7 +98,9 @@ function useUpdateRequired() {
 function UpdateRequired({ url }: { url: string | null }) {
   return (
     <div className="login-screen">
-      <h1 className="login-brand">TRENDS</h1>
+      <h1 className="login-brand">
+        <BrandLogo label="BUZZ NOIR" />
+      </h1>
       <main className="login-box g3">
         <div className="online-card">
           <h2>新しい版があります</h2>
@@ -129,7 +132,9 @@ function AppStart() {
       </div>
       <span className="login-rays" aria-hidden="true" />
       <img className="login-chara" src="/assets/cards/c13-subject.webp" alt="" draggable={false} />
-      <h1 className="login-brand">TRENDS</h1>
+      <h1 className="login-brand">
+        <BrandLogo label="BUZZ NOIR" />
+      </h1>
       {failed && (
         <main className="login-box g3">
           <div className="online-card">
@@ -153,7 +158,9 @@ function LoginScreen() {
       </div>
       <span className="login-rays" aria-hidden="true" />
       <img className="login-chara" src="/assets/cards/c13-subject.webp" alt="" draggable={false} />
-      <h1 className="login-brand">TRENDS</h1>
+      <h1 className="login-brand">
+        <BrandLogo label="BUZZ NOIR" />
+      </h1>
       <main className="login-box g3">
         <Login />
       </main>

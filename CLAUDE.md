@@ -1,4 +1,6 @@
-# TRENDS カードゲーム
+# BUZZ NOIR カードゲーム（旧 TRENDS）
+
+ゲームの名前は **BUZZ NOIR（バズノワール）**（11月27日に TRENDS から変えた。経緯は [`docs/history.md`](docs/history.md)）。画面に出す名前とロゴだけを変え、コードの中の名前（`@trends/*`・`trends-api`・Bundle ID `com.kakuremiino.trends` など）は TRENDS のまま。ロゴは `apps/web/src/brand/`（2 段は 1 層、横 1 行は 2 層）。
 
 AIで描いたイラストを立体感のあるキラカードにして遊ぶ、オリジナルカードゲーム。Web とスマホアプリ（Capacitor）で出す予定。
 

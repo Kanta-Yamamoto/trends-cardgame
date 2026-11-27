@@ -19,6 +19,9 @@
 
 ### 決まったこと（11月27日）
 
+- ゲームの名前を BUZZ NOIR にし、画面とロゴを差し替えた（[history.md](history.md)「ゲームの名前を BUZZ NOIR にし、ロゴを差し替える」）
+  - [ ] App Store Connect の「App 情報」で、アプリの名前を「BUZZ NOIR ミームカードバトル」に変える（オーナー）。説明文の「TRENDS」も直す
+
 - g3 の名前は「公式文書」にした（オーナー：「変える。公式文書、とかにしよう」）
 - 審査の間だけ Cloud Run を 1 台起こしておく（オーナーが許可）。代わりに、毎日 GCP の利用料金を報告する（[deploy.md](deploy.md)「毎日の利用料金の報告」）
   - [ ] 審査が終わったら `min_instance_count` を 0 に戻す

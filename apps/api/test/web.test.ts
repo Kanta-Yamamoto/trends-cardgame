@@ -19,7 +19,7 @@ describe("serveWeb", () => {
 
   beforeAll(async () => {
     mkdirSync(join(dir, "assets"));
-    writeFileSync(join(dir, "index.html"), "<html><head><title>TRENDS</title></head><body></body></html>");
+    writeFileSync(join(dir, "index.html"), "<html><head><title>BUZZ NOIR</title></head><body></body></html>");
     writeFileSync(join(dir, "sw.js"), "// sw");
     writeFileSync(join(dir, "manifest.webmanifest"), "{}");
     writeFileSync(join(dir, "version.json"), '{"build":"abc"}');
@@ -40,7 +40,7 @@ describe("serveWeb", () => {
   it("画面の道は index.html を返す", async () => {
     const res = await request(app.getHttpServer()).get("/play").set("Accept", "text/html");
     expect(res.status).toBe(200);
-    expect(res.text).toContain("TRENDS");
+    expect(res.text).toContain("BUZZ NOIR");
   });
 
   it("画面には、リンクのプレビュー（OGP）を <head> に差し込む", async () => {
@@ -51,8 +51,8 @@ describe("serveWeb", () => {
       .set("X-Forwarded-Proto", "https");
     expect(res.headers["cache-control"]).toBe("no-cache");
     const head = res.text.slice(0, res.text.indexOf("</head>"));
-    expect(head).toContain('property="og:title" content="TRENDS"');
-    expect(head).toContain('property="og:image" content="https://trends.example/ogp.jpg?v=2"');
+    expect(head).toContain('property="og:title" content="BUZZ NOIR"');
+    expect(head).toContain('property="og:image" content="https://trends.example/ogp.jpg?v=3"');
     // 対戦の部屋のリンクは、誘われたことが分かる題名にする
     const room = await request(app.getHttpServer()).get("/online/AB12").set("Accept", "text/html");
     expect(room.text).toContain("オンライン対戦に誘われました");

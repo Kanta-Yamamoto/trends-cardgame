@@ -14,7 +14,8 @@
 .ac-msg.ng::before, .ac-msg.ok::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
 /* 初期登録：ログインの画面と同じ地（★5 のキャラクター）に、名前を入れる台 */
-.ac-reg .login-brand { top: max(40px, calc(env(safe-area-inset-top, 0px) + 24px)); font-size: 44px; }
+.ac-reg .login-brand { top: max(40px, calc(env(safe-area-inset-top, 0px) + 24px)); }
+.ac-reg .login-brand .brand-logo { width: 250px; filter: drop-shadow(0 10px 24px #1f487833); }
 .ac-reg .login-chara { top: 10%; width: min(400px, 104vw); }
 .ac-reg-box { display: grid; gap: 12px; text-align: left; }
 .ac-reg-box h1 { margin: 0; font-size: 22px; font-weight: 800; }

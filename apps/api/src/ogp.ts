@@ -9,7 +9,7 @@ import type { Request } from "express";
 /** プレビューの絵（1200×630。apps/web/public/ogp.jpg） */
 export const OGP_IMAGE = "/ogp.jpg";
 /** 絵を差し替えたら上げる（LINE・X などが前の絵を覚えたままにしないよう、絵の URL に付ける） */
-const OGP_IMAGE_VERSION = 2;
+const OGP_IMAGE_VERSION = 3;
 
 /** 説明文（10月27日。オーナーが挙げた売り：おしゃれな演出・わかりやすい操作・豊富なキャラクター。絵の文字は「多彩なギミックで戦う 本格カードゲーム」） */
 const ABOUT = "おしゃれな演出・わかりやすい操作・豊富なキャラクター。多彩なギミックで戦う本格カードゲーム";
@@ -23,12 +23,13 @@ export interface Preview {
 export function previewFor(path: string, invited: boolean): Preview {
   if (/^\/online\/[^/]+\/?$/.test(path)) {
     return {
-      title: "TRENDS のオンライン対戦に誘われました",
+      title: "BUZZ NOIR のオンライン対戦に誘われました",
       description: "リンクを開いてデッキを選ぶと、すぐに対戦が始まります",
     };
   }
-  if (invited) return { title: "TRENDS に招待されました", description: `${ABOUT}。リンクを開くと遊べます` };
-  return { title: "TRENDS", description: ABOUT };
+  if (invited)
+    return { title: "BUZZ NOIR に招待されました", description: `${ABOUT}。リンクを開くと遊べます` };
+  return { title: "BUZZ NOIR", description: ABOUT };
 }
 
 const esc = (s: string) =>
@@ -47,7 +48,7 @@ export function ogpTags(req: Request, preview: Preview): string {
   const origin = originOf(req);
   const meta: [string, string][] = [
     ["og:type", "website"],
-    ["og:site_name", "TRENDS"],
+    ["og:site_name", "BUZZ NOIR"],
     ["og:locale", "ja_JP"],
     ["og:title", preview.title],
     ["og:description", preview.description],
@@ -57,7 +58,7 @@ export function ogpTags(req: Request, preview: Preview): string {
       ["og:image", `${origin}${OGP_IMAGE}?v=${OGP_IMAGE_VERSION}`],
       ["og:image:width", "1200"],
       ["og:image:height", "630"],
-      ["og:image:alt", "TRENDS"],
+      ["og:image:alt", "BUZZ NOIR"],
     );
   }
   return [

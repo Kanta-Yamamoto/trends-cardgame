@@ -174,7 +174,7 @@ export const GATE_HTML = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0b0b10" />
-<title>TRENDS（準備中）</title>
+<title>BUZZ NOIR（準備中）</title>
 <style>
   html, body { height: 100%; margin: 0; }
   body { display: grid; place-items: center; background: #0b0b10; color: #f2f1ee;
@@ -191,7 +191,7 @@ export const GATE_HTML = `<!doctype html>
 </head>
 <body>
 <main>
-  <h1>TRENDS</h1>
+  <h1>BUZZ NOIR</h1>
   <p>ただいま準備中です。</p>
   <p>招待リンクをもらった方は、そのリンクから開いてください。</p>
   <form method="get" action="/">

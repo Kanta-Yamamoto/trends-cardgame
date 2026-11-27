@@ -1401,7 +1401,10 @@ button.pile:hover:not(:disabled) .trash-top { filter: grayscale(0.2) brightness(
 .login-rays { position: absolute; left: 50%; top: 39%; width: 900px; height: 900px; margin: -450px 0 0 -450px; background: repeating-conic-gradient(from 0deg, #ffffffbf 0deg 6deg, transparent 6deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 52%); mask-image: radial-gradient(circle, #000 0%, transparent 52%); opacity: 0.55; animation: spin 90s linear infinite; pointer-events: none; }
 .login-chara { position: absolute; left: 50%; top: 18%; width: min(470px, 120vw); transform: translateX(-50%); -webkit-mask-image: linear-gradient(#000 70%, transparent 96%); mask-image: linear-gradient(#000 70%, transparent 96%); filter: drop-shadow(0 12px 20px var(--shadow)); animation: login-float 5.4s ease-in-out infinite; pointer-events: none; user-select: none; }
 @keyframes login-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
-.login-brand { position: absolute; left: 0; right: 0; top: max(60px, calc(env(safe-area-inset-top, 0px) + 40px)); margin: 0; text-align: center; font: 400 76px/1 var(--f-mark); letter-spacing: 0.06em; color: var(--pri-3); text-shadow: 0 4px 0 #fff, 0 14px 30px #1f487840; }
+/* ロゴ BUZZ NOIR（brand/Logo.tsx）。2 段は 1 層（文字の 1 色）、横 1 行は 2 層（紺と水色の帯） */
+.brand-logo { display: block; height: auto; overflow: visible; }
+.login-brand { position: absolute; left: 0; right: 0; top: max(60px, calc(env(safe-area-inset-top, 0px) + 40px)); margin: 0; color: var(--ink); }
+.login-brand .brand-logo { width: 190px; margin: 0 auto; filter: drop-shadow(0 3px 0 #fff) drop-shadow(0 14px 30px #1f487840); }
 .login-box { position: absolute; left: 14px; right: 14px; bottom: max(28px, env(safe-area-inset-bottom, 0px)); padding: 22px 20px 20px; border-radius: var(--r-xl); text-align: center; }
 .login-box .online-card { margin: 0; padding: 0; background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; display: grid; justify-items: center; gap: 10px; }
 .login-box .online-card h2 { margin: 0; font-size: 20px; }

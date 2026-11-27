@@ -58,7 +58,7 @@
 @keyframes hm-up-in { from { opacity: 0; transform: translateY(8px); } }
 .hm-news-go { flex: none; width: 18px; height: 18px; color: var(--ink-2); }
 
-/* 真ん中の舞台：光の筋、TRENDS の透かし、ガラスの円、泡、キャラクター */
+/* 真ん中の舞台：光の筋、ロゴ（BUZZ NOIR）の透かし、ガラスの円、泡、キャラクター */
 .hm-stage-wrap { position: relative; z-index: 1; min-height: 0; }
 .hm-rays {
   position: absolute; left: 50%; top: 50%; width: 900px; height: 900px; margin: -450px 0 0 -450px; pointer-events: none; opacity: 0.55;
@@ -68,9 +68,10 @@
 }
 .hm-mark {
   position: absolute; left: 0; right: 0; top: 4%; text-align: center; pointer-events: none;
-  font: 400 min(116px, 29vw)/1 var(--f-mark); letter-spacing: 0.04em; color: #ffffffb8; text-shadow: 0 10px 30px var(--shadow);
+  color: var(--ink); filter: drop-shadow(0 10px 30px var(--shadow));
   transition: transform 0.5s ease-out;
 }
+.hm-mark .brand-logo { width: min(200px, 52vw); margin: 0 auto; }
 .hm-disc, .hm-ring { position: absolute; left: 50%; top: 52%; aspect-ratio: 1; border-radius: 50%; translate: -50% -50%; pointer-events: none; }
 .hm-disc {
   height: min(72%, 320px);

@@ -23,7 +23,7 @@
 
 ## 3. App Store Connect の準備 ★（文面は Claude が用意する）
 
-1. 新しいアプリを作る：名前 TRENDS ミームカードバトル、言語 日本語、Bundle ID `com.kakuremiino.trends`、SKU `trends-ios`
+1. 新しいアプリを作る：名前 BUZZ NOIR ミームカードバトル（11月27日に TRENDS から変えた。作ってあるアプリは「App 情報」で名前を変える）、言語 日本語、Bundle ID `com.kakuremiino.trends`、SKU `trends-ios`
 2. アプリ内課金を作る：種類「非消耗型」、製品 ID `com.kakuremiino.trends.unlock`、参照名「すべての機能を解放」、価格 500 円、審査用のスクリーンショットを付ける
 3. アプリの Apple ID は `6829398027`（`infra/gcp.env` の `APPLE_APP_ID`）。これが無いと、本番の購入を確かめられない
 4. App 情報：プライバシーポリシーの URL は `https://trends-api-523738975867.asia-northeast1.run.app/privacy.html`、サポートの URL は同じサーバーの `/support.html`
@@ -71,7 +71,7 @@
 
 ## App Store に貼る文面
 
-- 名前：TRENDS ミームカードバトル（ホーム画面とゲームの中のロゴは TRENDS のまま）
+- 名前：BUZZ NOIR ミームカードバトル（ホーム画面の名前とゲームの中のロゴは BUZZ NOIR。「ミームカードバトル」を足す形は TRENDS のときのまま。Claude の案）
 - サブタイトル：ネットのいまが、キラカードで戦う
 - カテゴリ：ゲーム（カード）
 - キーワード：トレンド,カードゲーム,対戦,TCG,デッキ構築,パック開封,オンライン対戦,キラカード,ミーム,CPU対戦

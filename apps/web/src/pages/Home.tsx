@@ -1,6 +1,7 @@
 import { CARDS, type CardDef } from "@trends/cards";
 import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
+import { BrandLogo } from "../brand/Logo";
 import { ATTR_META } from "../cards/meta";
 import { useAccess } from "../gacha/access";
 import { markNewsSeen, NEWS, unseenCount } from "../home/news";
@@ -261,7 +262,7 @@ export function Home() {
           style={{ transform: `translate(${-tilt.x * 30}px, ${-tilt.y * 8}px)` }}
           aria-hidden="true"
         >
-          TRENDS
+          <BrandLogo />
         </div>
         <div className="hm-ring" aria-hidden="true" />
         <div className="hm-disc" aria-hidden="true" />

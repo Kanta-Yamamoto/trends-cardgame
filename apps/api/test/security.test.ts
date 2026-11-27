@@ -55,7 +55,7 @@ describe("protect", () => {
 
   beforeAll(async () => {
     process.env.INVITE_CODE = "open-sesame";
-    writeFileSync(join(dir, "index.html"), "<head><title>TRENDS</title></head><div id=root>");
+    writeFileSync(join(dir, "index.html"), "<head><title>BUZZ NOIR</title></head><div id=root>");
     writeFileSync(join(dir, "app.js"), "//");
     writeFileSync(join(dir, "ogp.jpg"), "jpg");
     writeFileSync(join(dir, "privacy.html"), "<title>プライバシーポリシー</title>");
@@ -102,7 +102,7 @@ describe("protect", () => {
     // 開き直させない（クッキーを持ち越さないプレビューのロボットにも、画面とプレビューが届くように）
     expect(res.status).toBe(200);
     expect(res.text).toContain("id=root");
-    expect(res.text).toContain('property="og:title" content="TRENDS のオンライン対戦に誘われました"');
+    expect(res.text).toContain('property="og:title" content="BUZZ NOIR のオンライン対戦に誘われました"');
     expect(res.headers["cache-control"]).toBe("no-store");
     const set = String(res.headers["set-cookie"]?.[0] ?? "");
     expect(set).toContain(`${INVITE_COOKIE}=`);
@@ -130,8 +130,8 @@ describe("protect", () => {
       .set("X-Forwarded-Proto", "https")
       .set("X-Forwarded-For", "192.0.2.50");
     expect(res.status).toBe(200);
-    expect(res.text).toContain('property="og:title" content="TRENDS に招待されました"');
-    expect(res.text).toContain('property="og:image" content="https://trends.example/ogp.jpg?v=2"');
+    expect(res.text).toContain('property="og:title" content="BUZZ NOIR に招待されました"');
+    expect(res.text).toContain('property="og:image" content="https://trends.example/ogp.jpg?v=3"');
     expect(res.text).toContain('name="twitter:card" content="summary_large_image"');
     // 合言葉そのものは、プレビューにも書かない
     expect(res.text).not.toContain("open-sesame");
