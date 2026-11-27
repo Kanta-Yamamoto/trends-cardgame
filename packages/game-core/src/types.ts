@@ -48,7 +48,7 @@ export interface Unit {
   exposeAtTurnEnd?: boolean;
   /** このターン数までは眠っていて攻撃できない */
   boundUntil: number;
-  /** キーワードと効果が消されている（コミュニティノート） */
+  /** キーワードと効果が消されている（公式文書） */
   silenced: boolean;
   /** ガードだけ消されている */
   noGuard: boolean;
