@@ -134,3 +134,100 @@
 .tw-chibi img { display: block; width: 100%; animation: ti-float 2.6s ease-in-out 0.8s infinite; }
 @keyframes ti-pop-up { from { opacity: 0; transform: translateY(30px) scale(0.6); } }
 .tw-talk { max-width: 340px; padding: 10px 14px 12px; border-radius: 18px; text-align: left; animation: tut-fade 0.5s 0.5s ease backwards; }
+
+/* ---------- 導入のつづき（11月1日）：あるあるがカードに・キラカードをなぞる ---------- */
+/* 案内の文の強調（Rich.tsx）。大事な言葉は水色の濃い色で太く、カードの名前は太く */
+.tut-em { font-weight: 800; color: var(--pri-2); background: linear-gradient(transparent 62%, #bfe9ff 62%); padding: 0 1px; }
+.tut-cn { font-weight: 800; color: var(--ink); }
+
+/* 2 つめからの場面では、ちびミナモは小さくなって左下へ（吹き出しの上から、ひょこっとのぞく） */
+.ti-chibi { transition: left 0.5s cubic-bezier(.3, 1.3, .5, 1), width 0.5s cubic-bezier(.3, 1.3, .5, 1), bottom 0.5s cubic-bezier(.3, 1.3, .5, 1); }
+.sc-trends .ti-chibi, .sc-kira .ti-chibi { left: 19%; width: min(34%, 150px); bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+.ti-talk { z-index: 2; }
+
+/* カードの扇：5 枚が下から順にぽんぽん出て、扇に開く */
+.ti-fan { position: absolute; inset: 0; pointer-events: none; }
+.ti-fan-card {
+  position: absolute; left: 50%; top: 15%; width: min(30%, 132px);
+  transform: translateX(calc(-50% + var(--k) * min(13vw, 54px))) translateY(calc(var(--k) * var(--k) * 7px)) rotate(calc(var(--k) * 8deg));
+  animation: ti-fan-in 0.55s cubic-bezier(.2, 1.4, .4, 1) calc(0.1s + var(--i) * 0.12s) backwards;
+  z-index: calc(5 - var(--k) * var(--k));
+  filter: drop-shadow(0 10px 16px #0b3a6655);
+}
+.ti-fan-card:nth-child(3) { width: min(34%, 150px); top: 12%; }
+@keyframes ti-fan-in {
+  0% { opacity: 0; transform: translateX(-50%) translateY(120px) rotate(0deg) scale(0.6); }
+  40% { transform: translateX(-50%) translateY(-10px) rotate(0deg); }
+  60% { opacity: 1; }
+}
+/* 話題の言葉：ふわっと浮かんで、ゆらゆら */
+.ti-tag {
+  position: absolute; padding: 5px 11px; border-radius: 99px; white-space: nowrap;
+  background: #ffffffe8; box-shadow: 0 0 0 1.5px #5cc8f0aa, 0 6px 14px -6px #0b3a6688;
+  font: 800 13px / 1 var(--f-ui); color: var(--pri-2); letter-spacing: 0.02em;
+  animation: ti-tag-in 0.5s cubic-bezier(.2, 1.8, .4, 1) calc(0.8s + var(--i) * 0.16s) backwards, ti-tag-bob 3s ease-in-out calc(var(--i) * -0.6s) infinite;
+  z-index: 6;
+}
+@keyframes ti-tag-in { from { opacity: 0; transform: scale(0.3); } }
+@keyframes ti-tag-bob { 50% { transform: translateY(-5px); } }
+
+/* キラカード：真ん中に★5 を 1 枚。指でなぞると傾いて光る（HoloCard の interactive） */
+.ti-kira { position: absolute; left: 50%; top: 9%; width: min(62%, 260px); transform: translateX(-50%); touch-action: none; animation: ti-kira-in 0.6s cubic-bezier(.2, 1.3, .4, 1) backwards; }
+@keyframes ti-kira-in { from { opacity: 0; transform: translateX(-50%) translateY(40px) scale(0.8) rotate(-6deg); } }
+.ti-kira-glow { position: absolute; inset: -18%; border-radius: 50%; background: radial-gradient(closest-side, #ffffffee, #bfe9ff88 45%, transparent 75%); pointer-events: none; animation: ti-glow 2.4s ease-in-out infinite; }
+@keyframes ti-glow { 50% { opacity: 0.6; transform: scale(0.94); } }
+/* なぞってのお手本：光の点が、カードの上を左右になぞる */
+.ti-swipe { position: absolute; inset: 0; pointer-events: none; }
+.ti-swipe i { position: absolute; left: 22%; top: 55%; width: 34px; height: 34px; margin: -17px; border-radius: 50%; background: radial-gradient(circle, #fff 0 30%, #ffffff88 55%, transparent 72%); box-shadow: 0 0 0 2px #ffffffcc, 0 0 20px 6px #5cc8f0aa; animation: ti-swipe 1.8s ease-in-out 0.8s infinite; opacity: 0; }
+@keyframes ti-swipe {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.8); }
+  15% { opacity: 1; transform: translate(0, 0) scale(1); }
+  65% { opacity: 1; transform: translate(140%, -60%); }
+  85%, 100% { opacity: 0; transform: translate(170%, -70%) scale(0.8); }
+}
+/* なぞれたら：光がはじける */
+.ti-sparkle { position: absolute; left: 50%; top: 45%; width: 0; height: 0; pointer-events: none; }
+.ti-sparkle i { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; background: #fff; clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); filter: drop-shadow(0 0 6px #5cc8f0); animation: ti-spark 0.9s cubic-bezier(.2, .8, .3, 1) forwards; }
+@keyframes ti-spark {
+  0% { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(0.3); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(-150px) scale(1.2); }
+}
+
+/* ---------- 属性の紹介（AttrTour.tsx）：勝ったあと。属性の丸を押すと、その属性の★5 が出る ---------- */
+/* 選んだ属性の色を、地にうっすら差す */
+.ta-tint { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(90% 50% at 50% 28%, color-mix(in srgb, var(--ac, #5cc8f0) 30%, transparent), transparent 70%); transition: background 0.4s ease; }
+.ta-stage { position: absolute; left: 50%; top: 7%; width: min(62%, 260px); aspect-ratio: 63 / 88; transform: translateX(-50%); }
+.ta-card { position: absolute; inset: 0; touch-action: none; animation: ta-flip 0.5s cubic-bezier(.2, 1.3, .4, 1) backwards; }
+.ta-card .ti-kira-glow { background: radial-gradient(closest-side, #ffffffee, color-mix(in srgb, var(--ac) 45%, transparent) 50%, transparent 76%); }
+@keyframes ta-flip { from { opacity: 0; transform: perspective(800px) rotateY(-80deg) scale(0.85); } }
+/* まだ選んでいないとき：属性の色の裏向きのカードが 5 枚、扇に並ぶ */
+.ta-backs { position: absolute; inset: 0; }
+.ta-back {
+  position: absolute; left: 50%; top: 18%; width: 46%; aspect-ratio: 63 / 88; border-radius: 10px;
+  display: grid; place-items: center; font: 900 30px / 1 var(--f-ui); color: #fff; text-shadow: 0 2px 6px #0004;
+  background: radial-gradient(120% 80% at 50% 20%, color-mix(in srgb, var(--c) 50%, white), var(--c) 55%, color-mix(in srgb, var(--c) 60%, black));
+  box-shadow: 0 0 0 3px #fff, 0 12px 22px -10px #0b3a6688;
+  transform-origin: 50% 170%; transform: translateX(-50%) rotate(calc(var(--k) * 13deg));
+  animation: ta-back-in 0.5s cubic-bezier(.2, 1.4, .4, 1) calc((var(--k) + 2) * 0.08s) backwards;
+}
+@keyframes ta-back-in { from { opacity: 0; transform: translateX(-50%) translateY(60px) rotate(0deg); } }
+/* 属性の丸：まだ見ていないものは脈打つ。見たものには小さな印 */
+.ta-row { position: absolute; left: 12px; right: 12px; top: calc(7% + min(62vw, 260px) * 88 / 63 + 26px); display: flex; justify-content: center; gap: 10px; z-index: 3; }
+.ta-attr {
+  position: relative; width: 58px; height: 58px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 35%, white), var(--c) 60%, var(--d)); color: #fff;
+  box-shadow: 0 0 0 3px #fff, 0 8px 16px -6px #0b3a6688;
+  font: 900 15px / 1 var(--f-ui); text-shadow: 0 1px 3px #0006;
+  animation: ta-attr-in 0.45s cubic-bezier(.2, 1.6, .4, 1) calc(0.3s + var(--i) * 0.08s) backwards;
+  transition: transform 0.2s cubic-bezier(.2, 1.6, .4, 1);
+}
+.ta-attr b { font-weight: 900; }
+.ta-attr:not(.seen)::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 70%, transparent); animation: ta-pulse 1.6s ease-out calc(var(--i) * 0.2s) infinite; }
+@keyframes ta-pulse { to { box-shadow: 0 0 0 12px transparent; } }
+.ta-attr.seen::before { content: "✓"; position: absolute; right: -4px; top: -4px; width: 20px; height: 20px; border-radius: 50%; background: #fff; color: var(--d); font: 900 12px / 20px var(--f-ui); text-shadow: none; box-shadow: 0 2px 6px #0003; }
+.ta-attr.on { transform: translateY(-6px) scale(1.12); box-shadow: 0 0 0 3px #fff, 0 0 0 6px color-mix(in srgb, var(--c) 60%, transparent), 0 12px 20px -6px #0b3a6699; }
+@keyframes ta-attr-in { from { opacity: 0; transform: scale(0.3); } }
+.tut-attrs .tut-em { color: var(--ad, var(--pri-2)); background: linear-gradient(transparent 62%, color-mix(in srgb, var(--ac, #5cc8f0) 35%, white) 62%); }
+.tut-attrs .ta-deck .tut-em { color: var(--pri-2); background: linear-gradient(transparent 62%, #bfe9ff 62%); }
+.tut-attrs .tut-skip { top: max(12px, env(safe-area-inset-top, 0px)); right: 12px; transform: none; }
