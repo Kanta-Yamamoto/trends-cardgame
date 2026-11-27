@@ -6,6 +6,7 @@ import { type CpuGameRecord, createGame } from "@trends/game-core";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AppModule } from "../src/app.module";
+import { APP_ORIGIN, INVITE_COOKIE, inviteCookieValue } from "../src/security";
 
 // 実際の PostgreSQL に対して動かす。ログインは開発用（名前だけ）を使う
 process.env.AUTH_DEV_LOGIN = "true";
@@ -103,5 +104,21 @@ describe("CPU 対戦の記録", () => {
       .send({ client: "x", record: { ...record("p1"), human: "p2" } })
       .expect(400);
     await request(app.getHttpServer()).get("/logs/cpu-games?after=きのう").expect(400);
+  });
+  it("取り出しは、招待済みのクッキーを持つ人だけ（アプリの出どころを名乗っても断る）", async () => {
+    process.env.INVITE_CODE = "logs-invite";
+    try {
+      const get = () => request(app.getHttpServer()).get("/logs/cpu-games");
+      await get().expect(403);
+      await get().set("Origin", APP_ORIGIN).expect(403);
+      await get()
+        .set("Cookie", `${INVITE_COOKIE}=${inviteCookieValue("違う合言葉")}`)
+        .expect(403);
+      await get()
+        .set("Cookie", `${INVITE_COOKIE}=${inviteCookieValue("logs-invite")}`)
+        .expect(200);
+    } finally {
+      delete process.env.INVITE_CODE;
+    }
   });
 });

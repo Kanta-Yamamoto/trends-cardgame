@@ -70,12 +70,24 @@ function readCookie(header: string | undefined, name: string) {
   return undefined;
 }
 
-/** この接続が招待済みか（守りが効いていないときは、いつも招待済み）。Socket.IO の接続でも使う */
-export function isInvited(req: IncomingMessage): boolean {
+/** 招待済みのクッキーに入れる値（合言葉のハッシュ） */
+export const inviteCookieValue = (code: string) => digest(code);
+
+/**
+ * 招待済みのクッキーを持っているか（守りが効いていないときは、いつも持っている扱い）。
+ * アプリの出どころ（Origin）は名乗れば誰でも付けられるので、ここでは通さない。CPU 対戦の記録の取り出しに使う
+ */
+export function hasInviteCookie(req: IncomingMessage): boolean {
   const code = inviteCode();
-  if (!code || req.headers.origin === APP_ORIGIN) return true;
+  if (!code) return true;
   const got = readCookie(req.headers.cookie, INVITE_COOKIE);
   return !!got && sameText(got, digest(code));
+}
+
+/** この接続が招待済みか（守りが効いていないときは、いつも招待済み）。Socket.IO の接続でも使う */
+export function isInvited(req: IncomingMessage): boolean {
+  if (req.headers.origin === APP_ORIGIN) return true;
+  return hasInviteCookie(req);
 }
 
 /** 本当の接続元の IP。Cloud Run は X-Forwarded-For の最後に足すので、最後を使う（前の方は相手が自由に書ける） */
