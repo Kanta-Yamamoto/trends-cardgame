@@ -1,46 +1,29 @@
-import { CARDS } from "@trends/cards";
-import type { GameEvent, PlayerId } from "@trends/game-core";
+import type { Face } from "../tutorial/Guide";
 
-/** 結果画面に出す、決着の原因（見出しと、何が起きたかの1行） */
-export interface EndReason {
-  title: string;
-  detail: string;
+/** 結果の画面で、ちびミナモが言う一言と、そのときの表情 */
+export interface ResultTalk {
+  text: string;
+  face: Face;
 }
 
+/** 長期戦とみなすターン数（両方のターンを数える。お互い 8 ターンずつ） */
+export const LONG_GAME_TURN = 16;
+/** 「激しいバトル」「惜しかった」とみなす、残りのライフの上限 */
+export const CLOSE_LP = 10;
+
 /**
- * 対戦の記録から、決着の原因を作る（me は見ている人。勝ち負けは won）。
- * 決着の出来事（降参・時間切れ・山札切れ・特殊勝利）がなければ、ライフが0になっての決着
+ * 結果の画面のちびミナモの一言（11月4日。オーナーの決めた形）。
+ * 長期戦がいちばん先。それ以外は、勝ちは自分の残りのライフ、負けは相手の残りのライフで分ける。
+ * turn は決着したターン（両方のターンを数える）
  */
-export function endReason(events: GameEvent[], me: PlayerId, won: boolean): EndReason {
-  const end = [...events]
-    .reverse()
-    .find(
-      (e) =>
-        e.type === "resigned" || e.type === "timedOut" || e.type === "deckOut" || e.type === "specialWin",
-    );
-  switch (end?.type) {
-    case "resigned":
-      return won
-        ? { title: "相手の降参", detail: "相手が降参した" }
-        : { title: "降参", detail: "あなたが降参した" };
-    case "timedOut":
-      return won
-        ? { title: "相手の時間切れ", detail: "相手の持ち時間が0になった" }
-        : { title: "時間切れ", detail: "あなたの持ち時間が0になった" };
-    case "deckOut":
-      return end.player === me
-        ? { title: "山札切れ", detail: "自分のターンの始めに、あなたの山札が0枚でカードを引けなかった" }
-        : { title: "相手の山札切れ", detail: "相手のターンの始めに、相手の山札が0枚でカードを引けなかった" };
-    case "specialWin": {
-      const card = CARDS.find((c) => c.id === end.cardId);
-      const name = card?.dark?.name ?? card?.name ?? end.cardId;
-      return end.player === me
-        ? { title: `『${name}』の特殊勝利`, detail: "自分のターンの始めに、あなたの山札が0枚だった" }
-        : { title: `相手の『${name}』の特殊勝利`, detail: "相手のターンの始めに、相手の山札が0枚だった" };
-    }
-    default:
-      return won
-        ? { title: "相手のライフが0", detail: "相手のライフを0にした" }
-        : { title: "ライフが0", detail: "あなたのライフが0になった" };
+export function resultTalk(won: boolean, turn: number, myLp: number, foeLp: number): ResultTalk {
+  const long = turn >= LONG_GAME_TURN;
+  if (won) {
+    if (long) return { text: "考えて戦い抜いたね！長期戦を制したよ！", face: "think" };
+    if (myLp <= CLOSE_LP) return { text: "激しいバトルを制したね！", face: "surprise" };
+    return { text: "おめでとう！圧倒的だったね！", face: "cheer" };
   }
+  if (long) return { text: "長期戦に勝てるカードに変更してみよう！", face: "point" };
+  if (foeLp <= CLOSE_LP) return { text: "惜しかったね、、、次のバトルに活かそう！", face: "shy" };
+  return { text: "相手が一枚上手だったね。デッキを見直してみよう！", face: "think" };
 }

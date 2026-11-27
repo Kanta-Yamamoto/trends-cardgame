@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router";
+import { BrandLogo } from "../brand/Logo";
 import { isApp } from "../native";
 import { api, type User, useSession } from "../online/session";
 import { Store } from "../purchase/store";
@@ -65,7 +66,7 @@ export function RegisterScreen() {
       <span className="login-rays" aria-hidden="true" />
       <img className="login-chara" src="/assets/cards/c13-subject.webp" alt="" draggable={false} />
       <p className="login-brand" aria-hidden="true">
-        TRENDS
+        <BrandLogo layout="row" />
       </p>
       <main className="login-box g3">
         {done ? (

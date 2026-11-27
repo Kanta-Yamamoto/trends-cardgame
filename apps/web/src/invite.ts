@@ -58,7 +58,7 @@ export const canShare = () => typeof navigator !== "undefined" && typeof navigat
 /** 共有の画面を出す。やめたときは false */
 export async function shareLink(link: string): Promise<boolean> {
   try {
-    await navigator.share({ title: "TRENDS", text: "TRENDS で一緒に遊ぼう", url: link });
+    await navigator.share({ title: "BUZZ NOIR", text: "BUZZ NOIR で一緒に遊ぼう", url: link });
     return true;
   } catch {
     return false;

@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no, viewport-fit=cover"
     />
-    <title>TRENDS</title>
+    <title>BUZZ NOIR</title>
     <meta name="description" content="ネットの話題をキラカードにして戦う、オリジナルカードゲーム" />
     <!-- 公開前なので、検索エンジンに載せない -->
     <meta name="robots" content="noindex, nofollow" />
@@ -16,7 +16,7 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="TRENDS" />
+    <meta name="apple-mobile-web-app-title" content="BUZZ NOIR" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -35,9 +35,9 @@
       }
       #boot.out { animation: boot-out 0.38s cubic-bezier(.3,.6,.4,1) forwards; pointer-events: none; }
       @keyframes boot-out { to { opacity: 0; transform: scale(1.06); filter: blur(2px); } }
-      .boot-mark { position: relative; width: min(58vw, 260px); height: auto; filter: drop-shadow(0 3px 0 #fff); }
+      .boot-mark { position: relative; width: min(46vw, 200px); height: auto; filter: drop-shadow(0 3px 0 #fff); }
       .boot-shine { animation: boot-shine 1.8s ease-in-out infinite; }
-      @keyframes boot-shine { 0% { transform: translateX(0); } 60%, 100% { transform: translateX(5200px); } }
+      @keyframes boot-shine { 0% { transform: translateX(0); } 60%, 100% { transform: translateX(560px); } }
       .boot-bubbles { position: absolute; inset: 0; }
       .boot-bubbles i {
         position: absolute; bottom: -24px; border-radius: 50%;
@@ -57,25 +57,22 @@
     <!--
       起きるまでのローディング（10月30日。ソーダの泡）：眠っていたサーバーが起きるまでの間、白い画面の代わりに出す。
       画面の部品（JS）が読み込まれる前から出せるよう、ここに直に書く。サーバーが返事をしたら src/boot.ts が消す。
-      文字の TRENDS は、書体の読み込みを待たないように、Anton の字の形をそのまま埋め込んである
+      ロゴ（BUZZ NOIR・2 段・1 層）は、書体の読み込みを待たないように、字の形をそのまま埋め込んである（src/brand/logo.ts と同じ形）
     -->
     <div id="boot" aria-hidden="true">
       <div class="boot-bubbles">
         <i style="left:0%;width:6px;height:6px;animation-duration:3.2s;animation-delay:-0.00s;--sway:-6px"></i><i style="left:61%;width:21px;height:21px;animation-duration:4.5s;animation-delay:-0.47s;--sway:9px"></i><i style="left:22%;width:14px;height:14px;animation-duration:3.8s;animation-delay:-0.94s;--sway:-12px"></i><i style="left:83%;width:7px;height:7px;animation-duration:5.1s;animation-delay:-1.41s;--sway:15px"></i><i style="left:44%;width:22px;height:22px;animation-duration:4.4s;animation-delay:-1.88s;--sway:-18px"></i><i style="left:5%;width:15px;height:15px;animation-duration:3.7s;animation-delay:-2.35s;--sway:6px"></i><i style="left:66%;width:8px;height:8px;animation-duration:5.0s;animation-delay:-2.82s;--sway:-9px"></i><i style="left:27%;width:23px;height:23px;animation-duration:4.3s;animation-delay:-3.29s;--sway:12px"></i><i style="left:88%;width:16px;height:16px;animation-duration:3.6s;animation-delay:-3.76s;--sway:-15px"></i><i style="left:49%;width:9px;height:9px;animation-duration:4.9s;animation-delay:-0.23s;--sway:18px"></i><i style="left:10%;width:24px;height:24px;animation-duration:4.2s;animation-delay:-0.70s;--sway:-6px"></i><i style="left:71%;width:17px;height:17px;animation-duration:3.5s;animation-delay:-1.17s;--sway:9px"></i><i style="left:32%;width:10px;height:10px;animation-duration:4.8s;animation-delay:-1.64s;--sway:-12px"></i><i style="left:93%;width:25px;height:25px;animation-duration:4.1s;animation-delay:-2.11s;--sway:15px"></i><i style="left:54%;width:18px;height:18px;animation-duration:3.4s;animation-delay:-2.58s;--sway:-18px"></i><i style="left:15%;width:11px;height:11px;animation-duration:4.7s;animation-delay:-3.05s;--sway:6px"></i>
       </div>
-      <svg class="boot-mark" viewBox="0 -864 2887 869">
-        <title>TRENDS</title>
+      <svg class="boot-mark" viewBox="0 0 308.6 268">
+        <title>BUZZ NOIR</title>
         <defs>
-          <linearGradient id="boot-fill" x1="0" y1="0" x2=".35" y2="1">
-            <stop offset="0" stop-color="#9fe3fb" /><stop offset=".46" stop-color="#2fa8e4" /><stop offset="1" stop-color="#1272b0" />
-          </linearGradient>
           <linearGradient id="boot-gloss" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0" stop-color="#fff" stop-opacity="0" /><stop offset=".5" stop-color="#fff" stop-opacity=".9" /><stop offset="1" stop-color="#fff" stop-opacity="0" />
           </linearGradient>
-          <clipPath id="boot-clip"><path d="M112 0V-694H10V-859H386V-694H284V0ZM464 0V-859H728Q794 -859 827 -829Q861 -799 873 -745Q884 -691 884 -619Q884 -548 866 -506Q848 -464 799 -448Q840 -440 856 -408Q872 -376 872 -325V0H703V-336Q703 -374 687 -383Q672 -392 638 -392V0ZM639 -541H680Q716 -541 716 -619Q716 -669 708 -685Q700 -700 679 -700H639ZM971 0V-859H1315V-693H1146V-526H1308V-364H1146V-167H1326V0ZM1413 0V-859H1590L1669 -448V-859H1835V0H1667L1581 -430V0ZM1941 0V-859H2177Q2270 -859 2317 -808Q2364 -756 2364 -657V-255Q2364 -133 2321 -66Q2278 0 2172 0ZM2114 -152H2144Q2191 -152 2191 -198V-641Q2191 -684 2180 -697Q2168 -709 2133 -709H2114ZM2668 8Q2551 8 2499 -51Q2447 -109 2447 -237V-321H2616V-214Q2616 -184 2625 -167Q2634 -150 2657 -150Q2680 -150 2689 -164Q2698 -178 2698 -209Q2698 -249 2691 -275Q2683 -302 2664 -326Q2644 -350 2610 -382L2533 -456Q2447 -537 2447 -642Q2447 -752 2498 -810Q2549 -867 2645 -867Q2763 -867 2813 -804Q2863 -741 2863 -613H2688V-672Q2688 -689 2678 -699Q2668 -709 2651 -709Q2630 -709 2621 -698Q2611 -686 2611 -668Q2611 -650 2621 -629Q2631 -608 2659 -581L2759 -485Q2788 -457 2813 -426Q2838 -394 2853 -352Q2868 -311 2868 -250Q2868 -129 2824 -61Q2779 8 2668 8Z" /></clipPath>
+          <clipPath id="boot-clip"><path d="M0.4 -0H28.9Q43.5 -0 50.1 6.8Q56.8 13.5 56.8 27.6V32.4Q56.8 41.7 53.8 47.5Q50.8 53.3 44.7 55.9V56.2Q58.7 61 58.7 81.3V91.5Q58.7 105.4 51.4 112.7Q44.1 120 30.1 120H0.4ZM26.7 48.9Q32.3 48.9 35.1 45.9Q38 43 38 36.2V29.5Q38 23 35.7 20.1Q33.3 17.1 28.4 17.1H19.3V48.9ZM30.1 102.9Q35.1 102.9 37.5 100.2Q39.9 97.5 39.9 91V80.6Q39.9 72.3 37 69.2Q34.2 66 27.7 66H19.3V102.9ZM84.6 91.5V-0H103.5V92.9Q103.5 99.1 105.9 101.8Q108.4 104.6 113.1 104.6Q117.7 104.6 120.2 101.8Q122.7 99.1 122.7 92.9V-0H140.8V91.5Q140.8 106.1 133.6 113.9Q126.4 121.7 112.7 121.7Q99 121.7 91.8 113.9Q84.6 106.1 84.6 91.5ZM168.3 103.2 203.2 17.1H170V-0H223.5V16.8L188.5 102.9H223.5V120H168.3ZM251.4 103.2 286.4 17.1H253.1V-0H306.6V16.8L271.6 102.9H306.6V120H251.4ZM-0 148H23.7L42 219.8H42.3V148H59.1V268H39.8L17.1 180.4H16.8V268H-0ZM84.1 239.5V176.5Q84.1 162.1 91.5 154.2Q98.8 146.3 112.7 146.3Q126.6 146.3 134 154.2Q141.3 162.1 141.3 176.5V239.5Q141.3 253.9 134 261.8Q126.6 269.7 112.7 269.7Q98.8 269.7 91.5 261.8Q84.1 253.9 84.1 239.5ZM122.5 240.7V175.3Q122.5 163.4 112.7 163.4Q102.9 163.4 102.9 175.3V240.7Q102.9 252.6 112.7 252.6Q122.5 252.6 122.5 240.7ZM186.4 148H205.3V268H186.4ZM249.9 148H277.9Q292.5 148 299.1 154.8Q305.8 161.5 305.8 175.6V183Q305.8 201.7 293.5 206.6V207Q300.3 209 303.2 215.4Q306 221.7 306 232.3V253.4Q306 258.6 306.3 261.7Q306.7 264.9 308.1 268H288.9Q287.8 265.1 287.5 262.5Q287.1 259.9 287.1 253.3V231.3Q287.1 223.1 284.5 219.8Q281.8 216.6 275.3 216.6H268.8V268H249.9ZM275.7 199.4Q281.3 199.4 284.1 196.5Q287 193.6 287 186.7V177.5Q287 171 284.7 168.1Q282.3 165.1 277.4 165.1H268.8V199.4Z" /></clipPath>
         </defs>
-        <path d="M112 0V-694H10V-859H386V-694H284V0ZM464 0V-859H728Q794 -859 827 -829Q861 -799 873 -745Q884 -691 884 -619Q884 -548 866 -506Q848 -464 799 -448Q840 -440 856 -408Q872 -376 872 -325V0H703V-336Q703 -374 687 -383Q672 -392 638 -392V0ZM639 -541H680Q716 -541 716 -619Q716 -669 708 -685Q700 -700 679 -700H639ZM971 0V-859H1315V-693H1146V-526H1308V-364H1146V-167H1326V0ZM1413 0V-859H1590L1669 -448V-859H1835V0H1667L1581 -430V0ZM1941 0V-859H2177Q2270 -859 2317 -808Q2364 -756 2364 -657V-255Q2364 -133 2321 -66Q2278 0 2172 0ZM2114 -152H2144Q2191 -152 2191 -198V-641Q2191 -684 2180 -697Q2168 -709 2133 -709H2114ZM2668 8Q2551 8 2499 -51Q2447 -109 2447 -237V-321H2616V-214Q2616 -184 2625 -167Q2634 -150 2657 -150Q2680 -150 2689 -164Q2698 -178 2698 -209Q2698 -249 2691 -275Q2683 -302 2664 -326Q2644 -350 2610 -382L2533 -456Q2447 -537 2447 -642Q2447 -752 2498 -810Q2549 -867 2645 -867Q2763 -867 2813 -804Q2863 -741 2863 -613H2688V-672Q2688 -689 2678 -699Q2668 -709 2651 -709Q2630 -709 2621 -698Q2611 -686 2611 -668Q2611 -650 2621 -629Q2631 -608 2659 -581L2759 -485Q2788 -457 2813 -426Q2838 -394 2853 -352Q2868 -311 2868 -250Q2868 -129 2824 -61Q2779 8 2668 8Z" fill="url(#boot-fill)" />
-        <g clip-path="url(#boot-clip)"><rect class="boot-shine" x="-1400" y="-880" width="900" height="900" fill="url(#boot-gloss)" /></g>
+        <path fill="#1F2D44" d="M0.4 -0H28.9Q43.5 -0 50.1 6.8Q56.8 13.5 56.8 27.6V32.4Q56.8 41.7 53.8 47.5Q50.8 53.3 44.7 55.9V56.2Q58.7 61 58.7 81.3V91.5Q58.7 105.4 51.4 112.7Q44.1 120 30.1 120H0.4ZM26.7 48.9Q32.3 48.9 35.1 45.9Q38 43 38 36.2V29.5Q38 23 35.7 20.1Q33.3 17.1 28.4 17.1H19.3V48.9ZM30.1 102.9Q35.1 102.9 37.5 100.2Q39.9 97.5 39.9 91V80.6Q39.9 72.3 37 69.2Q34.2 66 27.7 66H19.3V102.9ZM84.6 91.5V-0H103.5V92.9Q103.5 99.1 105.9 101.8Q108.4 104.6 113.1 104.6Q117.7 104.6 120.2 101.8Q122.7 99.1 122.7 92.9V-0H140.8V91.5Q140.8 106.1 133.6 113.9Q126.4 121.7 112.7 121.7Q99 121.7 91.8 113.9Q84.6 106.1 84.6 91.5ZM168.3 103.2 203.2 17.1H170V-0H223.5V16.8L188.5 102.9H223.5V120H168.3ZM251.4 103.2 286.4 17.1H253.1V-0H306.6V16.8L271.6 102.9H306.6V120H251.4ZM-0 148H23.7L42 219.8H42.3V148H59.1V268H39.8L17.1 180.4H16.8V268H-0ZM84.1 239.5V176.5Q84.1 162.1 91.5 154.2Q98.8 146.3 112.7 146.3Q126.6 146.3 134 154.2Q141.3 162.1 141.3 176.5V239.5Q141.3 253.9 134 261.8Q126.6 269.7 112.7 269.7Q98.8 269.7 91.5 261.8Q84.1 253.9 84.1 239.5ZM122.5 240.7V175.3Q122.5 163.4 112.7 163.4Q102.9 163.4 102.9 175.3V240.7Q102.9 252.6 112.7 252.6Q122.5 252.6 122.5 240.7ZM186.4 148H205.3V268H186.4ZM249.9 148H277.9Q292.5 148 299.1 154.8Q305.8 161.5 305.8 175.6V183Q305.8 201.7 293.5 206.6V207Q300.3 209 303.2 215.4Q306 221.7 306 232.3V253.4Q306 258.6 306.3 261.7Q306.7 264.9 308.1 268H288.9Q287.8 265.1 287.5 262.5Q287.1 259.9 287.1 253.3V231.3Q287.1 223.1 284.5 219.8Q281.8 216.6 275.3 216.6H268.8V268H249.9ZM275.7 199.4Q281.3 199.4 284.1 196.5Q287 193.6 287 186.7V177.5Q287 171 284.7 168.1Q282.3 165.1 277.4 165.1H268.8V199.4Z" />
+        <g clip-path="url(#boot-clip)"><rect class="boot-shine" x="-160" y="0" width="110" height="268" fill="url(#boot-gloss)" /></g>
       </svg>
     </div>
     <div id="root"></div>

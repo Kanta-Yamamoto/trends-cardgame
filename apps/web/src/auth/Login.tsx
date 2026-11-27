@@ -66,7 +66,7 @@ export function Login() {
   return (
     <div className="online-card">
       <h2>ログイン</h2>
-      <p className="muted">TRENDS は、Google アカウントでログインして遊びます。</p>
+      <p className="muted">BUZZ NOIR は、Google アカウントでログインして遊びます。</p>
       {down && <p className="notice">サーバーに繋がりません。時間をおいて開き直してください。</p>}
       {cfg?.googleClientId && <GoogleButton clientId={cfg.googleClientId} />}
       {cfg?.devLogin && <DevLogin />}

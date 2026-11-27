@@ -1,3 +1,4 @@
+import { BrandLogo } from "../brand/Logo";
 /** パックの名前（今は 1 種類） */
 export const PACK_NAME = "DIRECTOR'S CUT";
 
@@ -10,7 +11,9 @@ function Print() {
     <>
       <span className="gx-pk-foil" />
       <img className="gx-pk-chara" src="/assets/cards/c17-subject.webp" alt="" draggable={false} />
-      <span className="gx-pk-logo">TRENDS</span>
+      <span className="gx-pk-logo">
+        <BrandLogo layout="row" />
+      </span>
       <span className="gx-pk-band">第1弾</span>
       <span className="gx-pk-crimp t" />
       <span className="gx-pk-crimp b" />

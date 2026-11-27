@@ -35,7 +35,7 @@ export function InstallGuide({ onClose }: { onClose: (forever: boolean) => void 
       <button type="button" className="zoom-sheet-bg" aria-label="あとで" onClick={() => onClose(false)} />
       <div className="ig-body">
         <img className="ig-icon" src="/icons/icon-192.png" alt="" width={56} height={56} />
-        <h2>TRENDS をアプリとして入れる</h2>
+        <h2>BUZZ NOIR をアプリとして入れる</h2>
         <p className="muted">
           ホーム画面に追加すると、ブラウザの枠がない全画面で遊べます。無料で、すぐ終わります。
         </p>

@@ -23,7 +23,7 @@ export function InviteFriends() {
 
   return (
     <div className="invite">
-      <p className="invite-lead">このリンクを送ると、友だちも TRENDS で遊べます。</p>
+      <p className="invite-lead">このリンクを送ると、友だちも BUZZ NOIR で遊べます。</p>
       <p className="invite-link">
         {link ??
           (failed

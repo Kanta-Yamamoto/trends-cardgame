@@ -38,6 +38,8 @@ interface Setup {
   hand: string[];
   mana: number;
   foeLp?: number;
+  /** 自分のライフ（省略は 14） */
+  meLp?: number;
   myDeck?: string[];
   foeDeck?: string[];
   /** このゲームで出したガードの数（ネ申のコストが下がる） */
@@ -60,7 +62,7 @@ function board(s: Setup): GameState {
     players: {
       p1: {
         ...p(ME),
-        lp: 14,
+        lp: s.meLp ?? 14,
         mana: s.mana,
         maxMana: s.mana,
         hand: s.hand,
@@ -121,6 +123,14 @@ const BOARDS: Record<string, Setup> = {
     foe: { 0: "t-kusa", 1: "f10", 2: "c4", 3: "n13", 4: "k6" },
     hand: ["g20", "n10", "k3", "c16", "f2", "c17", "m9"],
     mana: 6,
+  },
+  // 負け：自分のライフが残り少なく、ターンを終えると相手のキャラクターに攻撃される（結果の画面の確かめ用）
+  lose: {
+    me: {},
+    foe: { 1: "c4", 3: "f10" },
+    hand: ["n10"],
+    mana: 1,
+    meLp: 2,
   },
   win: {
     me: { 1: "c9", 3: "m9" },
@@ -196,6 +206,8 @@ export const promoActions = {
     useGame.getState().select({ kind: "attacker", slot });
     useGame.getState().attack({ kind: "leader" });
   },
+  /** ターンを終える（相手の CPU が動く） */
+  endTurn: () => useGame.getState().endTurn(),
   /** 差し出し（『フィクサー』）で、自分の枠 slot のキャラクターを選ぶ */
   sacrifice: (slot: number) => useGame.getState().sacrifice(slot),
 };

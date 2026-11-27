@@ -28,6 +28,8 @@ locals {
     "iamcredentials.googleapis.com",
     "sts.googleapis.com",
     "billingbudgets.googleapis.com",
+    "monitoring.googleapis.com",
+    "bigquery.googleapis.com",
   ]
 }
 
@@ -97,8 +99,10 @@ resource "google_cloud_run_v2_service" "api" {
     service_account = google_service_account.api.email
     # オンライン対戦（WebSocket）の部屋は1台のメモリで管理しているので、台数は1に固定する。
     # 増やすときは Socket.IO の Redis アダプターなどで台数間をつなぐ
+    # 待機の台数。App Store の審査の間だけ 1 にする（11月27日。審査の人が開いたときに、眠っていたサーバーが起きるまで待たせない）。
+    # 審査が終わったら 0 に戻す。1 にしている間は、待機の分の料金がかかる（毎日の報告：.github/workflows/cost-report.yml）
     scaling {
-      min_instance_count = 0
+      min_instance_count = 1
       max_instance_count = 1
     }
     # 同じ人の接続を同じ台に、WebSocket は最長1時間つなぎっぱなしにできるように
@@ -226,4 +230,41 @@ resource "google_billing_budget" "monthly" {
   threshold_rules { threshold_percent = 0.5 }
   threshold_rules { threshold_percent = 0.9 }
   threshold_rules { threshold_percent = 1.0 }
+}
+
+# 毎日の利用料金の報告（.github/workflows/cost-report.yml・tools/cost-report.mjs）。
+# 請求の明細を BigQuery に書き出す先。書き出しは請求先アカウントの設定なので、オーナーがコンソールで一度だけ選ぶ
+# （「お支払い」→「課金データのエクスポート」→「BigQuery エクスポート」→「標準の使用料金」で、このデータセットを選ぶ）。
+# 書き出しが始まるまでは、Cloud Run の使った時間からの見積もりで報告する
+resource "google_bigquery_dataset" "billing_export" {
+  dataset_id                 = "billing_export"
+  location                   = var.region
+  delete_contents_on_destroy = false
+  depends_on                 = [google_project_service.apis]
+}
+
+# 報告用のサービスアカウント（読むだけ。main ブランチの GitHub Actions からだけ借りられる）
+resource "google_service_account" "cost_reporter" {
+  account_id   = "cost-reporter"
+  display_name = "GitHub Actions cost report"
+}
+
+resource "google_service_account_iam_member" "github_impersonates_cost_reporter" {
+  service_account_id = google_service_account.cost_reporter.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_repository}"
+}
+
+resource "google_project_iam_member" "cost_reporter_roles" {
+  # monitoring.viewer：Cloud Run の使った時間を読む。bigquery.jobUser：請求の明細を集計するクエリを動かす
+  for_each = toset(["roles/monitoring.viewer", "roles/bigquery.jobUser"])
+  project  = var.project_id
+  role     = each.value
+  member   = "serviceAccount:${google_service_account.cost_reporter.email}"
+}
+
+resource "google_bigquery_dataset_iam_member" "cost_reporter_reads_billing" {
+  dataset_id = google_bigquery_dataset.billing_export.dataset_id
+  role       = "roles/bigquery.dataViewer"
+  member     = "serviceAccount:${google_service_account.cost_reporter.email}"
 }

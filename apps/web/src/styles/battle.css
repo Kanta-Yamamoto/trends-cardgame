@@ -52,10 +52,11 @@
 .pstage .slot.center:not(.droppable) { border-color: #f2cf7a66; }
 .pstage .mini { aspect-ratio: auto; width: var(--slot); height: var(--card-h); box-sizing: border-box; border-radius: 12px; padding: 0; border: 2px solid #ffffffd9; display: block; overflow: hidden; background-color: var(--pn); }
 .pstage .mini::before, .pstage .mini::after { display: none; }
-/* 絵は引き伸ばさない：カード全体に元の比率（2:3）で敷き、下の段（札と数字）にかかる所だけ暗くする（11月2日。オーナー：縦横の縮尺がおかしい） */
+/* 絵は引き伸ばさない：カード全体に元の比率（2:3）で敷き、下の段（札と数字）にかかる所だけ暗くする（11月2日。オーナー：縦横の縮尺がおかしい）。
+   数字と札は自分の地を持つので、暗くするのは下のふちだけ（11月3日。オーナー：黒い加工が強すぎて絵の大半が見えない） */
 .pstage .mini.has-art { background-size: cover; background-position: 50% 18%; background-repeat: no-repeat; }
-.pstage .mini.has-art::before { display: block; content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(180deg, transparent 38%, #0a1020a6 58%, #0a1020eb 100%); }
-.pstage .mini.has-art.is-dark::before { background: linear-gradient(180deg, #2a0d3a22 32%, #12051ab3 58%, #07020bee 100%); }
+.pstage .mini.has-art::before { display: block; content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(180deg, transparent 62%, #0a102033 80%, #0a102080 100%); }
+.pstage .mini.has-art.is-dark::before { background: linear-gradient(180deg, #2a0d3a22 40%, #12051a4d 75%, #07020b99 100%); }
 .pstage .mini.on-field { box-shadow: 0 3px 8px #0007; transition: transform 0.15s ease; }
 .pstage .mini.unit.ready { border-color: #f2c14e; box-shadow: 0 0 0 1px #f2c14e, 0 3px 8px #0007; }
 .pstage .mini.unit.tired { filter: saturate(0.6) brightness(0.78); }
